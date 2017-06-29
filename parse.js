@@ -2,83 +2,30 @@
 Parse Framework
 */
 
-(function parse() {
+(function parser() {
     "use strict";
-    var markuppretty = function markuppretty_(options) {
+    var parse = {
+            attrs: [], // markup - element attributes
+            begin: [], // all - token index where a structure opens as described by stack
+            jscom: [], // markup - stores a boolean if a given token is a C like comment used within a markup tag in JSX/TSX
+            lines: [], // all - the number of empty lines to store at the given token
+            presv: [], // markup = indicates whether the current token should be voided from beautification
+            stack: [], // all - the name of the current container indicated by begin
+            token: [], // all - parsed tokens, used by all lexers
+            types: [] // all - parsed token categories, used by all lexers
+        },
+        lexer = {};
+    lexer.markup = function parser_markup(options) {
         var safeSort    = global.prettydiff.safeSort,
             output      = "",
-            stats       = {
-                cdata      : [
-                    0, 0
-                ],
-                comment    : [
-                    0, 0
-                ],
-                conditional: [
-                    0, 0
-                ],
-                content    : [
-                    0, 0
-                ],
-                end        : [
-                    0, 0
-                ],
-                ignore     : [
-                    0, 0
-                ],
-                script     : [
-                    0, 0
-                ],
-                sgml       : [
-                    0, 0
-                ],
-                singleton  : [
-                    0, 0
-                ],
-                space      : 0,
-                start      : [
-                    0, 0
-                ],
-                style      : [
-                    0, 0
-                ],
-                template   : [
-                    0, 0
-                ],
-                text       : [
-                    0, 0
-                ],
-                xml        : [0, 0]
-            },
-
-            //parallel arrays
-            // * attrs is a list of arrays, each of which contains (if any) parsed
-            // attributes
-            // * begin stores the index of the current token's parent element
-            // * daddy stores the tag name of the parent element
-            // * jscom stores true/false if the current token is a JS comment from JSX
-            // format
-            // * level describes the indentation of a given token level is only used in
-            // beautify and diff modes
-            // * linen stores the input line number on which the token occurs
-            // * lines describes the preceeding space using: 2, 1, or 0 lines is populated
-            // in markuppretty__tokenize_spacer
-            // * presv whether a given token should be preserved as provided
-            // * token stores parsed tokens
-            // * types segments tokens into named groups
-            // * value attribute value if current type is attribute and
-            // options.attributetoken is true
-            attrs       = [],
-            jscom       = [],
-            level       = [],
-            linen       = [],
-            lines       = [],
-            token       = [],
-            types       = [],
-            presv       = [],
-            daddy       = [],
-            begin       = [],
-            value       = [],
+            attrs       = parse.attrs,
+            begin       = parse.begin,
+            jscom       = parse.jscom,
+            lines       = parse.lines,
+            presv       = parse.presv,
+            stack       = parse.stack,
+            token       = parse.token,
+            types       = parse.types,
             reqs        = [],
             ids         = [],
             parseError  = [],
@@ -597,7 +544,6 @@ Parse Framework
                     spacer();
                     jscom.push(false);
                     linen.push(line);
-                    value.push("");
                     ext = false;
                     // this complex series of conditions determines an elements delimiters look to
                     // the types being pushed to quickly reason about the logic no type is pushed
@@ -734,7 +680,7 @@ Parse Framework
                                     a = a + 6;
                                     token.push("{:else}");
                                     presv.push(true);
-                                    daddy.push(parent[parent.length - 1][0]);
+                                    stack.push(parent[parent.length - 1][0]);
                                     begin.push(parent[parent.length - 1][1]);
                                     attrs.push({});
                                     stats.template[0] = stats.template[0] + 1;
@@ -798,7 +744,7 @@ Parse Framework
                                 a                       = a + 9;
                                 types[types.length - 1] = "template_else";
                                 presv.push(true);
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 attrs.push({});
                                 stats.template[0] = stats.template[0] + 1;
@@ -1214,7 +1160,6 @@ Parse Framework
                         jscom.pop();
                         linen.pop();
                         lines.pop();
-                        value.pop();
                         space = minspace;
                         return;
                     }
@@ -1262,8 +1207,6 @@ Parse Framework
 
                         attrs.push({});
                         attrs.push({});
-                        value.push("");
-                        value.push("");
                         jscom.push(false);
                         jscom.push(false);
                         e = linen[linen.length - 1];
@@ -1272,13 +1215,13 @@ Parse Framework
                         types[types.length - 1] = "template_start";
                         token.push("{% comment %}");
                         types.push("comment");
-                        daddy.push(parent[parent.length - 1][0]);
+                        stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         stats.template[0] = stats.template[0] + 1;
                         stats.template[1] = stats.template[1] + 13;
                         token.push(element);
                         types.push("template_end");
-                        daddy.push(parent[parent.length - 1][0]);
+                        stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         stats.template[0] = stats.template[0] + 1;
                         stats.template[1] = stats.template[1] + element.length;
@@ -1379,7 +1322,7 @@ Parse Framework
                                     element;
                             if (element.indexOf("</") > 0) {
                                 token.push(element);
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 stats.end[0] = stats.end[0] + 1;
                                 stats.end[1] = stats.end[1] + token[token.length - 1].length;
@@ -1463,7 +1406,6 @@ Parse Framework
                                 linen.pop();
                                 lines.pop();
                                 presv.pop();
-                                value.pop();
                                 if (types[types.length - 1] === "start") {
                                     token[token.length - 1] = token[token.length - 1].replace(/>$/, "/>");
                                 }
@@ -1615,7 +1557,7 @@ Parse Framework
                             if (tname === "cfelse" || tname === "cfelseif") {
                                 types.push("template_else");
                                 token.push(lexer.join(""));
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 stats.template[0] = stats.template[0] + 1;
                                 stats.template[1] = stats.template[1] + token[token.length - 1].length;
@@ -1636,7 +1578,7 @@ Parse Framework
                                 }
                                 types.push("template");
                                 token.push(lexer.join("").replace(/\s+/, " "));
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 stats.template[0] = stats.template[0] + 1;
                                 stats.template[1] = stats.template[1] + token[token.length - 1].length;
@@ -1649,7 +1591,7 @@ Parse Framework
                                 }
                                 types.push("template_start");
                                 token.push(lexer.join(""));
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 if (parent[parent.length - 1][1] === -1) {
                                     begin.push(token.length - 1);
                                 } else {
@@ -1822,7 +1764,7 @@ Parse Framework
                     // temprorarily creates a pseudo end tag
                     if (liend === true && (options.mode === "beautify" || options.mode === "diff" || options.mode === "parse")) {
                         token.push("</prettydiffli>");
-                        daddy.push(parent[parent.length - 1][0]);
+                        stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         lines.push(lines[lines.length - 1]);
                         linen.push(line);
@@ -1835,7 +1777,6 @@ Parse Framework
                         }
                         presv.push(false);
                         jscom.push(false);
-                        value.push("");
                         if (parent.length > 1) {
                             parent.pop();
                         }
@@ -1847,7 +1788,7 @@ Parse Framework
                     }
                     if (preserve === true) {
                         token.push(element);
-                        daddy.push(parent[parent.length - 1][0]);
+                        stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         stats.ignore[0] = stats.ignore[0] + 1;
                         stats.ignore[1] = stats.ignore[1] + token[token.length - 1].length;
@@ -1857,7 +1798,7 @@ Parse Framework
                         } else {
                             token.push(element.replace(/\s+/g, " "));
                         }
-                        daddy.push(parent[parent.length - 1][0]);
+                        stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         if (types[types.length - 1].indexOf("template") > -1) {
                             stats.template[0] = stats.template[0] + 1;
@@ -1882,14 +1823,13 @@ Parse Framework
                                 store      = {
                                     attrs: [],
                                     begin: [],
-                                    daddy: [],
                                     jscom: [],
                                     linen: [],
                                     lines: [],
                                     presv: [],
+                                    stack: [],
                                     token: [],
-                                    types: [],
-                                    value: []
+                                    types: []
                                 },
                                 sortName   = function markuppretty__tokenize_tag_sorttag_sortName(x, y) {
                                     if (token[x[0]] < token[y[0]]) {
@@ -1905,8 +1845,8 @@ Parse Framework
                                         .begin
                                         .push(begin[index]);
                                     store
-                                        .daddy
-                                        .push(daddy[index]);
+                                        .stack
+                                        .push(stack[index]);
                                     store
                                         .jscom
                                         .push(jscom[index]);
@@ -1925,9 +1865,6 @@ Parse Framework
                                     store
                                         .types
                                         .push(types[index]);
-                                    store
-                                        .value
-                                        .push(value[index]);
                                 };
                             for (bb = token.length - 2; bb > -1; bb = bb - 1) {
                                 if (types[bb] === "start") {
@@ -1965,23 +1902,22 @@ Parse Framework
                             }
                             endData.attrs = attrs.pop();
                             endData.begin = begin.pop();
-                            endData.daddy = daddy.pop();
+                            endData.stack = stack.pop();
                             endData.jscom = jscom.pop();
                             endData.linen = linen.pop();
                             endData.lines = lines.pop();
                             endData.presv = presv.pop();
                             endData.token = token.pop();
                             endData.types = types.pop();
-                            endData.value = value.pop();
                             attrs         = attrs
                                 .slice(0, startStore)
                                 .concat(store.attrs);
                             begin         = begin
                                 .slice(0, startStore)
                                 .concat(store.begin);
-                            daddy         = daddy
+                            stack         = stack
                                 .slice(0, startStore)
-                                .concat(store.daddy);
+                                .concat(store.stack);
                             jscom         = jscom
                                 .slice(0, startStore)
                                 .concat(store.jscom);
@@ -2000,19 +1936,15 @@ Parse Framework
                             types         = types
                                 .slice(0, startStore)
                                 .concat(store.types);
-                            value         = value
-                                .slice(0, startStore)
-                                .concat(store.value);
                             attrs.push(endData.attrs);
                             begin.push(endData.begin);
-                            daddy.push(endData.daddy);
+                            stack.push(endData.stack);
                             jscom.push(endData.jscom);
                             linen.push(endData.linen);
                             lines.push(endData.lines);
                             presv.push(endData.presv);
                             token.push(endData.token);
                             types.push(endData.types);
-                            value.push(endData.value);
                         }());
                     }
                     e = token.length - 1;
@@ -2020,33 +1952,6 @@ Parse Framework
                         parent.push([tname, e]);
                     } else if (types[e] === "end" && parent.length > 1) {
                         parent.pop();
-                    }
-                    if (options.attributetoken === true && options.mode === "parse") {
-                        attribute = Object.keys(attrs[e]);
-                        bcount    = attribute.length;
-                        if ((types[e] === "start" || types[e] === "singleton") && bcount > 0) {
-                            for (f = 0; f < bcount; f = f + 1) {
-                                attrs.push({});
-                                begin.push(begin[e]);
-                                if (daddy[e] === "root") {
-                                    daddy.push(tname);
-                                } else {
-                                    daddy.push(daddy[e]);
-                                }
-                                jscom.push(false);
-                                linen.push(linen[e]);
-                                lines.push(0);
-                                presv.push(presv[e]);
-                                token.push(attribute[f]);
-                                if (attribute[f] === "") {
-                                    types.push("template_attribute");
-                                    value.push("");
-                                } else {
-                                    types.push("attribute");
-                                    value.push(attrs[e][attribute[f]]);
-                                }
-                            }
-                        }
                     }
                 },
                 content       = function markuppretty__tokenize_content() {
@@ -2085,7 +1990,6 @@ Parse Framework
                     attrs.push({});
                     jscom.push(false);
                     linen.push(line);
-                    value.push("");
                     if (linepreserve > 0) {
                         presv.push(true);
                     } else {
@@ -2125,11 +2029,10 @@ Parse Framework
                                         jscom.pop();
                                         linen.pop();
                                         presv.pop();
-                                        value.pop();
                                         return lines.pop();
                                     }
                                     token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
-                                    daddy.push(parent[parent.length - 1][0]);
+                                    stack.push(parent[parent.length - 1][0]);
                                     begin.push(parent[parent.length - 1][1]);
                                     stats.script[0] = stats.script[0] + 1;
                                     stats.script[1] = stats.script[1] + token[token.length - 1].length;
@@ -2152,11 +2055,10 @@ Parse Framework
                                             jscom.pop();
                                             linen.pop();
                                             presv.pop();
-                                            value.pop();
                                             return lines.pop();
                                         }
                                         token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
-                                        daddy.push(parent[parent.length - 1][0]);
+                                        stack.push(parent[parent.length - 1][0]);
                                         begin.push(parent[parent.length - 1][1]);
                                         stats.script[0] = stats.script[0] + 1;
                                         stats.script[1] = stats.script[1] + token[token.length - 1].length;
@@ -2182,11 +2084,10 @@ Parse Framework
                                             jscom.pop();
                                             linen.pop();
                                             presv.pop();
-                                            value.pop();
                                             return lines.pop();
                                         }
                                         token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
-                                        daddy.push(parent[parent.length - 1][0]);
+                                        stack.push(parent[parent.length - 1][0]);
                                         begin.push(parent[parent.length - 1][1]);
                                         stats.style[0] = stats.style[0] + 1;
                                         stats.style[1] = stats.style[1] + token[token.length - 1].length;
@@ -2240,7 +2141,7 @@ Parse Framework
                             }
                             stats.content[0] = stats.content[0] + 1;
                             stats.content[1] = stats.content[1] + token[token.length - 1].length;
-                            daddy.push(parent[parent.length - 1][0]);
+                            stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             return types.push("content");
                         }
@@ -2265,10 +2166,9 @@ Parse Framework
                                 linen.push(line);
                                 presv.push(false);
                                 token.push("{:else}");
-                                value.push("");
                                 stats.template[0] = stats.template[0] + 1;
                                 stats.template[1] = stats.template[1] + token[token.length - 1].length;
-                                daddy.push(parent[parent.length - 1][0]);
+                                stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 return types.push("template_else");
                             }
@@ -2286,7 +2186,7 @@ Parse Framework
                             }
                             stats.content[0] = stats.content[0] + 1;
                             stats.content[1] = stats.content[1] + token[token.length - 1].length;
-                            daddy.push(parent[parent.length - 1][0]);
+                            stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             return types.push("content");
                         }
@@ -2303,7 +2203,7 @@ Parse Framework
                     }
                     stats.content[0] = stats.content[0] + 1;
                     stats.content[1] = stats.content[1] + token[token.length - 1].length;
-                    daddy.push(parent[parent.length - 1][0]);
+                    stack.push(parent[parent.length - 1][0]);
                     begin.push(parent[parent.length - 1][1]);
                     return types.push("content");
                 };
@@ -2399,8 +2299,6 @@ Parse Framework
                     def      = {
                         attrs: "array - List of attributes (if any) for the given token.",
                         begin: "number - Index where the parent element occurs.",
-                        daddy: "string - Tag name of the parent element. Tokens of type 'template_start' are n" +
-                                "ot considered as parent elements.  End tags reflect their matching start tag.",
                         jscom: "boolean - Whether the token is a JavaScript comment if in JSX format.",
                         linen: "number - The line number in the original source where the token started, which" +
                                 " is used for reporting and analysis.",
@@ -2408,11 +2306,12 @@ Parse Framework
                                 "iginal code source.",
                         presv: "boolean - Whether the token is preserved verbatim as found.  Useful for commen" +
                                 "ts and HTML 'pre' tags.",
+                        stack: "string - Tag name of the parent element. Tokens of type 'template_start' are n" +
+                                "ot considered as parent elements.  End tags reflect their matching start tag.",
                         token: "string - The parsed code tokens.",
                         types: "string - Data types of the tokens: cdata, comment, conditional, content, end, " +
                                 "ignore, linepreserve, script, sgml, singleton, start, template, template_else," +
-                                " template_end, template_start, xml",
-                        value: "string - The attribute's value if the current type is attribute"
+                                " template_end, template_start, xml"
                     },
                     //white space token to insertion logic
                     insert   = function markuppretty__parse_insert(string) {
@@ -2426,14 +2325,13 @@ Parse Framework
                         }
                         attrs.splice(a, 0, {});
                         begin.splice(a, 0, begin[a]);
-                        daddy.splice(a, 0, daddy[a]);
+                        stack.splice(a, 0, stack[a]);
                         jscom.splice(a, 0, false);
                         linen.splice(a, 0, linen[a]);
                         lines.splice(a, 0, 1);
                         presv.splice(a, 0, false);
                         token.splice(a, 0, string);
                         types.splice(a, 0, "content");
-                        value.splice(a, 0, "");
                         c = c + 1;
                         a = a + 1;
                     },
@@ -2462,11 +2360,6 @@ Parse Framework
                             token[a] = (toke.slice(0, toke.length - xlen) + atts + string);
                         }
                     };
-                if (options.attributetoken === true) {
-                    delete def.attrs;
-                } else {
-                    delete def.value;
-                }
                 for (a = 0; a < c; a = a + 1) {
                     wspace = "";
                     record = Object.keys(attrs[a]);
@@ -2479,14 +2372,13 @@ Parse Framework
                         } else {
                             attrs.splice(a, 1);
                             begin.splice(a, 1);
-                            daddy.splice(a, 1);
+                            stack.splice(a, 1);
                             jscom.splice(a, 1);
                             linen.splice(a, 1);
                             lines.splice(a, 1);
                             presv.splice(a, 1);
                             token.splice(a, 1);
                             types.splice(a, 1);
-                            value.splice(a, 1);
                             a = a - 1;
                             c = c - 1;
                         }
@@ -2527,37 +2419,19 @@ Parse Framework
                     }
                 }
                 if (options.parseFormat === "sequential") {
-                    if (options.attributetoken === true) {
-                        def.order = "[token, types, value, lines, linen, jscom, presv, daddy, begin]";
-                    } else {
-                        def.order = "[token, types, attrs, lines, linen, jscom, presv, daddy, begin]";
-                    }
+                    def.order = "[token, types, attrs, lines, linen, jscom, presv, stack, begin]";
                     for (a = 0; a < c; a = a + 1) {
-                        if (options.attributetoken === true) {
-                            record.push([
-                                token[a],
-                                types[a],
-                                value[a],
-                                lines[a],
-                                linen[a],
-                                jscom[a],
-                                presv[a],
-                                daddy[a],
-                                begin[a]
-                            ]);
-                        } else {
-                            record.push([
-                                token[a],
-                                types[a],
-                                attrs[a],
-                                lines[a],
-                                linen[a],
-                                jscom[a],
-                                presv[a],
-                                daddy[a],
-                                begin[a]
-                            ]);
-                        }
+                        record.push([
+                            token[a],
+                            types[a],
+                            attrs[a],
+                            lines[a],
+                            linen[a],
+                            jscom[a],
+                            presv[a],
+                            stack[a],
+                            begin[a]
+                        ]);
                     }
                     if (options.nodeasync === true) {
                         return [
@@ -2576,12 +2450,7 @@ Parse Framework
                             header = "<tr class=\"header\"><th>index</th><th>token</th><th>types</th>",
                             aa     = 0,
                             len    = 0;
-                        if (options.attributetoken === true) {
-                            header = header + "<th>value</th>";
-                        } else {
-                            header = header + "<th>attrs</th>";
-                        }
-                        header = header + "<th>linen</th><th>jscom</th><th>presv</th><th>daddy</th><th>" +
+                        header = header + "<th>attrs</th><th>linen</th><th>jscom</th><th>presv</th><th>stack</th><th>" +
                                 "begin</th><th>lines</th></tr>";
                         report.push("<table summary='markup parse table'><thead>");
                         report.push(header);
@@ -2612,26 +2481,18 @@ Parse Framework
                                 report.push("</td><td>");
                                 report.push(types[aa]);
                                 report.push("</td>");
-                                if (options.attributetoken === true) {
-                                    report.push("<td style=\"white-space:pre\">");
-                                    report.push(
-                                        value[aa].replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                    );
-                                    report.push("</td><td>");
-                                } else {
-                                    report.push("<td style=\"white-space:pre\">");
-                                    report.push(
-                                        JSON.stringify(attrs[aa]).replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                    );
-                                    report.push("</td><td>");
-                                }
+                                report.push("<td style=\"white-space:pre\">");
+                                report.push(
+                                    JSON.stringify(attrs[aa]).replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
+                                );
+                                report.push("</td><td>");
                                 report.push(linen[aa]);
                                 report.push("</td><td>");
                                 report.push(jscom[aa]);
                                 report.push("</td><td>");
                                 report.push(presv[aa]);
                                 report.push("</td><td>");
-                                report.push(daddy[aa]);
+                                report.push(stack[aa]);
                                 report.push("</td><td>");
                                 report.push(begin[aa]);
                                 report.push("</td><td>");
@@ -2652,13 +2513,9 @@ Parse Framework
                         return {data: report.join(""), definition: def};
                     }());
                 }
-                if (options.attributetoken === true) {
-                    data.value = value;
-                } else {
-                    data.attrs = attrs;
-                }
+                data.attrs = attrs;
                 data.begin = begin;
-                data.daddy = daddy;
+                data.stack = stack;
                 data.jscom = jscom;
                 data.linen = linen;
                 data.lines = lines;
@@ -2677,43 +2534,8 @@ Parse Framework
                 return {data: data, definition: def};
             }());
         }
-
-        if (options.mode === "minify") {
-            (function markuppretty__minify() {
-                var a      = 0,
-                    c      = token.length,
-                    script = function markuppretty__minify_script() {
-                        options.source = token[a];
-                        token[a]       = extlib("script");
-                        level.push(-20);
-                    },
-                    style  = function markuppretty__minify_style() {
-                        options.source = token[a];
-                        token[a]       = extlib("style");
-                        level.push(-20);
-                    };
-                for (a = 0; a < c; a = a + 1) {
-                    if (types[a] === "script") {
-                        script();
-                    } else if (types[a] === "style") {
-                        style();
-                    } else if (lines[a] > 0) {
-                        if (types[a] === "singleton" || types[a] === "content" || types[a] === "template") {
-                            level.push(0);
-                        } else if (types[a - 1] === "singleton" || types[a - 1] === "content" || types[a] === "template") {
-                            level.push(0);
-                        } else {
-                            level.push(-20);
-                        }
-                    } else {
-                        level.push(-20);
-                    }
-                }
-            }());
-        }
-        return output;
-    },
-    jspretty = function jspretty_(options) {
+    };
+    lexer.clang = function parser_clang(options) {
         var sourcemap    = [
                 0, ""
             ],
@@ -5719,8 +5541,8 @@ Parse Framework
             }());
         }
         return result;
-    },
-    csspretty = function csspretty_(options) {
+    };
+    lexer.css = function parser_css(options) {
         var token      = [],
             types      = [],
             lines      = [],
@@ -7648,4 +7470,5 @@ Parse Framework
 
         return output;
     };
+    return parse;
 }());
