@@ -1190,11 +1190,13 @@ Parse Framework
                             types[types.length - 1] = "template_else";
                         }
                     } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
-                        if ((/^(<%\s+end\s+-?%>)$/).test(element) === true) {
-                            types[types.length - 1] = "template_end";
-                        } else if (((/\sdo\s/).test(element) === true && element.indexOf("-%>") === element.length - 3) || (/^(<%(%|-)?\s*if)/).test(element) === true) {
-                            types[types.length - 1] = "template_start";
-                        }
+                        if ((/^(<%\s*end\s*-?%>)$/).test(element) === true || (/^(<%\s*\}\s*%>)$/).test(element) === true) {
+                             types[types.length - 1] = "template_end";
+-                        } else if ((/^(<%\s*\}?\s*else\s*\{?\s*-?%>)$/).test(element) === true) {
++                            types[types.length - 1] = "template_else";
++                        } else if (element.indexOf("<%=") !== 0) {
+                             types[types.length - 1] = "template_start";
+                         }
                     }
                     tname = tagName(element);
                     if (options.html === true && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (types.length === 0 || types[types.length - 1].indexOf("template") < 0) && options.jsx === false && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
@@ -6282,6 +6284,7 @@ Parse Framework
                                     parts.reverse();
                                     cc = cc + 1;
                                     dd = aa - cc;
+                                    lines[aa] = lines[cc];
                                     token.splice(cc, dd);
                                     types.splice(cc, dd);
                                     lines.splice(cc, dd);
