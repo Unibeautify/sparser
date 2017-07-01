@@ -14,10 +14,12 @@ Parse Framework
             token: [], // all - parsed tokens, used by all lexers
             types: [] // all - parsed token categories, used by all lexers
         },
-        lexer = {};
+        lexer = {},
+        lf    = (options.crlf === true || options.crlf === "true")
+            ? "\r\n"
+            : "\n";
     lexer.markup = function parser_markup(options) {
         var safeSort    = global.prettydiff.safeSort,
-            output      = "",
             attrs       = parse.attrs,
             begin       = parse.begin,
             jscom       = parse.jscom,
@@ -33,13 +35,8 @@ Parse Framework
                 ["none", -1]
             ],
             line        = 1,
-            wrap        = options.wrap,
             objsortop   = false,
             globalerror = "",
-            lf          = (options.crlf === true || options.crlf === "true")
-                ? "\r\n"
-                : "\n",
-            sourceSize  = options.source.length,
             extlib      = function markuppretty__extlib(type) {
                 var result = "",
                     newline = options.newline;
@@ -126,21 +123,6 @@ Parse Framework
                 return name;
             };
 
-        (function markuppretty__options() {
-            objsortop      = (
-                options.objsort === true || options.objsort === "true" || options.objsort === "all" || options.objsort === "markup"
-            );
-            options.source = (
-                typeof options.source === "string" && options.source.length > 0
-            )
-                ? options
-                    .source
-                    .replace(/\r\n?/g, "\n")
-                : "Error: no source code supplied to markuppretty!";
-            if (options.mode === "analysis") {
-                options.accessibility = true;
-            }
-        }());
         //type definitions:
         // * start      end     type
         // * <![CDATA[   ]]>    cdata
@@ -398,7 +380,6 @@ Parse Framework
                 spacer        = function markuppretty__tokenize_spacer() {
                     var linea = 0;
                     if (space.length > 0) {
-                        stats.space = stats.space + space.length;
                         linea       = space
                             .split("\n")
                             .length - 1;
@@ -419,7 +400,7 @@ Parse Framework
                 },
                 //parses tags, attributes, and template elements
                 tag           = function markuppretty__tokenize_tag(end) {
-                    var lexer     = [],
+                    var store     = [],
                         bcount    = 0,
                         e         = 0,
                         f         = 0,
@@ -543,7 +524,6 @@ Parse Framework
                         };
                     spacer();
                     jscom.push(false);
-                    linen.push(line);
                     ext = false;
                     // this complex series of conditions determines an elements delimiters look to
                     // the types being pushed to quickly reason about the logic no type is pushed
@@ -683,8 +663,6 @@ Parse Framework
                                     stack.push(parent[parent.length - 1][0]);
                                     begin.push(parent[parent.length - 1][1]);
                                     attrs.push({});
-                                    stats.template[0] = stats.template[0] + 1;
-                                    stats.template[1] = stats.template[1] + 7;
                                     earlyexit         = true;
                                     return types.push("template_else");
                                 }
@@ -747,8 +725,6 @@ Parse Framework
                                 stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 attrs.push({});
-                                stats.template[0] = stats.template[0] + 1;
-                                stats.template[1] = stats.template[1] + 10;
                                 earlyexit         = true;
                                 return token.push("{@}else{@}");
                             }
@@ -807,31 +783,31 @@ Parse Framework
                             line = line + 1;
                         }
                         if (preserve === true || (/\s/).test(b[a]) === false) {
-                            lexer.push(b[a]);
-                        } else if (lexer[lexer.length - 1] !== " ") {
-                            lexer.push(" ");
+                            store.push(b[a]);
+                        } else if (store[store.length - 1] !== " ") {
+                            store.push(" ");
                         }
                         if (comment === true) {
                             quote = "";
                             //comments must ignore fancy encapsulations and attribute parsing
-                            if (b[a] === lastchar && lexer.length > end.length + 1) {
+                            if (b[a] === lastchar && store.length > end.length + 1) {
                                 //if current character matches the last character of the tag ending sequence
-                                f = lexer.length;
+                                f = store.length;
                                 for (e = end.length - 1; e > -1; e = e - 1) {
                                     f = f - 1;
-                                    if (lexer[f] !== end.charAt(e)) {
+                                    if (store[f] !== end.charAt(e)) {
                                         break;
                                     }
                                 }
                                 if (e < 0) {
                                     if (end === "endcomment") {
                                         f = f - 1;
-                                        if ((/\s/).test(lexer[f]) === true) {
+                                        if ((/\s/).test(store[f]) === true) {
                                             do {
                                                 f = f - 1;
-                                            } while ((/\s/).test(lexer[f]) === true);
+                                            } while ((/\s/).test(store[f]) === true);
                                         }
-                                        if (lexer[f - 1] === "{" && lexer[f] === "%") {
+                                        if (store[f - 1] === "{" && store[f] === "%") {
                                             end      = "%}";
                                             lastchar = "}";
                                         }
@@ -849,7 +825,7 @@ Parse Framework
                                         jsxcount = jsxcount - 1;
                                     }
                                 }
-                                if (types[types.length - 1] === "sgml" && b[a] === "[" && lexer.length > 4) {
+                                if (types[types.length - 1] === "sgml" && b[a] === "[" && store.length > 4) {
                                     types[types.length - 1] = "template_start";
                                     break;
                                 }
@@ -1158,7 +1134,6 @@ Parse Framework
                     //nopush flags mean an early exit
                     if (nopush === true) {
                         jscom.pop();
-                        linen.pop();
                         lines.pop();
                         space = minspace;
                         return;
@@ -1191,12 +1166,12 @@ Parse Framework
                         }
                     } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
                         if ((/^(<%\s*end\s*-?%>)$/).test(element) === true || (/^(<%\s*\}\s*%>)$/).test(element) === true) {
-                             types[types.length - 1] = "template_end";
--                        } else if ((/^(<%\s*\}?\s*else\s*\{?\s*-?%>)$/).test(element) === true) {
-+                            types[types.length - 1] = "template_else";
-+                        } else if (element.indexOf("<%=") !== 0) {
-                             types[types.length - 1] = "template_start";
-                         }
+                            types[types.length - 1] = "template_end";
+                        } else if ((/^(<%\s*\}?\s*else\s*\{?\s*-?%>)$/).test(element) === true) {
+                            types[types.length - 1] = "template_else";
+                        } else if (element.indexOf("<%=") !== 0) {
+                            types[types.length - 1] = "template_start";
+                        }
                     }
                     tname = tagName(element);
                     if (options.html === true && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (types.length === 0 || types[types.length - 1].indexOf("template") < 0) && options.jsx === false && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
@@ -1211,22 +1186,15 @@ Parse Framework
                         attrs.push({});
                         jscom.push(false);
                         jscom.push(false);
-                        e = linen[linen.length - 1];
-                        linen.push(e);
-                        linen.push(e);
                         types[types.length - 1] = "template_start";
                         token.push("{% comment %}");
                         types.push("comment");
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
-                        stats.template[0] = stats.template[0] + 1;
-                        stats.template[1] = stats.template[1] + 13;
                         token.push(element);
                         types.push("template_end");
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
-                        stats.template[0] = stats.template[0] + 1;
-                        stats.template[1] = stats.template[1] + element.length;
                         return token.push("{% endcomment %}");
                     }
 
@@ -1263,7 +1231,7 @@ Parse Framework
                             sq     = 0,
                             syntax = "<{\"'=/",
                             slice  = "",
-                            store  = [],
+                            atlist = [],
                             name   = "",
                             cft    = cftags[tname];
                         if (tname.slice(0, 3) === "cf_") {
@@ -1276,10 +1244,10 @@ Parse Framework
                             eq = attstore[ind].indexOf("=");
                             dq = attstore[ind].indexOf("\"");
                             sq = attstore[ind].indexOf("'");
-                            if (eq > -1 && store.length > 0) {
-                                obj[store.join(" ")] = "";
-                                store                = [];
-                                obj[attstore[ind]]   = "";
+                            if (eq > -1 && atlist.length > 0) {
+                                obj[atlist.join(" ")] = "";
+                                atlist                = [];
+                                obj[attstore[ind]]    = "";
                             } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
                                 store.push(attstore[ind]);
                             } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
@@ -1310,8 +1278,8 @@ Parse Framework
                                 obj[name] = slice;
                             }
                         }
-                        if (store.length > 0) {
-                            obj[store.join(" ")] = "";
+                        if (atlist.length > 0) {
+                            obj[atlist.join(" ")] = "";
                         }
                         return obj;
                     }());
@@ -1326,8 +1294,6 @@ Parse Framework
                                 token.push(element);
                                 stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
-                                stats.end[0] = stats.end[0] + 1;
-                                stats.end[1] = stats.end[1] + token[token.length - 1].length;
                                 return types.push("end");
                             }
                         }
@@ -1381,10 +1347,6 @@ Parse Framework
                                             types[aa] = "template_start";
                                         } else {
                                             types[aa]          = "start";
-                                            stats.singleton[0] = stats.singleton[0] - 1;
-                                            stats.singleton[1] = stats.singleton[1] - token[token.length - 1].length;
-                                            stats.start[0]     = stats.start[0] + 1;
-                                            stats.start[1]     = stats.start[1] + token[token.length - 1].length;
                                         }
                                         if (Object.keys(attrs[aa]).length > 0) {
                                             token[aa] = token[aa].replace(/(\s*\/>)$/, " >");
@@ -1405,7 +1367,6 @@ Parse Framework
                                 types.pop();
                                 attrs.pop();
                                 jscom.pop();
-                                linen.pop();
                                 lines.pop();
                                 presv.pop();
                                 if (types[types.length - 1] === "start") {
@@ -1561,8 +1522,6 @@ Parse Framework
                                 token.push(lexer.join(""));
                                 stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
-                                stats.template[0] = stats.template[0] + 1;
-                                stats.template[1] = stats.template[1] + token[token.length - 1].length;
                                 singleton         = true;
                                 return false;
                             }
@@ -1582,8 +1541,6 @@ Parse Framework
                                 token.push(lexer.join("").replace(/\s+/, " "));
                                 stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
-                                stats.template[0] = stats.template[0] + 1;
-                                stats.template[1] = stats.template[1] + token[token.length - 1].length;
                                 singleton         = true;
                                 return false;
                             }
@@ -1599,8 +1556,6 @@ Parse Framework
                                 } else {
                                     begin.push(parent[parent.length - 1][1]);
                                 }
-                                stats.template[0] = stats.template[0] + 1;
-                                stats.template[1] = stats.template[1] + token[token.length - 1].length;
                                 singleton         = true;
                             }
                             return false;
@@ -1769,7 +1724,6 @@ Parse Framework
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         lines.push(lines[lines.length - 1]);
-                        linen.push(line);
                         lines[lines.length - 2] = 0;
                         attrs.push({});
                         if (types[types.length - 1] === "start") {
@@ -1782,8 +1736,6 @@ Parse Framework
                         if (parent.length > 1) {
                             parent.pop();
                         }
-                        stats.end[0] = stats.end[0] + 1;
-                        stats.end[1] = stats.end[1] + 5;
                     }
                     if (parent[parent.length - 1][1] === -1) {
                         parent[parent.length - 1] = ["root", token.length];
@@ -1792,8 +1744,6 @@ Parse Framework
                         token.push(element);
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
-                        stats.ignore[0] = stats.ignore[0] + 1;
-                        stats.ignore[1] = stats.ignore[1] + token[token.length - 1].length;
                     } else {
                         if (options.jsx === true) {
                             token.push(element);
@@ -1802,17 +1752,6 @@ Parse Framework
                         }
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
-                        if (types[types.length - 1].indexOf("template") > -1) {
-                            stats.template[0] = stats.template[0] + 1;
-                            stats.template[1] = stats.template[1] + token[token.length - 1].length;
-                        } else if (types[types.length - 1].indexOf("linepreserve") > -1) {
-                            stats.ignore[0] = stats.ignore[0] + 1;
-                            stats.ignore[1] = stats.ignore[1] + token[token.length - 1].length;
-                        } else {
-                            stats[types[types.length - 1]][0] = stats[types[types.length - 1]][0] + 1;
-                            stats[types[types.length - 1]][1] = stats[types[types.length - 1]][1] +
-                                    token[token.length - 1].length;
-                        }
                     }
                     if (options.tagsort === true && types[types.length - 1] === "end" && types[types.length - 2] !== "start") {
                         (function markuppretty__tokenize_tag_sorttag() {
@@ -1822,11 +1761,10 @@ Parse Framework
                                 endStore   = 0,
                                 startStore = 0,
                                 endData    = {},
-                                store      = {
+                                storage    = {
                                     attrs: [],
                                     begin: [],
                                     jscom: [],
-                                    linen: [],
                                     lines: [],
                                     presv: [],
                                     stack: [],
@@ -1840,31 +1778,28 @@ Parse Framework
                                     return -1;
                                 },
                                 pushy      = function markuppretty__tokenize_tag_sorttag_pushy(index) {
-                                    store
+                                    storage
                                         .attrs
                                         .push(attrs[index]);
-                                    store
+                                    storage
                                         .begin
                                         .push(begin[index]);
-                                    store
+                                    storage
                                         .stack
                                         .push(stack[index]);
-                                    store
+                                    storage
                                         .jscom
                                         .push(jscom[index]);
-                                    store
-                                        .linen
-                                        .push(linen[index]);
-                                    store
+                                    storage
                                         .lines
                                         .push(lines[index]);
-                                    store
+                                    storage
                                         .presv
                                         .push(presv[index]);
-                                    store
+                                    storage
                                         .token
                                         .push(token[index]);
-                                    store
+                                    storage
                                         .types
                                         .push(types[index]);
                                 };
@@ -1906,43 +1841,38 @@ Parse Framework
                             endData.begin = begin.pop();
                             endData.stack = stack.pop();
                             endData.jscom = jscom.pop();
-                            endData.linen = linen.pop();
                             endData.lines = lines.pop();
                             endData.presv = presv.pop();
                             endData.token = token.pop();
                             endData.types = types.pop();
                             attrs         = attrs
                                 .slice(0, startStore)
-                                .concat(store.attrs);
+                                .concat(storage.attrs);
                             begin         = begin
                                 .slice(0, startStore)
-                                .concat(store.begin);
+                                .concat(storage.begin);
                             stack         = stack
                                 .slice(0, startStore)
-                                .concat(store.stack);
+                                .concat(storage.stack);
                             jscom         = jscom
                                 .slice(0, startStore)
-                                .concat(store.jscom);
-                            linen         = linen
-                                .slice(0, startStore)
-                                .concat(store.linen);
+                                .concat(storage.jscom);
                             lines         = lines
                                 .slice(0, startStore)
-                                .concat(store.lines);
+                                .concat(storage.lines);
                             presv         = presv
                                 .slice(0, startStore)
-                                .concat(store.presv);
+                                .concat(storage.presv);
                             token         = token
                                 .slice(0, startStore)
-                                .concat(store.token);
+                                .concat(storage.token);
                             types         = types
                                 .slice(0, startStore)
-                                .concat(store.types);
+                                .concat(storage.types);
                             attrs.push(endData.attrs);
                             begin.push(endData.begin);
                             stack.push(endData.stack);
                             jscom.push(endData.jscom);
-                            linen.push(endData.linen);
                             lines.push(endData.lines);
                             presv.push(endData.presv);
                             token.push(endData.token);
@@ -1957,7 +1887,7 @@ Parse Framework
                     }
                 },
                 content       = function markuppretty__tokenize_content() {
-                    var lexer     = [],
+                    var lex       = [],
                         quote     = "",
                         end       = "",
                         square    = (
@@ -1991,7 +1921,6 @@ Parse Framework
                     spacer();
                     attrs.push({});
                     jscom.push(false);
-                    linen.push(line);
                     if (linepreserve > 0) {
                         presv.push(true);
                     } else {
@@ -2026,18 +1955,15 @@ Parse Framework
                                 if (name === "cfscript" && end === "</cfscript") {
                                     a   = a - 1;
                                     ext = false;
-                                    if (lexer.length < 1) {
+                                    if (lex.length < 1) {
                                         attrs.pop();
                                         jscom.pop();
-                                        linen.pop();
                                         presv.pop();
                                         return lines.pop();
                                     }
-                                    token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
+                                    token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                     stack.push(parent[parent.length - 1][0]);
                                     begin.push(parent[parent.length - 1][1]);
-                                    stats.script[0] = stats.script[0] + 1;
-                                    stats.script[1] = stats.script[1] + token[token.length - 1].length;
                                     if (typeof global.prettydiff.jspretty === "function") {
                                         return types.push(name);
                                     }
@@ -2052,18 +1978,15 @@ Parse Framework
                                     if (end === "</script") {
                                         a   = a - 1;
                                         ext = false;
-                                        if (lexer.length < 1) {
+                                        if (lex.length < 1) {
                                             attrs.pop();
                                             jscom.pop();
-                                            linen.pop();
                                             presv.pop();
                                             return lines.pop();
                                         }
-                                        token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
+                                        token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                         stack.push(parent[parent.length - 1][0]);
                                         begin.push(parent[parent.length - 1][1]);
-                                        stats.script[0] = stats.script[0] + 1;
-                                        stats.script[1] = stats.script[1] + token[token.length - 1].length;
                                         if (typeof global.prettydiff.jspretty === "function") {
                                             return types.push(name);
                                         }
@@ -2081,18 +2004,15 @@ Parse Framework
                                     if (end === "</style") {
                                         a   = a - 1;
                                         ext = false;
-                                        if (lexer.length < 1) {
+                                        if (lex.length < 1) {
                                             attrs.pop();
                                             jscom.pop();
-                                            linen.pop();
                                             presv.pop();
                                             return lines.pop();
                                         }
-                                        token.push(lexer.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
+                                        token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                         stack.push(parent[parent.length - 1][0]);
                                         begin.push(parent[parent.length - 1][1]);
-                                        stats.style[0] = stats.style[0] + 1;
-                                        stats.style[1] = stats.style[1] + token[token.length - 1].length;
                                         if (typeof global.prettydiff.csspretty === "function") {
                                             return types.push(name);
                                         }
@@ -2133,43 +2053,36 @@ Parse Framework
                             if (options.content === true) {
                                 token.push("text");
                             } else if (options.textpreserve === true) {
-                                token.push(minspace + lexer.join(""));
+                                token.push(minspace + lex.join(""));
                                 lines[lines.length - 1] = 0;
                             } else if (linepreserve > 0) {
-                                token.push(minspace + lexer.join("").replace(/(\s+)$/, tailSpace));
+                                token.push(minspace + lex.join("").replace(/(\s+)$/, tailSpace));
                                 lines[lines.length - 1] = 0;
                             } else {
-                                token.push(lexer.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
+                                token.push(lex.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
                             }
-                            stats.content[0] = stats.content[0] + 1;
-                            stats.content[1] = stats.content[1] + token[token.length - 1].length;
                             stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             return types.push("content");
                         }
 
-                        if (ext === false && lexer.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.jsx === true || options.dustjs === true || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
+                        if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.jsx === true || options.dustjs === true || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
                             if (options.dustjs === true && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                 a = a + 6;
                                 if (options.content === true) {
                                     token.push("text");
                                 } else if (options.textpreserve === true) {
-                                    token.push(minspace + lexer.join(""));
+                                    token.push(minspace + lex.join(""));
                                     lines[lines.length - 1] = 0;
                                 } else {
-                                    token.push(lexer.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
+                                    token.push(lex.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
                                 }
-                                stats.content[0] = stats.content[0] + 1;
-                                stats.content[1] = stats.content[1] + token[token.length - 1].length;
                                 types.push("content");
                                 spacer();
                                 attrs.push({});
                                 jscom.push(false);
-                                linen.push(line);
                                 presv.push(false);
                                 token.push("{:else}");
-                                stats.template[0] = stats.template[0] + 1;
-                                stats.template[1] = stats.template[1] + token[token.length - 1].length;
                                 stack.push(parent[parent.length - 1][0]);
                                 begin.push(parent[parent.length - 1][1]);
                                 return types.push("template_else");
@@ -2178,33 +2091,29 @@ Parse Framework
                             if (options.content === true) {
                                 token.push("text");
                             } else if (options.textpreserve === true) {
-                                token.push(minspace + lexer.join(""));
+                                token.push(minspace + lex.join(""));
                                 lines[lines.length - 1] = 0;
                             } else if (linepreserve > 0) {
-                                token.push(minspace + lexer.join("").replace(/(\s+)$/, tailSpace));
+                                token.push(minspace + lex.join("").replace(/(\s+)$/, tailSpace));
                                 lines[lines.length - 1] = 0;
                             } else {
-                                token.push(lexer.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
+                                token.push(lex.join("").replace(/(\s+)$/, tailSpace).replace(/\s+/g, " "));
                             }
-                            stats.content[0] = stats.content[0] + 1;
-                            stats.content[1] = stats.content[1] + token[token.length - 1].length;
                             stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             return types.push("content");
                         }
-                        lexer.push(b[a]);
+                        lex.push(b[a]);
                     }
                     spacer();
                     if (options.content === true) {
                         token.push("text");
                     } else if (options.textpreserve === true) {
-                        token.push(minspace + lexer.join(""));
+                        token.push(minspace + lex.join(""));
                         lines[lines.length - 1] = 0;
                     } else {
-                        token.push(lexer.join("").replace(/(\s+)$/, tailSpace));
+                        token.push(lex.join("").replace(/(\s+)$/, tailSpace));
                     }
-                    stats.content[0] = stats.content[0] + 1;
-                    stats.content[1] = stats.content[1] + token[token.length - 1].length;
                     stack.push(parent[parent.length - 1][0]);
                     begin.push(parent[parent.length - 1][1]);
                     return types.push("content");
@@ -2250,37 +2159,6 @@ Parse Framework
             return options.source;
         }
 
-        globalerror = (function markuppretty__globalerror() {
-            var startend = stats.start[0] - stats.end[0],
-                error    = "";
-            if (startend > 0) {
-                error = startend + " more start tag";
-                if (startend > 1) {
-                    error = error + "s";
-                }
-                error = error + " than start tag";
-                if (startend > 1) {
-                    error = error + "s";
-                }
-                error = error + "!";
-                return error;
-            } else if (startend < 0) {
-                startend = startend * -1;
-                error    = startend + " more end tag";
-                if (startend > 1) {
-                    error = error + "s";
-                }
-                error = error + " than start tag";
-                if (startend > 1) {
-                    error = error + "s";
-                }
-                error = error + "!";
-                return error;
-            } else {
-                return "";
-            }
-        }());
-
         if (options.nodeasync === false) {
             if (global.prettydiff.meta === undefined) {
                 global.prettydiff.meta       = {};
@@ -2302,8 +2180,6 @@ Parse Framework
                         attrs: "array - List of attributes (if any) for the given token.",
                         begin: "number - Index where the parent element occurs.",
                         jscom: "boolean - Whether the token is a JavaScript comment if in JSX format.",
-                        linen: "number - The line number in the original source where the token started, which" +
-                                " is used for reporting and analysis.",
                         lines: "number - Whether the token is preceeded any space and/or line breaks in the or" +
                                 "iginal code source.",
                         presv: "boolean - Whether the token is preserved verbatim as found.  Useful for commen" +
@@ -2329,7 +2205,6 @@ Parse Framework
                         begin.splice(a, 0, begin[a]);
                         stack.splice(a, 0, stack[a]);
                         jscom.splice(a, 0, false);
-                        linen.splice(a, 0, linen[a]);
                         lines.splice(a, 0, 1);
                         presv.splice(a, 0, false);
                         token.splice(a, 0, string);
@@ -2376,7 +2251,6 @@ Parse Framework
                             begin.splice(a, 1);
                             stack.splice(a, 1);
                             jscom.splice(a, 1);
-                            linen.splice(a, 1);
                             lines.splice(a, 1);
                             presv.splice(a, 1);
                             token.splice(a, 1);
@@ -2421,14 +2295,13 @@ Parse Framework
                     }
                 }
                 if (options.parseFormat === "sequential") {
-                    def.order = "[token, types, attrs, lines, linen, jscom, presv, stack, begin]";
+                    def.order = "[token, types, attrs, lines, jscom, presv, stack, begin]";
                     for (a = 0; a < c; a = a + 1) {
                         record.push([
                             token[a],
                             types[a],
                             attrs[a],
                             lines[a],
-                            linen[a],
                             jscom[a],
                             presv[a],
                             stack[a],
@@ -2452,7 +2325,7 @@ Parse Framework
                             header = "<tr class=\"header\"><th>index</th><th>token</th><th>types</th>",
                             aa     = 0,
                             len    = 0;
-                        header = header + "<th>attrs</th><th>linen</th><th>jscom</th><th>presv</th><th>stack</th><th>" +
+                        header = header + "<th>attrs</th><th>jscom</th><th>presv</th><th>stack</th><th>" +
                                 "begin</th><th>lines</th></tr>";
                         report.push("<table summary='markup parse table'><thead>");
                         report.push(header);
@@ -2488,8 +2361,6 @@ Parse Framework
                                     JSON.stringify(attrs[aa]).replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
                                 );
                                 report.push("</td><td>");
-                                report.push(linen[aa]);
-                                report.push("</td><td>");
                                 report.push(jscom[aa]);
                                 report.push("</td><td>");
                                 report.push(presv[aa]);
@@ -2519,7 +2390,6 @@ Parse Framework
                 data.begin = begin;
                 data.stack = stack;
                 data.jscom = jscom;
-                data.linen = linen;
                 data.lines = lines;
                 data.presv = presv;
                 data.token = token;
@@ -2548,204 +2418,15 @@ Parse Framework
             // passes from the tokenization process to be analyzed by the algorithm
             token        = [], //stores parsed tokens
             types        = [], //parallel array that describes the tokens
-            level        = [], //parallel array that list indentation per token
             lines        = [], //used to preserve empty lines
             depth        = [], //describes the token's current container
             begin        = [], //index where current container starts
-            globals      = [], //which variables are declared globals
-            // meta used to find scope and variables for jsscope these values are assigned in parallel to the other arrays
-            //* irrelevant tokens are represented with an empty string
-            // * first '(' following 'function' is token index number of function's closing
-            // curly brace
-            //* variables are represented with the value 'v'
-            //* the closing brace of a function is an array of variables
-            meta         = [],
-            // lists a number at the opening paren of a function that points to the token
-            // index of the function's closing curly brace.  At the closing curly brace
-            // index this array stores an array indicating the names of variables declared
-            // in the current function for coloring by function depth in jsscope.  This
-            // array is ignored if jsscope is false
-            varlist      = [],
-            // groups variables from a variable list into a child array as well as
-            // properties of objects.  This array for adding extra space so that the "="
-            // following declared variables of a variable list is vertically aligned and
-            // likewise of the ":" with object properties
-            markupvar = [],
             // notes a token index of a JSX markup tag assigned to JavaScript variable. This
             // is necessary for indentation apart from syntactical factors.
             error        = [],
-            news         = 0,
             scolon       = 0,
             result       = "",
-            objsortop    = false,
-            verticalop   = false,
-            originalSize = options.source.length,
-            lf           = (options.crlf === true || options.crlf === "true")
-                ? "\r\n"
-                : "\n",
-            extlib       = function jspretty__extlib(ops) {
-                var item = (ops === undefined)
-                    ? global
-                        .prettydiff
-                        .markuppretty(ops)
-                    : global
-                        .prettydiff
-                        .markuppretty(options);
-                if (options.nodeasync === true) {
-                    if (globalerror === "") {
-                        globalerror = item[1];
-                    }
-                    return item[0];
-                }
-                return item;
-            };
-        (function jspretty__options() {
-            var styleguide  = {},
-                brace_style = {};
-            if (options.mode === "beautify" || options.mode === "diff" || options.mode === "minify") {
-                objsortop  = (
-                    options.objsort === true || options.objsort === "true" || options.objsort === "all" || options.objsort === "js" || options.objsort === "jsonly"
-                );
-                verticalop = (
-                    options.vertical === true || options.vertical === "true" || options.vertical === "all" || options.vertical === "js"
-                );
-            }
-            options.source                          = (
-                typeof options.source === "string" && options.source.length > 0
-            )
-                ? options
-                    .source
-                    .replace(/\r\n?/g, "\n")
-                : "Error: no source code supplied to jspretty!";
-            if (options.mode !== "analysis" && options.source.indexOf("Error: no") < 0) {
-                options.source = options.source + " ";
-            }
-            options.titanium                        = (options.titanium === true || options.titanium === "true")
-                ? (function jspretty__options_titanium() {
-                    options.correct  = false;
-                    options.titanium = true;
-                    token.push("x{");
-                    types.push("start");
-                    lines.push(0);
-                    depth.push("global");
-                    begin.push(0);
-                    return true;
-                }())
-                : false;
-            styleguide.airbnb                       = function jspretty__options_styleairbnb() {
-                options.bracepadding = true;
-                options.correct      = true;
-                options.endcomma     = "always";
-                options.inchar       = " ";
-                options.insize       = 2;
-                options.preserve     = 1;
-                options.quoteConvert = "single";
-                options.varword      = "each";
-                options.wrap         = 80;
-            };
-            styleguide.crockford                    = function jspretty__options_stylecrockford() {
-                options.bracepadding  = false;
-                options.correct       = true;
-                options.elseline      = false;
-                options.endcomma      = "never";
-                options.inchar        = " ";
-                options.insize        = 4;
-                options.nocaseindent  = true;
-                options.nochainindent = false;
-                options.space         = true;
-                options.varword       = "each";
-                verticalop            = false;
-            };
-            styleguide.google                       = function jspretty__options_stylegoogle() {
-                options.correct      = true;
-                options.inchar       = " ";
-                options.insize       = 4;
-                options.preserve     = 1;
-                options.quoteConvert = "single";
-                verticalop           = false;
-                options.wrap         = -1;
-            };
-            styleguide.grunt                        = function jspretty__options_stylegrunt() {
-                options.inchar       = " ";
-                options.insize       = 2;
-                options.quoteConvert = "single";
-                options.varword      = "each";
-            };
-            styleguide.jquery                       = function jspretty__options_stylejquery() {
-                options.bracepadding = true;
-                options.correct      = true;
-                options.inchar       = "\u0009";
-                options.insize       = 1;
-                options.quoteConvert = "double";
-                options.varword      = "each";
-                options.wrap         = 80;
-            };
-            styleguide.jslint                       = styleguide.crockford;
-            styleguide.mrdoobs                      = function jspretty__options_stylemrdoobs() {
-                options.braceline    = true;
-                options.bracepadding = true;
-                options.correct      = true;
-                options.inchar       = "\u0009";
-                options.insize       = 1;
-                verticalop           = false;
-            };
-            styleguide.mediawiki                    = function jspretty__options_stylemediawiki() {
-                options.bracepadding = true;
-                options.correct      = true;
-                options.inchar       = "\u0009";
-                options.insize       = 1;
-                options.preserve     = 1;
-                options.quoteConvert = "single";
-                options.space        = false;
-                options.wrap         = 80;
-            };
-            styleguide.meteor                       = function jspretty__options_stylemeteor() {
-                options.correct = true;
-                options.inchar  = " ";
-                options.insize  = 2;
-                options.wrap    = 80;
-            };
-            styleguide.yandex                       = function jspretty__options_styleyandex() {
-                options.bracepadding = false;
-                options.correct      = true;
-                options.quoteConvert = "single";
-                options.varword      = "each";
-                verticalop           = false;
-            };
-            brace_style.collapse                    = function jspretty__options_collapse() {
-                options.braceline    = false;
-                options.bracepadding = false;
-                options.braces       = false;
-                options.formatObject = "indent";
-                options.neverflatten = true;
-            };
-            brace_style["collapse-preserve-inline"] = function jspretty__options_collapseInline() {
-                options.braceline    = false;
-                options.bracepadding = true;
-                options.braces       = false;
-                options.formatObject = "inline";
-                options.neverflatten = false;
-            };
-            brace_style.expand                      = function jspretty__options_expand() {
-                options.braceline    = false;
-                options.bracepadding = false;
-                options.braces       = true;
-                options.formatObject = "indent";
-                options.neverflatten = true;
-            };
-            if (styleguide[options.styleguide] !== undefined) {
-                styleguide[options.styleguide]();
-            }
-            if (brace_style[options.brace_style] !== undefined) {
-                brace_style[options.brace_style]();
-            }
-            if (json === true) {
-                options.wrap = 0;
-            }
-        }());
-        if (options.source === "Error: no source code supplied to jspretty!") {
-            return options.source;
-        }
+            objsortop    = false;
 
         (function jspretty__tokenize() {
             var a              = 0,
@@ -3157,7 +2838,6 @@ Parse Framework
                         ltype              = "end";
                         c[a + 1]           = "";
                         c[a + 2]           = "";
-                        stats.container    = stats.container + 2;
                         a                  = a + 2;
                     } else {
                         g = types.length - 1;
@@ -3169,8 +2849,6 @@ Parse Framework
                                 } while (g > 0 && (types[g] === "comment" || types[g] === "comment-inline"));
                             }
                             if (options.varword === "list" && vart.len > -1 && vart.index[vart.len] === g && output === vart.word[vart.len]) {
-                                stats.word.token     = stats.word.token + 1;
-                                stats.word.chars     = stats.word.chars + output.length;
                                 ltoke                = ",";
                                 ltype                = "separator";
                                 token[g]             = ltoke;
@@ -3244,8 +2922,6 @@ Parse Framework
                         }
                         ltoke            = output;
                         ltype            = "word";
-                        stats.word.token = stats.word.token + 1;
-                        stats.word.chars = stats.word.chars + output.length;
                         if (output === "from" && token[lengtha - 1] === "}") {
                             asifix();
                         }
@@ -4258,7 +3934,6 @@ Parse Framework
                     }
                     a = ee;
                     if (starting === "//") {
-                        stats.space.newline = stats.space.newline + 1;
                         build.pop();
                     }
                     output = build.join("");
@@ -4394,11 +4069,7 @@ Parse Framework
                         if (ltoke === "return" || ltoke === "typeof" || ltoke === "else" || ltype !== "word") {
                             ltoke             = regex();
                             ltype             = "regex";
-                            stats.regex.token = stats.regex.token + 1;
-                            stats.regex.chars = stats.regex.chars + ltoke.length;
                         } else {
-                            stats.operator.token = stats.operator.token + 1;
-                            stats.operator.chars = stats.operator.token + 1;
                             ltoke                = "/";
                             ltype                = "operator";
                         }
@@ -4572,15 +4243,8 @@ Parse Framework
                         asitest   = false;
                     for (f = a; f < locallen; f = f + 1) {
                         if (c[f] === "\n") {
-                            stats.space.newline = stats.space.newline + 1;
                             asitest             = true;
-                        } else if (c[f] === " ") {
-                            stats.space.space = stats.space.space + 1;
-                        } else if (c[f] === "\t") {
-                            stats.space.tab = stats.space.tab + 1;
-                        } else if (stest.test(c[f]) === true) {
-                            stats.space.other = stats.space.other + 1;
-                        } else {
+                        } else if (stest.test(c[f]) === false) {
                             break;
                         }
                         schars.push(c[f]);
@@ -4832,7 +4496,6 @@ Parse Framework
                             ltype = "end";
                             tokenpush(false, 0);
                         };
-                    stats.container = stats.container + 1;
                     if (wordTest > -1) {
                         word();
                     }
@@ -4994,7 +4657,6 @@ Parse Framework
                 };
             start = function jspretty__tokenize_start(x) {
                 brace.push(x);
-                stats.container = stats.container + 1;
                 if (wordTest > -1) {
                     word();
                 }
@@ -5052,62 +4714,44 @@ Parse Framework
                     //php
                     ltoke              = generic("<?php", "?>");
                     ltype              = "template";
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "<" && c[a + 1] === "%") {
                     //asp
                     ltoke              = generic("<%", "%>");
                     ltype              = "template";
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "{" && c[a + 1] === "%") {
                     //twig
                     ltoke              = generic("{%", "%}");
                     ltype              = tname(ltoke);
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "{" && c[a + 1] === "{" && c[a + 2] === "{") {
                     //mustache
                     ltoke              = generic("{{{", "}}}");
                     ltype              = "template";
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "{" && c[a + 1] === "{") {
                     //handlebars
                     ltoke              = generic("{{", "}}");
                     ltype              = tname(ltoke);
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-" && c[a + 4] === "#") {
                     //ssi
                     ltoke              = generic("<!--#", "-->");
                     ltype              = "template";
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-") {
                     //markup comment
                     ltoke                    = generic("<!--", "-->");
                     ltype                    = "comment";
-                    stats.commentBlock.token = stats.commentBlock.token + 1;
-                    stats.commentBlock.chars = stats.commentBlock.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "<") {
                     //markup
                     ltoke              = markup();
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                     //comment block
                     ltoke                    = generic("/*", "*\/");
-                    stats.commentBlock.token = stats.commentBlock.token + 1;
-                    stats.commentBlock.chars = stats.commentBlock.chars + ltoke.length;
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = token.length;
                         sourcemap[1] = ltoke;
@@ -5131,15 +4775,11 @@ Parse Framework
                     ltoke              = generic("#!" + c[a + 2], "\n");
                     ltoke              = ltoke.slice(0, ltoke.length - 1);
                     ltype              = "literal";
-                    stats.server.token = stats.server.token + 1;
-                    stats.server.chars = stats.server.chars + ltoke.length;
                     tokenpush(false, 2);
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     //comment line
                     asi(false);
                     ltoke                   = generic("//", "\n");
-                    stats.commentLine.token = stats.commentLine.token + 1;
-                    stats.commentLine.chars = stats.commentLine.chars + ltoke.length;
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = token.length;
                         sourcemap[1] = ltoke;
@@ -5152,16 +4792,12 @@ Parse Framework
                     asi(false);
                     ltoke                   = generic("#region", "\n");
                     ltype                   = "comment";
-                    stats.commentLine.token = stats.commentLine.token + 1;
-                    stats.commentLine.chars = stats.commentLine.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "#" && c[a + 1] === "e" && c[a + 2] === "n" && c[a + 3] === "d" && c[a + 4] === "r" && c[a + 5] === "e" && c[a + 6] === "g" && c[a + 7] === "i" && c[a + 8] === "o" && c[a + 9] === "n") {
                     //comment line
                     asi(false);
                     ltoke                   = generic("#endregion", "\n");
                     ltype                   = "comment";
-                    stats.commentLine.token = stats.commentLine.token + 1;
-                    stats.commentLine.chars = stats.commentLine.chars + ltoke.length;
                     tokenpush(false, 0);
                 } else if (c[a] === "`" || (c[a] === "}" && templateString[templateString.length - 1] === true)) {
                     //template string
@@ -5175,14 +4811,6 @@ Parse Framework
                     }
                     ltoke              = tempstring();
                     ltype              = "literal";
-                    stats.string.token = stats.string.token + 1;
-                    if (ltoke.charAt(ltoke.length - 1) === "{") {
-                        stats.string.quote = stats.string.quote + 3;
-                        stats.string.chars = stats.string.chars + ltoke.length - 3;
-                    } else {
-                        stats.string.quote = stats.string.quote + 2;
-                        stats.string.chars = ltoke.length - 2;
-                    }
                     tokenpush(false, 0);
                 } else if (c[a] === "\"" || c[a] === "'") {
                     //string
@@ -5191,11 +4819,6 @@ Parse Framework
                     if ((ltoke.charAt(0) === "\"" && options.quoteConvert === "single") || (ltoke.charAt(0) === "'" && options.quoteConvert === "double")) {
                         ltoke = quoteConvert(ltoke);
                     }
-                    stats.string.token = stats.string.token + 1;
-                    if (ltoke.length > 1) {
-                        stats.string.chars = stats.string.chars + ltoke.length - 2;
-                    }
-                    stats.string.quote = stats.string.quote + 2;
                     if (options.wrap !== 0 && token[lengtha - 1] === "+" && (token[lengtha - 2].charAt(0) === "\"" || token[lengtha - 2].charAt(0) === "'")) {
                         strmerge();
                     } else if (options.wrap > 0 && (types[lengtha] !== "operator" || token[lengtha] === "=" || token[lengtha] === ":" || (token[lengtha] === "+" && types[lengtha - 1] === "literal"))) {
@@ -5214,8 +4837,6 @@ Parse Framework
                     if (wordTest > -1) {
                         word();
                     }
-                    stats.operator.token = stats.operator.token + 1;
-                    stats.operator.chars = stats.operator.chars + 1;
                     ltoke                = "-";
                     ltype                = "operator";
                     tokenpush(false, 0);
@@ -5227,13 +4848,9 @@ Parse Framework
                     if (ltype === "end" && c[a] === "-") {
                         ltoke                = "-";
                         ltype                = "operator";
-                        stats.operator.token = stats.operator.token + 1;
-                        stats.operator.chars = stats.operator.chars + 1;
                     } else {
                         ltoke              = numb();
                         ltype              = "literal";
-                        stats.number.token = stats.number.token + 1;
-                        stats.number.chars = stats.number.chars + ltoke.length;
                     }
                     tokenpush(false, 0);
                 } else if (c[a] === ":" && c[a + 1] === ":") {
@@ -5243,8 +4860,6 @@ Parse Framework
                     plusplus();
                     asifix();
                     a                    = a + 1;
-                    stats.operator.token = stats.operator.token + 1;
-                    stats.operator.chars = stats.operator.chars + 2;
                     ltoke                = "::";
                     ltype                = "separator";
                     tokenpush(false, 0);
@@ -5254,7 +4869,6 @@ Parse Framework
                         word();
                     }
                     plusplus();
-                    stats.comma = stats.comma + 1;
                     if (ltype === "comment" || ltype === "comment-inline") {
                         commaComment();
                     } else if (vart.len > -1 && vart.count[vart.len] === 0 && options.varword === "each") {
@@ -5277,17 +4891,14 @@ Parse Framework
                     if (wordTest > -1) {
                         word();
                     }
-                    stats.operator.token = stats.operator.token + 1;
                     if (c[a + 1] === "." && c[a + 2] === ".") {
                         ltoke                = "...";
                         ltype                = "operator";
-                        stats.operator.chars = stats.operator.chars + 3;
                         a                    = a + 2;
                     } else {
                         asifix();
                         ltoke                = ".";
                         ltype                = "separator";
-                        stats.operator.chars = stats.operator.chars + 1;
                     }
                     if ((/\s/).test(c[a - 1]) === true) {
                         tokenpush(false, 1);
@@ -5314,7 +4925,6 @@ Parse Framework
                                 vart.index[vart.len] = token.length;
                             }
                         }
-                        stats.semicolon = stats.semicolon + 1;
                         plusplus();
                         ltoke = ";";
                         ltype = "separator";
@@ -5340,8 +4950,6 @@ Parse Framework
                         ltoke = token[lengtha - 1];
                     } else {
                         ltype                = "operator";
-                        stats.operator.token = stats.operator.token + 1;
-                        stats.operator.chars = stats.operator.chars + ltoke.length;
                         if (ltoke !== "!" && ltoke !== "++" && ltoke !== "--") {
                             asifix();
                         }
@@ -5550,10 +5158,8 @@ Parse Framework
             lines      = [],
             depth      = [],
             begin      = [],
-            uri        = [],
             colors     = [],
             output     = "",
-            endline    = false,
             objsortop  = false,
             verticalop = false,
             colorNames = {
@@ -5704,61 +5310,7 @@ Parse Framework
                 whitesmoke          : 0.913098651793419,
                 yellow              : 0.9278,
                 yellowgreen         : 0.5076295720870697
-            },
-            stats      = {
-                braces    : 0,
-                colon     : 0,
-                comments  : {
-                    chars: 0,
-                    count: 0
-                },
-                properties: {
-                    chars: 0,
-                    count: 0
-                },
-                selectors : {
-                    chars: 0,
-                    count: 0
-                },
-                semi      : 0,
-                space     : 0,
-                values    : {
-                    chars: 0,
-                    count: 0
-                },
-                variables : {
-                    chars: 0,
-                    count: 0
-                }
-            },
-            lf         = (options.crlf === true || options.crlf === "true")
-                ? "\r\n"
-                : "\n";
-        (function csspretty__options() {
-            objsortop      = (
-                options.objsort === true || options.objsort === "true" || options.objsort === "all" || options.objsort === "css"
-            );
-            verticalop     = (
-                options.compressedcss === false && (options.vertical === true || options.vertical === "true" || options.vertical === "all" || options.vertical === "css")
-            );
-            options.source = (
-                typeof options.source === "string" && options.source.length > 0
-            )
-                ? options
-                    .source
-                    .replace(/\r\n?/g, "\n") + " "
-                : "Error: no source code supplied to csspretty!";
-        }());
-        if (typeof options.source !== "string" || options.source === "" || (/^(\s+)$/).test(options.source) === true) {
-            if (options.nodeasync === true) {
-                return [options.source, "Error: no source supplied to csspretty."];
-            }
-            if (global.prettydiff.meta === undefined) {
-                global.prettydiff.meta = {};
-            }
-            global.prettydiff.meta.error = options.source;
-            return options.source;
-        }
+            };
         (function csspretty__tokenize() {
             var a          = 0,
                 b          = options
@@ -5766,7 +5318,6 @@ Parse Framework
                     .split(""),
                 len        = options.source.length,
                 ltype      = "",
-                itemsize   = 0,
                 space      = "",
                 endtest    = false,
                 struct     = [0],
@@ -5915,7 +5466,6 @@ Parse Framework
                         types[types.length - 1] = "comment-inline";
                     }
                     if (slen > 1 && end === true && options.preserve > 0) {
-                        endline = true;
                         space   = "";
                         return val;
                     }
@@ -6193,7 +5743,6 @@ Parse Framework
                         }
                     }
                     a        = aa;
-                    itemsize = out.length;
                     if (structval === "map" && out[0] === "(") {
                         mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
                     }
@@ -6263,8 +5812,6 @@ Parse Framework
                     //if the last non-comment type is 'item' then id it
                     if (ltype === "item" && types[aa].indexOf("external") < 0) {
                         if (type === "start") {
-                            stats.selectors.count = stats.selectors.count + 1;
-                            stats.selectors.chars = stats.selectors.chars + itemsize;
                             if (types[aa - 1] !== "comment" && types[aa - 1] !== "comment-inline" && types[aa - 1] !== "end" && types[aa - 1] !== "start" && types[aa - 1] !== "semi" && types[aa - 1] !== undefined && types[aa - 1].indexOf("external") < 0) {
                                 (function csspretty__tokenize_item_selparts() {
                                     var parts = [],
@@ -6355,10 +5902,6 @@ Parse Framework
                             if (options.mode === "beautify" || options.mode === "parse" || (options.mode === "diff" && options.diffcomments === true)) {
                                 if (token[token.length - 2] === "{") {
                                     types[types.length - 1] = "propvar";
-                                    stats.values.count      = stats.values.count - 1;
-                                    stats.values.chars      = stats.values.chars - itemsize;
-                                    stats.variables.count   = stats.variables.count + 1;
-                                    stats.variables.chars   = stats.variables.chars + itemsize;
                                 } else if (structval === "block") {
                                     if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                         aa = coms.length - 1;
@@ -6405,12 +5948,8 @@ Parse Framework
                                     }
                                 }
                             }
-                            stats.values.count = stats.values.count + 1;
-                            stats.values.chars = stats.values.chars + itemsize;
                         } else if (type === "semi") {
                             if (types[aa - 1] === "colon") {
-                                stats.values.count = stats.values.count + 1;
-                                stats.values.chars = stats.values.chars + itemsize;
                                 types[aa]          = "value";
                                 ltype              = "value";
                                 if (options.mode !== "diff") {
@@ -6456,14 +5995,10 @@ Parse Framework
                                         buildtoken();
                                     }
                                 }
-                                stats.variables.count = stats.variables.count + 1;
-                                stats.variables.chars = stats.variables.chars + itemsize;
                             }
                         } else if (type === "colon") {
                             types[aa]              = "property";
                             ltype                  = "property";
-                            stats.properties.count = stats.properties.count + 1;
-                            stats.properties.chars = stats.properties.chars + itemsize;
                         } else if (token[aa].charAt(0) === "@" && ((types[aa - 2] !== "propvar" && types[aa - 2] !== "property") || types[aa - 1] === "semi")) {
                             types[aa] = "propvar";
                             ltype     = "propvar";
@@ -6678,8 +6213,6 @@ Parse Framework
                         }
                     }
                     a                    = aa;
-                    stats.comments.count = stats.comments.count + 1;
-                    stats.comments.chars = stats.comments.chars + out.length;
                     if (options.mode === "minify") {
                         out.push(lf);
                     }
@@ -6972,7 +6505,6 @@ Parse Framework
                     options.topcoms = false;
                 }
                 if ((/\s/).test(b[a]) === true) {
-                    stats.space = stats.space + 1;
                     space       = space + b[a];
                 } else if (b[a] === "/" && b[a + 1] === "*") {
                     comment(false);
@@ -7023,7 +6555,6 @@ Parse Framework
                     }
                     nosort.push(false);
                     lines.push(spacer(false));
-                    stats.braces = stats.braces + 1;
                 } else if (b[a] === "}" || (b[a] === ")" && structval === "map" && mapper[mapper.length - 1] === 0)) {
                     endtest = true;
                     if (b[a] === "}" && types[types.length - 1] === "item" && token[token.length - 2] === "{" && token[token.length - 3] !== undefined && token[token.length - 3].charAt(token[token.length - 3].length - 1) === "@") {
@@ -7063,7 +6594,6 @@ Parse Framework
                         lines.push(spacer(false));
                         depth.push(structval);
                         begin.push(struct[struct.length - 1]);
-                        stats.braces = stats.braces + 1;
                     }
                     struct.pop();
                     if (token[struct[struct.length - 1]] === "{") {
@@ -7083,7 +6613,6 @@ Parse Framework
                         depth.push(structval);
                         begin.push(begin[begin.length - 1]);
                     }
-                    stats.semi = stats.semi + 1;
                     space      = "";
                 } else if (b[a] === ":" && types[types.length - 1] !== "end") {
                     item("colon");
@@ -7095,7 +6624,6 @@ Parse Framework
                         lines.push(0);
                     }
                     ltype       = "colon";
-                    stats.colon = stats.colon + 1;
                     space       = "";
                 } else {
                     if (structval === "map" && b[a] === "(") {
@@ -7209,265 +6737,6 @@ Parse Framework
                     },
                     definition: def
                 };
-            }());
-        }
-
-        //analysis
-        if (options.mode === "analysis") {
-            return (function csspretty__summary() {
-                var summ  = [],
-                    inl   = options.source.length,
-                    out   = output.length,
-                    uris  = uri.length,
-                    uric  = 0,
-                    a     = 0,
-                    b     = 0,
-                    color = [];
-                (function csspretty_summary_colorNormalize() {
-                    var aa = 0,
-                        bb = 0,
-                        cc = colors.length;
-                    colors.sort();
-                    color.push(colors[0]);
-                    for (aa = 0; aa < cc; aa = aa + 1) {
-                        if (colors[aa] !== color[bb]) {
-                            color.push(colors[aa]);
-                            bb = bb + 1;
-                        }
-                    }
-                }());
-                summ.push(
-                    "<div class='report' id='cssreport'><p><strong>Number of HTTP requests:</strong" +
-                    "> <em>"
-                );
-                summ.push(uris);
-                summ.push(
-                    "</em></p><table class='analysis' id='css-parts' summary='Component counts and " +
-                    "sizes'><caption>Component counts and sizes</caption><thead><tr><th>Type Name</" +
-                    "th><th>Quantity</th><th>Character Size</th></tr></thead><tbody><tr><th>curly b" +
-                    "races</th><td>"
-                );
-                summ.push(stats.braces);
-                summ.push("</td><td>");
-                summ.push(stats.braces);
-                summ.push("</td></tr><tr><th>colon</th><td>");
-                summ.push(stats.colon);
-                summ.push("</td><td>");
-                summ.push(stats.colon);
-                summ.push("</td></tr><tr><th>comments</th><td>");
-                summ.push(stats.comments.count);
-                summ.push("</td><td>");
-                summ.push(stats.comments.chars);
-                summ.push("</td></tr><tr><th>properties</th><td>");
-                summ.push(stats.properties.count);
-                summ.push("</td><td>");
-                summ.push(stats.properties.chars);
-                summ.push("</td></tr><tr><th>selectors</th><td>");
-                summ.push(stats.selectors.count);
-                summ.push("</td><td>");
-                summ.push(stats.selectors.chars);
-                summ.push("</td></tr><tr><th>semicolons</th><td>");
-                summ.push(stats.semi);
-                summ.push("</td><td>");
-                summ.push(stats.semi);
-                summ.push("</td></tr><tr><th>white space</th><td>");
-                summ.push(stats.space);
-                summ.push("</td><td>");
-                summ.push(stats.space);
-                summ.push("</td></tr><tr><th>values</th><td>");
-                summ.push(stats.values.count);
-                summ.push("</td><td>");
-                summ.push(stats.values.chars);
-                summ.push("</td></tr><tr><th>variables</th><td>");
-                summ.push(stats.variables.count);
-                summ.push("</td><td>");
-                summ.push(stats.variables.chars);
-                summ.push(
-                    "</td></tr></tbody></table><table class='analysis' id='css-size' summary='CSS c" +
-                    "haracter size change'><caption>CSS character size change</caption><tbody><tr><" +
-                    "th>Input</th><td>"
-                );
-                summ.push(inl);
-                summ.push("</td></tr><tr><th>Output</th><td>");
-                summ.push(out);
-                summ.push("</td></tr><tr><th>");
-                if (out > inl) {
-                    summ.push("Increase</th><td>");
-                    summ.push(out - inl);
-                    summ.push("</td></tr><tr><th>Percent Change</th><td>");
-                    a = (((out - inl) / out) * 100);
-                    summ.push(a.toFixed(2));
-                } else {
-                    summ.push("Decrease</th><td>");
-                    summ.push(inl - out);
-                    summ.push("</td></tr><tr><th>Percent Change</th><td>");
-                    a = (((inl - out) / inl) * 100);
-                    summ.push(a.toFixed(2));
-                }
-                summ.push(
-                    "%</td></tr></tbody></table><table class='analysis' id='css-uri' summary='A lis" +
-                    "t of HTTP requests'><caption>A List of HTTP Requests</caption><thead><tr><th>Q" +
-                    "uantity</th><th>URI</th></tr></thead><tbody>"
-                );
-                for (a = 0; a < uris; a = a + 1) {
-                    uric = 1;
-                    for (b = a + 1; b < uris; b = b + 1) {
-                        if (uri[a] === uri[b]) {
-                            uric = uric + 1;
-                            uri.splice(b, 1);
-                            uris = uris - 1;
-                        }
-                    }
-                    summ.push("<tr><td>");
-                    summ.push(uric);
-                    summ.push("</td><td>");
-                    summ.push(
-                        uri[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    );
-                    summ.push("</td></tr>");
-                }
-                summ.push("</tbody></table>");
-                summ.push("</div><span class='clear'></span>");
-                if (color.length === 0) {
-                    summ.push("<h4>0 colors were identified in the provided code.</h4>");
-                } else {
-                    summ.push("<h4>These ");
-                    summ.push(color.length);
-                    if (color.length > 1) {
-                        summ.push(" different");
-                    }
-                    summ.push(" color");
-                    if (color.length > 1) {
-                        summ.push("s");
-                    }
-                    summ.push(" were identified in the provided code:</h4><p>");
-                    summ.push(color.join(", "));
-                    summ.push("</p>");
-                    if (options.accessibility === true) {
-                        (function csspretty__summary_colorConvert() {
-                            var vl        = "",
-                                bb        = color.length,
-                                aa        = 0,
-                                luminance = function csspretty__summary_colorConvert_luminance(rgb) {
-                                    var convert = function csspretty__summary_colorConvert_luminance_convert(x) {
-                                        if (x === 0) {
-                                            return 0;
-                                        }
-                                        x = (x / 255);
-                                        if ((x * 100000) <= 3928) {
-                                            return ((x * 100) / 1292) * 10000;
-                                        }
-                                        x = x * 100000;
-                                        return Math.pow(((x + 5500) / 105500), 2.4) * 10000;
-                                    };
-                                    return (
-                                        (2126 * convert(rgb[0])) + (7152 * convert(rgb[1])) + (722 * convert(rgb[2]))
-                                    ) / 100000000;
-                                },
-                                hexToDec  = function csspretty__summary_colorConvert_hexToDec(val) {
-                                    var str = val
-                                            .slice(1)
-                                            .split(""),
-                                        rgb = [],
-                                        num = [],
-                                        aaa = 0,
-                                        bbb = str.length;
-                                    for (aaa = 0; aaa < bbb; aaa = aaa + 1) {
-                                        if (str[aaa] === "a") {
-                                            num.push(10);
-                                        } else if (str[aaa] === "b") {
-                                            num.push(11);
-                                        } else if (str[aaa] === "c") {
-                                            num.push(12);
-                                        } else if (str[aaa] === "d") {
-                                            num.push(13);
-                                        } else if (str[aaa] === "e") {
-                                            num.push(14);
-                                        } else if (str[aaa] === "f") {
-                                            num.push(15);
-                                        } else {
-                                            num.push(Number(str[aaa]));
-                                        }
-                                    }
-                                    if (bbb === 3) {
-                                        rgb.push((num[0] * 16) + num[0]);
-                                        rgb.push((num[1] * 16) + num[1]);
-                                        rgb.push((num[2] * 16) + num[2]);
-                                    } else {
-                                        rgb.push((num[0] * 16) + num[1]);
-                                        rgb.push((num[2] * 16) + num[3]);
-                                        rgb.push((num[4] * 16) + num[5]);
-                                    }
-                                    return luminance(rgb);
-                                },
-                                rgbToDec  = function csspretty__summary_colorConvert_rgbToDec(val) {
-                                    var rgb  = [],
-                                        rgbs = [],
-                                        rr   = 0;
-                                    if (vl.charAt(3) === "a") {
-                                        vl   = vl
-                                            .slice(5, vl.length - 1)
-                                            .replace(/\s+/g, "");
-                                        rgbs = vl.split(",");
-                                        rgbs.pop();
-                                    } else {
-                                        vl   = vl
-                                            .slice(4, vl.length - 1)
-                                            .replace(/\s+/g, "");
-                                        rgbs = vl.split(",");
-                                    }
-                                    do {
-                                        if ((/^([0-9a-f]{2})$/).test(rgbs[rr]) === false) {
-                                            if (rgbs[rr].charAt(rgbs[rr].length - 1) === "%") {
-                                                vl = rgbs[rr].slice(0, rgbs[rr].length - 1);
-                                                if (isNaN(vl) === true) {
-                                                    return val;
-                                                }
-                                                rgb.push(Number(vl));
-                                                if (rgb[rr] < 0) {
-                                                    rgb[rr] = 0;
-                                                } else if (rgb[rr] > 100) {
-                                                    rgb[rr] = 100;
-                                                }
-                                                rgb[rr] = Math.round(2.55 * rgb[rr]);
-                                            } else {
-                                                if (isNaN(rgbs[rr]) === true) {
-                                                    return val;
-                                                }
-                                                rgb.push(Number(rgbs[rr]));
-                                                if (rgb[rr] < 0) {
-                                                    rgb[rr] = 0;
-                                                } else if (rgb[rr] > 255) {
-                                                    rgb[rr] = 255;
-                                                }
-                                                rgb[rr] = Math.round(rgb[rr]);
-                                            }
-                                        }
-                                        rr = rr + 1;
-                                    } while (rr < 3);
-                                    return luminance(rgb);
-                                };
-                            colors = [];
-                            for (aa = 0; aa < bb; aa = aa + 1) {
-                                if (color[aa] === undefined) {
-                                    break;
-                                }
-                                vl = color[aa].toLowerCase();
-                                if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
-                                    colors.push(hexToDec(vl.slice(1)));
-                                } else if ((/^(rgba?\()/).test(vl) === true) {
-                                    colors.push(rgbToDec(vl));
-                                } else if (colorNames[vl] !== undefined) {
-                                    colors.push(colorNames[vl]);
-                                }
-                            }
-                        }());
-                    }
-                }
-                if (options.nodeasync === true) {
-                    return [summ.join(""), ""];
-                }
-                return summ.join("");
             }());
         }
 
