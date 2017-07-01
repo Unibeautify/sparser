@@ -15,13 +15,459 @@ Parse Framework
                 token: [], // all - parsed tokens, used by all lexers
                 types: [] // all - parsed token categories, used by all lexers
             },
+            error = "",
             lexer = {},
             lf    = (options.crlf === true || options.crlf === "true")
                 ? "\r\n"
-                : "\n";
+                : "\n",
+            safeSort  = function parser_safeSort(array, operation, recursive) {
+                var arTest  = function parser_safeSort_arTest(item) {
+                        if (typeof item !== "object" || item.length === undefined || item.length < 2) {
+                            return false;
+                        }
+                        return true;
+                    },
+                    extref  = function parser_safeSort_extref() {
+                        //worthless function for backwards compatibility with older versions of V8 node.
+                        return;
+                    },
+                    normal  = function parser_safeSort_normal(item) {
+                        var done    = [item[0]],
+                            storeb  = item,
+                            child   = function parser_safeSort_normal_child() {
+                                var a   = 0,
+                                    len = storeb.length;
+                                for (a = 0; a < len; a = a + 1) {
+                                    if (arTest(storeb[a]) === true) {
+                                        storeb[a] = parser_safeSort_normal(storeb[a]);
+                                    }
+                                }
+                            },
+                            recurse = function parser_safeSort_normal_recurse(x) {
+                                var a      = 0,
+                                    storea = [],
+                                    len    = storeb.length;
+                                for (a = 0; a < len; a = a + 1) {
+                                    if (storeb[a] !== x) {
+                                        storea.push(storeb[a]);
+                                    }
+                                }
+                                storeb = storea;
+                                if (storea.length > 0) {
+                                    done.push(storea[0]);
+                                    extref(storea[0]);
+                                } else {
+                                    if (recursive === true) {
+                                        child();
+                                    }
+                                    item = storeb;
+                                }
+                            };
+                        extref = recurse;
+                        recurse(array[0]);
+                    },
+                    descend = function parser_safeSort_descend(item) {
+                        var c       = 0,
+                            storeb  = item,
+                            len     = item.length,
+                            child   = function parser_safeSort_descend_child() {
+                                var a    = 0,
+                                    lenc = storeb.length;
+                                for (a = 0; a < lenc; a = a + 1) {
+                                    if (arTest(storeb[a]) === true) {
+                                        storeb[a] = parser_safeSort_descend(storeb[a]);
+                                    }
+                                }
+                            },
+                            recurse = function parser_safeSort_descend_recurse() {
+                                var a      = 0,
+                                    b      = 0,
+                                    d      = 0,
+                                    e      = 0,
+                                    ind    = [],
+                                    key    = storeb[c],
+                                    tstore = "",
+                                    tkey   = typeof key;
+                                for (a = c; a < len; a = a + 1) {
+                                    tstore = typeof storeb[a];
+                                    if (storeb[a] > key || (tstore > tkey)) {
+                                        key = storeb[a];
+                                        ind = [a];
+                                    } else if (storeb[a] === key) {
+                                        ind.push(a);
+                                    }
+                                }
+                                d = ind.length;
+                                b = d + c;
+                                for (a = c; a < b; a = a + 1) {
+                                    storeb[ind[e]] = storeb[a];
+                                    storeb[a]      = key;
+                                    e              = e + 1;
+                                }
+                                c = c + d;
+                                if (c < len) {
+                                    extref();
+                                } else {
+                                    if (recursive === true) {
+                                        child();
+                                    }
+                                    item = storeb;
+                                }
+                            };
+                        extref = recurse;
+                        recurse();
+                        return item;
+                    },
+                    ascend  = function parser_safeSort_ascend(item) {
+                        var c       = 0,
+                            storeb  = item,
+                            len     = item.length,
+                            child   = function parser_safeSort_ascend_child() {
+                                var a    = 0,
+                                    lenc = storeb.length;
+                                for (a = 0; a < lenc; a = a + 1) {
+                                    if (arTest(storeb[a]) === true) {
+                                        storeb[a] = parser_safeSort_ascend(storeb[a]);
+                                    }
+                                }
+                            },
+                            recurse = function parser_safeSort_ascend_recurse() {
+                                var a      = 0,
+                                    b      = 0,
+                                    d      = 0,
+                                    e      = 0,
+                                    ind    = [],
+                                    key    = storeb[c],
+                                    tstore = "",
+                                    tkey   = typeof key;
+                                for (a = c; a < len; a = a + 1) {
+                                    tstore = typeof storeb[a];
+                                    if (storeb[a] < key || tstore < tkey) {
+                                        key = storeb[a];
+                                        ind = [a];
+                                    } else if (storeb[a] === key) {
+                                        ind.push(a);
+                                    }
+                                }
+                                d = ind.length;
+                                b = d + c;
+                                for (a = c; a < b; a = a + 1) {
+                                    storeb[ind[e]] = storeb[a];
+                                    storeb[a]      = key;
+                                    e              = e + 1;
+                                }
+                                c = c + d;
+                                if (c < len) {
+                                    extref();
+                                } else {
+                                    if (recursive === true) {
+                                        child();
+                                    }
+                                    item = storeb;
+                                }
+                            };
+                        extref = recurse;
+                        recurse();
+                        return item;
+                    };
+                if (arTest(array) === false) {
+                    return array;
+                }
+                if (recursive === "true") {
+                    recursive = true;
+                } else if (recursive !== true) {
+                    recursive = false;
+                }
+                if (operation === "normal") {
+                    return normal(array);
+                }
+                if (operation === "descend") {
+                    return descend(array);
+                }
+                return ascend(array);
+            },
+            extlib      = function parser_extlib(type) {
+                var result = "",
+                    newline = options.newline;
+                options.newline = false;
+                result = (type === "script")
+                    ? lexer.clang(options)
+                    : lexer.css(options);
+                options.newline = newline;
+                if (options.nodeasync === true) {
+                    if (options.parseFormat === "htmltable") {
+                        if (type === "script") {
+                            return result[0]
+                                .data
+                                .replace(
+                                    "<thead>",
+                                    "<thead><tr><th colspan=\"6\" class=\"nested\">JavaScript tokens</th></tr>"
+                                );
+                        }
+                        return result[0]
+                            .data
+                            .replace(
+                                "<thead>",
+                                "<thead><tr><th colspan=\"4\" class=\"nested\">CSS tokens</th></tr>"
+                            );
+                    }
+                    return result[0].data;
+                }
+                if (options.parseFormat === "htmltable") {
+                    if (type === "script") {
+                        return result
+                            .data
+                            .replace(
+                                "<thead>",
+                                "<thead><tr><th colspan=\"6\" class=\"nested\">JavaScript tokens</th></tr>"
+                            );
+                    }
+                    return result
+                        .data
+                        .replace(
+                            "<thead>",
+                            "<thead><tr><th colspan=\"4\" class=\"nested\">CSS tokens</th></tr>"
+                        );
+                }
+                return result.data;
+            },
+            parseTable = function parser_parseTable() {
+                var a        = 0,
+                    c        = parse.token.length,
+                    record   = [],
+                    wspace   = "",
+                    data     = {},
+                    def      = {
+                        attrs: "array - List of attributes (if any) for the given token.",
+                        begin: "number - Index where the parent element occurs.",
+                        jscom: "boolean - Whether the token is a JavaScript comment if in JSX format.",
+                        lines: "number - Whether the token is preceeded any space and/or line breaks in the or" +
+                                "iginal code source.",
+                        presv: "boolean - Whether the token is preserved verbatim as found.  Useful for commen" +
+                                "ts and HTML 'pre' tags.",
+                        stack: "string - Tag name of the parent element. Tokens of type 'template_start' are n" +
+                                "ot considered as parent elements.  End tags reflect their matching start tag.",
+                        token: "string - The parsed code tokens.",
+                        types: "string - Data types of the tokens: cdata, comment, conditional, content, end, " +
+                                "ignore, linepreserve, script, sgml, singleton, start, template, template_else," +
+                                " template_end, template_start, xml"
+                    },
+                    //white space token to insertion logic
+                    insert   = function markuppretty__parse_insert(string) {
+                        if (parse.types[a] === "content") {
+                            parse.token[a] = string + parse.token[a];
+                            return;
+                        }
+                        if (parse.types[a - 1] === "content" && parse.token[a] !== "content") {
+                            parse.token[a - 1] = parse.token[a - 1] + string;
+                            return;
+                        }
+                        parse.attrs.splice(a, 0, {});
+                        parse.begin.splice(a, 0, parse.begin[a]);
+                        parse.jscom.splice(a, 0, false);
+                        parse.lines.splice(a, 0, 1);
+                        parse.presv.splice(a, 0, false);
+                        parse.stack.splice(a, 0, parse.stack[a]);
+                        parse.token.splice(a, 0, string);
+                        parse.types.splice(a, 0, "content");
+                        c = c + 1;
+                        a = a + 1;
+                    },
+                    attApply = function markuppretty__parse_attApply(atty) {
+                        var string = "",
+                            xlen   = atty.length,
+                            xind   = 0,
+                            toke   = parse.token[a],
+                            atts   = "";
+                        for (xind = 0; xind < xlen; xind = xind + 1) {
+                            if (parse.attrs[a][atty[xind]] === "") {
+                                atts = atts + " " + atty[xind];
+                            } else {
+                                atts = atts + " " + atty[xind] + "=" + parse.attrs[a][atty[xind]];
+                            }
+                        }
+                        if (parse.presv[a] === true) {
+                            parse.token[a] = toke.replace(" ", atts);
+                        } else {
+                            string   = ((/(\/>)$/).test(toke) === true)
+                                ? "/>"
+                                : ">";
+                            xlen     = (string === "/>")
+                                ? 3
+                                : 2;
+                            parse.token[a] = (toke.slice(0, toke.length - xlen) + atts + string);
+                        }
+                    };
+                for (a = 0; a < c; a = a + 1) {
+                    wspace = "";
+                    record = Object.keys(parse.attrs[a]);
+                    if (record.length > 0 && options.unformatted === false) {
+                        attApply(record);
+                    }
+                    if (parse.token[a] === "</prettydiffli>") {
+                        if (options.correct === true) {
+                            parse.token[a] = "</li>";
+                        } else {
+                            parse.attrs.splice(a, 1);
+                            parse.begin.splice(a, 1);
+                            parse.stack.splice(a, 1);
+                            parse.jscom.splice(a, 1);
+                            parse.lines.splice(a, 1);
+                            parse.presv.splice(a, 1);
+                            parse.token.splice(a, 1);
+                            parse.types.splice(a, 1);
+                            a = a - 1;
+                            c = c - 1;
+                        }
+                    }
+                    if (options.parseFormat !== "htmltable") {
+                        if (parse.types[a] === "script") {
+                            options.source = parse.token[a];
+                            parse.token[a] = extlib("script");
+                        } else if (parse.types[a] === "style") {
+                            options.source = parse.token[a];
+                            parse.token[a] = extlib("style");
+                        }
+                    }
+                    if (options.parseSpace === true) {
+                        if (parse.lines[a] > 1) {
+                            if (options.preserve > 1) {
+                                if (options.parseFormat === "htmltable") {
+                                    wspace = "(empty line)";
+                                } else {
+                                    wspace = lf + lf;
+                                }
+                            } else if (parse.types[a] === "singleton" || parse.types[a] === "content" || parse.types[a] === "template") {
+                                wspace = " ";
+                            }
+                        } else if (parse.lines[a] === 1) {
+                            if (parse.types[a] === "singleton" || parse.types[a] === "content" || parse.types[a] === "template") {
+                                wspace = " ";
+                            } else if (parse.types[a] !== parse.types[a - 1] && (parse.types[a - 1] === "singleton" || parse.types[a - 1] === "content" || parse.types[a - 1] === "template")) {
+                                wspace = " ";
+                            }
+                        }
+                        if (wspace !== "") {
+                            if (wspace === " " && options.parseFormat === "htmltable") {
+                                wspace = "(space)";
+                            }
+                            insert(wspace);
+                        }
+                    }
+                }
+                if (options.parseFormat === "sequential") {
+                    def.order = "[token, types, attrs, lines, jscom, presv, stack, begin]";
+                    for (a = 0; a < c; a = a + 1) {
+                        record.push([
+                            parse.token[a],
+                            parse.types[a],
+                            parse.attrs[a],
+                            parse.lines[a],
+                            parse.jscom[a],
+                            parse.presv[a],
+                            parse.stack[a],
+                            parse.begin[a]
+                        ]);
+                    }
+                    if (options.nodeasync === true) {
+                        return [
+                            {
+                                data      : record,
+                                definition: def
+                            },
+                            error
+                        ];
+                    }
+                    return {data: record, definition: def};
+                }
+                if (options.parseFormat === "htmltable") {
+                    return (function markuppretty__parse_html() {
+                        var report = [],
+                            header = "<tr class=\"header\"><th>index</th><th>token</th><th>types</th>",
+                            aa     = 0,
+                            len    = 0;
+                        header = header + "<th>attrs</th><th>jscom</th><th>presv</th><th>stack</th><th>" +
+                                "begin</th><th>lines</th></tr>";
+                        report.push("<table summary='markup parse table'><thead>");
+                        report.push(header);
+                        report.push("</thead><tbody>");
+                        len = parse.token.length;
+                        for (aa = 0; aa < len; aa = aa + 1) {
+                            if (parse.types[aa] === "script") {
+                                options.source = parse.token[aa];
+                                report.push("<tr><td colspan=\"10\" class=\"nested\">");
+                                report.push(extlib("script"));
+                                report.push("</td></tr>");
+                                report.push("<tr><th colspan=\"10\" class=\"nested\">Markup tokens</th></tr>");
+                                report.push(header);
+                            } else if (parse.types[aa] === "style") {
+                                options.source = parse.token[aa];
+                                report.push("<tr><td colspan=\"10\" class=\"nested\">");
+                                report.push(extlib("style"));
+                                report.push("</td></tr>");
+                                report.push("<tr><th colspan=\"10\" class=\"nested\">Markup tokens</th></tr>");
+                                report.push(header);
+                            } else {
+                                report.push("<tr><td>");
+                                report.push(aa);
+                                report.push("</td><td style=\"white-space:pre\">");
+                                report.push(
+                                    parse.token[aa].replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
+                                );
+                                report.push("</td><td>");
+                                report.push(parse.types[aa]);
+                                report.push("</td>");
+                                report.push("<td style=\"white-space:pre\">");
+                                report.push(
+                                    JSON.stringify(parse.attrs[aa]).replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
+                                );
+                                report.push("</td><td>");
+                                report.push(parse.jscom[aa]);
+                                report.push("</td><td>");
+                                report.push(parse.presv[aa]);
+                                report.push("</td><td>");
+                                report.push(parse.stack[aa]);
+                                report.push("</td><td>");
+                                report.push(parse.begin[aa]);
+                                report.push("</td><td>");
+                                report.push(parse.lines[aa]);
+                                report.push("</td></tr>");
+                            }
+                        }
+                        report.push("</tbody></table>");
+                        if (options.nodeasync === true) {
+                            return [
+                                {
+                                    data      : report.join(""),
+                                    definition: def
+                                },
+                                error
+                            ];
+                        }
+                        return {data: report.join(""), definition: def};
+                    }());
+                }
+                data.attrs = parse.attrs;
+                data.begin = parse.begin;
+                data.stack = parse.stack;
+                data.jscom = parse.jscom;
+                data.lines = parse.lines;
+                data.presv = parse.presv;
+                data.token = parse.token;
+                data.types = parse.types;
+                if (options.nodeasync === true) {
+                    return [
+                        {
+                            data      : data,
+                            definition: def
+                        },
+                        error
+                    ];
+                }
+                return {data: data, definition: def};
+            };
         lexer.markup = function parser_markup() {
-            var safeSort    = global.prettydiff.safeSort,
-                attrs       = parse.attrs,
+            var attrs       = parse.attrs,
                 begin       = parse.begin,
                 jscom       = parse.jscom,
                 lines       = parse.lines,
@@ -37,71 +483,6 @@ Parse Framework
                 ],
                 line        = 1,
                 objsortop   = false,
-                globalerror = "",
-                extlib      = function markuppretty__extlib(type) {
-                    var result = "",
-                        newline = options.newline;
-                    if (type === "script" && typeof global.prettydiff.jspretty !== "function") {
-                        return options.source;
-                    }
-                    if (type === "style" && typeof global.prettydiff.csspretty !== "function") {
-                        return options.source;
-                    }
-                    options.newline = false;
-                    result = (type === "script")
-                        ? global
-                            .prettydiff
-                            .jspretty(options)
-                        : global
-                            .prettydiff
-                            .csspretty(options);
-                    options.newline = newline;
-                    if (options.nodeasync === true) {
-                        if (globalerror === "") {
-                            globalerror = result[1];
-                        }
-                        if (options.mode === "parse") {
-                            if (options.parseFormat === "htmltable") {
-                                if (type === "script") {
-                                    return result[0]
-                                        .data
-                                        .replace(
-                                            "<thead>",
-                                            "<thead><tr><th colspan=\"6\" class=\"nested\">JavaScript tokens</th></tr>"
-                                        );
-                                }
-                                return result[0]
-                                    .data
-                                    .replace(
-                                        "<thead>",
-                                        "<thead><tr><th colspan=\"4\" class=\"nested\">CSS tokens</th></tr>"
-                                    );
-                            }
-                            return result[0].data;
-                        }
-                        return result[0];
-                    }
-                    if (options.mode === "parse") {
-                        if (options.parseFormat === "htmltable") {
-                            if (type === "script") {
-                                return result
-                                    .data
-                                    .replace(
-                                        "<thead>",
-                                        "<thead><tr><th colspan=\"6\" class=\"nested\">JavaScript tokens</th></tr>"
-                                    );
-                            }
-                            return result
-                                .data
-                                .replace(
-                                    "<thead>",
-                                    "<thead><tr><th colspan=\"4\" class=\"nested\">CSS tokens</th></tr>"
-                                );
-                        }
-                        return result.data;
-                    }
-                    return result;
-                },
                 //What is the lowercase tag name of the provided token?
                 tagName     = function markuppretty__tagName(el) {
                     var space = el
@@ -2156,256 +2537,8 @@ Parse Framework
                 if (global.prettydiff.meta === undefined) {
                     global.prettydiff.meta = {};
                 }
-                global.prettydiff.meta.error = "Error: source does not appear to be markup.";
+                error = "Error: source does not appear to be markup.";
                 return options.source;
-            }
-
-            if (options.nodeasync === false) {
-                if (global.prettydiff.meta === undefined) {
-                    global.prettydiff.meta       = {};
-                    global.prettydiff.meta.error = "";
-                }
-                if (global.prettydiff.meta.error === "") {
-                    global.prettydiff.meta.error = globalerror;
-                }
-            }
-
-            if (options.mode === "parse") {
-                return (function markuppretty__parse() {
-                    var a        = 0,
-                        c        = token.length,
-                        record   = [],
-                        wspace   = "",
-                        data     = {},
-                        def      = {
-                            attrs: "array - List of attributes (if any) for the given token.",
-                            begin: "number - Index where the parent element occurs.",
-                            jscom: "boolean - Whether the token is a JavaScript comment if in JSX format.",
-                            lines: "number - Whether the token is preceeded any space and/or line breaks in the or" +
-                                    "iginal code source.",
-                            presv: "boolean - Whether the token is preserved verbatim as found.  Useful for commen" +
-                                    "ts and HTML 'pre' tags.",
-                            stack: "string - Tag name of the parent element. Tokens of type 'template_start' are n" +
-                                    "ot considered as parent elements.  End tags reflect their matching start tag.",
-                            token: "string - The parsed code tokens.",
-                            types: "string - Data types of the tokens: cdata, comment, conditional, content, end, " +
-                                    "ignore, linepreserve, script, sgml, singleton, start, template, template_else," +
-                                    " template_end, template_start, xml"
-                        },
-                        //white space token to insertion logic
-                        insert   = function markuppretty__parse_insert(string) {
-                            if (types[a] === "content") {
-                                token[a] = string + token[a];
-                                return;
-                            }
-                            if (types[a - 1] === "content" && token[a] !== "content") {
-                                token[a - 1] = token[a - 1] + string;
-                                return;
-                            }
-                            attrs.splice(a, 0, {});
-                            begin.splice(a, 0, begin[a]);
-                            stack.splice(a, 0, stack[a]);
-                            jscom.splice(a, 0, false);
-                            lines.splice(a, 0, 1);
-                            presv.splice(a, 0, false);
-                            token.splice(a, 0, string);
-                            types.splice(a, 0, "content");
-                            c = c + 1;
-                            a = a + 1;
-                        },
-                        attApply = function markuppretty__parse_attApply(atty) {
-                            var string = "",
-                                xlen   = atty.length,
-                                xind   = 0,
-                                toke   = token[a],
-                                atts   = "";
-                            for (xind = 0; xind < xlen; xind = xind + 1) {
-                                if (attrs[a][atty[xind]] === "") {
-                                    atts = atts + " " + atty[xind];
-                                } else {
-                                    atts = atts + " " + atty[xind] + "=" + attrs[a][atty[xind]];
-                                }
-                            }
-                            if (presv[a] === true) {
-                                token[a] = toke.replace(" ", atts);
-                            } else {
-                                string   = ((/(\/>)$/).test(toke) === true)
-                                    ? "/>"
-                                    : ">";
-                                xlen     = (string === "/>")
-                                    ? 3
-                                    : 2;
-                                token[a] = (toke.slice(0, toke.length - xlen) + atts + string);
-                            }
-                        };
-                    for (a = 0; a < c; a = a + 1) {
-                        wspace = "";
-                        record = Object.keys(attrs[a]);
-                        if (record.length > 0 && options.unformatted === false) {
-                            attApply(record);
-                        }
-                        if (token[a] === "</prettydiffli>") {
-                            if (options.correct === true) {
-                                token[a] = "</li>";
-                            } else {
-                                attrs.splice(a, 1);
-                                begin.splice(a, 1);
-                                stack.splice(a, 1);
-                                jscom.splice(a, 1);
-                                lines.splice(a, 1);
-                                presv.splice(a, 1);
-                                token.splice(a, 1);
-                                types.splice(a, 1);
-                                a = a - 1;
-                                c = c - 1;
-                            }
-                        }
-                        if (options.parseFormat !== "htmltable") {
-                            if (types[a] === "script") {
-                                options.source = token[a];
-                                token[a]       = extlib("script");
-                            } else if (types[a] === "style") {
-                                options.source = token[a];
-                                token[a]       = extlib("style");
-                            }
-                        }
-                        if (options.parseSpace === true) {
-                            if (lines[a] > 1) {
-                                if (options.preserve > 1) {
-                                    if (options.parseFormat === "htmltable") {
-                                        wspace = "(empty line)";
-                                    } else {
-                                        wspace = lf + lf;
-                                    }
-                                } else if (types[a] === "singleton" || types[a] === "content" || types[a] === "template") {
-                                    wspace = " ";
-                                }
-                            } else if (lines[a] === 1) {
-                                if (types[a] === "singleton" || types[a] === "content" || types[a] === "template") {
-                                    wspace = " ";
-                                } else if (types[a] !== types[a - 1] && (types[a - 1] === "singleton" || types[a - 1] === "content" || types[a - 1] === "template")) {
-                                    wspace = " ";
-                                }
-                            }
-                            if (wspace !== "") {
-                                if (wspace === " " && options.parseFormat === "htmltable") {
-                                    wspace = "(space)";
-                                }
-                                insert(wspace);
-                            }
-                        }
-                    }
-                    if (options.parseFormat === "sequential") {
-                        def.order = "[token, types, attrs, lines, jscom, presv, stack, begin]";
-                        for (a = 0; a < c; a = a + 1) {
-                            record.push([
-                                token[a],
-                                types[a],
-                                attrs[a],
-                                lines[a],
-                                jscom[a],
-                                presv[a],
-                                stack[a],
-                                begin[a]
-                            ]);
-                        }
-                        if (options.nodeasync === true) {
-                            return [
-                                {
-                                    data      : record,
-                                    definition: def
-                                },
-                                globalerror
-                            ];
-                        }
-                        return {data: record, definition: def};
-                    }
-                    if (options.parseFormat === "htmltable") {
-                        return (function markuppretty__parse_html() {
-                            var report = [],
-                                header = "<tr class=\"header\"><th>index</th><th>token</th><th>types</th>",
-                                aa     = 0,
-                                len    = 0;
-                            header = header + "<th>attrs</th><th>jscom</th><th>presv</th><th>stack</th><th>" +
-                                    "begin</th><th>lines</th></tr>";
-                            report.push("<table summary='markup parse table'><thead>");
-                            report.push(header);
-                            report.push("</thead><tbody>");
-                            len = token.length;
-                            for (aa = 0; aa < len; aa = aa + 1) {
-                                if (types[aa] === "script") {
-                                    options.source = token[aa];
-                                    report.push("<tr><td colspan=\"10\" class=\"nested\">");
-                                    report.push(extlib("script"));
-                                    report.push("</td></tr>");
-                                    report.push("<tr><th colspan=\"10\" class=\"nested\">Markup tokens</th></tr>");
-                                    report.push(header);
-                                } else if (types[aa] === "style") {
-                                    options.source = token[aa];
-                                    report.push("<tr><td colspan=\"10\" class=\"nested\">");
-                                    report.push(extlib("style"));
-                                    report.push("</td></tr>");
-                                    report.push("<tr><th colspan=\"10\" class=\"nested\">Markup tokens</th></tr>");
-                                    report.push(header);
-                                } else {
-                                    report.push("<tr><td>");
-                                    report.push(aa);
-                                    report.push("</td><td style=\"white-space:pre\">");
-                                    report.push(
-                                        token[aa].replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                    );
-                                    report.push("</td><td>");
-                                    report.push(types[aa]);
-                                    report.push("</td>");
-                                    report.push("<td style=\"white-space:pre\">");
-                                    report.push(
-                                        JSON.stringify(attrs[aa]).replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                    );
-                                    report.push("</td><td>");
-                                    report.push(jscom[aa]);
-                                    report.push("</td><td>");
-                                    report.push(presv[aa]);
-                                    report.push("</td><td>");
-                                    report.push(stack[aa]);
-                                    report.push("</td><td>");
-                                    report.push(begin[aa]);
-                                    report.push("</td><td>");
-                                    report.push(lines[aa]);
-                                    report.push("</td></tr>");
-                                }
-                            }
-                            report.push("</tbody></table>");
-                            if (options.nodeasync === true) {
-                                return [
-                                    {
-                                        data      : report.join(""),
-                                        definition: def
-                                    },
-                                    globalerror
-                                ];
-                            }
-                            return {data: report.join(""), definition: def};
-                        }());
-                    }
-                    data.attrs = attrs;
-                    data.begin = begin;
-                    data.stack = stack;
-                    data.jscom = jscom;
-                    data.lines = lines;
-                    data.presv = presv;
-                    data.token = token;
-                    data.types = types;
-                    if (options.nodeasync === true) {
-                        return [
-                            {
-                                data      : data,
-                                definition: def
-                            },
-                            globalerror
-                        ];
-                    }
-                    return {data: data, definition: def};
-                }());
             }
         };
         lexer.clang = function parser_clang() {
@@ -2413,7 +2546,6 @@ Parse Framework
                     0, ""
                 ],
                 json         = (options.lang === "json"),
-                globalerror  = "",
                 // all data that is created from the tokization process is stored in the
                 // following four arrays: token, types, level, and lines.  All of this data
                 // passes from the tokenization process to be analyzed by the algorithm
@@ -2759,8 +2891,8 @@ Parse Framework
                                 message, error[1]
                             ];
                         }
-                        if (globalerror === "") {
-                            globalerror = message + ":" + error[1];
+                        if (error === "") {
+                            error = message + ":" + error[1];
                         }
                     },
                     //A tokenizer for keywords, reserved words, and variables
@@ -4975,7 +5107,6 @@ Parse Framework
                     tokenpop();
                 }
             }());
-
             if (options.correct === true) {
                 (function jspretty__correct() {
                     var a = 0,
@@ -4996,162 +5127,6 @@ Parse Framework
                     }
                 }());
             }
-            if (options.nodeasync === false) {
-                if (global.prettydiff.meta === undefined) {
-                    global.prettydiff.meta       = {};
-                    global.prettydiff.meta.error = "";
-                }
-                if (global.prettydiff.meta.error === "") {
-                    global.prettydiff.meta.error = globalerror;
-                }
-            }
-            if (options.mode === "parse") {
-                return (function jspretty__parse() {
-                    var a      = 0,
-                        c      = token.length,
-                        record = [],
-                        def    = {
-                            begin: "number - The index where the current container starts",
-                            depth: "string - The name of the current container",
-                            lines: "number - Whether the token is preceeded any space and/or line breaks in the or" +
-                                    "iginal code source",
-                            token: "string - The parsed code tokens",
-                            types: "string - Data types of the tokens: comment, comment-inline, end, literal, mark" +
-                                    "up, operator, regex, separator, start, template, template_else, template_end, " +
-                                    "template_start, word"
-                        };
-                    for (a = 0; a < c; a = a + 1) {
-                        if (options.correct === false && (token[a] === "x;" || token[a] === "x{" || token[a] === "x}" || token[a] === "x(" || token[a] === "x)")) {
-                            c = c - 1;
-                            begin.splice(a, 1);
-                            depth.splice(a, 1);
-                            lines.splice(a, 1);
-                            token.splice(a, 1);
-                            types.splice(a, 1);
-                        }
-                        if (options.parseFormat !== "htmltable" && types[a] === "markup" && global.prettydiff.markuppretty !== undefined) {
-                            options.source = token[a];
-                            options.jsx    = true;
-                            token[a]       = global
-                                .prettydiff
-                                .markuppretty(options)
-                                .data;
-                        }
-                    }
-                    if (options.parseFormat === "sequential") {
-                        for (a = 0; a < c; a = a + 1) {
-                            record.push([
-                                token[a], types[a], depth[a], begin[a], lines[a]
-                            ]);
-                        }
-                        if (options.nodeasync === true) {
-                            return [
-                                {
-                                    data      : record,
-                                    definition: def
-                                },
-                                globalerror
-                            ];
-                        }
-                        return {data: record, definition: def};
-                    }
-                    if (options.parseFormat === "htmltable") {
-                        return (function jspretty__parse_html() {
-                            var output = [],
-                                header = "<tr class=\"header\"><th>index</th><th>token</th><th>types</th><th>depth</th><" +
-                                        "th>begin</th><th>lines</th></tr>",
-                                aa     = 0,
-                                len    = 0;
-                            output.push("<table summary='CSS parse table'><thead>");
-                            output.push(header);
-                            output.push("</thead><tbody>");
-                            len = token.length;
-                            for (aa = 0; aa < len; aa = aa + 1) {
-                                if (types[aa] === "markup" && global.prettydiff.markuppretty !== undefined) {
-                                    options.source = token[aa];
-                                    options.jsx    = true;
-                                    output.push("<tr><td colspan=\"6\" class=\"nested\">");
-                                    output.push(global.prettydiff.markuppretty(options).data.replace(
-                                        "<thead>",
-                                        "<thead><tr><th colspan=\"10\" class=\"nested\">markup tokens</th></tr>"
-                                    ));
-                                    output.push("</td></tr>");
-                                    output.push(
-                                        "<tr><th colspan=\"6\" class=\"nested\">JavaScript tokens</th></tr>"
-                                    );
-                                    output.push(header);
-                                } else {
-                                    output.push("<tr><td>");
-                                    output.push(aa);
-                                    output.push("</td><td>");
-                                    output.push(
-                                        token[aa].replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                    );
-                                    output.push("</td><td>");
-                                    output.push(types[aa]);
-                                    output.push("</td><td>");
-                                    output.push(depth[aa]);
-                                    output.push("</td><td>");
-                                    output.push(begin[aa]);
-                                    output.push("</td><td>");
-                                    output.push(lines[aa]);
-                                    output.push("</td></tr>");
-                                }
-                            }
-                            output.push("</tbody></table>");
-                            if (options.nodeasync === true) {
-                                return [
-                                    {
-                                        data      : output.join(""),
-                                        definition: def
-                                    },
-                                    globalerror
-                                ];
-                            }
-                            return {data: output.join(""), definition: def};
-                        }());
-                    }
-                    if (options.nodeasync === true) {
-                        return [
-                            {
-                                data      : {
-                                    begin: begin,
-                                    depth: depth,
-                                    lines: lines,
-                                    token: token,
-                                    types: types
-                                },
-                                definition: def
-                            },
-                            globalerror
-                        ];
-                    }
-                    return {
-                        data      : {
-                            begin: begin,
-                            depth: depth,
-                            lines: lines,
-                            token: token,
-                            types: types
-                        },
-                        definition: def
-                    };
-                }());
-            }
-
-            if (options.jsx === true && options.jsscope !== "none" && token[0] === "{") {
-                options.jsscope = "none";
-                (function jspretty__jsxScope() {
-                    var a   = 0,
-                        len = token.length;
-                    for (a = 0; a < len; a = a + 1) {
-                        if (types[a] === "word" && token[a - 1] !== ".") {
-                            token[a] = "[pdjsxscope]" + token[a] + "[/pdjsxscope]";
-                        }
-                    }
-                }());
-            }
-            return result;
         };
         lexer.css = function parser_css() {
             var token      = [],
@@ -6637,113 +6612,9 @@ Parse Framework
                     properties();
                 }
             }());
-
-            if (options.mode === "parse") {
-                return (function csspretty__parse() {
-                    var a      = 0,
-                        c      = token.length,
-                        record = [],
-                        def    = {
-                            token: "string - The parsed code tokens",
-                            types: "string - Data types of the tokens: colon, comment, comment-inline, end, extern" +
-                                    "al, external_else, external_end, external_start, item, propvar, pseudo, select" +
-                                    "or, semi, start, value",
-                            lines: "number - Whether the token is preceeded any space and/or line breaks in the or" +
-                                    "iginal code source",
-                            depth: "string - Type of current structure",
-                            begin: "number - Index where current structure begins"
-                        };
-                    if (options.parseFormat === "sequential") {
-                        for (a = 0; a < c; a = a + 1) {
-                            record.push([
-                                token[a], types[a], lines[a], depth[a], begin[a]
-                            ]);
-                        }
-                        if (options.nodeasync === true) {
-                            return [
-                                {
-                                    data      : record,
-                                    definition: def
-                                },
-                                ""
-                            ];
-                        }
-                        return {data: record, definition: def};
-                    }
-                    if (options.parseFormat === "htmltable") {
-                        return (function csspretty__parse_html() {
-                            var report = [],
-                                aa     = 0,
-                                len    = 0;
-                            report.push("<table summary='CSS parse table'><thead><tr><th>index</th>");
-                            report.push("<th>token</th>");
-                            report.push("<th>types</th>");
-                            report.push("<th>lines</th>");
-                            report.push("<th>depth</th>");
-                            report.push("<th>begin</th>");
-                            report.push("</tr></thead><tbody>");
-                            len = token.length;
-                            for (aa = 0; aa < len; aa = aa + 1) {
-                                report.push("<tr><td>");
-                                report.push(aa);
-                                report.push("</td><td>");
-                                report.push(
-                                    token[aa].replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;")
-                                );
-                                report.push("</td><td>");
-                                report.push(types[aa]);
-                                report.push("</td><td>");
-                                report.push(lines[aa]);
-                                report.push("</td><td>");
-                                report.push(depth[aa]);
-                                report.push("</td><td>");
-                                report.push(begin[aa]);
-                                report.push("</td></tr>");
-                            }
-                            report.push("</tbody></table>");
-                            if (options.nodeasync === true) {
-                                return [
-                                    {
-                                        data      : report.join(""),
-                                        definition: def
-                                    },
-                                    ""
-                                ];
-                            }
-                            return {data: report.join(""), definition: def};
-                        }());
-                    }
-                    if (options.nodeasync === true) {
-                        return [
-                            {
-                                data      : {
-                                    token: token,
-                                    types: types,
-                                    lines: lines,
-                                    depth: depth,
-                                    begin: begin
-                                },
-                                definition: def
-                            },
-                            ""
-                        ];
-                    }
-                    return {
-                        data      : {
-                            token: token,
-                            types: types,
-                            lines: lines,
-                            depth: depth,
-                            begin: begin
-                        },
-                        definition: def
-                    };
-                }());
-            }
-
-            return output;
         };
-        return parse;
+        lexer[options.langType]();
+        return parseTable();
     };
     if (typeof module === "object" && typeof module.parent === "object") {
         module.exports = parser;
