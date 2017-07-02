@@ -5,7 +5,8 @@ Parse Framework
 (function parser_container() {
     "use strict";
     var parser = function parser_(options) {
-        var parse = {
+        var parseFail = false,
+            parse = {
                 attrs: [], // markup - element attributes
                 begin: [], // all - token index where a structure opens as described by stack
                 jscom: [], // markup - stores a boolean if a given token is a C like comment used within a markup tag in JSX/TSX
@@ -477,7 +478,6 @@ Parse Framework
                 types       = parse.types,
                 reqs        = [],
                 ids         = [],
-                parseError  = [],
                 parent      = [
                     ["none", -1]
                 ],
@@ -806,7 +806,6 @@ Parse Framework
                             liend     = false,
                             ignoreme  = false,
                             quotetest = false,
-                            parseFail = false,
                             singleton = false,
                             earlyexit = false,
                             attribute = [],
@@ -1211,8 +1210,8 @@ Parse Framework
                                         types[types.length - 1] = "template_start";
                                         break;
                                     }
-                                    if (b[a] === "<" && preserve === false && lexer.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        parseError.push("Parse error on line " + line + " on element: ");
+                                    if (error === "" && b[a] === "<" && preserve === false && lexer.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
+                                        error = "Parse error on line " + line + " on element: ";
                                         parseFail = true;
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
@@ -1668,16 +1667,17 @@ Parse Framework
 
                         if (parseFail === true) {
                             if (element.indexOf("<!--<![") === 0) {
-                                parseError.pop();
+                                error = "";
+                                parseFail = false;
                             } else {
-                                parseError[parseError.length - 1] = parseError[parseError.length - 1] +
-                                        element;
+                                error = error + element;
                                 if (element.indexOf("</") > 0) {
                                     token.push(element);
                                     stack.push(parent[parent.length - 1][0]);
                                     begin.push(parent[parent.length - 1][1]);
-                                    return types.push("end");
+                                    types.push("end");
                                 }
+                                return;
                             }
                         }
                         // cheat identifies HTML singleton elements as singletons even if formatted as
@@ -2346,10 +2346,7 @@ Parse Framework
                                         token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                         stack.push(parent[parent.length - 1][0]);
                                         begin.push(parent[parent.length - 1][1]);
-                                        if (typeof global.prettydiff.jspretty === "function") {
-                                            return types.push(name);
-                                        }
-                                        return types.push("content");
+                                        types.push("cfscript");
                                     }
                                     if (name === "script") {
                                         if (a === c - 9) {
@@ -2369,10 +2366,7 @@ Parse Framework
                                             token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                             stack.push(parent[parent.length - 1][0]);
                                             begin.push(parent[parent.length - 1][1]);
-                                            if (typeof global.prettydiff.jspretty === "function") {
-                                                return types.push(name);
-                                            }
-                                            return types.push("content");
+                                            types.push("script");
                                         }
                                     }
                                     if (name === "style") {
@@ -2395,10 +2389,7 @@ Parse Framework
                                             token.push(lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""));
                                             stack.push(parent[parent.length - 1][0]);
                                             begin.push(parent[parent.length - 1][1]);
-                                            if (typeof global.prettydiff.csspretty === "function") {
-                                                return types.push(name);
-                                            }
-                                            return types.push("content");
+                                            types.push("style");
                                         }
                                     }
                                 } else if (quote === b[a] && (quote === "\"" || quote === "'" || quote === "`" || (quote === "*" && b[a + 1] === "/")) && esctest() === false) {
@@ -2534,9 +2525,6 @@ Parse Framework
                 if (options.nodeasync === true) {
                     return [options.source, "Error: source does not appear to be markup."];
                 }
-                if (global.prettydiff.meta === undefined) {
-                    global.prettydiff.meta = {};
-                }
                 error = "Error: source does not appear to be markup.";
                 return options.source;
             }
@@ -2556,9 +2544,7 @@ Parse Framework
                 begin        = [], //index where current container starts
                 // notes a token index of a JSX markup tag assigned to JavaScript variable. This
                 // is necessary for indentation apart from syntactical factors.
-                error        = [],
                 scolon       = 0,
-                result       = "",
                 objsortop    = false;
 
             (function jspretty__tokenize() {
@@ -5135,7 +5121,6 @@ Parse Framework
                 depth      = [],
                 begin      = [],
                 colors     = [],
-                output     = "",
                 objsortop  = false,
                 verticalop = false,
                 colorNames = {
