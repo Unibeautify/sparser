@@ -21,16 +21,181 @@ Parse Framework
                 ? "\r\n"
                 : "\n";
         lexer.markup = function parser_markup(source) {
-            var safeSort   = global.prettydiff.safeSort,
-                attrs      = parse.attrs,
-                begin      = parse.begin,
-                jscom      = parse.jscom,
-                linen      = parse.linen,
-                lines      = parse.lines,
-                presv      = parse.presv,
-                stack      = parse.stack,
-                token      = parse.token,
-                types      = parse.types,
+            var safeSort   = function safeSort_(array, operation, recursive) {
+                    var arTest  = function safeSort_arTest(item) {
+                            if (typeof item !== "object" || item.length === undefined || item.length < 2) {
+                                return false;
+                            }
+                            return true;
+                        },
+                        extref  = function safeSort__extref() {
+                            //worthless function for backwards compatibility with older versions of V8 node.
+                            return;
+                        },
+                        normal  = function safeSort__normal(item) {
+                            var done    = [item[0]],
+                                storeb  = item,
+                                child   = function safeSort__normal_child() {
+                                    var a   = 0,
+                                        len = storeb.length;
+                                    for (a = 0; a < len; a = a + 1) {
+                                        if (arTest(storeb[a]) === true) {
+                                            storeb[a] = safeSort__normal(storeb[a]);
+                                        }
+                                    }
+                                },
+                                recurse = function safeSort__normal_recurse(x) {
+                                    var a      = 0,
+                                        storea = [],
+                                        len    = storeb.length;
+                                    for (a = 0; a < len; a = a + 1) {
+                                        if (storeb[a] !== x) {
+                                            storea.push(storeb[a]);
+                                        }
+                                    }
+                                    storeb = storea;
+                                    if (storea.length > 0) {
+                                        done.push(storea[0]);
+                                        extref(storea[0]);
+                                    } else {
+                                        if (recursive === true) {
+                                            child();
+                                        }
+                                        item = storeb;
+                                    }
+                                };
+                            extref = recurse;
+                            recurse(array[0]);
+                        },
+                        descend = function safeSort__descend(item) {
+                            var c       = 0,
+                                storeb  = item,
+                                len     = item.length,
+                                child   = function safeSort__descend_child() {
+                                    var a    = 0,
+                                        lenc = storeb.length;
+                                    for (a = 0; a < lenc; a = a + 1) {
+                                        if (arTest(storeb[a]) === true) {
+                                            storeb[a] = safeSort__descend(storeb[a]);
+                                        }
+                                    }
+                                },
+                                recurse = function safeSort__descend_recurse() {
+                                    var a      = 0,
+                                        b      = 0,
+                                        d      = 0,
+                                        e      = 0,
+                                        ind    = [],
+                                        key    = storeb[c],
+                                        tstore = "",
+                                        tkey   = typeof key;
+                                    for (a = c; a < len; a = a + 1) {
+                                        tstore = typeof storeb[a];
+                                        if (storeb[a] > key || (tstore > tkey)) {
+                                            key = storeb[a];
+                                            ind = [a];
+                                        } else if (storeb[a] === key) {
+                                            ind.push(a);
+                                        }
+                                    }
+                                    d = ind.length;
+                                    b = d + c;
+                                    for (a = c; a < b; a = a + 1) {
+                                        storeb[ind[e]] = storeb[a];
+                                        storeb[a]      = key;
+                                        e              = e + 1;
+                                    }
+                                    c = c + d;
+                                    if (c < len) {
+                                        extref();
+                                    } else {
+                                        if (recursive === true) {
+                                            child();
+                                        }
+                                        item = storeb;
+                                    }
+                                };
+                            extref = recurse;
+                            recurse();
+                            return item;
+                        },
+                        ascend  = function safeSort__ascend(item) {
+                            var c       = 0,
+                                storeb  = item,
+                                len     = item.length,
+                                child   = function safeSort__ascend_child() {
+                                    var a    = 0,
+                                        lenc = storeb.length;
+                                    for (a = 0; a < lenc; a = a + 1) {
+                                        if (arTest(storeb[a]) === true) {
+                                            storeb[a] = safeSort__ascend(storeb[a]);
+                                        }
+                                    }
+                                },
+                                recurse = function safeSort__ascend_recurse() {
+                                    var a      = 0,
+                                        b      = 0,
+                                        d      = 0,
+                                        e      = 0,
+                                        ind    = [],
+                                        key    = storeb[c],
+                                        tstore = "",
+                                        tkey   = typeof key;
+                                    for (a = c; a < len; a = a + 1) {
+                                        tstore = typeof storeb[a];
+                                        if (storeb[a] < key || tstore < tkey) {
+                                            key = storeb[a];
+                                            ind = [a];
+                                        } else if (storeb[a] === key) {
+                                            ind.push(a);
+                                        }
+                                    }
+                                    d = ind.length;
+                                    b = d + c;
+                                    for (a = c; a < b; a = a + 1) {
+                                        storeb[ind[e]] = storeb[a];
+                                        storeb[a]      = key;
+                                        e              = e + 1;
+                                    }
+                                    c = c + d;
+                                    if (c < len) {
+                                        extref();
+                                    } else {
+                                        if (recursive === true) {
+                                            child();
+                                        }
+                                        item = storeb;
+                                    }
+                                };
+                            extref = recurse;
+                            recurse();
+                            return item;
+                        };
+                    if (arTest(array) === false) {
+                        return array;
+                    }
+                    if (recursive === "true") {
+                        recursive = true;
+                    } else if (recursive !== true) {
+                        recursive = false;
+                    }
+                    if (operation === "normal") {
+                        return normal(array);
+                    }
+                    if (operation === "descend") {
+                        return descend(array);
+                    }
+                    return ascend(array);
+                },
+                attrs      = [],
+                begin      = [],
+                jscom      = [],
+                linen      = [],
+                lines      = [],
+                presv      = [],
+                stack      = [],
+                token      = [],
+                types      = [],
                 reqs       = [],
                 ids        = [],
                 parseError = [],
@@ -40,7 +205,7 @@ Parse Framework
                 line       = 1,
                 objsortop  = false,
                 //What is the lowercase tag name of the provided token?
-                tagName    = function markuppretty__tagName(el) {
+                tagName    = function parser_markup_tagName(el) {
                     var space = el
                             .replace(/^(\{((%-?)|\{-?)\s*)/, "%")
                             .replace(/\s+/, " ")
@@ -113,7 +278,7 @@ Parse Framework
             // * {<         }       template_start
             // * {+         }       template_start
             // * <?xml      ?>      xml
-            (function markuppretty__tokenize() {
+            (function parser_markup_tokenize() {
                 var a             = 0,
                     b             = source.split(""),
                     c             = b.length,
@@ -305,7 +470,7 @@ Parse Framework
                         "cfzipparam"            : "prohibited"
                     }, // determine if spaces between nodes are absent, multiline, or merely there 2 -
                     // multiline 1 - space present 0 - no space present
-                    spacer        = function markuppretty__tokenize_spacer() {
+                    spacer        = function parser_markup_tokenize_spacer() {
                         var linea = 0;
                         if (space.length > 0) {
                             linea = space
@@ -327,7 +492,7 @@ Parse Framework
                         space    = "";
                     },
                     //parses tags, attributes, and template elements
-                    tag           = function markuppretty__tokenize_tag(end) {
+                    tag           = function parser_markup_tokenize_tag(end) {
                         var lex       = [],
                             bcount    = 0,
                             e         = 0,
@@ -360,14 +525,14 @@ Parse Framework
                             presend   = {
                                 cfquery: true
                             },
-                            arname    = function markuppretty__tokenize_tag_name(x) {
+                            arname    = function parser_markup_tokenize_tag_name(x) {
                                 var eq = x.indexOf("=");
                                 if (eq > 0 && ((eq < x.indexOf("\"") && x.indexOf("\"") > 0) || (eq < x.indexOf("'") && x.indexOf("'") > 0))) {
                                     return x.slice(0, eq);
                                 }
                                 return x;
                             },
-                            slashy    = function markuppretty__tokenize_tag_slashy() {
+                            slashy    = function parser_markup_tokenize_tag_slashy() {
                                 var x = a;
                                 do {
                                     x = x - 1;
@@ -378,7 +543,7 @@ Parse Framework
                                 }
                                 return true;
                             },
-                            attrpush  = function markuppretty__tokenize_tag_attrpush(quotes) {
+                            attrpush  = function parser_markup_tokenize_tag_attrpush(quotes) {
                                 var atty = "",
                                     name = "",
                                     aa   = 0,
@@ -463,7 +628,7 @@ Parse Framework
                         // for start tags or singleton tags just yet some types set the `preserve` flag,
                         // which means to preserve internal white space The `nopush` flag is set when
                         // parsed tags are to be ignored and forgotten
-                        (function markuppretty__tokenize_types() {
+                        (function parser_markup_tokenize_types() {
                             if (end === "]>") {
                                 end      = ">";
                                 sgmlflag = sgmlflag - 1;
@@ -1187,7 +1352,7 @@ Parse Framework
                                 attstore = safeSort(attstore);
                             }
                         }
-                        attrs.push(function markuppretty__tokenize_attribute() {
+                        attrs.push(function parser_markup_tokenize_attribute() {
                             var ind    = 0,
                                 len    = attstore.length,
                                 obj    = {},
@@ -1243,7 +1408,7 @@ Parse Framework
                                         }
                                         obj[name] = slice;
                                     }
-                                    ind = ind - 1;
+                                    ind = ind + 1;
                                 } while (ind < len);
                             }
                             if (store.length > 0) {
@@ -1268,7 +1433,7 @@ Parse Framework
                         }
                         // cheat identifies HTML singleton elements as singletons even if formatted as
                         // start tags
-                        cheat = (function markuppretty__tokenize_tag_cheat() {
+                        cheat = (function parser_markup_tokenize_tag_cheat() {
                             var atty         = [],
                                 attn         = token[token.length - 1],
                                 atval        = "",
@@ -1297,7 +1462,7 @@ Parse Framework
                                     source     : "singleton",
                                     wbr        : "singleton"
                                 },
-                                fixsingleton = function markuppretty__tokenize_tag_cheat_fixsingleton() {
+                                fixsingleton = function parser_markup_tokenize_tag_cheat_fixsingleton() {
                                     var aa    = token.length - 1,
                                         bb    = 0,
                                         vname = tname.slice(1);
@@ -1722,8 +1887,8 @@ Parse Framework
 
                         // HTML5 does not require an end tag for an opening list item <li> this logic
                         // temprorarily creates a pseudo end tag
-                        if (liend === true && (options.mode === "beautify" || options.mode === "diff" || options.mode === "parse")) {
-                            token.push("</prettydiffli>");
+                        if (liend === true) {
+                            token.push("</parseli>");
                             stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             lines.push(lines[lines.length - 1]);
@@ -1758,7 +1923,7 @@ Parse Framework
                             begin.push(parent[parent.length - 1][1]);
                         }
                         if (options.tagsort === true && types[types.length - 1] === "end" && types[types.length - 2] !== "start") {
-                            (function markuppretty__tokenize_tag_sorttag() {
+                            (function parser_markup_tokenize_tag_sorttag() {
                                 var children   = [],
                                     bb         = 0,
                                     d          = 0,
@@ -1776,13 +1941,13 @@ Parse Framework
                                         token: [],
                                         types: []
                                     },
-                                    sortName   = function markuppretty__tokenize_tag_sorttag_sortName(x, y) {
+                                    sortName   = function parser_markup_tokenize_tag_sorttag_sortName(x, y) {
                                         if (token[x[0]] < token[y[0]]) {
                                             return 1;
                                         }
                                         return -1;
                                     },
-                                    pushy      = function markuppretty__tokenize_tag_sorttag_pushy(index) {
+                                    pushy      = function parser_markup_tokenize_tag_sorttag_pushy(index) {
                                         store
                                             .attrs
                                             .push(attrs[index]);
@@ -1903,21 +2068,21 @@ Parse Framework
                             parent.pop();
                         }
                     },
-                    content       = function markuppretty__tokenize_content() {
+                    content       = function parser_markup_tokenize_content() {
                         var lex       = [],
                             quote     = "",
                             end       = "",
                             square    = (
                                 types[types.length - 1] === "template_start" && token[token.length - 1].indexOf("<!") === 0 && token[token.length - 1].indexOf("<![") < 0 && token[token.length - 1].charAt(token[token.length - 1].length - 1) === "["
                             ),
-                            tailSpace = function markuppretty__tokenize_content_tailSpace(spacey) {
+                            tailSpace = function parser_markup_tokenize_content_tailSpace(spacey) {
                                 if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
                                     spacey = "";
                                 }
                                 space = spacey;
                                 return "";
                             },
-                            esctest   = function markuppretty__tokenize_content_esctest() {
+                            esctest   = function parser_markup_tokenize_content_esctest() {
                                 var aa = 0,
                                     bb = 0;
                                 if (b[a - 1] !== "\\") {
@@ -2161,34 +2326,42 @@ Parse Framework
                 lines[0] = 0;
             }());
 
-            if (token.length === 0) {
-                if (options.nodeasync === true) {
-                    return [source, "Error: source does not appear to be markup."];
-                }
-                return source;
+            return {
+                attrs: attrs,
+                begin: begin,
+                jscom: jscom,
+                lines: lines,
+                presv: presv,
+                stack: stack,
+                token: token,
+                types: types
             }
         };
         lexer.script = function parser_script(source) {
             var sourcemap = [
                     0, ""
                 ],
+                objsortop = false,
                 json      = (options.lang === "json"),
-                begin     = parse.begin,
-                lines     = parse.lines,
-                stack     = parse.stack,
-                token     = parse.token,
-                types     = parse.types,
+                attrs     = [],
+                begin     = [],
+                jscom     = [],
+                lines     = [],
+                presv     = [],
+                stack     = [],
+                token     = [],
+                types     = [],
                 error     = [],
                 scolon    = 0,
                 result    = "";
-            (function jspretty__options() {
+            (function parser_script_options() {
                 var styleguide  = {},
                     brace_style = {};
                 if (options.mode !== "analysis" && source.indexOf("Error: no") < 0) {
                     source = source + " ";
                 }
                 options.titanium                        = (options.titanium === true || options.titanium === "true")
-                    ? (function jspretty__options_titanium() {
+                    ? (function parser_script_options_titanium() {
                         options.correct  = false;
                         options.titanium = true;
                         token.push("x{");
@@ -2199,7 +2372,7 @@ Parse Framework
                         return true;
                     }())
                     : false;
-                styleguide.airbnb                       = function jspretty__options_styleairbnb() {
+                styleguide.airbnb                       = function parser_script_options_styleairbnb() {
                     options.bracepadding = true;
                     options.correct      = true;
                     options.endcomma     = "always";
@@ -2210,7 +2383,7 @@ Parse Framework
                     options.varword      = "each";
                     options.wrap         = 80;
                 };
-                styleguide.crockford                    = function jspretty__options_stylecrockford() {
+                styleguide.crockford                    = function parser_script_options_stylecrockford() {
                     options.bracepadding  = false;
                     options.correct       = true;
                     options.elseline      = false;
@@ -2222,7 +2395,7 @@ Parse Framework
                     options.space         = true;
                     options.varword       = "each";
                 };
-                styleguide.google                       = function jspretty__options_stylegoogle() {
+                styleguide.google                       = function parser_script_options_stylegoogle() {
                     options.correct      = true;
                     options.inchar       = " ";
                     options.insize       = 4;
@@ -2230,13 +2403,13 @@ Parse Framework
                     options.quoteConvert = "single";
                     options.wrap         = -1;
                 };
-                styleguide.grunt                        = function jspretty__options_stylegrunt() {
+                styleguide.grunt                        = function parser_script_options_stylegrunt() {
                     options.inchar       = " ";
                     options.insize       = 2;
                     options.quoteConvert = "single";
                     options.varword      = "each";
                 };
-                styleguide.jquery                       = function jspretty__options_stylejquery() {
+                styleguide.jquery                       = function parser_script_options_stylejquery() {
                     options.bracepadding = true;
                     options.correct      = true;
                     options.inchar       = "\u0009";
@@ -2246,14 +2419,14 @@ Parse Framework
                     options.wrap         = 80;
                 };
                 styleguide.jslint                       = styleguide.crockford;
-                styleguide.mrdoobs                      = function jspretty__options_stylemrdoobs() {
+                styleguide.mrdoobs                      = function parser_script_options_stylemrdoobs() {
                     options.braceline    = true;
                     options.bracepadding = true;
                     options.correct      = true;
                     options.inchar       = "\u0009";
                     options.insize       = 1;
                 };
-                styleguide.mediawiki                    = function jspretty__options_stylemediawiki() {
+                styleguide.mediawiki                    = function parser_script_options_stylemediawiki() {
                     options.bracepadding = true;
                     options.correct      = true;
                     options.inchar       = "\u0009";
@@ -2263,33 +2436,33 @@ Parse Framework
                     options.space        = false;
                     options.wrap         = 80;
                 };
-                styleguide.meteor                       = function jspretty__options_stylemeteor() {
+                styleguide.meteor                       = function parser_script_options_stylemeteor() {
                     options.correct = true;
                     options.inchar  = " ";
                     options.insize  = 2;
                     options.wrap    = 80;
                 };
-                styleguide.yandex                       = function jspretty__options_styleyandex() {
+                styleguide.yandex                       = function parser_script_options_styleyandex() {
                     options.bracepadding = false;
                     options.correct      = true;
                     options.quoteConvert = "single";
                     options.varword      = "each";
                 };
-                brace_style.collapse                    = function jspretty__options_collapse() {
+                brace_style.collapse                    = function parser_script_options_collapse() {
                     options.braceline    = false;
                     options.bracepadding = false;
                     options.braces       = false;
                     options.formatObject = "indent";
                     options.neverflatten = true;
                 };
-                brace_style["collapse-preserve-inline"] = function jspretty__options_collapseInline() {
+                brace_style["collapse-preserve-inline"] = function parser_script_options_collapseInline() {
                     options.braceline    = false;
                     options.bracepadding = true;
                     options.braces       = false;
                     options.formatObject = "inline";
                     options.neverflatten = false;
                 };
-                brace_style.expand                      = function jspretty__options_expand() {
+                brace_style.expand                      = function parser_script_options_expand() {
                     options.braceline    = false;
                     options.bracepadding = false;
                     options.braces       = true;
@@ -2307,7 +2480,7 @@ Parse Framework
                 }
             }());
 
-            (function jspretty__tokenize() {
+            (function parser_script_tokenize() {
                 var a              = 0,
                     b              = source.length,
                     c              = options
@@ -2338,11 +2511,11 @@ Parse Framework
                         word : []
                     },
                     //operations for start types: (, [, {
-                    start          = function jspretty__tokenize_startInit() {
+                    start          = function parser_script_tokenize_startInit() {
                         return;
                     },
                     //peek at whats up next
-                    nextchar       = function jspretty__tokenize_nextchar(len, current) {
+                    nextchar       = function parser_script_tokenize_nextchar(len, current) {
                         var cc    = 0,
                             dd    = "",
                             front = (current === true)
@@ -2383,7 +2556,7 @@ Parse Framework
                         return "";
                     },
                     //cleans up improperly applied ASI
-                    asifix         = function jspretty__tokenize_asifix() {
+                    asifix         = function parser_script_tokenize_asifix() {
                         var len = types.length;
                         do {
                             len = len - 1;
@@ -2402,7 +2575,7 @@ Parse Framework
                         }
                     },
                     //determine the definition of containment by stack
-                    stackPush      = function jspretty__tokenize_stackPush() {
+                    stackPush      = function parser_script_tokenize_stackPush() {
                         // * block      : if, for, while, catch, function, class, map
                         // * immediates : else, do, try, finally, switch
                         // * paren based: method, expression, paren
@@ -2531,13 +2704,13 @@ Parse Framework
                             begin.push(last);
                         }
                     },
-                    tokenpop       = function jspretty__tokenize_tokenpop() {
+                    tokenpop       = function parser_script_tokenize_tokenpop() {
                         lengtha   = lengtha - 1;
                         lengthb   = lengthb - 1;
                         tempstore = [token.pop(), types.pop(), lines.pop(), stack.pop(), begin.pop()];
                     },
                     //reinsert the prior popped token
-                    temppush       = function jspretty__tokenize_temppush() {
+                    temppush       = function parser_script_tokenize_temppush() {
                         token.push(tempstore[0]);
                         types.push(tempstore[1]);
                         lines.push(tempstore[2]);
@@ -2546,7 +2719,7 @@ Parse Framework
                         lengtha = lengtha + 1;
                     },
                     //populate various parallel arrays
-                    tokenpush      = function jspretty__tokenize_tokenpush(comma, lin) {
+                    tokenpush      = function parser_script_tokenize_tokenpush(comma, lin) {
                         if (comma === true) {
                             token.push(",");
                             types.push("separator");
@@ -2554,12 +2727,15 @@ Parse Framework
                             token.push(ltoke);
                             types.push(ltype);
                         }
+                        attrs.push({});
+                        jscom.push(false);
+                        presv.push(false);
                         lengtha = token.length;
                         lines.push(lin);
                         stackPush();
                     },
                     //inserts ending curly brace
-                    blockinsert    = function jspretty__tokenize_blockinsert() {
+                    blockinsert    = function parser_script_tokenize_blockinsert() {
                         var next = nextchar(5, false),
                             g    = lengtha - 1;
                         if (json === true) {
@@ -2600,7 +2776,7 @@ Parse Framework
                         } while (brace[brace.length - 1] === "x{");
                     },
                     //remove "vart" object data
-                    vartpop        = function jspretty__tokenize_vartpop() {
+                    vartpop        = function parser_script_tokenize_vartpop() {
                         vart
                             .count
                             .pop();
@@ -2612,7 +2788,7 @@ Parse Framework
                             .pop();
                         vart.len = vart.len - 1;
                     },
-                    logError       = function jspretty__tokenize_logError(message, start) {
+                    logError       = function parser_script_tokenize_logError(message, start) {
                         var f = a,
                             g = types.length;
                         if (error.length > 0) {
@@ -2639,13 +2815,13 @@ Parse Framework
                         }
                     },
                     //A tokenizer for keywords, reserved words, and variables
-                    word           = function jspretty__tokenize_word() {
+                    word           = function parser_script_tokenize_word() {
                         var f        = wordTest,
                             g        = 1,
                             build    = [],
                             output   = "",
                             nextitem = "",
-                            elsefix  = function jspretty__tokenize_word_elsefix() {
+                            elsefix  = function parser_script_tokenize_word_elsefix() {
                                 brace.push("x{");
                                 stacklist.push(["else", lengtha]);
                                 token.splice(lengtha - 3, 1);
@@ -2778,7 +2954,7 @@ Parse Framework
                                 asifix();
                             }
                             if (output === "while" && token[lengtha - 1] === "x;" && token[lengtha - 2] === "}") {
-                                (function jspretty__tokenize_word_whilefix() {
+                                (function parser_script_tokenize_word_whilefix() {
                                     var d = 0,
                                         e = 0;
                                     for (e = lengtha - 3; e > -1; e = e - 1) {
@@ -2851,7 +3027,7 @@ Parse Framework
                         }
                     },
                     //sort object properties
-                    objSort        = function jspretty__tokenize_objSort() {
+                    objSort        = function parser_script_tokenize_objSort() {
                         var cc        = 0,
                             dd        = 0,
                             ee        = 0,
@@ -2861,7 +3037,7 @@ Parse Framework
                             keylen    = 0,
                             keyend    = 0,
                             front     = 0,
-                            sort      = function jspretty__tokenize_objSort_sort(x, y) {
+                            sort      = function parser_script_tokenize_objSort_sort(x, y) {
                                 var xx = x[0],
                                     yy = y[0];
                                 if (types[xx] === "comment" || types[xx] === "comment-inline") {
@@ -3016,7 +3192,7 @@ Parse Framework
                             }
                         }
                     },
-                    slashes        = function jspretty__tokenize_slashes(index) {
+                    slashes        = function parser_script_tokenize_slashes(index) {
                         var slashy = index;
                         do {
                             slashy = slashy - 1;
@@ -3027,7 +3203,7 @@ Parse Framework
                         return false;
                     }, // commaComment ensures that commas immediately precede comments instead of
                     // immediately follow
-                    commaComment   = function jspretty__tokenize_commacomment() {
+                    commaComment   = function parser_script_tokenize_commacomment() {
                         var x = types.length;
                         if (stack[lengtha - 1] === "object" && objsortop === true) {
                             ltoke = ",";
@@ -3047,7 +3223,7 @@ Parse Framework
                         }
                     },
                     //injects a comma into the end of arrays for use with endcomma option
-                    endCommaArray  = function jspretty__tokenize_endCommaArray() {
+                    endCommaArray  = function parser_script_tokenize_endCommaArray() {
                         var d = 0,
                             e = 0;
                         for (d = lengtha; d > 0; d = d - 1) {
@@ -3065,7 +3241,7 @@ Parse Framework
                         }
                     },
                     //automatic semicolon insertion
-                    asi            = function jspretty__tokenize_asi(isEnd) {
+                    asi            = function parser_script_tokenize_asi(isEnd) {
                         var len   = token.length - 1,
                             aa    = 0,
                             next  = nextchar(1, false),
@@ -3161,7 +3337,7 @@ Parse Framework
                         }
                     },
                     //convert ++ and -- into "= x +"  and "= x -" in most cases
-                    plusplus = function jspretty__tokenize_plusplus() {
+                    plusplus = function parser_script_tokenize_plusplus() {
                         var store      = [],
                             pre        = true,
                             toke       = "+",
@@ -3171,13 +3347,13 @@ Parse Framework
                             inc        = 0,
                             ind        = 0,
                             walk       = 0,
-                            end        = function jspretty__tokenize_plusplus_endInit() {
+                            end        = function parser_script_tokenize_plusplus_endInit() {
                                 return;
                             },
-                            period     = function jspretty__tokenize_plusplus_periodInit() {
+                            period     = function parser_script_tokenize_plusplus_periodInit() {
                                 return;
                             },
-                            applyStore = function jspretty__tokenize_plusplus_applyStore() {
+                            applyStore = function parser_script_tokenize_plusplus_applyStore() {
                                 var x = 0,
                                     y = store[0].length;
                                 do {
@@ -3194,20 +3370,20 @@ Parse Framework
                         tokea   = token[lengtha - 1];
                         tokeb   = token[lengtha - 2];
                         tokec   = token[lengtha - 3];
-                        end     = function jspretty__tokenize_plusplus_end() {
+                        end     = function parser_script_tokenize_plusplus_end() {
                             walk = begin[walk] - 1;
                             if (types[walk] === "end") {
-                                jspretty__tokenize_plusplus_end();
+                                parser_script_tokenize_plusplus_end();
                             } else if (token[walk - 1] === ".") {
                                 period();
                             }
                         };
-                        period  = function jspretty__tokenize_plusplus_period() {
+                        period  = function parser_script_tokenize_plusplus_period() {
                             walk = walk - 2;
                             if (types[walk] === "end") {
                                 end();
                             } else if (token[walk - 1] === ".") {
-                                jspretty__tokenize_plusplus_period();
+                                parser_script_tokenize_plusplus_period();
                             }
                         };
                         if (tokea !== "++" && tokea !== "--" && tokeb !== "++" && tokeb !== "--") {
@@ -3350,17 +3526,17 @@ Parse Framework
                         }
                     },
                     //converts "+=" and "-=" to "x = x + 1"
-                    plusequal = function jspretty__tokenize_plusequal(op) {
+                    plusequal = function parser_script_tokenize_plusequal(op) {
                         var toke       = op.charAt(0),
                             walk       = lengtha - 1,
                             store      = [],
-                            end        = function jspretty__tokenize_plusequal_endInit() {
+                            end        = function parser_script_tokenize_plusequal_endInit() {
                                 return;
                             },
-                            period     = function jspretty__tokenize_plusequal_periodInit() {
+                            period     = function parser_script_tokenize_plusequal_periodInit() {
                                 return;
                             },
-                            applyStore = function jspretty__tokenize_plusplus_applyStore() {
+                            applyStore = function parser_script_tokenize_plusplus_applyStore() {
                                 var x = 0,
                                     y = store[0].length;
                                 do {
@@ -3372,20 +3548,20 @@ Parse Framework
                                     x = x + 1;
                                 } while (x < y);
                             };
-                        end    = function jspretty__tokenize_plusequal_end() {
+                        end    = function parser_script_tokenize_plusequal_end() {
                             walk = begin[walk] - 1;
                             if (types[walk] === "end") {
-                                jspretty__tokenize_plusequal_end();
+                                parser_script_tokenize_plusequal_end();
                             } else if (token[walk - 1] === ".") {
                                 period();
                             }
                         };
-                        period = function jspretty__tokenize_plusequal_period() {
+                        period = function parser_script_tokenize_plusequal_period() {
                             walk = walk - 2;
                             if (types[walk] === "end") {
                                 end();
                             } else if (token[walk - 1] === ".") {
-                                jspretty__tokenize_plusequal_period();
+                                parser_script_tokenize_plusequal_period();
                             }
                         };
                         if (types[walk] === "end") {
@@ -3405,7 +3581,7 @@ Parse Framework
                         return toke;
                     },
                     //fixes asi location if inserted after an inserted brace
-                    asibrace       = function jspretty__tokenize_asibrace() {
+                    asibrace       = function parser_script_tokenize_asibrace() {
                         var aa = token.length;
                         do {
                             aa = aa - 1;
@@ -3420,7 +3596,7 @@ Parse Framework
                         stackPush();
                     },
                     //convert double quotes to single or the opposite
-                    quoteConvert   = function jspretty__tokenize_quoteConvert(item) {
+                    quoteConvert   = function parser_script_tokenize_quoteConvert(item) {
                         var dub   = (options.quoteConvert === "double"),
                             qchar = (dub === true)
                                 ? "\""
@@ -3434,10 +3610,10 @@ Parse Framework
                         return qchar + item + qchar;
                     },
                     //manage comment wrapping
-                    commentwrap    = function jspretty__tokenize_commentwrap(comment, line) {
+                    commentwrap    = function parser_script_tokenize_commentwrap(comment, line) {
                         var prior        = "",
                             ptype        = "",
-                            xblock       = (function jspretty__tokenize_commentLine_xblock() {
+                            xblock       = (function parser_script_tokenize_commentLine_xblock() {
                                 if (token[lengtha - 1] !== "x}" || (lines[lengtha - 1] > 0 && nextchar(4, false) !== "else") || (token[lengtha - 1] === "x}" && (token[lengtha - 2] === "}" || token[lengtha - 2] === "x}"))) {
                                     return false;
                                 }
@@ -3455,7 +3631,7 @@ Parse Framework
                             ),
                             hrule        = (/^(\/\/\s*---+\s*)$/),
                             remind       = (/^(\/\/\s*((todo)|(note:)))/i),
-                            commentSplit = function jspretty__tokenize_commentLine_commentSplit() {
+                            commentSplit = function parser_script_tokenize_commentLine_commentSplit() {
                                 var endi    = options.wrap - 3,
                                     starti  = 0,
                                     spacely = (comment.indexOf(" ") > 0),
@@ -3707,7 +3883,7 @@ Parse Framework
                         }
                     },
                     //merges strings separated by "+" if options.wrap is less than 0
-                    strmerge       = function jspretty__tokenize_strmerge() {
+                    strmerge       = function parser_script_tokenize_strmerge() {
                         var aa   = 0,
                             bb   = "",
                             item = ltoke.slice(1, ltoke.length - 1);
@@ -3718,7 +3894,7 @@ Parse Framework
                     }, // the generic function is a generic tokenizer start argument contains the
                     // token's starting syntax offset argument is length of start minus control
                     // chars end is how is to identify where the token ends
-                    generic        = function jspretty__tokenize_genericBuilder(starting, ending) {
+                    generic        = function parser_script_tokenize_genericBuilder(starting, ending) {
                         var ee     = 0,
                             ender  = ending.split(""),
                             endlen = ender.length,
@@ -3756,27 +3932,27 @@ Parse Framework
                             if (ee > a + 1) {
                                 if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("<?php", "?>"));
+                                    build.push(parser_script_tokenize_genericBuilder("<?php", "?>"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("<%", "%>"));
+                                    build.push(parser_script_tokenize_genericBuilder("<%", "%>"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("{%", "%}"));
+                                    build.push(parser_script_tokenize_genericBuilder("{%", "%}"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("{{{", "}}}"));
+                                    build.push(parser_script_tokenize_genericBuilder("{{{", "}}}"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("{{", "}}"));
+                                    build.push(parser_script_tokenize_genericBuilder("{{", "}}"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
                                     a = ee;
-                                    build.push(jspretty__tokenize_genericBuilder("<!--#", "-->"));
+                                    build.push(parser_script_tokenize_genericBuilder("<!--#", "-->"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else {
                                     build.push(c[ee]);
@@ -3837,7 +4013,7 @@ Parse Framework
                         return output;
                     },
                     //a tokenizer for regular expressions
-                    regex          = function jspretty__tokenize_regex() {
+                    regex          = function parser_script_tokenize_regex() {
                         var ee     = 0,
                             f      = b,
                             h      = 0,
@@ -3903,7 +4079,7 @@ Parse Framework
                         return output;
                     },
                     //a unique tokenizer for operator characters
-                    operator       = function jspretty__tokenize_operator() {
+                    operator       = function parser_script_tokenize_operator() {
                         var syntax = [
                                 "=",
                                 "<",
@@ -4015,7 +4191,7 @@ Parse Framework
                         return output;
                     },
                     //ES6 template string support
-                    tempstring     = function jspretty__tokenize_tempstring() {
+                    tempstring     = function parser_script_tokenize_tempstring() {
                         var output = [c[a]];
                         for (a = a + 1; a < b; a = a + 1) {
                             output.push(c[a]);
@@ -4031,7 +4207,7 @@ Parse Framework
                         return output.join("");
                     },
                     //a tokenizer for numbers
-                    numb           = function jspretty__tokenize_number() {
+                    numb           = function parser_script_tokenize_number() {
                         var ee    = 0,
                             f     = b,
                             build = [c[a]],
@@ -4088,7 +4264,7 @@ Parse Framework
                         return build.join("");
                     }, // Not a tokenizer.  This counts white space characters and determines if there
                     // are empty lines to be preserved
-                    space          = function jspretty__tokenize_space() {
+                    space          = function parser_script_tokenize_space() {
                         var schars    = [],
                             f         = 0,
                             locallen  = b,
@@ -4098,7 +4274,7 @@ Parse Framework
                         for (f = a; f < locallen; f = f + 1) {
                             if (c[f] === "\n") {
                                 asitest = true;
-                            } else {
+                            } else if ((/\s/).test(c[f]) === false) {
                                 break;
                             }
                             schars.push(c[f]);
@@ -4133,7 +4309,7 @@ Parse Framework
                         }
                     }, // Identifies blocks of markup embedded within JavaScript for language supersets
                     // like React JSX.
-                    markup         = function jspretty__tokenize_markup() {
+                    markup         = function parser_script_tokenize_markup() {
                         var output     = [],
                             curlytest  = false,
                             endtag     = false,
@@ -4167,7 +4343,7 @@ Parse Framework
                             options.jsx = true;
                         } else if (options.typescript === true || token[lengtha - 1] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
                             //Java type generics
-                            return (function jspretty__tokenize_markup_generic() {
+                            return (function parser_script_tokenize_markup_generic() {
                                 var generics = [
                                         "<",
                                         c[a + 1]
@@ -4284,10 +4460,10 @@ Parse Framework
                         return output.join("");
                     },
                     //operations for end types: ), ], }
-                    end            = function jspretty__tokenize_end(x) {
+                    end            = function parser_script_tokenize_end(x) {
                         var insert   = false,
                             next     = nextchar(1, false),
-                            newarray = function jspretty__tokenize_end_newarray() {
+                            newarray = function parser_script_tokenize_end_newarray() {
                                 var aa       = begin[lengtha - 1],
                                     bb       = 0,
                                     cc       = 0,
@@ -4442,7 +4618,7 @@ Parse Framework
                         }
                     },
                     //determines tag names for {% %} based template tags and returns a type
-                    tname          = function jspretty__tokenize_tname(x) {
+                    tname          = function parser_script_tokenize_tname(x) {
                         var sn       = 2,
                             en       = 0,
                             st       = x.slice(0, 2),
@@ -4508,7 +4684,7 @@ Parse Framework
                         }
                         return "template";
                     };
-                start = function jspretty__tokenize_start(x) {
+                start = function parser_script_tokenize_start(x) {
                     brace.push(x);
                     if (wordTest > -1) {
                         word();
@@ -4829,7 +5005,7 @@ Parse Framework
             }());
 
             if (options.correct === true) {
-                (function jspretty__correct() {
+                (function parser_script_correct() {
                     var a = 0,
                         b = token.length;
                     for (a = 0; a < b; a = a + 1) {
@@ -4848,14 +5024,24 @@ Parse Framework
                     }
                 }());
             }
-            return result;
+
+            return {
+                attrs: attrs,
+                begin: begin,
+                jscom: jscom,
+                lines: lines,
+                presv: presv,
+                stack: stack,
+                token: token,
+                types: types
+            }
         };
         lexer.style  = function parser_style(source) {
-            var begin      = parse.begin,
-                lines      = parse.lines,
-                stack      = parse.stack,
-                token      = parse.token,
-                types      = parse.types,
+            var begin      = [],
+                lines      = [],
+                stack      = [],
+                token      = [],
+                types      = [],
                 colors     = [],
                 output     = "",
                 objsortop  = false,
@@ -5009,24 +5195,15 @@ Parse Framework
                     yellow              : 0.9278,
                     yellowgreen         : 0.5076295720870697
                 };
-            (function csspretty__options() {
+            (function parser_style_options() {
                 objsortop  = (
                     options.objsort === true || options.objsort === "true" || options.objsort === "all" || options.objsort === "css"
                 );
                 verticalop = (
                     options.compressedcss === false && (options.vertical === true || options.vertical === "true" || options.vertical === "all" || options.vertical === "css")
                 );
-                source     = (typeof source === "string" && source.length > 0)
-                    ? source.replace(/\r\n?/g, "\n") + " "
-                    : "Error: no source code supplied to csspretty!";
             }());
-            if (typeof source !== "string" || source === "" || (/^(\s+)$/).test(source) === true) {
-                if (options.nodeasync === true) {
-                    return [source, "Error: no source supplied to csspretty."];
-                }
-                return source;
-            }
-            (function csspretty__tokenize() {
+            (function parser_style_tokenize() {
                 var a          = 0,
                     b          = options
                         .source
@@ -5039,7 +5216,7 @@ Parse Framework
                     mapper     = [],
                     structval  = "root",
                     nosort     = [],
-                    esctest    = function csspretty__tokenize_esctest(xx) {
+                    esctest    = function parser_style_tokenize_esctest(xx) {
                         var yy = xx;
                         do {
                             xx = xx - 1;
@@ -5058,7 +5235,7 @@ Parse Framework
                     //  * url values that are not quoted are wrapped    in double quote characters
                     // * color values are set to lowercase and    reduced from 6 to 3 digits if
                     // appropriate
-                    value      = function csspretty__tokenize_item_value(val, font) {
+                    value      = function parser_style_tokenize_item_value(val, font) {
                         var x         = val.split(""),
                             leng      = x.length,
                             cc        = 0,
@@ -5068,7 +5245,7 @@ Parse Framework
                             values    = [],
                             qchar     = "",
                             qreg      = {},
-                            colorPush = function csspretty__tokenize_item_value_colorPush(value) {
+                            colorPush = function parser_style_tokenize_item_value_colorPush(value) {
                                 var vl = value.toLowerCase();
                                 if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
                                     colors.push(value);
@@ -5160,7 +5337,7 @@ Parse Framework
                         return values.join(" ");
                     },
                     //map location of empty lines for beautification
-                    spacer     = function csspretty__tokenize_space(end) {
+                    spacer     = function parser_style_tokenize_space(end) {
                         var slen = space
                                 .split(lf)
                                 .length - 1,
@@ -5187,7 +5364,7 @@ Parse Framework
                         return val;
                     },
                     //sort parsed properties intelligently
-                    objSort    = function csspretty__tokenize_objSort() {
+                    objSort    = function parser_style_tokenize_objSort() {
                         var cc        = 0,
                             dd        = 0,
                             ee        = 0,
@@ -5197,7 +5374,7 @@ Parse Framework
                             keylen    = 0,
                             keyend    = 0,
                             start     = 0,
-                            sort      = function csspretty__tokenize_objSort_sort(x, y) {
+                            sort      = function parser_style_tokenize_objSort_sort(x, y) {
                                 var xx = x[0],
                                     yy = y[0];
                                 if (types[xx] === "comment" || types[xx] === "comment-inline") {
@@ -5353,7 +5530,7 @@ Parse Framework
                         }
                     },
                     //the generic token builder
-                    buildtoken = function csspretty__tokenize_build() {
+                    buildtoken = function parser_style_tokenize_build() {
                         var aa         = 0,
                             bb         = 0,
                             out        = [],
@@ -5504,7 +5681,7 @@ Parse Framework
                     }, // Some tokens receive a generic type named 'item' because their type is unknown
                     // until we know the following syntax.  This function replaces the type 'item'
                     // with something more specific.
-                    item       = function csspretty__tokenize_item(type) {
+                    item       = function parser_style_tokenize_item(type) {
                         var aa    = types.length,
                             bb    = 0,
                             coms  = [],
@@ -5526,7 +5703,7 @@ Parse Framework
                         if (ltype === "item" && types[aa].indexOf("external") < 0) {
                             if (type === "start") {
                                 if (types[aa - 1] !== "comment" && types[aa - 1] !== "comment-inline" && types[aa - 1] !== "end" && types[aa - 1] !== "start" && types[aa - 1] !== "semi" && types[aa - 1] !== undefined && types[aa - 1].indexOf("external") < 0) {
-                                    (function csspretty__tokenize_item_selparts() {
+                                    (function parser_style_tokenize_item_selparts() {
                                         var parts = [],
                                             cc    = aa,
                                             dd    = 0;
@@ -5573,7 +5750,7 @@ Parse Framework
                                         .replace(/^(\s+)/, "")
                                         .replace(/(\s+)$/, "");
                                 }
-                                (function csspretty__tokenize_item_selectorsort() {
+                                (function parser_style_tokenize_item_selectorsort() {
                                     var y    = 0,
                                         slen = token[aa].length,
                                         z    = "",
@@ -5719,14 +5896,14 @@ Parse Framework
                             }
                         }
                     },
-                    external   = function csspretty__tokenize_external(open, end) {
+                    external   = function parser_style_tokenize_external(open, end) {
                         var store  = [],
                             quote  = "",
                             name   = "",
                             endlen = 0,
                             start  = open.length,
                             linev  = spacer(false),
-                            exit   = function csspretty__tokenize_external_exit(typename) {
+                            exit   = function parser_style_tokenize_external_exit(typename) {
                                 var endtype = types[types.length - 2];
                                 if (ltype === "item") {
                                     if (endtype === "colon") {
@@ -5875,7 +6052,7 @@ Parse Framework
                         }
                     },
                     //finds comments include those JS looking '//' comments
-                    comment    = function csspretty__tokenize_comment(inline) {
+                    comment    = function parser_style_tokenize_comment(inline) {
                         var aa        = 0,
                             bb        = 0,
                             out       = [b[a]],
@@ -5995,7 +6172,7 @@ Parse Framework
                         }
                     },
                     //do fancy things to property types like: sorting, consolidating, and padding
-                    properties = function csspretty__tokenize_properties() {
+                    properties = function parser_style_tokenize_properties() {
                         var aa    = 0,
                             bb    = 1,
                             cc    = 0,
@@ -6039,9 +6216,9 @@ Parse Framework
                         p.reverse();
 
                         //consolidate margin and padding
-                        (function csspretty__tokenize_properties_propcheck() {
+                        (function parser_style_tokenize_properties_propcheck() {
                             var leng      = set.length,
-                                fourcount = function csspretty__tokenize_properties_propcheck_fourcount(name) {
+                                fourcount = function parser_style_tokenize_properties_propcheck_fourcount(name) {
                                     var test     = [
                                             false, false, false, false
                                         ],
@@ -6053,7 +6230,7 @@ Parse Framework
                                         yy       = -1,
                                         zz       = 0,
                                         valsplit = [],
-                                        store    = function csspretty__tokenize_properties_propcheck_fourcount_store(side) {
+                                        store    = function parser_style_tokenize_properties_propcheck_fourcount_store(side) {
                                             yy         = yy + 1;
                                             val[side]  = token[set[aa][2]];
                                             test[side] = true;
@@ -6350,8 +6527,21 @@ Parse Framework
                     properties();
                 }
             }());
-            return output;
+
+            return {
+                attrs: attrs,
+                begin: begin,
+                jscom: jscom,
+                lines: lines,
+                presv: presv,
+                stack: stack,
+                token: token,
+                types: types
+            }
         };
+        return lexer[options.type](options.source);
     };
-    return parse;
+    if (typeof module === "object" && typeof module.parent === "object") {
+        module.exports = parser;
+    }
 }());
