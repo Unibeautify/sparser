@@ -4,7 +4,7 @@
         fs      = require("fs"),
         options = {
             source: "",
-            type  : "script"
+            type  : "markup"
         },
         source = process.argv[2];
     if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {

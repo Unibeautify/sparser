@@ -5245,6 +5245,7 @@ Parse Framework
                             values    = [],
                             qchar     = "",
                             qreg      = {},
+                            transition = (token[token.length - 3] === "transition"),
                             colorPush = function parser_style_tokenize_item_value_colorPush(value) {
                                 var vl = value.toLowerCase();
                                 if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
@@ -5301,7 +5302,7 @@ Parse Framework
                                 values[cc] = "0" + values[cc];
                             } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
                                 values[cc] = values[cc].replace(/^(0+\.)/, ".");
-                            } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true) {
+                            } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
                                 values[cc] = "0";
                             } else if ((/^(0+)/).test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(/0+/, "0");
