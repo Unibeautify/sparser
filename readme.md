@@ -21,6 +21,29 @@ lang   | string    | any                   | the name of the language, some pars
 source | string    | any                   | the code to parse
 type   | string    | markup, script, style | which lexer to start with
 
+### lang
+**optional** - This option allows passing in a specific language name.  There is some language specific logic in the parsers.  Currently these values exist in the parser logic:
+
+* apacheVelocity - https://velocity.apache.org/
+* dustjs - http://www.dustjs.com/
+* html - https://w3c.github.io/html/
+* jsx - https://jsx.github.io/
+* qml - http://doc.qt.io/qt-5/qmlapplications.html
+* twig - https://twig.sensiolabs.org/
+* typescript - http://www.typescriptlang.org/
+
+The default language values, if not specified, are:
+
+* XML if type value is markup
+* JavaScript if type value is script
+* LESS/SCSS if type value is style
+
+### source
+**required** - This is the string that will be parsed.  Any string may be passed in, but the data type must be a string.
+
+### type
+**required** - This option tells the parser which lexer to start with.
+
 ## Output
 There will be a single format for output that will be uniform for all operations.  The output will be an object storing 8 arrays.  Each array represents a specific type of description and, provided one exception in the token array, will contain only 1 data type.
 
@@ -100,3 +123,9 @@ The *token* array generally contains a string of the current item.  In cases whe
 
 #### types
 The *types* array contains a string that describes the token value according to a generalized category name.
+
+## Things to be aware of
+This section will list intentional exceptions to the basic rules and parsing behavior.
+
+* Token array values are generally strings, but can be arrays in the cases where one lexer hands off to another.
+* Markup elements with the attribute named *data-parse-ignore* will be processed into a string and their corresponding types value will be *singleton*.  This prevents the element from alteration due to beautifiers and it includes are descendant artifacts within the element.  For backwards compatibility the attribute name *data-prettydiff-ignore* will continue to be accepted and will be the only mention of a beautifier in the parser logic.

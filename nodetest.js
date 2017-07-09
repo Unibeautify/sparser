@@ -1,8 +1,15 @@
+/*
+    A simple test script to run the parser.
+    This code is not a formal part of the project at this time.
+*/
+
 (function nodetest() {
     "use strict";
     var parser  = require("./parse.js"),
         fs      = require("fs"),
         options = {
+            html  : true,
+            jsx   : false,
             source: "",
             type  : "markup"
         },
