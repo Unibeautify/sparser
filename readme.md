@@ -32,7 +32,7 @@ type   | string    | markup, script, style | which lexer to start with
 * twig - https://twig.sensiolabs.org/
 * typescript - http://www.typescriptlang.org/
 
-The default language values, if not specified, are:
+The default language values, when not specified, are:
 
 * XML if type value is markup
 * JavaScript if type value is script

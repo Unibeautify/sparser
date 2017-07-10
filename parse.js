@@ -8,7 +8,231 @@ Parse Framework
         var lexer  = {},
             lf     = (options.crlf === true || options.crlf === "true")
                 ? "\r\n"
-                : "\n";
+                : "\n",
+            lineNumber = 1,
+            objectSort = function parser_objectSort(data) {
+                var cc        = 0,
+                    dd        = 0,
+                    ee        = 0,
+                    startlen  = data.token.length - 1,
+                    behind    = startlen,
+                    keys      = [],
+                    keylen    = 0,
+                    keyend    = 0,
+                    front     = 0,
+                    sort      = function parser_script_tokenize_objSort_sort(x, y) {
+                        var xx = x[0],
+                            yy = y[0];
+                        if (data.types[xx] === "comment" || data.types[xx] === "comment-inline") {
+                            do {
+                                xx = xx + 1;
+                            } while (
+                                xx < startlen && (data.types[xx] === "comment" || data.types[xx] === "comment-inline")
+                            );
+                        }
+                        if (data.types[yy] === "comment" || data.types[yy] === "comment-inline") {
+                            do {
+                                yy = yy + 1;
+                            } while (
+                                yy < startlen && (data.types[yy] === "comment" || data.types[yy] === "comment-inline")
+                            );
+                        }
+                        if (data.token[xx].toLowerCase() > data.token[yy].toLowerCase()) {
+                            return 1;
+                        }
+                        return -1;
+                    },
+                    commaTest = true,
+                    store     = {
+                        attrs: [],
+                        begin: [],
+                        jscom: [],
+                        lines: [],
+                        presv: [],
+                        stack: [],
+                        token: [],
+                        types: []
+                    };
+                if (data.token[behind] === "," || data.types[behind] === "comment") {
+                    do {
+                        behind = behind - 1;
+                    } while (behind > 0 && (data.token[behind] === "," || data.types[behind] === "comment"));
+                }
+                cc = behind;
+                if (cc > -1) {
+                    do {
+                        if (data.types[cc] === "end") {
+                            dd = dd + 1;
+                        }
+                        if (data.types[cc] === "start") {
+                            dd = dd - 1;
+                        }
+                        if (dd === 0) {
+                            if (data.types[cc].indexOf("template") > -1) {
+                                return;
+                            }
+                            if (data.token[cc] === ",") {
+                                commaTest = true;
+                                front     = cc + 1;
+                            }
+                            if (commaTest === true && data.token[cc] === "," && front < behind) {
+                                if (data.token[behind] !== ",") {
+                                    behind = behind + 1;
+                                }
+                                if (data.types[front] === "comment-inline") {
+                                    front = front + 1;
+                                }
+                                keys.push([front, behind]);
+                                behind = front - 1;
+                            }
+                        }
+                        if (dd < 0 && cc < startlen) {
+                            if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
+                                ee = keys[keys.length - 1][0];
+                                if (data.types[ee - 1] !== "comment-inline") {
+                                    ee = ee - 1;
+                                }
+                                keys.push([
+                                    cc + 1,
+                                    ee
+                                ]);
+                            }
+                            if (data.token[cc - 1] === "=" || data.token[cc - 1] === ":" || data.token[cc - 1] === "(" || data.token[cc - 1] === "[" || data.token[cc - 1] === "," || data.types[cc - 1] === "word" || cc === 0) {
+                                if (keys.length > 1) {
+                                    keys.sort(sort);
+                                    keylen    = keys.length;
+                                    commaTest = false;
+                                    dd = 0;
+                                    if (dd < keylen) {
+                                        do {
+                                            keyend = keys[dd][1];
+                                            if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
+                                                store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
+                                            }
+                                            ee = keys[dd][0];
+                                            if (ee < keyend) {
+                                                do {
+                                                    store.attrs.push(data.attrs[ee]);
+                                                    store.begin.push(data.begin[ee]);
+                                                    store.jscom.push(data.jscom[ee]);
+                                                    store.lines.push(data.lines[ee]);
+                                                    store.presv.push(data.presv[ee]);
+                                                    store.stack.push(data.stack[ee]);
+                                                    store.token.push(data.token[ee]);
+                                                    store.types.push(data.types[ee]);
+
+                                                    //remove extra commas
+                                                    if (data.token[ee] === ",") {
+                                                        commaTest = true;
+                                                    } else if (data.token[ee] !== "," && data.types[ee] !== "comment" && data.types[ee] !== "comment-inline") {
+                                                        commaTest = false;
+                                                    }
+                                                    ee = ee + 1;
+                                                } while (ee < keylen);
+                                            }
+                                            if (commaTest === false) {
+                                                ee = store.types.length - 1;
+                                                if (store.types[ee] === "comment" || store.types[ee] === "comment-inline") {
+                                                    do {
+                                                        ee = ee - 1;
+                                                    } while (
+                                                        ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
+                                                    );
+                                                }
+                                                ee = ee + 1;
+                                                store.attrs.splice(ee, 0, {});
+                                                store.begin.splice(ee, 0, cc);
+                                                store.jscom.splice(ee, 0, false);
+                                                store.lines.splice(ee, 0, store.lines[ee - 1]);
+                                                store.presv.splice(ee, 0, false);
+                                                store.stack.splice(ee, 0, "object");
+                                                store.token.splice(ee, 0, ",");
+                                                store.types.splice(ee, 0, "separator");
+                                                store.lines[ee - 1] = 0;
+                                            }
+                                            dd = dd + 1;
+                                        } while (dd < keylen);
+                                    }
+                                    ee = store.types.length;
+                                    do {
+                                        ee = ee - 1;
+                                    } while (
+                                        ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
+                                    );
+                                    if (options.endcomma === "never" || options.endcomma === "multiline") {
+                                        store.attrs.splice(ee, 1);
+                                        store.begin.splice(ee, 1);
+                                        store.jscom.splice(ee, 1);
+                                        store.lines.splice(ee, 1);
+                                        store.presv.splice(ee, 1);
+                                        store.stack.splice(ee, 1);
+                                        store.token.splice(ee, 1);
+                                        store.types.splice(ee, 1);
+                                    }
+                                    keylen = data.token.length - (cc + 1);
+                                    data.attrs.splice(cc + 1, keylen);
+                                    data.begin.splice(cc + 1, keylen);
+                                    data.jscom.splice(cc + 1, keylen);
+                                    data.lines.splice(cc + 1, keylen);
+                                    data.presv.splice(cc + 1, keylen);
+                                    data.stack.splice(cc + 1, keylen);
+                                    data.token.splice(cc + 1, keylen);
+                                    data.types.splice(cc + 1, keylen);
+                                    data.attrs     = data.attrs.concat(store.attrs);
+                                    data.begin     = data.begin.concat(store.begin);
+                                    data.jscom     = data.jscom.concat(store.jscom);
+                                    data.lines     = data.lines.concat(store.lines);
+                                    data.presv     = data.presv.concat(store.presv);
+                                    data.stack     = data.stack.concat(store.stack);
+                                    data.token     = data.token.concat(store.token);
+                                    data.types     = data.types.concat(store.types);
+                                    ee   = data.token.length;
+                                    store.token = [cc];
+                                    cc = cc + 1;
+                                    if (cc < ee) {
+                                        do {
+                                            if (data.types[cc] === "start") {
+                                                store.token.push(cc);
+                                            }
+                                            data.begin[cc] = store.token[store.token.length - 1];
+                                            if (data.types[cc] === "end") {
+                                                store.token.pop();
+                                            }
+                                            cc = cc + 1;
+                                        } while (cc < ee);
+                                    }
+                                } else if (options.endcomma === "always" && data.types[ee - 1] !== "start") {
+                                    tokenpush(true, 0);
+                                }
+                            }
+                            return;
+                        }
+                        cc = cc - 1;
+                    } while (cc > -1);
+                }
+            },
+            recordPop  = function parser_recordPop(data, length) {
+                data.attrs.pop();
+                data.begin.pop();
+                data.jscom.pop();
+                data.lines.pop();
+                data.presv.pop();
+                data.stack.pop();
+                data.token.pop();
+                data.types.pop();
+                return length - 1;
+            },
+            recordPush = function parser_recordPush(data, record, length) {
+                data.attrs.push(record.attrs);
+                data.begin.push(record.begin);
+                data.jscom.push(record.jscom);
+                data.lines.push(record.lines);
+                data.presv.push(record.presv);
+                data.stack.push(record.stack);
+                data.token.push(record.token);
+                data.types.push(record.types);
+                return length + 1;
+            };
         lexer.markup = function parser_markup(source) {
             var safeSort   = function safeSort_(array, operation, recursive) {
                     var arTest  = function safeSort_arTest(item) {
@@ -27,20 +251,26 @@ Parse Framework
                                 child   = function safeSort__normal_child() {
                                     var a   = 0,
                                         len = storeb.length;
-                                    for (a = 0; a < len; a = a + 1) {
-                                        if (arTest(storeb[a]) === true) {
-                                            storeb[a] = safeSort__normal(storeb[a]);
-                                        }
+                                    if (a < len) {
+                                        do {
+                                            if (arTest(storeb[a]) === true) {
+                                                storeb[a] = safeSort__normal(storeb[a]);
+                                            }
+                                            a = a + 1;
+                                        } while (a < len);
                                     }
                                 },
                                 recurse = function safeSort__normal_recurse(x) {
                                     var a      = 0,
                                         storea = [],
                                         len    = storeb.length;
-                                    for (a = 0; a < len; a = a + 1) {
-                                        if (storeb[a] !== x) {
-                                            storea.push(storeb[a]);
-                                        }
+                                    if (a < len) {
+                                        do {
+                                            if (storeb[a] !== x) {
+                                                storea.push(storeb[a]);
+                                            }
+                                            a = a + 1;
+                                        } while (a < len);
                                     }
                                     storeb = storea;
                                     if (storea.length > 0) {
@@ -63,14 +293,17 @@ Parse Framework
                                 child   = function safeSort__descend_child() {
                                     var a    = 0,
                                         lenc = storeb.length;
-                                    for (a = 0; a < lenc; a = a + 1) {
-                                        if (arTest(storeb[a]) === true) {
-                                            storeb[a] = safeSort__descend(storeb[a]);
-                                        }
+                                    if (a < lenc) {
+                                        do {
+                                            if (arTest(storeb[a]) === true) {
+                                                storeb[a] = safeSort__descend(storeb[a]);
+                                            }
+                                            a = a + 1;
+                                        } while (a < lenc);
                                     }
                                 },
                                 recurse = function safeSort__descend_recurse() {
-                                    var a      = 0,
+                                    var a      = c,
                                         b      = 0,
                                         d      = 0,
                                         e      = 0,
@@ -78,21 +311,28 @@ Parse Framework
                                         key    = storeb[c],
                                         tstore = "",
                                         tkey   = typeof key;
-                                    for (a = c; a < len; a = a + 1) {
-                                        tstore = typeof storeb[a];
-                                        if (storeb[a] > key || (tstore > tkey)) {
-                                            key = storeb[a];
-                                            ind = [a];
-                                        } else if (storeb[a] === key) {
-                                            ind.push(a);
-                                        }
+                                    if (a < len) {
+                                        do {
+                                            tstore = typeof storeb[a];
+                                            if (storeb[a] > key || (tstore > tkey)) {
+                                                key = storeb[a];
+                                                ind = [a];
+                                            } else if (storeb[a] === key) {
+                                                ind.push(a);
+                                            }
+                                            a = a + 1;
+                                        } while (a < len);
                                     }
                                     d = ind.length;
+                                    a = c;
                                     b = d + c;
-                                    for (a = c; a < b; a = a + 1) {
-                                        storeb[ind[e]] = storeb[a];
-                                        storeb[a]      = key;
-                                        e              = e + 1;
+                                    if (a < b) {
+                                        do {
+                                            storeb[ind[e]] = storeb[a];
+                                            storeb[a]      = key;
+                                            e              = e + 1;
+                                            a = a + 1;
+                                        } while (a < b);
                                     }
                                     c = c + d;
                                     if (c < len) {
@@ -115,14 +355,17 @@ Parse Framework
                                 child   = function safeSort__ascend_child() {
                                     var a    = 0,
                                         lenc = storeb.length;
-                                    for (a = 0; a < lenc; a = a + 1) {
-                                        if (arTest(storeb[a]) === true) {
-                                            storeb[a] = safeSort__ascend(storeb[a]);
-                                        }
+                                    if (a < lenc) {
+                                        do {
+                                            if (arTest(storeb[a]) === true) {
+                                                storeb[a] = safeSort__ascend(storeb[a]);
+                                            }
+                                            a = a + 1;
+                                        } while (a < lenc);
                                     }
                                 },
                                 recurse = function safeSort__ascend_recurse() {
-                                    var a      = 0,
+                                    var a      = c,
                                         b      = 0,
                                         d      = 0,
                                         e      = 0,
@@ -130,21 +373,28 @@ Parse Framework
                                         key    = storeb[c],
                                         tstore = "",
                                         tkey   = typeof key;
-                                    for (a = c; a < len; a = a + 1) {
-                                        tstore = typeof storeb[a];
-                                        if (storeb[a] < key || tstore < tkey) {
-                                            key = storeb[a];
-                                            ind = [a];
-                                        } else if (storeb[a] === key) {
-                                            ind.push(a);
-                                        }
+                                    if (a < len) {
+                                        do {
+                                            tstore = typeof storeb[a];
+                                            if (storeb[a] < key || tstore < tkey) {
+                                                key = storeb[a];
+                                                ind = [a];
+                                            } else if (storeb[a] === key) {
+                                                ind.push(a);
+                                            }
+                                            a = a + 1;
+                                        } while (a < len);
                                     }
                                     d = ind.length;
+                                    a = c;
                                     b = d + c;
-                                    for (a = c; a < b; a = a + 1) {
-                                        storeb[ind[e]] = storeb[a];
-                                        storeb[a]      = key;
-                                        e              = e + 1;
+                                    if (a < b) {
+                                        do {
+                                            storeb[ind[e]] = storeb[a];
+                                            storeb[a]      = key;
+                                            e              = e + 1;
+                                            a = a + 1;
+                                        } while (a < b);
                                     }
                                     c = c + d;
                                     if (c < len) {
@@ -176,36 +426,37 @@ Parse Framework
                     }
                     return ascend(array);
                 },
-                attrs      = [],
-                begin      = [],
-                jscom      = [],
-                linen      = [],
-                lines      = [],
-                presv      = [],
-                stack      = [],
-                token      = [],
-                types      = [],
-                reqs       = [],
-                ids        = [],
+                data       = {
+                    attrs: [],
+                    begin: [],
+                    jscom: [],
+                    lines: [],
+                    presv: [],
+                    stack: [],
+                    token: [],
+                    types: []
+                },
+                record     = {},
                 parseError = [],
                 parent     = [
                     ["none", -1]
                 ],
                 line       = 1,
                 objsortop  = false,
-                //What is the lowercase tag name of the provided token?
+                // Find the lowercase tag name of the provided token.
                 tagName    = function parser_markup_tagName(el) {
-                    var space = el
-                            .replace(/^(\{((%-?)|\{-?)\s*)/, "%")
+                    var reg = (/^(\{((%-?)|\{-?)\s*)/),
+                        space = el
+                            .replace(reg, "%")
                             .replace(/\s+/, " ")
                             .indexOf(" "),
                         name  = (space < 0)
                             ? el
-                                .replace(/^(\{((%-?)|\{-?)\s*)/, " ")
+                                .replace(reg, " ")
                                 .slice(1, el.length - 1)
                                 .toLowerCase()
                             : el
-                                .replace(/^(\{((%-?)|\{-?)\s*)/, " ")
+                                .replace(reg, " ")
                                 .slice(1, space)
                                 .toLowerCase();
                     name = name.replace(/(\}\})$/, "");
@@ -275,6 +526,7 @@ Parse Framework
                     space         = "",
                     list          = 0,
                     litag         = 0,
+                    emptylines    = 0,
                     linepreserve  = 0,
                     cftransaction = false,
                     sgmlflag      = 0,
@@ -461,33 +713,10 @@ Parse Framework
                         "cfzipparam"            : "prohibited"
                     },
                     
-                    // determine if spaces between nodes are absent, multiline, or merely there 2 -
-                    // multiline 1 - space present 0 - no space present
-                    spacer        = function parser_markup_tokenize_spacer() {
-                        var linea = 0;
-                        if (space.length > 0) {
-                            linea = space
-                                .split("\n")
-                                .length - 1;
-                            if (options.preserve > 0 && linea > 1) {
-                                if (linea > options.preserve + 1) {
-                                    lines.push(options.preserve + 1);
-                                } else {
-                                    lines.push(linea);
-                                }
-                            } else {
-                                lines.push(1);
-                            }
-                        } else {
-                            lines.push(0);
-                        }
-                        minspace = space;
-                        space    = "";
-                    },
-                    
                     //parses tags, attributes, and template elements
                     tag           = function parser_markup_tokenize_tag(end) {
                         var lex       = [],
+                            attr      = {},
                             bcount    = 0,
                             e         = 0,
                             f         = 0,
@@ -499,6 +728,7 @@ Parse Framework
                             element   = "",
                             lastchar  = "",
                             jsxquote  = "",
+                            ltype     = "",
                             tname     = "",
                             comment   = false,
                             cheat     = false,
@@ -567,10 +797,6 @@ Parse Framework
                                     name = arname(atty);
                                     if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
                                         ignoreme = true;
-                                    } else if (name === "id") {
-                                        ids.push(atty.slice(name.length + 2, atty.length - 1));
-                                    } else if (name === "schemaLocation") {
-                                        reqs.push(atty.slice(name.length + 2, atty.length - 1));
                                     }
                                     quote = "";
                                 } else {
@@ -580,8 +806,6 @@ Parse Framework
                                     name = arname(atty);
                                     if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
                                         ignoreme = true;
-                                    } else if (name === "id") {
-                                        ids.push(element.slice(name.length + 1, atty.length));
                                     }
                                     if (options.lang === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
                                         jsxcount = 0;
@@ -619,9 +843,7 @@ Parse Framework
                                 }
                                 attribute = [];
                             };
-                        spacer();
-                        jscom.push(false);
-                        linen.push(line);
+                        data.jscom.push(false);
                         ext = false;
                         // this complex series of conditions determines an elements delimiters look to
                         // the types being pushed to quickly reason about the logic no type is pushed
@@ -632,31 +854,31 @@ Parse Framework
                             if (end === "]>") {
                                 end      = ">";
                                 sgmlflag = sgmlflag - 1;
-                                types.push("template_end");
+                                ltype = "template_end";
                             } else if (end === "---") {
                                 preserve = true;
-                                types.push("comment");
+                                ltype = "comment";
                             } else if (b[a] === "<") {
                                 if (b[a + 1] === "/") {
                                     if (b[a + 2] === "#") {
-                                        types.push("template_end");
+                                        ltype = "template_end";
                                     } else {
-                                        types.push("end");
+                                        ltype = "end";
                                     }
                                     end = ">";
                                 } else if (b[a + 1] === "!") {
                                     if (b[a + 2] === "-" && b[a + 3] === "-") {
                                         if (b[a + 4] === "#") {
                                             end = "-->";
-                                            types.push("template");
+                                            ltype = "template";
                                         } else if (b[a + 4] === "[" && b[a + 5] === "i" && b[a + 6] === "f" && options.conditional === true) {
                                             end = "-->";
-                                            types.push("conditional");
+                                            ltype = "conditional";
                                         } else if (b[a + 4] === "-" && (/<cf[a-z]/i).test(source) === true) {
                                             preserve = true;
                                             comment  = true;
                                             end      = "--->";
-                                            types.push("comment");
+                                            ltype = "comment";
                                         } else {
                                             end = "-->";
                                             if (options.comments === "nocomment") {
@@ -668,28 +890,28 @@ Parse Framework
                                                 }
                                                 comment = true;
                                                 if (options.commline === true) {
-                                                    lines[lines.length - 1] = 2;
+                                                    data.lines[data.lines.length - 1] = 2;
                                                 }
-                                                types.push("comment");
+                                                ltype = "comment";
                                             }
                                         }
                                     } else if (b[a + 2] === "[" && b[a + 3] === "C" && b[a + 4] === "D" && b[a + 5] === "A" && b[a + 6] === "T" && b[a + 7] === "A" && b[a + 8] === "[") {
                                         end      = "]]>";
                                         preserve = true;
                                         comment  = true;
-                                        types.push("cdata");
+                                        ltype = "cdata";
                                     } else {
                                         end      = ">";
                                         sgmlflag = sgmlflag + 1;
-                                        types.push("sgml");
+                                        ltype = "sgml";
                                     }
                                 } else if (b[a + 1] === "?") {
                                     end = "?>";
                                     if (b[a + 2] === "x" && b[a + 3] === "m" && b[a + 4] === "l") {
-                                        types.push("xml");
+                                        ltype = "xml";
                                     } else {
                                         preserve = true;
-                                        types.push("template");
+                                        ltype = "template";
                                     }
                                 } else if (b[a + 1] === "%") {
                                     if (b[a + 2] !== "=") {
@@ -701,48 +923,48 @@ Parse Framework
                                         if (options.commline === true) {
                                             line[line.length - 1] = 2;
                                         }
-                                        types.push("comment");
+                                        ltype = "comment";
                                     } else if (b[a + 2] === "#") {
                                         end     = "%>";
                                         comment = true;
                                         if (options.commline === true) {
                                             line[line.length - 1] = 2;
                                         }
-                                        types.push("comment");
+                                        ltype = "comment";
                                     } else {
                                         end = "%>";
-                                        types.push("template");
+                                        ltype = "template";
                                     }
                                 } else if (b[a + 4] !== undefined && b[a + 1].toLowerCase() === "p" && b[a + 2].toLowerCase() === "r" && b[a + 3].toLowerCase() === "e" && (b[a + 4] === ">" || (/\s/).test(b[a + 4]) === true)) {
                                     end      = "</pre>";
                                     preserve = true;
-                                    types.push("ignore");
+                                    ltype = "ignore";
                                 } else if (b[a + 4] !== undefined && b[a + 1].toLowerCase() === "x" && b[a + 2].toLowerCase() === "s" && b[a + 3].toLowerCase() === "l" && b[a + 4].toLowerCase() === ":" && b[a + 5].toLowerCase() === "t" && b[a + 6].toLowerCase() === "e" && b[a + 7].toLowerCase() === "x" && b[a + 8].toLowerCase() === "t" && (b[a + 9] === ">" || (/\s/).test(b[a + 9]) === true)) {
                                     end      = "</xsl:text>";
                                     preserve = true;
-                                    types.push("ignore");
+                                    ltype = "ignore";
                                 } else if (b[a + 8] !== undefined && b[a + 1].toLowerCase() === "c" && b[a + 2].toLowerCase() === "f" && b[a + 3].toLowerCase() === "q" && b[a + 4].toLowerCase() === "u" && b[a + 5].toLowerCase() === "e" && b[a + 6].toLowerCase() === "r" && b[a + 7].toLowerCase() === "y" && (b[a + 8] === ">" || (/\s/).test(b[a + 8]))) {
                                     end          = ">";
                                     linepreserve = linepreserve + 1;
-                                    types.push("linepreserve");
+                                    ltype = "linepreserve";
                                 } else if (b[a + 1] === "<") {
                                     if (b[a + 2] === "<") {
                                         end = ">>>";
                                     } else {
                                         end = ">>";
                                     }
-                                    types.push("template");
+                                    ltype = "template";
                                 } else if (b[a + 1] === "#") {
                                     if (b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e") {
                                         end = ">";
-                                        types.push("template_else");
+                                        ltype = "template_else";
                                     } else if (b[a + 2] === "-" && b[a + 3] === "-") {
                                         end = "-->";
-                                        types.push("comment");
+                                        ltype = "comment";
                                         preserve = true;
                                     } else {
                                         end = ">";
-                                        types.push("template_start");
+                                        ltype = "template_start";
                                     }
                                 } else {
                                     simple = true;
@@ -752,118 +974,126 @@ Parse Framework
                                 preserve = true;
                                 if (options.lang === "jsx") {
                                     end = "}";
-                                    types.push("script");
+                                    ltype = "script";
                                 } else if (options.lang === "dustjs") {
                                     if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                         a = a + 6;
-                                        token.push("{:else}");
-                                        presv.push(true);
-                                        stack.push(parent[parent.length - 1][0]);
-                                        begin.push(parent[parent.length - 1][1]);
-                                        attrs.push({});
                                         earlyexit = true;
-                                        return types.push("template_else");
+                                        return recordPush(data, {
+                                            attrs: {},
+                                            begin: parent[parent.length - 1][1],
+                                            jscom: false,
+                                            lines: emptylines,
+                                            presv: true,
+                                            stack: parent[parent.length - 1][0],
+                                            types: "template_else",
+                                            token: "{:else}"
+                                        }, 0);
                                     }
                                     if (b[a + 1] === "!") {
                                         end     = "!}";
                                         comment = true;
-                                        types.push("comment");
+                                        ltype = "comment";
                                     } else if (b[a + 1] === "/") {
                                         end = "}";
-                                        types.push("template_end");
+                                        ltype = "template_end";
                                     } else if (b[a + 1] === "~") {
                                         end = "}";
-                                        types.push("singleton");
+                                        ltype = "singleton";
                                     } else if (b[a + 1] === ">") {
                                         end = "/}";
-                                        types.push("singleton");
+                                        ltype = "singleton";
                                     } else if (b[a + 1] === "#" || b[a + 1] === "?" || b[a + 1] === "^" || b[a + 1] === "@" || b[a + 1] === "<" || b[a + 1] === "+") {
                                         end = "}";
-                                        types.push("template_start");
+                                        ltype = "template_start";
                                     } else {
                                         end = "}";
-                                        types.push("template");
+                                        ltype = "template";
                                     }
                                 } else if (b[a + 1] === "{") {
                                     if (b[a + 2] === "{") {
                                         end = "}}}";
-                                        types.push("template");
+                                        ltype = "template";
                                     } else if (b[a + 2] === "#") {
                                         end = "}}";
-                                        types.push("template_start");
+                                        ltype = "template_start";
                                     } else if (b[a + 2] === "/") {
                                         end = "}}";
-                                        types.push("template_end");
+                                        ltype = "template_end";
                                     } else if (b[a + 2] === "e" && b[a + 3] === "n" && b[a + 4] === "d") {
                                         end = "}}";
-                                        types.push("template_end");
+                                        ltype = "template_end";
                                     } else if (b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e") {
                                         end = "}}";
-                                        types.push("template_else");
+                                        ltype = "template_else";
                                     } else {
                                         end = "}}";
-                                        types.push("template");
+                                        ltype = "template";
                                     }
                                 } else if (b[a + 1] === "%") {
                                     end = "%}";
-                                    types.push("template");
+                                    ltype = "template";
                                 } else if (b[a + 1] === "#") {
                                     end = "#}";
-                                    types.push("comment");
+                                    ltype = "comment";
                                     preserve = true;
                                     comment  = true;
                                 } else {
                                     end = b[a + 1] + "}";
-                                    types.push("template");
+                                    ltype = "template";
                                 }
                                 if (b[a + 1] === "@" && b[a + 2] === "}" && b[a + 3] === "e" && b[a + 4] === "l" && b[a + 5] === "s" && b[a + 6] === "e" && b[a + 7] === "{" && b[a + 8] === "@" && b[a + 9] === "}") {
-                                    a                       = a + 9;
-                                    types[types.length - 1] = "template_else";
-                                    presv.push(true);
-                                    stack.push(parent[parent.length - 1][0]);
-                                    begin.push(parent[parent.length - 1][1]);
-                                    attrs.push({});
+                                    a         = a + 9;
                                     earlyexit = true;
-                                    return token.push("{@}else{@}");
+                                    return recordPush(data, {
+                                        attrs: {},
+                                        begin: parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: emptylines,
+                                        presv: true,
+                                        stack: parent[parent.length - 1][0],
+                                        types: "template_else",
+                                        token: "{@}else{@}"
+                                    }, 0);
                                 }
                             } else if (b[a] === "[" && b[a + 1] === "%") {
                                 end = "%]";
-                                types.push("template");
+                                ltype = "template";
                             } else if (b[a] === "#" && options.lang === "apacheVelocity") {
                                 if (b[a + 1] === "*") {
                                     preserve = true;
                                     comment  = true;
                                     end      = "*#";
-                                    types.push("comment");
+                                    ltype = "comment";
                                 } else if (b[a + 1] === "[" && b[a + 2] === "[") {
                                     preserve = true;
                                     comment  = true;
                                     end      = "]]#";
-                                    types.push("comment");
+                                    ltype = "comment";
                                 } else if (b[a + 1] === "#") {
                                     preserve = true;
                                     comment  = true;
                                     end      = "\n";
-                                    types.push("comment");
+                                    ltype = "comment";
                                 } else if (b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (/\s/).test(b[a + 5]) === true) {
                                     end = "\n";
-                                    types.push("template_else");
+                                    ltype = "template_else";
                                 } else if (b[a + 1] === "i" && b[a + 2] === "f") {
                                     end = "\n";
-                                    types.push("template_start");
+                                    ltype = "template_start";
                                 } else if (b[a + 1] === "f" && b[a + 2] === "o" && b[a + 3] === "r" && b[a + 4] === "e" && b[a + 5] === "a" && b[a + 6] === "c" && b[a + 7] === "h") {
                                     end = "\n";
-                                    types.push("template_start");
+                                    ltype = "template_start";
                                 } else if (b[a + 1] === "e" && b[a + 2] === "n" && b[a + 3] === "d") {
                                     end = "\n";
-                                    types.push("template_end");
+                                    ltype = "template_end";
                                 } else {
                                     end = "\n";
-                                    types.push("template");
+                                    ltype = "template";
                                 }
                             } else if (b[a] === "$" && options.lang === "apacheVelocity") {
                                 end = "\n";
-                                types.push("template");
+                                ltype = "template";
                             }
                             if (options.unformatted === true) {
                                 preserve = true;
@@ -928,8 +1158,8 @@ Parse Framework
                                                 jsxcount = jsxcount - 1;
                                             }
                                         }
-                                        if (types[types.length - 1] === "sgml" && b[a] === "[" && lex.length > 4) {
-                                            types[types.length - 1] = "template_start";
+                                        if (data.types[data.types.length - 1] === "sgml" && b[a] === "[" && lex.length > 4) {
+                                            data.types[data.types.length - 1] = "template_start";
                                             break;
                                         }
                                         if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
@@ -1100,7 +1330,7 @@ Parse Framework
                                                         } else {
                                                             quote                   = "";
                                                             jsxquote                = "";
-                                                            jscom[jscom.length - 1] = true;
+                                                            data.jscom[data.jscom.length - 1] = true;
                                                             element                 = attribute.join("");
                                                             if (element.charAt(1) === "*") {
                                                                 element = element + "\n";
@@ -1160,7 +1390,7 @@ Parse Framework
                                         } else if (end !== "%>" && end !== "\n" && (b[a] === "\"" || b[a] === "'")) {
                                             //opening quote
                                             quote = b[a];
-                                        } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && types[types.length - 1] !== "conditional") {
+                                        } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[data.types.length - 1] !== "conditional") {
                                             quote = "-->";
                                         } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                             //opening embedded template expression
@@ -1202,11 +1432,11 @@ Parse Framework
                                                 break;
                                             }
                                             if (lex[0] === "{" && lex[1] === "%" && lex.join("").replace(/\s+/g, "") === "{%comment%}") {
-                                                end                     = "endcomment";
-                                                lastchar                = "t";
-                                                preserve                = true;
-                                                comment                 = true;
-                                                types[types.length - 1] = "comment";
+                                                end      = "endcomment";
+                                                lastchar = "t";
+                                                preserve = true;
+                                                comment  = true;
+                                                ltype    = "comment";
                                             } else {
                                                 //if current character matches the last character of the tag ending sequence
                                                 f = lex.length;
@@ -1257,17 +1487,7 @@ Parse Framework
                         }
                         //nopush flags mean an early exit
                         if (nopush === true) {
-                            jscom.pop();
-                            linen.pop();
-                            lines.pop();
-                            space = minspace;
                             return;
-                        }
-
-                        if (preserve === true) {
-                            presv.push(true);
-                        } else {
-                            presv.push(false);
                         }
 
                         if (options.correct === true) {
@@ -1285,43 +1505,55 @@ Parse Framework
                         element = lex.join("");
                         if (element.indexOf("{{") === 0 && element.slice(element.length - 2) === "}}") {
                             if (tagName(element) === "end") {
-                                types[types.length - 1] = "template_end";
+                                ltype = "template_end";
                             } else if (tagName(element) === "else") {
-                                types[types.length - 1] = "template_else";
+                                ltype = "template_else";
                             }
                         } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
                             if ((/^(<%\s+end\s+-?%>)$/).test(element) === true) {
-                                types[types.length - 1] = "template_end";
+                                ltype = "template_end";
                             } else if (((/\sdo\s/).test(element) === true && element.indexOf("-%>") === element.length - 3) || (/^(<%(%|-)?\s*if)/).test(element) === true) {
-                                types[types.length - 1] = "template_start";
+                                ltype = "template_start";
                             }
                         }
                         tname = tagName(element);
-                        if (options.lang === "html" && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (types.length === 0 || types[types.length - 1].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
+                        if (options.lang === "html" && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (data.types.length === 0 || data.types[data.types.length - 1].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
                             element = element.toLowerCase();
                         }
                         if (tname === "comment" && element.slice(0, 2) === "{%") {
                             element = element
                                 .replace(/^(\{%\s*comment\s*%\}\s*)/, "")
                                 .replace(/(\s*\{%\s*endcomment\s*%\})$/, "");
-
-                            attrs.push({});
-                            attrs.push({});
-                            jscom.push(false);
-                            jscom.push(false);
-                            e = linen[linen.length - 1];
-                            linen.push(e);
-                            linen.push(e);
-                            types[types.length - 1] = "template_start";
-                            token.push("{% comment %}");
-                            types.push("comment");
-                            stack.push(parent[parent.length - 1][0]);
-                            begin.push(parent[parent.length - 1][1]);
-                            token.push(element);
-                            types.push("template_end");
-                            stack.push(parent[parent.length - 1][0]);
-                            begin.push(parent[parent.length - 1][1]);
-                            return token.push("{% endcomment %}");
+                            recordPush(data, {
+                                attrs: {},
+                                begin: parent[parent.length - 1][1],
+                                jscom: false,
+                                lines: emptylines,
+                                presv: preserve,
+                                stack: parent[parent.length - 1][0],
+                                token: "{% comment %}",
+                                types: "template_start"
+                            }, 0);
+                            recordPush(data, {
+                                attrs: {},
+                                begin: parent[parent.length - 1][1],
+                                jscom: false,
+                                lines: emptylines,
+                                presv: preserve,
+                                stack: parent[parent.length - 1][0],
+                                token: element,
+                                types: "comment"
+                            }, 0);
+                            return recordPush(data, {
+                                attrs: {},
+                                begin: parent[parent.length - 1][1],
+                                jscom: false,
+                                lines: emptylines,
+                                presv: preserve,
+                                stack: parent[parent.length - 1][0],
+                                token: "{% endcomment %}",
+                                types: "template_end"
+                            }, 0);
                         }
 
                         if (end !== "]>" && sgmlflag > 0 && element.charAt(element.length - 1) !== "[" && (element.slice(element.length - 2) === "]>" || (/^(<!((doctype)|(notation))\s)/i).test(element) === true)) {
@@ -1348,11 +1580,11 @@ Parse Framework
                                     e = e + 1;
                                 } while (e < f);
                             }
-                            if (objsortop === true && jscom[jscom.length - 1] === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (objsortop === true && data.jscom[data.jscom.length - 1] === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore = safeSort(attstore);
                             }
                         }
-                        attrs.push(function parser_markup_tokenize_attribute() {
+                        attr = (function parser_markup_tokenize_attribute() {
                             var ind    = 0,
                                 len    = attstore.length,
                                 obj    = {},
@@ -1424,10 +1656,16 @@ Parse Framework
                                 parseError[parseError.length - 1] = parseError[parseError.length - 1] +
                                         element;
                                 if (element.indexOf("</") > 0) {
-                                    token.push(element);
-                                    stack.push(parent[parent.length - 1][0]);
-                                    begin.push(parent[parent.length - 1][1]);
-                                    return types.push("end");
+                                    return recordPush(data, {
+                                        attrs: attr,
+                                        begin: parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: emptylines,
+                                        presv: preserve,
+                                        stack: parent[parent.length - 1][0],
+                                        token: element,
+                                        types: "end"
+                                    }, 0);
                                 }
                             }
                         }
@@ -1435,7 +1673,7 @@ Parse Framework
                         // start tags
                         cheat = (function parser_markup_tokenize_tag_cheat() {
                             var atty         = [],
-                                attn         = token[token.length - 1],
+                                attn         = data.token[data.token.length - 1],
                                 atval        = "",
                                 type         = "",
                                 d            = 0,
@@ -1463,29 +1701,29 @@ Parse Framework
                                     wbr        : "singleton"
                                 },
                                 fixsingleton = function parser_markup_tokenize_tag_cheat_fixsingleton() {
-                                    var aa    = token.length - 1,
+                                    var aa    = data.token.length - 1,
                                         bb    = 0,
                                         vname = tname.slice(1);
                                     if (aa > -1) {
                                         do {
-                                            if (types[aa] === "end") {
+                                            if (data.types[aa] === "end") {
                                                 bb = bb + 1;
-                                            } else if (types[aa] === "start") {
+                                            } else if (data.types[aa] === "start") {
                                                 bb = bb - 1;
                                                 if (bb < 0) {
                                                     return false;
                                                 }
                                             }
-                                            if (bb === 0 && token[aa].toLowerCase().indexOf(vname) === 1) {
-                                                if (cftags[tagName(token[aa])] !== undefined) {
-                                                    types[aa] = "template_start";
+                                            if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
+                                                if (cftags[tagName(data.token[aa])] !== undefined) {
+                                                    data.types[aa] = "template_start";
                                                 } else {
-                                                    types[aa] = "start";
+                                                    data.types[aa] = "start";
                                                 }
-                                                if (Object.keys(attrs[aa]).length > 0) {
-                                                    token[aa] = token[aa].replace(/(\s*\/>)$/, " >");
+                                                if (Object.keys(data.attrs[aa]).length > 0) {
+                                                    data.token[aa] = data.token[aa].replace(/(\s*\/>)$/, " >");
                                                 } else {
-                                                    token[aa] = token[aa].replace(/(\s*\/>)$/, ">");
+                                                    data.token[aa] = data.token[aa].replace(/(\s*\/>)$/, ">");
                                                 }
                                                 return false;
                                             }
@@ -1496,20 +1734,15 @@ Parse Framework
                             if (presend["/" + tname] === true) {
                                 linepreserve = linepreserve - 1;
                             }
-                            if (types[types.length - 1] === "end" && tname.slice(0, 3) !== "/cf") {
-                                if (types[types.length - 2] === "singleton" && attn.charAt(attn.length - 2) !== "/" && "/" + tagName(attn) === tname) {
-                                    types[types.length - 2] = "start";
-                                } else if ((types[types.length - 2] === "start" || htmlsings[tname.slice(1)] === "singleton") && tname !== "/span" && tname !== "/div" && tname !== "/script" && (options.lang !== "html" || (options.lang === "html" && tname !== "/li")) && tname === "/" + tagName(token[token.length - 1]) && options.tagmerge === true) {
-                                    types.pop();
-                                    attrs.pop();
-                                    jscom.pop();
-                                    linen.pop();
-                                    lines.pop();
-                                    presv.pop();
-                                    if (types[types.length - 1] === "start") {
-                                        token[token.length - 1] = token[token.length - 1].replace(/>$/, "/>");
+                            if (data.types[data.types.length - 1] === "end" && tname.slice(0, 3) !== "/cf") {
+                                if (data.types[data.types.length - 2] === "singleton" && attn.charAt(attn.length - 2) !== "/" && "/" + tagName(attn) === tname) {
+                                    data.types[data.types.length - 2] = "start";
+                                } else if ((data.types[data.types.length - 2] === "start" || htmlsings[tname.slice(1)] === "singleton") && tname !== "/span" && tname !== "/div" && tname !== "/script" && (options.lang !== "html" || (options.lang === "html" && tname !== "/li")) && tname === "/" + tagName(data.token[data.token.length - 1]) && options.tagmerge === true) {
+                                    recordPop(data);
+                                    if (data.types[data.types.length - 1] === "start") {
+                                        data.token[data.token.length - 1] = data.token[data.token.length - 1].replace(/>$/, "/>");
                                     }
-                                    types[types.length - 1] = "singleton";
+                                    data.types[data.types.length - 1] = "singleton";
                                     singleton               = true;
                                     return;
                                 }
@@ -1528,13 +1761,11 @@ Parse Framework
                                         if (atval.charAt(0) === "\"" || atval.charAt(0) === "'") {
                                             atval = atval.slice(1, atval.length - 1);
                                         }
-                                        reqs.push(atval);
                                     } else if (tname === "link" && atty === "href") {
                                         atval = atty[1];
                                         if (atval.charAt(0) === "\"" || atval.charAt(0) === "'") {
                                             atval = atval.slice(1, atval.length - 1);
                                         }
-                                        reqs.push(atval);
                                     }
                                     d = d - 1;
                                 } while (d > -1);
@@ -1581,17 +1812,17 @@ Parse Framework
                                 }
                             }
                             if (tname === "/#assign" || tname === "/#global") {
-                                d = types.length - 2;
+                                d = data.types.length - 2;
                                 if (d > -1) {
                                     do {
-                                        if (types[d] === "start" || types[d] === "template_start") {
+                                        if (data.types[d] === "start" || data.types[d] === "template_start") {
                                             ee = ee - 1;
-                                        } else if (types[d] === "end" || types[d] === "template_end") {
+                                        } else if (data.types[d] === "end" || data.types[d] === "template_end") {
                                             ee = ee + 1;
                                         }
                                         if (ee === 1) {
-                                            if ((token[d].indexOf("<#assign") === 0 && tname === "/#assign") || (token[d].indexOf("<#global") === 0 && tname === "/#global")) {
-                                                types[d] = "template_start";
+                                            if ((data.token[d].indexOf("<#assign") === 0 && tname === "/#assign") || (data.token[d].indexOf("<#global") === 0 && tname === "/#global")) {
+                                                data.types[d] = "template_start";
                                                 return false;
                                             }
                                         }
@@ -1603,23 +1834,23 @@ Parse Framework
                                 }
                                 return false;
                             }
-                            if (tname.charAt(0) === "#" && types[types.length - 1] === "start" && (tname === "#assign" || tname === "#break" || tname === "#case" || tname === "#default" || tname === "#fallback" || tname === "#flush" || tname === "#ftl" || tname === "#global" || tname === "#import" || tname === "#include" || tname === "#local" || tname === "#t" || tname === "#lt" || tname === "#rt" || tname === "#nested" || tname === "#nt" || tname === "#recover" || tname === "#recurse" || tname === "#return" || tname === "#sep" || tname === "#setting" || tname === "#stop" || tname === "#visit")) {
+                            if (tname.charAt(0) === "#" && data.types[data.types.length - 1] === "start" && (tname === "#assign" || tname === "#break" || tname === "#case" || tname === "#default" || tname === "#fallback" || tname === "#flush" || tname === "#ftl" || tname === "#global" || tname === "#import" || tname === "#include" || tname === "#local" || tname === "#t" || tname === "#lt" || tname === "#rt" || tname === "#nested" || tname === "#nt" || tname === "#recover" || tname === "#recurse" || tname === "#return" || tname === "#sep" || tname === "#setting" || tname === "#stop" || tname === "#visit")) {
                                 simple = true;
                                 return true;
                             }
                             if (options.lang === "html") {
                                 //simple means of looking for missing li end tags
                                 if (tname === "li") {
-                                    if (litag === list && (list !== 0 || (list === 0 && types.length > 0 && types[types.length - 1].indexOf("template") < 0))) {
-                                        d = types.length - 1;
+                                    if (litag === list && (list !== 0 || (list === 0 && data.types.length > 0 && data.types[data.types.length - 1].indexOf("template") < 0))) {
+                                        d = data.types.length - 1;
                                         if (d > -1) {
                                             do {
-                                                if (types[d] === "start" || types[d] === "template_start") {
+                                                if (data.types[d] === "start" || data.types[d] === "template_start") {
                                                     ee = ee - 1;
-                                                } else if (types[d] === "end" || types[d] === "template_end") {
+                                                } else if (data.types[d] === "end" || data.types[d] === "template_end") {
                                                     ee = ee + 1;
                                                 }
-                                                if (ee === -1 && (tagName(token[d]) === "li" || (tagName(token[d + 1]) === "li" && (tagName(token[d]) === "ul" || tagName(token[d]) === "ol")))) {
+                                                if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
                                                     liend = true;
                                                     break;
                                                 }
@@ -1643,7 +1874,7 @@ Parse Framework
                                     }
                                     list = list - 1;
                                 }
-                                if (types[types.length - 1] === "end" && htmlsings[tname.slice(1)] === "singleton" && tname !== "/cftransaction") {
+                                if (data.types[data.types.length - 1] === "end" && htmlsings[tname.slice(1)] === "singleton" && tname !== "/cftransaction") {
                                     return fixsingleton();
                                 }
                                 if (htmlsings[tname] === "singleton") {
@@ -1657,13 +1888,13 @@ Parse Framework
                                     return true;
                                 }
                             }
-                            if (types[types.length - 1] === "end" && tname.slice(0, 3) === "/cf" && cftags[tname.slice(1)] !== undefined) {
+                            if (data.types[data.types.length - 1] === "end" && tname.slice(0, 3) === "/cf" && cftags[tname.slice(1)] !== undefined) {
                                 cfval = cftags[tname.slice(1)];
                                 if (tname === "/cftransaction") {
                                     cftransaction = false;
                                 }
                                 if (cfval !== undefined) {
-                                    types[types.length - 1] = "template_end";
+                                    data.types[data.types.length - 1] = "template_end";
                                 }
                                 if ((cfval === "optional" || cfval === "prohibited") && tname !== "/cftransaction") {
                                     return fixsingleton();
@@ -1672,10 +1903,16 @@ Parse Framework
                             }
                             if (tname.slice(0, 2) === "cf") {
                                 if (tname === "cfelse" || tname === "cfelseif") {
-                                    types.push("template_else");
-                                    token.push(lex.join(""));
-                                    stack.push(parent[parent.length - 1][0]);
-                                    begin.push(parent[parent.length - 1][1]);
+                                    recordPush(data, {
+                                        attrs: attr,
+                                        begin: parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: emptylines,
+                                        presv: preserve,
+                                        stack: parent[parent.length - 1][0],
+                                        token: lex.join(""),
+                                        types: "template_else"
+                                    }, 0);
                                     singleton = true;
                                     return false;
                                 }
@@ -1691,10 +1928,16 @@ Parse Framework
                                         lex.push("/");
                                         lex.push(">");
                                     }
-                                    types.push("template");
-                                    token.push(lex.join("").replace(/\s+/, " "));
-                                    stack.push(parent[parent.length - 1][0]);
-                                    begin.push(parent[parent.length - 1][1]);
+                                    recordPush(data, {
+                                        attrs: attr,
+                                        begin: parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: emptylines,
+                                        presv: preserve,
+                                        stack: parent[parent.length - 1][0],
+                                        token: lex.join("").replace(/\s+/, " "),
+                                        types: "template"
+                                    }, 0);
                                     singleton = true;
                                     return false;
                                 }
@@ -1702,23 +1945,27 @@ Parse Framework
                                     if (tname === "cftransaction" && cftransaction === false) {
                                         cftransaction = true;
                                     }
-                                    types.push("template_start");
-                                    token.push(lex.join(""));
-                                    stack.push(parent[parent.length - 1][0]);
-                                    if (parent[parent.length - 1][1] === -1) {
-                                        begin.push(token.length - 1);
-                                    } else {
-                                        begin.push(parent[parent.length - 1][1]);
-                                    }
+                                    recordPush(data, {
+                                        attrs: attr,
+                                        begin: (parent[parent.length - 1][1] === -1)
+                                            ? data.token.length - 1
+                                            : parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: emptylines,
+                                        presv: preserve,
+                                        stack: parent[parent.length - 1][0],
+                                        token: lex.join(""),
+                                        types: "template_start"
+                                    }, 0);
                                     singleton = true;
                                 }
                                 return false;
                             }
-                            if (options.lang === "dustjs" && types[types.length - 1] === "template_start") {
+                            if (options.lang === "dustjs" && data.types[data.types.length - 1] === "template_start") {
                                 type  = element.charAt(1);
                                 atval = element.slice(element.length - 2);
                                 if ((atval === "/}" || atval.charAt(0) === type) && (type === "#" || type === "?" || type === "^" || type === "@" || type === "<" || type === "+")) {
-                                    types[types.length - 1] = "template";
+                                    data.types[data.types.length - 1] = "template";
                                 }
                             }
                             return false;
@@ -1742,7 +1989,7 @@ Parse Framework
                                 types.push("singleton");
                             } else {
                                 preserve                = true;
-                                presv[presv.length - 1] = true;
+                                data.presv[data.presv.length - 1] = true;
                                 types.push("ignore");
                                 a     = a + 1;
                                 quote = "";
@@ -1813,8 +2060,8 @@ Parse Framework
                         }
 
                         //some template tags can be evaluated as a block start/end based on syntax alone
-                        e = types.length - 1;
-                        if (types[e].indexOf("template") > -1) {
+                        e = data.types.length - 1;
+                        if (data.types[e].indexOf("template") > -1) {
                             if (element.slice(0, 2) === "{%") {
                                 lex = [
                                     "autoescape",
@@ -1837,17 +2084,17 @@ Parse Framework
                                     "verbatim"
                                 ];
                                 if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif") {
-                                    types[e] = "template_else";
+                                    data.types[e] = "template_else";
                                 } else {
                                     f = lex.length - 1;
                                     if (f > -1) {
                                         do {
                                             if (tname === lex[f]) {
-                                                types[e] = "template_start";
+                                                data.types[e] = "template_start";
                                                 break;
                                             }
                                             if (tname === "end" + lex[f]) {
-                                                types[e] = "template_end";
+                                                data.types[e] = "template_end";
                                                 break;
                                             }
                                             f = f - 1;
@@ -1856,19 +2103,19 @@ Parse Framework
                                 }
                             } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
                                 if ((/^(\{\{\s*end\s*\}\})$/).test(element) === true) {
-                                    types[e] = "template_end";
+                                    data.types[e] = "template_end";
                                 } else if (tname === "block" || tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
                                     if (tname !== "block" || (/\{%\s*\w/).test(source) === false) {
-                                        types[e] = "template_start";
+                                        data.types[e] = "template_start";
                                     }
                                 }
-                            } else if (types[e] === "template") {
+                            } else if (data.types[e] === "template") {
                                 if (element.indexOf("else") > 2) {
-                                    types[e] = "template_else";
+                                    data.types[e] = "template_else";
                                 } else if ((/^(<%\s*\})/).test(element) === true || (/^(\[%\s*\})/).test(element) === true || (/^(\{@\s*\})/).test(element) === true) {
-                                    types[e] = "template_end";
+                                    data.types[e] = "template_end";
                                 } else if ((/(\{\s*%>)$/).test(element) === true || (/(\{\s*%\])$/).test(element) === true || (/(\{\s*@\})$/).test(element) === true) {
-                                    types[e] = "template_start";
+                                    data.types[e] = "template_start";
                                 }
                             }
                         }
@@ -1880,10 +2127,9 @@ Parse Framework
                             stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                             lines.push(lines[lines.length - 1]);
-                            linen.push(line);
                             lines[lines.length - 2] = 0;
                             attrs.push({});
-                            if (types[types.length - 1] === "start") {
+                            if (data.types[data.types.length - 1] === "start") {
                                 types.splice(types.length - 1, 0, "end");
                             } else {
                                 types.push("end");
@@ -1910,7 +2156,7 @@ Parse Framework
                             stack.push(parent[parent.length - 1][0]);
                             begin.push(parent[parent.length - 1][1]);
                         }
-                        if (options.tagsort === true && types[types.length - 1] === "end" && types[types.length - 2] !== "start") {
+                        if (options.tagsort === true && data.types[data.types.length - 1] === "end" && data.types[data.types.length - 2] !== "start") {
                             (function parser_markup_tokenize_tag_sorttag() {
                                 var children   = [],
                                     bb         = 0,
@@ -1922,7 +2168,6 @@ Parse Framework
                                         attrs: [],
                                         begin: [],
                                         jscom: [],
-                                        linen: [],
                                         lines: [],
                                         presv: [],
                                         stack: [],
@@ -1948,9 +2193,6 @@ Parse Framework
                                         store
                                             .jscom
                                             .push(jscom[index]);
-                                        store
-                                            .linen
-                                            .push(linen[index]);
                                         store
                                             .lines
                                             .push(lines[index]);
@@ -2006,7 +2248,6 @@ Parse Framework
                                 endData.begin = begin.pop();
                                 endData.stack = stack.pop();
                                 endData.jscom = jscom.pop();
-                                endData.linen = linen.pop();
                                 endData.lines = lines.pop();
                                 endData.presv = presv.pop();
                                 endData.token = token.pop();
@@ -2023,9 +2264,6 @@ Parse Framework
                                 jscom         = jscom
                                     .slice(0, startStore)
                                     .concat(store.jscom);
-                                linen         = linen
-                                    .slice(0, startStore)
-                                    .concat(store.linen);
                                 lines         = lines
                                     .slice(0, startStore)
                                     .concat(store.lines);
@@ -2042,7 +2280,6 @@ Parse Framework
                                 begin.push(endData.begin);
                                 stack.push(endData.stack);
                                 jscom.push(endData.jscom);
-                                linen.push(endData.linen);
                                 lines.push(endData.lines);
                                 presv.push(endData.presv);
                                 token.push(endData.token);
@@ -2050,9 +2287,9 @@ Parse Framework
                             }());
                         }
                         e = token.length - 1;
-                        if (types[e] === "start") {
+                        if (data.types[e] === "start") {
                             parent.push([tname, e]);
-                        } else if (types[e] === "end" && parent.length > 1) {
+                        } else if (data.types[e] === "end" && parent.length > 1) {
                             parent.pop();
                         }
                     },
@@ -2061,7 +2298,7 @@ Parse Framework
                             quote     = "",
                             end       = "",
                             square    = (
-                                types[types.length - 1] === "template_start" && token[token.length - 1].indexOf("<!") === 0 && token[token.length - 1].indexOf("<![") < 0 && token[token.length - 1].charAt(token[token.length - 1].length - 1) === "["
+                                data.types[data.types.length - 1] === "template_start" && data.token[data.token.length - 1].indexOf("<!") === 0 && data.token[data.token.length - 1].indexOf("<![") < 0 && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) === "["
                             ),
                             tailSpace = function parser_markup_tokenize_content_tailSpace(spacey) {
                                 if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
@@ -2091,14 +2328,13 @@ Parse Framework
                         spacer();
                         attrs.push({});
                         jscom.push(false);
-                        linen.push(line);
                         if (linepreserve > 0) {
                             presv.push(true);
                         } else {
                             presv.push(false);
                         }
                         if (ext === true) {
-                            name = tagName(token[token.length - 1]);
+                            name = tagName(data.token[data.token.length - 1]);
                         }
                         for (a = a; a < c; a = a + 1) {
                             if (b[a] === "\n") {
@@ -2129,7 +2365,6 @@ Parse Framework
                                         if (lex.length < 1) {
                                             attrs.pop();
                                             jscom.pop();
-                                            linen.pop();
                                             presv.pop();
                                             return lines.pop();
                                         }
@@ -2150,7 +2385,6 @@ Parse Framework
                                             if (lex.length < 1) {
                                                 attrs.pop();
                                                 jscom.pop();
-                                                linen.pop();
                                                 presv.pop();
                                                 return lines.pop();
                                             }
@@ -2174,7 +2408,6 @@ Parse Framework
                                             if (lex.length < 1) {
                                                 attrs.pop();
                                                 jscom.pop();
-                                                linen.pop();
                                                 presv.pop();
                                                 return lines.pop();
                                             }
@@ -2246,7 +2479,6 @@ Parse Framework
                                     spacer();
                                     attrs.push({});
                                     jscom.push(false);
-                                    linen.push(line);
                                     presv.push(false);
                                     token.push("{:else}");
                                     stack.push(parent[parent.length - 1][0]);
@@ -2283,14 +2515,25 @@ Parse Framework
                         stack.push(parent[parent.length - 1][0]);
                         begin.push(parent[parent.length - 1][1]);
                         return types.push("content");
+                    }
+                    spacer        = function parser_markup_tokenize_spacer() {
+                        emptylines = 0;
+                        do {
+                            if (b[a] === "\n") {
+                                emptylines = emptylines + 1;
+                                lineNumber = lineNumber + 1;
+                            }
+                            if ((/\s/).test(b[a + 1]) === false) {
+                                break;
+                            }
+                            a = a + 1;
+                        } while (a < c);
                     };
 
-                for (a = 0; a < c; a = a + 1) {
+                do {
+                    record = {};
                     if ((/\s/).test(b[a]) === true) {
-                        space = space + b[a];
-                        if (b[a] === "\n") {
-                            line = line + 1;
-                        }
+                        spacer();
                     } else if (ext === true) {
                         content();
                     } else if (b[a] === "<") {
@@ -2310,7 +2553,8 @@ Parse Framework
                     } else {
                         content();
                     }
-                }
+                    a = a + 1;
+                } while (a < c);
                 lines[0] = 0;
             }());
 
@@ -2331,14 +2575,16 @@ Parse Framework
                 ],
                 objsortop = false,
                 json      = (options.lang === "json"),
-                attrs     = [],
-                begin     = [],
-                jscom     = [],
-                lines     = [],
-                presv     = [],
-                stack     = [],
-                token     = [],
-                types     = [],
+                data       = {
+                    attrs: [],
+                    begin: [],
+                    jscom: [],
+                    lines: [],
+                    presv: [],
+                    stack: [],
+                    token: [],
+                    types: []
+                },
                 error     = [],
                 scolon    = 0,
                 result    = "";
@@ -2567,22 +2813,22 @@ Parse Framework
                             begin.push(last);
                         }
                     },
-                    tokenpop       = function parser_script_tokenize_tokenpop() {
+                    /*tokenpop       = function parser_script_tokenize_tokenpop() {
                         lengtha   = lengtha - 1;
                         lengthb   = lengthb - 1;
                         tempstore = [token.pop(), types.pop(), lines.pop(), stack.pop(), begin.pop()];
-                    },
+                    },*/
                     //reinsert the prior popped token
-                    temppush       = function parser_script_tokenize_temppush() {
+                    /*temppush       = function parser_script_tokenize_temppush() {
                         token.push(tempstore[0]);
                         types.push(tempstore[1]);
                         lines.push(tempstore[2]);
                         stack.push(tempstore[3]);
                         begin.push(tempstore[4]);
                         lengtha = lengtha + 1;
-                    },
+                    },*/
                     //populate various parallel arrays
-                    tokenpush      = function parser_script_tokenize_tokenpush(comma, lin) {
+                    /*tokenpush      = function parser_script_tokenize_tokenpush(comma, lin) {
                         if (comma === true) {
                             token.push(",");
                             types.push("separator");
@@ -2596,7 +2842,7 @@ Parse Framework
                         lengtha = token.length;
                         lines.push(lin);
                         stackPush();
-                    },
+                    },*/
                     //inserts ending curly brace
                     blockinsert    = function parser_script_tokenize_blockinsert() {
                         var next = nextchar(5, false),
@@ -2702,11 +2948,11 @@ Parse Framework
                         } while (f < a);
                         output   = build.join("");
                         wordTest = -1;
-                        if (types.length > 1 && output === "function" && token[lengtha - 1] === "(" && (token[token.length - 2] === "{" || token[token.length - 2] === "x{")) {
-                            types[types.length - 1] = "start";
+                        if (data.types.length > 1 && output === "function" && data.token[lengtha - 1] === "(" && (data.token[data.token.length - 2] === "{" || data.token[data.token.length - 2] === "x{")) {
+                            data.types[data.types.length - 1] = "start";
                         }
-                        if (types.length > 2 && output === "function" && ltoke === "(" && (token[token.length - 2] === "}" || token[token.length - 2] === "x}")) {
-                            if (token[token.length - 2] === "}") {
+                        if (data.types.length > 2 && output === "function" && ltoke === "(" && (data.token[data.token.length - 2] === "}" || data.token[data.token.length - 2] === "x}")) {
+                            if (data.token[data.token.length - 2] === "}") {
                                 for (f = token.length - 3; f > -1; f = f - 1) {
                                     if (types[f] === "end") {
                                         g = g + 1;
@@ -2717,12 +2963,12 @@ Parse Framework
                                         break;
                                     }
                                 }
-                                if (token[f] === "{" && token[f - 1] === ")") {
+                                if (data.token[f] === "{" && data.token[f - 1] === ")") {
                                     g = 1;
                                     for (f = f - 2; f > -1; f = f - 1) {
-                                        if (types[f] === "end") {
+                                        if (data.types[f] === "end") {
                                             g = g + 1;
-                                        } else if (types[f] === "start" || types[f] === "end") {
+                                        } else if (data.types[f] === "start" || data.types[f] === "end") {
                                             g = g - 1;
                                         }
                                         if (g === 0) {
@@ -2730,21 +2976,21 @@ Parse Framework
                                         }
                                     }
                                     if (token[f - 1] !== "function" && token[f - 2] !== "function") {
-                                        types[types.length - 1] = "start";
+                                        data.types[data.types.length - 1] = "start";
                                     }
                                 }
                             } else {
-                                types[types.length - 1] = "start";
+                                data.types[data.types.length - 1] = "start";
                             }
                         }
-                        if (options.correct === true && (output === "Object" || output === "Array") && c[a + 1] === "(" && c[a + 2] === ")" && token[lengtha - 2] === "=" && token[lengtha - 1] === "new") {
+                        if (options.correct === true && (output === "Object" || output === "Array") && c[a + 1] === "(" && c[a + 2] === ")" && data.token[lengtha - 2] === "=" && data.token[lengtha - 1] === "new") {
                             if (output === "Object") {
-                                token[lengtha - 1]                 = "{";
+                                data.token[lengtha - 1]                 = "{";
                                 ltoke                              = "}";
                                 stack[a - 1]                       = "object";
                                 stacklist[stacklist.length - 1][0] = "object";
                             } else {
-                                token[lengtha - 1]                 = "[";
+                                data.token[lengtha - 1]                 = "[";
                                 ltoke                              = "]";
                                 stack[a - 1]                       = "array";
                                 stacklist[stacklist.length - 1][0] = "array";
@@ -2813,21 +3059,21 @@ Parse Framework
                                     f = f + 1;
                                 } while (f < g);
                             }
-                            if (output === "from" && token[lengtha - 1] === "x;" && token[lengtha - 2] === "}") {
+                            if (output === "from" && data.token[lengtha - 1] === "x;" && data.token[lengtha - 2] === "}") {
                                 asifix();
                             }
-                            if (output === "while" && token[lengtha - 1] === "x;" && token[lengtha - 2] === "}") {
+                            if (output === "while" && data.token[lengtha - 1] === "x;" && data.token[lengtha - 2] === "}") {
                                 (function parser_script_tokenize_word_whilefix() {
                                     var d = 0,
                                         e = 0;
                                     for (e = lengtha - 3; e > -1; e = e - 1) {
-                                        if (types[e] === "end") {
+                                        if (data.types[e] === "end") {
                                             d = d + 1;
-                                        } else if (types[e] === "start") {
+                                        } else if (data.types[e] === "start") {
                                             d = d - 1;
                                         }
                                         if (d < 0) {
-                                            if (token[e] === "{" && token[e - 1] === "do") {
+                                            if (data.token[e] === "{" && data.token[e - 1] === "do") {
                                                 asifix();
                                             }
                                             return;
@@ -2837,7 +3083,7 @@ Parse Framework
                             }
                             ltoke = output;
                             ltype = "word";
-                            if (output === "from" && token[lengtha - 1] === "}") {
+                            if (output === "from" && data.token[lengtha - 1] === "}") {
                                 asifix();
                             }
                         }
@@ -2886,172 +3132,6 @@ Parse Framework
                             if (nextitem !== "(") {
                                 paren = lengtha - 1;
                                 start("x(");
-                            }
-                        }
-                    },
-                    //sort object properties
-                    objSort        = function parser_script_tokenize_objSort() {
-                        var cc        = 0,
-                            dd        = 0,
-                            ee        = 0,
-                            startlen  = token.length - 1,
-                            behind    = startlen,
-                            keys      = [],
-                            keylen    = 0,
-                            keyend    = 0,
-                            front     = 0,
-                            sort      = function parser_script_tokenize_objSort_sort(x, y) {
-                                var xx = x[0],
-                                    yy = y[0];
-                                if (types[xx] === "comment" || types[xx] === "comment-inline") {
-                                    do {
-                                        xx = xx + 1;
-                                    } while (
-                                        xx < startlen && (types[xx] === "comment" || types[xx] === "comment-inline")
-                                    );
-                                }
-                                if (types[yy] === "comment" || types[yy] === "comment-inline") {
-                                    do {
-                                        yy = yy + 1;
-                                    } while (
-                                        yy < startlen && (types[yy] === "comment" || types[yy] === "comment-inline")
-                                    );
-                                }
-                                if (token[xx].toLowerCase() > token[yy].toLowerCase()) {
-                                    return 1;
-                                }
-                                return -1;
-                            },
-                            commaTest = true,
-                            pairToken = [],
-                            pairTypes = [],
-                            pairLines = [],
-                            pairStack = [],
-                            pairBegin = [];
-                        if (token[behind] === "," || types[behind] === "comment") {
-                            do {
-                                behind = behind - 1;
-                            } while (behind > 0 && (token[behind] === "," || types[behind] === "comment"));
-                        }
-                        for (cc = behind; cc > -1; cc = cc - 1) {
-                            if (types[cc] === "end") {
-                                dd = dd + 1;
-                            }
-                            if (types[cc] === "start") {
-                                dd = dd - 1;
-                            }
-                            if (dd === 0) {
-                                if (types[cc].indexOf("template") > -1) {
-                                    return;
-                                }
-                                if (token[cc] === ",") {
-                                    commaTest = true;
-                                    front     = cc + 1;
-                                }
-                                if (commaTest === true && token[cc] === "," && front < behind) {
-                                    if (token[behind] !== ",") {
-                                        behind = behind + 1;
-                                    }
-                                    if (types[front] === "comment-inline") {
-                                        front = front + 1;
-                                    }
-                                    keys.push([front, behind]);
-                                    behind = front - 1;
-                                }
-                            }
-                            if (dd < 0 && cc < startlen) {
-                                if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
-                                    ee = keys[keys.length - 1][0];
-                                    if (types[ee - 1] !== "comment-inline") {
-                                        ee = ee - 1;
-                                    }
-                                    keys.push([
-                                        cc + 1,
-                                        ee
-                                    ]);
-                                }
-                                if (token[cc - 1] === "=" || token[cc - 1] === ":" || token[cc - 1] === "(" || token[cc - 1] === "[" || token[cc - 1] === "," || types[cc - 1] === "word" || cc === 0) {
-                                    if (keys.length > 1) {
-                                        keys.sort(sort);
-                                        keylen    = keys.length;
-                                        commaTest = false;
-                                        for (dd = 0; dd < keylen; dd = dd + 1) {
-                                            keyend = keys[dd][1];
-                                            if (lines[keys[dd][0] - 1] > 1 && pairLines.length > 0) {
-                                                pairLines[pairLines.length - 1] = lines[keys[dd][0] - 1];
-                                            }
-                                            for (ee = keys[dd][0]; ee < keyend; ee = ee + 1) {
-                                                pairToken.push(token[ee]);
-                                                pairTypes.push(types[ee]);
-                                                pairLines.push(lines[ee]);
-                                                pairStack.push(stack[ee]);
-                                                pairBegin.push(begin[ee]);
-
-                                                //remove extra commas
-                                                if (token[ee] === ",") {
-                                                    commaTest = true;
-                                                } else if (token[ee] !== "," && types[ee] !== "comment" && types[ee] !== "comment-inline") {
-                                                    commaTest = false;
-                                                }
-                                            }
-                                            if (commaTest === false) {
-                                                ee = pairTypes.length - 1;
-                                                if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
-                                                    do {
-                                                        ee = ee - 1;
-                                                    } while (
-                                                        ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                                    );
-                                                }
-                                                ee = ee + 1;
-                                                pairToken.splice(ee, 0, ",");
-                                                pairTypes.splice(ee, 0, "separator");
-                                                pairLines.splice(ee, 0, pairLines[ee - 1]);
-                                                pairStack.splice(ee, 0, "object");
-                                                pairBegin.splice(ee, 0, cc);
-                                                pairLines[ee - 1] = 0;
-                                            }
-                                        }
-                                        ee = pairTypes.length;
-                                        do {
-                                            ee = ee - 1;
-                                        } while (
-                                            ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                        );
-                                        if (options.endcomma === "never" || options.endcomma === "multiline") {
-                                            pairToken.splice(ee, 1);
-                                            pairTypes.splice(ee, 1);
-                                            pairLines.splice(ee, 1);
-                                            pairStack.splice(ee, 1);
-                                            pairBegin.splice(ee, 1);
-                                        }
-                                        keylen = token.length - (cc + 1);
-                                        token.splice(cc + 1, keylen);
-                                        types.splice(cc + 1, keylen);
-                                        lines.splice(cc + 1, keylen);
-                                        stack.splice(cc + 1, keylen);
-                                        begin.splice(cc + 1, keylen);
-                                        token     = token.concat(pairToken);
-                                        types     = types.concat(pairTypes);
-                                        lines     = lines.concat(pairLines);
-                                        stack     = stack.concat(pairStack);
-                                        begin     = begin.concat(pairBegin);
-                                        lengtha   = token.length;
-                                        pairToken = [cc];
-                                        for (cc = cc + 1; cc < lengtha; cc = cc + 1) {
-                                            if (types[cc] === "start") {
-                                                pairToken.push(cc);
-                                            }
-                                            begin[cc] = pairToken[pairToken.length - 1];
-                                            if (types[cc] === "end") {
-                                                pairToken.pop();
-                                            }
-                                        }
-                                    } else if (options.endcomma === "always" && types[lengtha - 1] !== "start") {
-                                        tokenpush(true, 0);
-                                    }
-                                }
-                                return;
                             }
                         }
                     },
@@ -4343,17 +4423,17 @@ Parse Framework
                                     arraylen = 0;
                                 tokenpop();
                                 cc = lengtha - 1;
-                                if (ar === true && token[cc - 1] === "(" && types[cc] === "literal" && token[cc].charAt(0) !== "\"" && token[cc].charAt(0) !== "'") {
-                                    arraylen = token[cc] - 1;
+                                if (ar === true && data.token[cc - 1] === "(" && data.types[cc] === "literal" && data.token[cc].charAt(0) !== "\"" && data.token[cc].charAt(0) !== "'") {
+                                    arraylen = data.token[cc] - 1;
                                     tokenpop();
                                     tokenpop();
                                     tokenpop();
-                                    token[token.length - 1]         = "[";
-                                    lengtha                         = token.length;
-                                    types[types.length - 1]         = "start";
-                                    lines[lines.length - 1]         = 0;
-                                    stack[stack.length - 1]         = "array";
-                                    begin[begin.length - 1]         = lengtha - 1;
+                                    data.token[data.token.length - 1]         = "[";
+                                    lengtha                         = data.token.length;
+                                    data.types[data.types.length - 1]         = "start";
+                                    data.lines[data.lines.length - 1]         = 0;
+                                    data.stack[data.stack.length - 1]         = "array";
+                                    data.begin[data.begin.length - 1]         = lengtha - 1;
                                     stacklist[stacklist.length - 1] = [
                                         "array", lengtha - 1
                                     ];
@@ -4897,11 +4977,16 @@ Parse Framework
             }
         };
         lexer.style  = function parser_style(source) {
-            var begin      = [],
-                lines      = [],
-                stack      = [],
-                token      = [],
-                types      = [],
+            var data       = {
+                    attrs: [],
+                    begin: [],
+                    jscom: [],
+                    lines: [],
+                    presv: [],
+                    stack: [],
+                    token: [],
+                    types: []
+                },
                 colors     = [],
                 output     = "",
                 objsortop  = false,
@@ -5214,8 +5299,8 @@ Parse Framework
                             }
                         } else if (space.length > 1) {
                             val = 1;
-                        } else if (slen === 0 && types[types.length - 1] === "comment" && types[types.length - 2] !== "comment") {
-                            types[types.length - 1] = "comment-inline";
+                        } else if (slen === 0 && data.types[data.types.length - 1] === "comment" && data.types[data.types.length - 2] !== "comment") {
+                            data.types[data.types.length - 1] = "comment-inline";
                         }
                         if (slen > 1 && end === true && options.preserve > 0) {
                             space = "";
@@ -5498,8 +5583,8 @@ Parse Framework
                         if (structval === "map" && out[0] === "(") {
                             mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
                         }
-                        if (comma === true && structval !== "map" && types[types.length - 1] !== "comment" && types[types.length - 1] !== "comment-inline") {
-                            token[token.length - 1] = token[token.length - 1] + out
+                        if (comma === true && structval !== "map" && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
+                            data.token[data.token.length - 1] = data.token[data.token.length - 1] + out
                                 .join("")
                                 .replace(/\s+/g, " ")
                                 .replace(/^\s/, "")
@@ -5515,21 +5600,21 @@ Parse Framework
                         if (token[token.length - 1].indexOf("extend(") === 0) {
                             ltype = "pseudo";
                             types.push("pseudo");
-                        } else if ("\"'".indexOf(token[token.length - 1].charAt(0)) > -1 && types[types.length - 1] === "propvar") {
+                        } else if ("\"'".indexOf(data.token[data.token.length - 1].charAt(0)) > -1 && data.types[data.types.length - 1] === "propvar") {
                             ltype = "item";
                             types.push("value");
                         } else if (out[0] === "@" || out[0] === "$") {
-                            if (types[types.length - 1] === "colon" && (types[types.length - 2] === "property" || types[types.length - 2] === "propvar")) {
+                            if (data.types[data.types.length - 1] === "colon" && (data.types[data.types.length - 2] === "property" || data.types[data.types.length - 2] === "propvar")) {
                                 ltype = "value";
                                 types.push("value");
                             } else {
                                 ltype = "propvar";
                                 types.push("propvar");
-                                outy = token[token.length - 1];
+                                outy = data.token[data.token.length - 1];
                                 aa   = outy.indexOf("(");
                                 if (outy.charAt(outy.length - 1) === ")" && aa > 0) {
                                     outy                    = outy.slice(aa + 1, outy.length - 1);
-                                    token[token.length - 1] = token[token.length - 1].slice(0, aa + 1) + value(
+                                    data.token[data.token.length - 1] = data.token[data.token.length - 1].slice(0, aa + 1) + value(
                                         outy,
                                         false
                                     ) + ")";
@@ -5643,14 +5728,14 @@ Parse Framework
                                 types[aa] = "value";
                                 ltype     = "value";
                                 token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
-                                if (options.quoteConvert !== "none" && (token[aa - 2] === "font" || token[aa - 2] === "font-family")) {
-                                    token[aa] = value(token[aa], true);
+                                if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
+                                    data.token[aa] = value(data.token[aa], true);
                                 } else {
-                                    token[aa] = value(token[aa], false);
+                                    data.token[aa] = value(data.token[aa], false);
                                 }
                                 //take comments out until the 'item' is found and then put the comments back
-                                if (token[token.length - 2] === "{") {
-                                    types[types.length - 1] = "propvar";
+                                if (data.token[data.token.length - 2] === "{") {
+                                    data.types[data.types.length - 1] = "propvar";
                                 } else if (structval === "block") {
                                     if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                         aa = coms.length - 1;
@@ -5751,10 +5836,10 @@ Parse Framework
                             start  = open.length,
                             linev  = spacer(false),
                             exit   = function parser_style_tokenize_external_exit(typename) {
-                                var endtype = types[types.length - 2];
+                                var endtype = data.types[data.types.length - 2];
                                 if (ltype === "item") {
                                     if (endtype === "colon") {
-                                        types[types.length - 1] = "value";
+                                        data.types[data.types.length - 1] = "value";
                                     } else {
                                         item(endtype);
                                     }
@@ -5813,13 +5898,13 @@ Parse Framework
                                                 .replace(/^(\{\{\s+)/, "{{")
                                                 .replace(/(\s+\}\})$/, "}}");
                                         }
-                                        if (ltype === "item" && types[types.length - 2] === "colon" && (types[types.length - 3] === "property" || types[types.length - 3] === "propvar")) {
+                                        if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
                                             ltype                   = "value";
-                                            types[types.length - 1] = "value";
-                                            if (isNaN(token[token.length - 1]) === true && token[token.length - 1].charAt(token[token.length - 1].length - 1) !== ")") {
-                                                token[token.length - 1] = token[token.length - 1] + quote;
+                                            data.types[data.types.length - 1] = "value";
+                                            if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
+                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + quote;
                                             } else {
-                                                token[token.length - 1] = token[token.length - 1] + " " + quote;
+                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " + quote;
                                             }
                                             return;
                                         }
@@ -5951,7 +6036,7 @@ Parse Framework
                             }
                         }
                         a = aa;
-                        if (token.length > 0 && (ltype === "selector" || ltype === "propvar") && types[types.length - 1] !== "comment" && types[types.length - 1] !== "comment-inline") {
+                        if (token.length > 0 && (ltype === "selector" || ltype === "propvar") && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
                             spareToke.push(token[token.length - 1]);
                             token.pop();
                             types.pop();
@@ -5985,7 +6070,7 @@ Parse Framework
                                 stack.pop();
                                 begin.pop();
                             } while (
-                                types.length > 1 && types[types.length - 1] !== "semi" && types[types.length - 1] !== "start"
+                                types.length > 1 && data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start"
                             );
                             token.push(out.join(""));
                             types.push(type);
@@ -6268,9 +6353,9 @@ Parse Framework
                         stack.push(stack[stack.length - 1]);
                         begin.push(begin[begin.length - 1]);
                         a = a + 4;
-                    } else if (b[a] === "{" || (b[a] === "(" && token[token.length - 1] === ":" && types[types.length - 2] === "propvar")) {
-                        if (b[a] === "{" && token[token.length - 2] === ":") {
-                            types[types.length - 1] = "pseudo";
+                    } else if (b[a] === "{" || (b[a] === "(" && data.token[data.token.length - 1] === ":" && data.types[data.types.length - 2] === "propvar")) {
+                        if (b[a] === "{" && data.token[data.token.length - 2] === ":") {
+                            data.types[data.types.length - 1] = "pseudo";
                         }
                         item("start");
                         struct.push(token.length);
@@ -6290,8 +6375,8 @@ Parse Framework
                         lines.push(spacer(false));
                     } else if (b[a] === "}" || (b[a] === ")" && structval === "map" && mapper[mapper.length - 1] === 0)) {
                         endtest = true;
-                        if (b[a] === "}" && types[types.length - 1] === "item" && token[token.length - 2] === "{" && token[token.length - 3] !== undefined && token[token.length - 3].charAt(token[token.length - 3].length - 1) === "@") {
-                            token[token.length - 3] = token[token.length - 3] + "{" + token[token.length - 1] +
+                        if (b[a] === "}" && data.types[data.types.length - 1] === "item" && data.token[data.token.length - 2] === "{" && data.token[data.token.length - 3] !== undefined && data.token[data.token.length - 3].charAt(data.token[data.token.length - 3].length - 1) === "@") {
+                            data.token[data.token.length - 3] = data.token[data.token.length - 3] + "{" + data.token[data.token.length - 1] +
                                     "}";
                             token.pop();
                             token.pop();
@@ -6336,7 +6421,7 @@ Parse Framework
                         }
                     } else if (b[a] === ";" || (b[a] === "," && structval === "map")) {
                         item("semi");
-                        if (types[types.length - 1] !== "semi" && types[types.length - 1] !== "start" && esctest(a) === false) {
+                        if (data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start" && esctest(a) === false) {
                             ltype = "semi";
                             types.push("semi");
                             token.push(b[a]);
@@ -6345,7 +6430,7 @@ Parse Framework
                             begin.push(begin[begin.length - 1]);
                         }
                         space = "";
-                    } else if (b[a] === ":" && types[types.length - 1] !== "end") {
+                    } else if (b[a] === ":" && data.types[data.types.length - 1] !== "end") {
                         item("colon");
                         types.push("colon");
                         token.push(":");
