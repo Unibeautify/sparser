@@ -10,6 +10,28 @@ Parse Framework
                 ? "\r\n"
                 : "\n",
             lineNumber = 1,
+            recordPop  = function parser_recordPop(data, length) {
+                data.attrs.pop();
+                data.begin.pop();
+                data.jscom.pop();
+                data.lines.pop();
+                data.presv.pop();
+                data.stack.pop();
+                data.token.pop();
+                data.types.pop();
+                return length - 1;
+            },
+            recordPush = function parser_recordPush(data, record, length) {
+                data.attrs.push(record.attrs);
+                data.begin.push(record.begin);
+                data.jscom.push(record.jscom);
+                data.lines.push(record.lines);
+                data.presv.push(record.presv);
+                data.stack.push(record.stack);
+                data.token.push(record.token);
+                data.types.push(record.types);
+                return length + 1;
+            },
             objectSort = function parser_objectSort(data) {
                 var cc        = 0,
                     dd        = 0,
@@ -210,28 +232,6 @@ Parse Framework
                         cc = cc - 1;
                     } while (cc > -1);
                 }
-            },
-            recordPop  = function parser_recordPop(data, length) {
-                data.attrs.pop();
-                data.begin.pop();
-                data.jscom.pop();
-                data.lines.pop();
-                data.presv.pop();
-                data.stack.pop();
-                data.token.pop();
-                data.types.pop();
-                return length - 1;
-            },
-            recordPush = function parser_recordPush(data, record, length) {
-                data.attrs.push(record.attrs);
-                data.begin.push(record.begin);
-                data.jscom.push(record.jscom);
-                data.lines.push(record.lines);
-                data.presv.push(record.presv);
-                data.stack.push(record.stack);
-                data.token.push(record.token);
-                data.types.push(record.types);
-                return length + 1;
             },
             safeSort   = function parser_safeSort(array, operation, recursive) {
                 var arTest  = function safeSort_arTest(item) {
@@ -1854,7 +1854,7 @@ Parse Framework
                         if (options.lang === "html") {
                             //simple means of looking for missing li end tags
                             if (tname === "li") {
-                                if (litag === list && (list !== 0 || (list === 0 && data.types.length > 0 && data.types[lengthMarkup].indexOf("template") < 0))) {
+                                if (litag === list && (list !== 0 || (list === 0 && lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") < 0))) {
                                     d = lengthMarkup;
                                     if (d > -1) {
                                         do {
@@ -2073,8 +2073,7 @@ Parse Framework
                     }
 
                     //some template tags can be evaluated as a block start/end based on syntax alone
-                    e = lengthMarkup;
-                    if (e > -1 && data.types[e].indexOf("template") > -1) {
+                    if (lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") > -1) {
                         if (element.slice(0, 2) === "{%") {
                             lex = [
                                 "autoescape",
@@ -2152,7 +2151,7 @@ Parse Framework
                         }
                     }
                     if (parent[parent.length - 1][1] === -1) {
-                        parent[parent.length - 1] = ["root", data.token.length];
+                        parent[parent.length - 1] = ["root", lengthMarkup];
                     }
                     if (preserve === false && options.lang !== "jsx") {
                         element = element.replace(/\s+/g, " ");
@@ -2271,6 +2270,7 @@ Parse Framework
                             endData.stack = data.stack.pop();
                             endData.token = data.token.pop();
                             endData.types = data.types.pop();
+                            lengthMarkup = lengthMarkup - 1;
                             data.attrs    = data
                                 .attrs
                                 .slice(0, startStore)
@@ -2303,6 +2303,7 @@ Parse Framework
                                 .types
                                 .slice(0, startStore)
                                 .concat(store.types);
+                            lengthMarkup = data.token.length - 1;
                             lengthMarkup = recordPush(data, {
                                 attrs: endData.attrs,
                                 begin: endData.begin,
