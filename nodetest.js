@@ -8,8 +8,6 @@
     var parser  = require("./parse.js"),
         fs      = require("fs"),
         options = {
-            html  : true,
-            jsx   : false,
             source: "",
             type  : "markup"
         },

@@ -515,19 +515,24 @@ Parse Framework
                 // Find the lowercase tag name of the provided token.
                 tagName    = function parser_markup_tagName(el) {
                     var reg = (/^(\{((%-?)|\{-?)\s*)/),
-                        space = el
-                            .replace(reg, "%")
-                            .replace(/\s+/, " ")
-                            .indexOf(" "),
-                        name  = (space < 0)
-                            ? el
-                                .replace(reg, " ")
-                                .slice(1, el.length - 1)
-                                .toLowerCase()
-                            : el
-                                .replace(reg, " ")
-                                .slice(1, space)
-                                .toLowerCase();
+                        space = "",
+                        name  = "";
+                    if (typeof el !== "string") {
+                        return "";
+                    }
+                    space = el
+                        .replace(reg, "%")
+                        .replace(/\s+/, " ")
+                        .indexOf(" ");
+                    name  = (space < 0)
+                        ? el
+                            .replace(reg, " ")
+                            .slice(1, el.length - 1)
+                            .toLowerCase()
+                        : el
+                            .replace(reg, " ")
+                            .slice(1, space)
+                            .toLowerCase()
                     name = name.replace(/(\}\})$/, "");
                     if (name.indexOf("(") > 0) {
                         name = name.slice(0, name.indexOf("("));
@@ -854,6 +859,7 @@ Parse Framework
                             attribute = [];
                         };
                     ext = false;
+
                     // this complex series of conditions determines an elements delimiters look to
                     // the types being pushed to quickly reason about the logic no type is pushed
                     // for start tags or singleton tags just yet some types set the `preserve` flag,
@@ -1113,6 +1119,7 @@ Parse Framework
                     if (earlyexit === true) {
                         return;
                     }
+
                     // This loop is the logic that parses tags and attributes If the attribute
                     // data-parse-ignore is present the `ignore` flag is set. The ignore flag is
                     // identical to the preserve flag
@@ -1496,11 +1503,13 @@ Parse Framework
                             }
                         } while (a < c);
                     }
+
                     //nopush flags mean an early exit
                     if (nopush === true) {
                         return;
                     }
 
+                    //a correction to incomplete template tags that use multiple angle braces 
                     if (options.correct === true) {
                         if (b[a + 1] === ">" && lex[0] === "<" && lex[1] !== "<") {
                             do {
@@ -1512,8 +1521,12 @@ Parse Framework
                             } while (lex[1] === "<");
                         }
                     }
+
                     igcount = 0;
                     element = lex.join("");
+
+                    //a type correction for template tags who have variable
+                    //start tag names but a consistent ending tag name
                     if (element.indexOf("{{") === 0 && element.slice(element.length - 2) === "}}") {
                         if (tagName(element) === "end") {
                             ltype = "template_end";
@@ -1527,10 +1540,15 @@ Parse Framework
                             ltype = "template_start";
                         }
                     }
+
                     tname = tagName(element);
+
+                    //html gets tag names in lowercase, if you want to preserve case sensitivity beautify as XML
                     if (options.lang === "html" && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
                         element = element.toLowerCase();
                     }
+
+                    //a quick hack to inject records for a type of template comments
                     if (tname === "comment" && element.slice(0, 2) === "{%") {
                         element = element
                             .replace(/^(\{%\s*comment\s*%\}\s*)/, "")
@@ -1568,6 +1586,7 @@ Parse Framework
                         return;
                     }
 
+                    //update a flag for subatomic parsing in SGML tags
                     if (end !== "]>" && sgmlflag > 0 && element.charAt(element.length - 1) !== "[" && (element.slice(element.length - 2) === "]>" || (/^(<!((doctype)|(notation))\s)/i).test(element) === true)) {
                         sgmlflag = sgmlflag - 1;
                     }
@@ -1596,6 +1615,8 @@ Parse Framework
                             attstore = safeSort(attstore);
                         }
                     }
+
+                    //creates the attributes object for the current record
                     attr = (function parser_markup_attribute() {
                         var ind    = 0,
                             len    = attstore.length,
@@ -1661,6 +1682,7 @@ Parse Framework
                         return obj;
                     }());
 
+                    //a correction for false-positive parse failures
                     if (parseFail === true) {
                         if (element.indexOf("<!--<![") === 0) {
                             parseError.pop();
@@ -1682,11 +1704,14 @@ Parse Framework
                             }
                         }
                     }
+
                     // cheat identifies HTML singleton elements as singletons even if formatted as
                     // start tags
                     cheat = (function parser_markup_tag_cheat() {
                         var atty         = [],
-                            attn         = data.token[lengthMarkup],
+                            attn         = (typeof data.token[lengthMarkup] === "string")
+                                ? data.token[lengthMarkup]
+                                : "",
                             atval        = "",
                             type         = "",
                             d            = 0,
@@ -1727,7 +1752,7 @@ Parse Framework
                                                 return false;
                                             }
                                         }
-                                        if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
+                                        if (bb === 0 && typeof data.token[aa] === "string" && data.token[aa].toLowerCase().indexOf(vname) === 1) {
                                             if (cftags[tagName(data.token[aa])] !== undefined) {
                                                 data.types[aa] = "template_start";
                                             } else {
@@ -1833,7 +1858,7 @@ Parse Framework
                                     } else if (data.types[d] === "end" || data.types[d] === "template_end") {
                                         ee = ee + 1;
                                     }
-                                    if (ee === 1) {
+                                    if (ee === 1 && typeof data.token[d] === "string") {
                                         if ((data.token[d].indexOf("<#assign") === 0 && tname === "/#assign") || (data.token[d].indexOf("<#global") === 0 && tname === "/#global")) {
                                             data.types[d] = "template_start";
                                             return false;
@@ -2244,7 +2269,7 @@ Parse Framework
                             if (children.length < 2) {
                                 return;
                             }
-                            children.sort(sortName);
+                            children = safeSort(children);
                             bb = children.length - 1;
                             if (bb > -1) {
                                 do {
@@ -2636,8 +2661,7 @@ Parse Framework
                     types: []
                 },
                 error     = [],
-                scolon    = 0,
-                result    = "";
+                scolon    = 0;
 
             (function parser_script_tokenize() {
                 var a              = 0,
@@ -2675,11 +2699,11 @@ Parse Framework
                     },
                     //peek at whats up next
                     nextchar       = function parser_script_tokenize_nextchar(len, current) {
-                        var cc    = 0,
-                            dd    = "",
-                            front = (current === true)
+                        var front = (current === true)
                                 ? a
-                                : a + 1;
+                                : a + 1,
+                            cc    = front,
+                            dd    = "";
                         if (typeof len !== "number" || len < 1) {
                             len = 1;
                         }
@@ -2690,27 +2714,30 @@ Parse Framework
                                 dd = "/";
                             }
                         }
-                        for (cc = front; cc < b; cc = cc + 1) {
-                            if ((/\s/).test(c[cc]) === false) {
-                                if (c[cc] === "/") {
-                                    if (dd === "") {
-                                        if (c[cc + 1] === "/") {
-                                            dd = "\n";
-                                        } else if (c[cc + 1] === "*") {
-                                            dd = "/";
+                        if (cc < b) {
+                            do {
+                                if ((/\s/).test(c[cc]) === false) {
+                                    if (c[cc] === "/") {
+                                        if (dd === "") {
+                                            if (c[cc + 1] === "/") {
+                                                dd = "\n";
+                                            } else if (c[cc + 1] === "*") {
+                                                dd = "/";
+                                            }
+                                        } else if (dd === "/" && c[cc - 1] === "*") {
+                                            dd = "";
                                         }
-                                    } else if (dd === "/" && c[cc - 1] === "*") {
-                                        dd = "";
                                     }
+                                    if (dd === "" && c[cc - 1] + c[cc] !== "*/") {
+                                        return c
+                                            .slice(cc, cc + len)
+                                            .join("");
+                                    }
+                                } else if (dd === "\n" && c[cc] === "\n") {
+                                    dd = "";
                                 }
-                                if (dd === "" && c[cc - 1] + c[cc] !== "*/") {
-                                    return c
-                                        .slice(cc, cc + len)
-                                        .join("");
-                                }
-                            } else if (dd === "\n" && c[cc] === "\n") {
-                                dd = "";
-                            }
+                                cc = cc + 1;
+                            } while (cc < b);
                         }
                         return "";
                     },
@@ -3003,27 +3030,35 @@ Parse Framework
                         }
                         if (data.types.length > 2 && output === "function" && ltoke === "(" && (data.token[data.token.length - 2] === "}" || data.token[data.token.length - 2] === "x}")) {
                             if (data.token[data.token.length - 2] === "}") {
-                                for (f = token.length - 3; f > -1; f = f - 1) {
-                                    if (types[f] === "end") {
-                                        g = g + 1;
-                                    } else if (types[f] === "start" || types[f] === "end") {
-                                        g = g - 1;
-                                    }
-                                    if (g === 0) {
-                                        break;
-                                    }
-                                }
-                                if (data.token[f] === "{" && data.token[f - 1] === ")") {
-                                    g = 1;
-                                    for (f = f - 2; f > -1; f = f - 1) {
-                                        if (data.types[f] === "end") {
+                                f = token.length - 3;
+                                if (f > -1) {
+                                    do {
+                                        if (types[f] === "end") {
                                             g = g + 1;
-                                        } else if (data.types[f] === "start" || data.types[f] === "end") {
+                                        } else if (types[f] === "start" || types[f] === "end") {
                                             g = g - 1;
                                         }
                                         if (g === 0) {
                                             break;
                                         }
+                                        f = f - 1;
+                                    } while (f > -1);
+                                }
+                                if (data.token[f] === "{" && data.token[f - 1] === ")") {
+                                    g = 1;
+                                    f = f - 2;
+                                    if (f > -1) {
+                                        do {
+                                            if (data.types[f] === "end") {
+                                                g = g + 1;
+                                            } else if (data.types[f] === "start" || data.types[f] === "end") {
+                                                g = g - 1;
+                                            }
+                                            if (g === 0) {
+                                                break;
+                                            }
+                                            f = f - 1;
+                                        } while (f > -1);
                                     }
                                     if (token[f - 1] !== "function" && token[f - 2] !== "function") {
                                         data.types[data.types.length - 1] = "start";
@@ -3115,19 +3150,22 @@ Parse Framework
                             if (output === "while" && data.token[lengtha - 1] === "x;" && data.token[lengtha - 2] === "}") {
                                 (function parser_script_tokenize_word_whilefix() {
                                     var d = 0,
-                                        e = 0;
-                                    for (e = lengtha - 3; e > -1; e = e - 1) {
-                                        if (data.types[e] === "end") {
-                                            d = d + 1;
-                                        } else if (data.types[e] === "start") {
-                                            d = d - 1;
-                                        }
-                                        if (d < 0) {
-                                            if (data.token[e] === "{" && data.token[e - 1] === "do") {
-                                                asifix();
+                                        e = lengtha - 3;
+                                    if (e > -1) {
+                                        do {
+                                            if (data.types[e] === "end") {
+                                                d = d + 1;
+                                            } else if (data.types[e] === "start") {
+                                                d = d - 1;
                                             }
-                                            return;
-                                        }
+                                            if (d < 0) {
+                                                if (data.token[e] === "{" && data.token[e - 1] === "do") {
+                                                    asifix();
+                                                }
+                                                return;
+                                            }
+                                            e = e - 1;
+                                        } while (e > -1);
                                     }
                                 }());
                             }
@@ -3217,20 +3255,23 @@ Parse Framework
                     },
                     //injects a comma into the end of arrays for use with endcomma option
                     endCommaArray  = function parser_script_tokenize_endCommaArray() {
-                        var d = 0,
+                        var d = lengtha,
                             e = 0;
-                        for (d = lengtha; d > 0; d = d - 1) {
-                            if (types[d] === "end") {
-                                e = e + 1;
-                            } else if (types[d] === "start") {
-                                e = e - 1;
-                            }
-                            if (e < 0) {
-                                return;
-                            }
-                            if (e === 0 && token[d] === ",") {
-                                return tokenpush(true, 0);
-                            }
+                        if (d > 0) {
+                            do {
+                                if (types[d] === "end") {
+                                    e = e + 1;
+                                } else if (types[d] === "start") {
+                                    e = e - 1;
+                                }
+                                if (e < 0) {
+                                    return;
+                                }
+                                if (e === 0 && token[d] === ",") {
+                                    return tokenpush(true, 0);
+                                }
+                                d = d - 1;
+                            } while (d > 0);
                         }
                     },
                     //automatic semicolon insertion
@@ -3921,53 +3962,57 @@ Parse Framework
                                 return "\\'";
                             }
                         }
-                        for (ee = base; ee < jj; ee = ee + 1) {
-                            if (ee > a + 1) {
-                                if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("<?php", "?>"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("<%", "%>"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("{%", "%}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("{{{", "}}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("{{", "}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(parser_script_tokenize_genericBuilder("<!--#", "-->"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                        ee = base;
+                        if (ee < jj) {
+                            do {
+                                if (ee > a + 1) {
+                                    if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("<?php", "?>"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("<%", "%>"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("{%", "%}"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("{{{", "}}}"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("{{", "}}"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                        a = ee;
+                                        build.push(parser_script_tokenize_genericBuilder("<!--#", "-->"));
+                                        ee = ee + build[build.length - 1].length - 1;
+                                    } else {
+                                        build.push(c[ee]);
+                                    }
                                 } else {
                                     build.push(c[ee]);
                                 }
-                            } else {
-                                build.push(c[ee]);
-                            }
-                            if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] === "\n" || ee === jj - 1)) {
-                                logError("Unterminated string in JavaScript", ee);
-                                break;
-                            }
-                            if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
-                                if (endlen === 1) {
+                                if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] === "\n" || ee === jj - 1)) {
+                                    logError("Unterminated string in JavaScript", ee);
                                     break;
                                 }
-                                // `ee - base` is a cheap means of computing length of build array the `ee -
-                                // base` and `endlen` are both length based values, so adding two (1 for each)
-                                // provides an index based number
-                                if (build[ee - base] === ender[0] && build.slice(ee - base - endlen + 2).join("") === ending) {
-                                    break;
+                                if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
+                                    if (endlen === 1) {
+                                        break;
+                                    }
+                                    // `ee - base` is a cheap means of computing length of build array the `ee -
+                                    // base` and `endlen` are both length based values, so adding two (1 for each)
+                                    // provides an index based number
+                                    if (build[ee - base] === ender[0] && build.slice(ee - base - endlen + 2).join("") === ending) {
+                                        break;
+                                    }
                                 }
-                            }
+                                ee = ee + 1;
+                            } while (ee < jj);
                         }
                         if (escape === true) {
                             output = build[build.length - 1];
@@ -3984,8 +4029,12 @@ Parse Framework
                             output = output.replace(/(\s+)$/, "");
                         } else if (starting === "/*") {
                             build = output.split(lf);
-                            for (ee = build.length - 1; ee > -1; ee = ee - 1) {
-                                build[ee] = build[ee].replace(/(\s+)$/, "");
+                            ee = build.length - 1;
+                            if (ee > -1) {
+                                do {
+                                    build[ee] = build[ee].replace(/(\s+)$/, "");
+                                    ee = ee - 1;
+                                } while (ee > -1);
                             }
                             output = build.join(lf);
                         }
@@ -4007,40 +4056,47 @@ Parse Framework
                     },
                     //a tokenizer for regular expressions
                     regex          = function parser_script_tokenize_regex() {
-                        var ee     = 0,
+                        var ee     = a + 1,
                             f      = b,
                             h      = 0,
                             i      = 0,
                             build  = ["/"],
                             output = "",
                             square = false;
-                        for (ee = a + 1; ee < f; ee = ee + 1) {
-                            build.push(c[ee]);
-                            if (c[ee - 1] !== "\\" || c[ee - 2] === "\\") {
-                                if (c[ee] === "[") {
-                                    square = true;
+                        if (ee < f) {
+                            do {
+                                build.push(c[ee]);
+                                if (c[ee - 1] !== "\\" || c[ee - 2] === "\\") {
+                                    if (c[ee] === "[") {
+                                        square = true;
+                                    }
+                                    if (c[ee] === "]") {
+                                        square = false;
+                                    }
                                 }
-                                if (c[ee] === "]") {
-                                    square = false;
-                                }
-                            }
-                            if (c[ee] === "/" && square === false) {
-                                if (c[ee - 1] === "\\") {
-                                    i = 0;
-                                    for (h = ee - 1; h > 0; h = h - 1) {
-                                        if (c[h] === "\\") {
-                                            i = i + 1;
-                                        } else {
+                                if (c[ee] === "/" && square === false) {
+                                    if (c[ee - 1] === "\\") {
+                                        i = 0;
+                                        h = ee - 1;
+                                        if (h > 0) {
+                                            do {
+                                                if (c[h] === "\\") {
+                                                    i = i + 1;
+                                                } else {
+                                                    break;
+                                                }
+                                                h = h - 1;
+                                            } while (h > 0);
+                                        }
+                                        if (i % 2 === 0) {
                                             break;
                                         }
-                                    }
-                                    if (i % 2 === 0) {
+                                    } else {
                                         break;
                                     }
-                                } else {
-                                    break;
                                 }
-                            }
+                                ee = ee + 1;
+                            } while (ee < f);
                         }
                         if (c[ee + 1] === "g" || c[ee + 1] === "i" || c[ee + 1] === "m" || c[ee + 1] === "y" || c[ee + 1] === "u") {
                             build.push(c[ee + 1]);
@@ -4150,19 +4206,27 @@ Parse Framework
                             if ((c[a + 1] === "+" && c[a + 2] === "+") || (c[a + 1] === "-" && c[a + 2] === "-")) {
                                 output = c[a];
                             } else {
-                                for (g = a + 1; g < jj; g = g + 1) {
-                                    if ((c[g] === "+" && c[g + 1] === "+") || (c[g] === "-" && c[g + 1] === "-")) {
-                                        break;
-                                    }
-                                    for (h = 0; h < synlen; h = h + 1) {
-                                        if (c[g] === syntax[h]) {
-                                            build.push(syntax[h]);
+                                g = a + 1;
+                                if (g < jj) {
+                                    do {
+                                        if ((c[g] === "+" && c[g + 1] === "+") || (c[g] === "-" && c[g + 1] === "-")) {
                                             break;
                                         }
-                                    }
-                                    if (h === synlen) {
-                                        break;
-                                    }
+                                        h = 0;
+                                        if (h < synlen) {
+                                            do {
+                                                if (c[g] === syntax[h]) {
+                                                    build.push(syntax[h]);
+                                                    break;
+                                                }
+                                                h = h + 1;
+                                            } while (h < synlen);
+                                        }
+                                        if (h === synlen) {
+                                            break;
+                                        }
+                                        g = g + 1;
+                                    } while (g < jj);
                                 }
                                 output = build.join("");
                             }
@@ -4186,16 +4250,20 @@ Parse Framework
                     //ES6 template string support
                     tempstring     = function parser_script_tokenize_tempstring() {
                         var output = [c[a]];
-                        for (a = a + 1; a < b; a = a + 1) {
-                            output.push(c[a]);
-                            if (c[a] === "`" && (c[a - 1] !== "\\" || slashes(a - 1) === false)) {
-                                templateString.pop();
-                                break;
-                            }
-                            if (c[a - 1] === "$" && c[a] === "{" && (c[a - 2] !== "\\" || slashes(a - 2) === false)) {
-                                templateString[templateString.length - 1] = true;
-                                break;
-                            }
+                        a = a + 1;
+                        if (a < b) {
+                            do {
+                                output.push(c[a]);
+                                if (c[a] === "`" && (c[a - 1] !== "\\" || slashes(a - 1) === false)) {
+                                    templateString.pop();
+                                    break;
+                                }
+                                if (c[a - 1] === "$" && c[a] === "{" && (c[a - 2] !== "\\" || slashes(a - 2) === false)) {
+                                    templateString[templateString.length - 1] = true;
+                                    break;
+                                }
+                                a = a + 1;
+                            } while (a < b);
                         }
                         return output.join("");
                     },
@@ -4225,24 +4293,9 @@ Parse Framework
                                 return build.join("");
                             }
                         }
-                        for (ee = a + 1; ee < f; ee = ee + 1) {
-                            if ((/[0-9]/).test(c[ee]) || (c[ee] === "." && dot === false)) {
-                                build.push(c[ee]);
-                                if (c[ee] === ".") {
-                                    dot = true;
-                                }
-                            } else {
-                                break;
-                            }
-                        }
-                        if (ee < f - 1 && ((/\d/).test(c[ee - 1]) === true || ((/\d/).test(c[ee - 2]) === true && (c[ee - 1] === "-" || c[ee - 1] === "+"))) && (c[ee] === "e" || c[ee] === "E")) {
-                            build.push(c[ee]);
-                            if (c[ee + 1] === "-" || c[ee + 1] === "+") {
-                                build.push(c[ee + 1]);
-                                ee = ee + 1;
-                            }
-                            dot = false;
-                            for (ee = ee + 1; ee < f; ee = ee + 1) {
+                        ee = a + 1;
+                        if (ee < f) {
+                            do {
                                 if ((/[0-9]/).test(c[ee]) || (c[ee] === "." && dot === false)) {
                                     build.push(c[ee]);
                                     if (c[ee] === ".") {
@@ -4251,6 +4304,29 @@ Parse Framework
                                 } else {
                                     break;
                                 }
+                                ee = ee + 1;
+                            } while (ee < f);
+                        }
+                        if (ee < f - 1 && ((/\d/).test(c[ee - 1]) === true || ((/\d/).test(c[ee - 2]) === true && (c[ee - 1] === "-" || c[ee - 1] === "+"))) && (c[ee] === "e" || c[ee] === "E")) {
+                            build.push(c[ee]);
+                            if (c[ee + 1] === "-" || c[ee + 1] === "+") {
+                                build.push(c[ee + 1]);
+                                ee = ee + 1;
+                            }
+                            dot = false;
+                            ee = ee + 1;
+                            if (ee < f) {
+                                do {
+                                    if ((/[0-9]/).test(c[ee]) || (c[ee] === "." && dot === false)) {
+                                        build.push(c[ee]);
+                                        if (c[ee] === ".") {
+                                            dot = true;
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                    ee = ee + 1;
+                                } while (ee < f);
                             }
                         }
                         a = ee - 1;
@@ -4259,18 +4335,21 @@ Parse Framework
                     // are empty lines to be preserved
                     space          = function parser_script_tokenize_space() {
                         var schars    = [],
-                            f         = 0,
+                            f         = a,
                             locallen  = b,
                             emptyline = 1,
                             output    = "",
                             asitest   = false;
-                        for (f = a; f < locallen; f = f + 1) {
-                            if (c[f] === "\n") {
-                                asitest = true;
-                            } else if ((/\s/).test(c[f]) === false) {
-                                break;
-                            }
-                            schars.push(c[f]);
+                        if (f < locallen) {
+                            do {
+                                if (c[f] === "\n") {
+                                    asitest = true;
+                                } else if ((/\s/).test(c[f]) === false) {
+                                    break;
+                                }
+                                schars.push(c[f]);
+                                f = f + 1;
+                            } while (f < locallen);
                         }
                         a = f - 1;
                         if (token.length === 0) {
@@ -4347,48 +4426,52 @@ Parse Framework
                                 if (c[a + 1] === "<") {
                                     e = 2;
                                 }
-                                for (d = a + 2; d < b; d = d + 1) {
-                                    generics.push(c[d]);
-                                    if (c[d] === "?" && c[d + 1] === ">") {
-                                        generics.push(">");
-                                        d = d + 1;
-                                    }
-                                    if (c[d] === ",") {
-                                        comma = true;
-                                        if ((/\s/).test(c[d + 1]) === false) {
-                                            generics.push(" ");
+                                d = a + 2;
+                                if (d < b) {
+                                    do {
+                                        generics.push(c[d]);
+                                        if (c[d] === "?" && c[d + 1] === ">") {
+                                            generics.push(">");
+                                            d = d + 1;
                                         }
-                                    } else if (c[d] === "[") {
-                                        f = f + 1;
-                                    } else if (c[d] === "]") {
-                                        f = f - 1;
-                                    } else if (c[d] === "<") {
-                                        e = e + 1;
-                                    } else if (c[d] === ">") {
-                                        e = e - 1;
-                                        if (e === 0 && f === 0) {
-                                            if ((/\s/).test(c[d - 1]) === true) {
-                                                ltype = "operator";
-                                                return operator();
+                                        if (c[d] === ",") {
+                                            comma = true;
+                                            if ((/\s/).test(c[d + 1]) === false) {
+                                                generics.push(" ");
                                             }
-                                            ltype = "generic";
-                                            a     = d;
-                                            return generics
-                                                .join("")
-                                                .replace(/\s+/g, " ");
+                                        } else if (c[d] === "[") {
+                                            f = f + 1;
+                                        } else if (c[d] === "]") {
+                                            f = f - 1;
+                                        } else if (c[d] === "<") {
+                                            e = e + 1;
+                                        } else if (c[d] === ">") {
+                                            e = e - 1;
+                                            if (e === 0 && f === 0) {
+                                                if ((/\s/).test(c[d - 1]) === true) {
+                                                    ltype = "operator";
+                                                    return operator();
+                                                }
+                                                ltype = "generic";
+                                                a     = d;
+                                                return generics
+                                                    .join("")
+                                                    .replace(/\s+/g, " ");
+                                            }
                                         }
-                                    }
-                                    if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
-                                        ltype = "operator";
-                                        return operator();
-                                    }
+                                        if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
+                                            ltype = "operator";
+                                            return operator();
+                                        }
+                                        d = d + 1;
+                                    } while (d < b);
                                 }
                             }());
                         } else {
                             ltype = "operator";
                             return operator();
                         }
-                        for (a = a; a < b; a = a + 1) {
+                        do {
                             output.push(c[a]);
                             if (c[a] === "{") {
                                 curlycount = curlycount + 1;
@@ -4448,7 +4531,8 @@ Parse Framework
                                 }
                                 endtag = false;
                             }
-                        }
+                            a = a + 1;
+                        } while (a < b);
                         ltype = "markup";
                         return output.join("");
                     },
@@ -4664,13 +4748,17 @@ Parse Framework
                             }
                             return "template";
                         }
-                        for (en = namelist.length - 1; en > -1; en = en - 1) {
-                            if (name === namelist[en]) {
-                                return "template_start";
-                            }
-                            if (name === "end" + namelist[en]) {
-                                return "template_end";
-                            }
+                        en = namelist.length - 1;
+                        if (en > -1) {
+                            do {
+                                if (name === namelist[en]) {
+                                    return "template_start";
+                                }
+                                if (name === "end" + namelist[en]) {
+                                    return "template_end";
+                                }
+                                en = en - 1;
+                            } while (en > -1);
                         }
                         return "template";
                     };
@@ -4723,7 +4811,7 @@ Parse Framework
                         begin[begin.length - 1]
                     ]);
                 };
-                for (a = 0; a < b; a = a + 1) {
+                do {
                     if ((/\s/).test(c[a])) {
                         if (wordTest > -1) {
                             word();
@@ -4980,7 +5068,8 @@ Parse Framework
                     if (vart.len > -1 && token.length === vart.index[vart.len] + 2 && token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && ltype !== "comment" && ltype !== "comment-inline" && options.varword === "list") {
                         vartpop();
                     }
-                }
+                    a = a + 1;
+                } while (a < b);
                 if (options.lang !== "jsx" && ((token[token.length - 1] !== "}" && token[0] === "{") || token[0] !== "{") && ((token[token.length - 1] !== "]" && token[0] === "[") || token[0] !== "[")) {
                     asi(false);
                 }
@@ -4998,7 +5087,7 @@ Parse Framework
                 (function parser_script_correct() {
                     var a = 0,
                         b = token.length;
-                    for (a = 0; a < b; a = a + 1) {
+                    do {
                         if (token[a] === "x;") {
                             token[a] = ";";
                             scolon   = scolon + 1;
@@ -5011,7 +5100,8 @@ Parse Framework
                         } else if (token[a] === "x)") {
                             token[a] = ")";
                         }
-                    }
+                        a = a + 1;
+                    } while (a < b);
                 }());
             }
 
@@ -5259,76 +5349,83 @@ Parse Framework
                         }
                         // this loop identifies containment so that tokens/sub-tokens are correctly
                         // taken
-                        for (cc = 0; cc < leng; cc = cc + 1) {
-                            items.push(x[cc]);
-                            if (block === "") {
-                                if (x[cc] === "\"") {
-                                    block = "\"";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "'") {
-                                    block = "'";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "(") {
-                                    block = ")";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "[") {
-                                    block = "]";
-                                    dd    = dd + 1;
+                        if (cc < leng) {
+                            do {
+                                items.push(x[cc]);
+                                if (block === "") {
+                                    if (x[cc] === "\"") {
+                                        block = "\"";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "'") {
+                                        block = "'";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "(") {
+                                        block = ")";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "[") {
+                                        block = "]";
+                                        dd    = dd + 1;
+                                    }
+                                } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
+                                    dd = dd + 1;
+                                } else if (x[cc] === block) {
+                                    dd = dd - 1;
+                                    if (dd === 0) {
+                                        block = "";
+                                    }
                                 }
-                            } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
-                                dd = dd + 1;
-                            } else if (x[cc] === block) {
-                                dd = dd - 1;
-                                if (dd === 0) {
-                                    block = "";
+                                if (block === "" && x[cc] === " ") {
+                                    items.pop();
+                                    values.push(colorPush(items.join("")));
+                                    items = [];
                                 }
-                            }
-                            if (block === "" && x[cc] === " ") {
-                                items.pop();
-                                values.push(colorPush(items.join("")));
-                                items = [];
-                            }
+                                cc = cc + 1;
+                            } while (cc < leng);
                         }
                         values.push(colorPush(items.join("")));
                         leng = values.length;
                         //This is where the rules mentioned above are applied
-                        for (cc = 0; cc < leng; cc = cc + 1) {
-                            if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
-                                values[cc] = "0" + values[cc];
-                            } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
-                                values[cc] = values[cc].replace(/^(0+\.)/, ".");
-                            } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
-                                values[cc] = "0";
-                            } else if ((/^(0+)/).test(values[cc]) === true) {
-                                values[cc] = values[cc].replace(/0+/, "0");
-                                if ((/\d/).test(values[cc].charAt(1)) === true) {
-                                    values[cc] = values[cc].substr(1);
-                                }
-                            } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
-                                block = values[cc].charAt(values[cc].indexOf("url(") + 4);
-                                if (block !== "@" && block !== "{" && block !== "<") {
-                                    if (qchar === "") {
-                                        values[cc] = values[cc]
-                                            .replace(/url\(\s*('|")?/, "url(\"")
-                                            .replace(/(('|")?\s*\))$/, "\")");
-                                    } else {
-                                        values[cc] = values[cc]
-                                            .replace(/url\(\s*('|")?/, "url(" + qchar)
-                                            .replace(/(('|")?\s*\))$/, qchar + ")");
+                        cc = 0;
+                        if (cc < leng) {
+                            do {
+                                if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
+                                    values[cc] = "0" + values[cc];
+                                } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
+                                    values[cc] = values[cc].replace(/^(0+\.)/, ".");
+                                } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
+                                    values[cc] = "0";
+                                } else if ((/^(0+)/).test(values[cc]) === true) {
+                                    values[cc] = values[cc].replace(/0+/, "0");
+                                    if ((/\d/).test(values[cc].charAt(1)) === true) {
+                                        values[cc] = values[cc].substr(1);
                                     }
+                                } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
+                                    block = values[cc].charAt(values[cc].indexOf("url(") + 4);
+                                    if (block !== "@" && block !== "{" && block !== "<") {
+                                        if (qchar === "") {
+                                            values[cc] = values[cc]
+                                                .replace(/url\(\s*('|")?/, "url(\"")
+                                                .replace(/(('|")?\s*\))$/, "\")");
+                                        } else {
+                                            values[cc] = values[cc]
+                                                .replace(/url\(\s*('|")?/, "url(" + qchar)
+                                                .replace(/(('|")?\s*\))$/, qchar + ")");
+                                        }
+                                    }
+                                } else if (font === true) {
+                                    if (qchar === "'") {
+                                        values[cc] = values[cc].replace(/"/g, "'");
+                                    } else {
+                                        values[cc] = values[cc].replace(/'/g, "\"");
+                                    }
+                                } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
+                                    qreg       = new RegExp(qchar, "g");
+                                    values[cc] = qchar + values[cc]
+                                        .slice(1, values[cc].length - 1)
+                                        .replace(qreg, "\\" + qchar) + qchar;
                                 }
-                            } else if (font === true) {
-                                if (qchar === "'") {
-                                    values[cc] = values[cc].replace(/"/g, "'");
-                                } else {
-                                    values[cc] = values[cc].replace(/'/g, "\"");
-                                }
-                            } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
-                                qreg       = new RegExp(qchar, "g");
-                                values[cc] = qchar + values[cc]
-                                    .slice(1, values[cc].length - 1)
-                                    .replace(qreg, "\\" + qchar) + qchar;
-                            }
+                                cc = cc + 1;
+                            } while (cc < leng);
                         }
                         return values.join(" ");
                     },
@@ -5360,7 +5457,7 @@ Parse Framework
                         return val;
                     },
                     //sort parsed properties intelligently
-                    objSort    = function parser_style_tokenize_objSort() {
+                    /*objSort    = function parser_style_tokenize_objSort() {
                         var cc        = 0,
                             dd        = 0,
                             ee        = 0,
@@ -5524,10 +5621,10 @@ Parse Framework
                                 return;
                             }
                         }
-                    },
+                    },*/
                     //the generic token builder
                     buildtoken = function parser_style_tokenize_build() {
-                        var aa         = 0,
+                        var aa         = a,
                             bb         = 0,
                             out        = [],
                             block      = [],
@@ -5545,89 +5642,92 @@ Parse Framework
                                 }
                             };
                         //this loop accounts for grouping mechanisms
-                        for (aa = a; aa < len; aa = aa + 1) {
-                            out.push(b[aa]);
-                            if (b[aa - 1] !== "\\" || esctest(aa) === false) {
-                                if (b[aa] === "\"" && block[block.length - 1] !== "'") {
-                                    if (block[block.length - 1] === "\"") {
-                                        block.pop();
-                                    } else {
-                                        block.push("\"");
-                                    }
-                                } else if (b[aa] === "'" && block[block.length - 1] !== "\"") {
-                                    if (block[block.length - 1] === "'") {
-                                        block.pop();
-                                    } else {
-                                        block.push("'");
-                                    }
-                                } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'") {
-                                    if (b[aa] === "(") {
-                                        mappy = mappy + 1;
-                                        block.push(")");
-                                        spacestart();
-                                    } else if (b[aa] === "[") {
-                                        block.push("]");
-                                        spacestart();
-                                    } else if (b[aa] === "#" && b[aa + 1] === "{") {
-                                        out.push("{");
-                                        aa = aa + 1;
-                                        block.push("}");
-                                        spacestart();
-                                    } else if (b[aa] === block[block.length - 1]) {
-                                        block.pop();
-                                        if ((/\s/).test(out[out.length - 2]) === true) {
-                                            out.pop();
-                                            do {
+                        if (aa < len) {
+                            do {
+                                out.push(b[aa]);
+                                if (b[aa - 1] !== "\\" || esctest(aa) === false) {
+                                    if (b[aa] === "\"" && block[block.length - 1] !== "'") {
+                                        if (block[block.length - 1] === "\"") {
+                                            block.pop();
+                                        } else {
+                                            block.push("\"");
+                                        }
+                                    } else if (b[aa] === "'" && block[block.length - 1] !== "\"") {
+                                        if (block[block.length - 1] === "'") {
+                                            block.pop();
+                                        } else {
+                                            block.push("'");
+                                        }
+                                    } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'") {
+                                        if (b[aa] === "(") {
+                                            mappy = mappy + 1;
+                                            block.push(")");
+                                            spacestart();
+                                        } else if (b[aa] === "[") {
+                                            block.push("]");
+                                            spacestart();
+                                        } else if (b[aa] === "#" && b[aa + 1] === "{") {
+                                            out.push("{");
+                                            aa = aa + 1;
+                                            block.push("}");
+                                            spacestart();
+                                        } else if (b[aa] === block[block.length - 1]) {
+                                            block.pop();
+                                            if ((/\s/).test(out[out.length - 2]) === true) {
                                                 out.pop();
-                                            } while ((/\s/).test(out[out.length - 1]) === true);
-                                            out.push(b[aa]);
+                                                do {
+                                                    out.pop();
+                                                } while ((/\s/).test(out[out.length - 1]) === true);
+                                                out.push(b[aa]);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            if (structval === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
-                                if (b[aa + 1] === ")" && token[token.length - 1] === "(") {
-                                    token.pop();
-                                    types.pop();
-                                    lines.pop();
-                                    stack.pop();
-                                    begin.pop();
-                                    struct.pop();
-                                    structval = stack[stack.length - 1];
-                                    out       = ["("];
-                                    aa        = a - 1;
-                                } else {
+                                if (structval === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
+                                    if (b[aa + 1] === ")" && token[token.length - 1] === "(") {
+                                        token.pop();
+                                        types.pop();
+                                        lines.pop();
+                                        stack.pop();
+                                        begin.pop();
+                                        struct.pop();
+                                        structval = stack[stack.length - 1];
+                                        out       = ["("];
+                                        aa        = a - 1;
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                if (b[aa + 1] === ":") {
+                                    bb = aa;
+                                    if ((/\s/).test(b[bb]) === true) {
+                                        do {
+                                            bb = bb - 1;
+                                        } while ((/\s/).test(b[bb]) === true);
+                                    }
+                                    outy = b
+                                        .slice(bb - 6, bb + 1)
+                                        .join("");
+                                    if (outy.indexOf("filter") === outy.length - 6 || outy.indexOf("progid") === outy.length - 6) {
+                                        outy = "filter";
+                                    }
+                                }
+                                if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === false) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
+                                    bb = out.length - 1;
+                                    if ((/\s/).test(out[bb]) === true) {
+                                        do {
+                                            bb = bb - 1;
+                                            aa = aa - 1;
+                                            out.pop();
+                                        } while ((/\s/).test(out[bb]) === true);
+                                    }
                                     break;
                                 }
-                            }
-                            if (b[aa + 1] === ":") {
-                                bb = aa;
-                                if ((/\s/).test(b[bb]) === true) {
-                                    do {
-                                        bb = bb - 1;
-                                    } while ((/\s/).test(b[bb]) === true);
+                                if (out[0] === "@" && block.length === 0 && (b[aa + 1] === "\"" || b[aa + 1] === "'")) {
+                                    break;
                                 }
-                                outy = b
-                                    .slice(bb - 6, bb + 1)
-                                    .join("");
-                                if (outy.indexOf("filter") === outy.length - 6 || outy.indexOf("progid") === outy.length - 6) {
-                                    outy = "filter";
-                                }
-                            }
-                            if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === false) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
-                                bb = out.length - 1;
-                                if ((/\s/).test(out[bb]) === true) {
-                                    do {
-                                        bb = bb - 1;
-                                        aa = aa - 1;
-                                        out.pop();
-                                    } while ((/\s/).test(out[bb]) === true);
-                                }
-                                break;
-                            }
-                            if (out[0] === "@" && block.length === 0 && (b[aa + 1] === "\"" || b[aa + 1] === "'")) {
-                                break;
-                            }
+                                aa = aa + 1;
+                            } while (aa < len);
                         }
                         a = aa;
                         if (structval === "map" && out[0] === "(") {
@@ -5752,19 +5852,22 @@ Parse Framework
                                         z    = "",
                                         mark = 0,
                                         list = [];
-                                    for (y = 0; y < slen; y = y + 1) {
-                                        if (z === "" && token[aa].charAt(y) === ",") {
-                                            list.push(token[aa].slice(mark, y));
-                                            mark = y + 1;
-                                        } else if (token[aa].charAt(y) === "\"" || token[aa].charAt(y) === "'" || token[aa].charAt(y) === "(" || token[aa].charAt(y) === "{") {
-                                            z = token[aa].charAt(y);
-                                        } else if (token[aa].charAt(y) === z && (z === "\"" || z === "''")) {
-                                            z = "";
-                                        } else if (token[aa].charAt(y) === ")" && z === "(") {
-                                            z = "";
-                                        } else if (token[aa].charAt(y) === "}" && z === "{") {
-                                            z = "";
-                                        }
+                                    if (y < slen) {
+                                        do {
+                                            if (z === "" && token[aa].charAt(y) === ",") {
+                                                list.push(token[aa].slice(mark, y));
+                                                mark = y + 1;
+                                            } else if (token[aa].charAt(y) === "\"" || token[aa].charAt(y) === "'" || token[aa].charAt(y) === "(" || token[aa].charAt(y) === "{") {
+                                                z = token[aa].charAt(y);
+                                            } else if (token[aa].charAt(y) === z && (z === "\"" || z === "''")) {
+                                                z = "";
+                                            } else if (token[aa].charAt(y) === ")" && z === "(") {
+                                                z = "";
+                                            } else if (token[aa].charAt(y) === "}" && z === "{") {
+                                                z = "";
+                                            }
+                                            y = y + 1;
+                                        } while (y < slen);
                                     }
                                     list.push(token[aa].slice(mark, y));
                                     list.sort();
@@ -5897,145 +6000,152 @@ Parse Framework
                                 types.push(typename);
                             };
                         nosort[nosort.length - 1] = true;
-                        for (a = a; a < len; a = a + 1) {
-                            store.push(b[a]);
-                            if (quote === "") {
-                                if (b[a] === "\"") {
-                                    quote = "\"";
-                                } else if (b[a] === "'") {
-                                    quote = "'";
-                                } else if (b[a] === "/") {
-                                    if (b[a + 1] === "/") {
-                                        quote = "/";
-                                    } else if (b[a + 1] === "*") {
-                                        quote = "*";
-                                    }
-                                } else if (b[a + 1] === end.charAt(0)) {
-                                    do {
-                                        endlen = endlen + 1;
-                                        a      = a + 1;
-                                        store.push(b[a]);
-                                    } while (a < len && endlen < end.length && b[a + 1] === end.charAt(endlen));
-                                    if (endlen === end.length) {
-                                        quote = store.join("");
-                                        if ((/\s/).test(quote.charAt(start)) === true) {
-                                            do {
-                                                start = start + 1;
-                                            } while ((/\s/).test(quote.charAt(start)) === true);
+                        if (a < len) {
+                            do {
+                                store.push(b[a]);
+                                if (quote === "") {
+                                    if (b[a] === "\"") {
+                                        quote = "\"";
+                                    } else if (b[a] === "'") {
+                                        quote = "'";
+                                    } else if (b[a] === "/") {
+                                        if (b[a + 1] === "/") {
+                                            quote = "/";
+                                        } else if (b[a + 1] === "*") {
+                                            quote = "*";
                                         }
-                                        endlen = start;
+                                    } else if (b[a + 1] === end.charAt(0)) {
                                         do {
                                             endlen = endlen + 1;
-                                        } while (endlen < end.length && (/\s/).test(quote.charAt(endlen)) === false);
-                                        if (endlen === quote.length) {
-                                            endlen = endlen - end.length;
-                                        }
-                                        if (open === "{%") {
-                                            if (quote.indexOf("{%-") === 0) {
-                                                quote = quote
-                                                    .replace(/^(\{%-\s*)/, "{%- ")
-                                                    .replace(/(\s*-%\})$/, " -%}");
-                                                name  = quote.slice(4);
-                                            } else {
-                                                quote = quote
-                                                    .replace(/^(\{%\s*)/, "{% ")
-                                                    .replace(/(\s*%\})$/, " %}");
-                                                name  = quote.slice(3);
+                                            a      = a + 1;
+                                            store.push(b[a]);
+                                        } while (a < len && endlen < end.length && b[a + 1] === end.charAt(endlen));
+                                        if (endlen === end.length) {
+                                            quote = store.join("");
+                                            if ((/\s/).test(quote.charAt(start)) === true) {
+                                                do {
+                                                    start = start + 1;
+                                                } while ((/\s/).test(quote.charAt(start)) === true);
                                             }
-                                        }
-                                        if (open === "{{") {
-                                            quote = quote
-                                                .replace(/^(\{\{\s+)/, "{{")
-                                                .replace(/(\s+\}\})$/, "}}");
-                                        }
-                                        if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
-                                            ltype                   = "value";
-                                            data.types[data.types.length - 1] = "value";
-                                            if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
-                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + quote;
-                                            } else {
-                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " + quote;
+                                            endlen = start;
+                                            do {
+                                                endlen = endlen + 1;
+                                            } while (endlen < end.length && (/\s/).test(quote.charAt(endlen)) === false);
+                                            if (endlen === quote.length) {
+                                                endlen = endlen - end.length;
                                             }
-                                            return;
-                                        }
-                                        lines.push(linev);
-                                        token.push(quote);
-                                        begin.push(struct[struct.length - 1]);
-                                        stack.push(structval);
-                                        if (open === "{%") {
-                                            name = name.slice(0, name.indexOf(" "));
-                                            if (name.indexOf("(") > 0) {
-                                                name = name.slice(0, name.indexOf("("));
-                                            }
-                                            store = [
-                                                "autoescape",
-                                                "block",
-                                                "capture",
-                                                "case",
-                                                "comment",
-                                                "embed",
-                                                "filter",
-                                                "for",
-                                                "form",
-                                                "if",
-                                                "macro",
-                                                "paginate",
-                                                "raw",
-                                                "sandbox",
-                                                "spaceless",
-                                                "tablerow",
-                                                "unless",
-                                                "verbatim"
-                                            ];
-                                            if (name === "else" || name === "elseif" || name === "when" || name === "elif") {
-                                                return exit("external_else");
-                                            }
-                                            for (endlen = store.length - 1; endlen > -1; endlen = endlen - 1) {
-                                                if (name === store[endlen]) {
-                                                    return exit("external_start");
+                                            if (open === "{%") {
+                                                if (quote.indexOf("{%-") === 0) {
+                                                    quote = quote
+                                                        .replace(/^(\{%-\s*)/, "{%- ")
+                                                        .replace(/(\s*-%\})$/, " -%}");
+                                                    name  = quote.slice(4);
+                                                } else {
+                                                    quote = quote
+                                                        .replace(/^(\{%\s*)/, "{% ")
+                                                        .replace(/(\s*%\})$/, " %}");
+                                                    name  = quote.slice(3);
                                                 }
-                                                if (name === "end" + store[endlen]) {
+                                            }
+                                            if (open === "{{") {
+                                                quote = quote
+                                                    .replace(/^(\{\{\s+)/, "{{")
+                                                    .replace(/(\s+\}\})$/, "}}");
+                                            }
+                                            if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
+                                                ltype                   = "value";
+                                                data.types[data.types.length - 1] = "value";
+                                                if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
+                                                    data.token[data.token.length - 1] = data.token[data.token.length - 1] + quote;
+                                                } else {
+                                                    data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " + quote;
+                                                }
+                                                return;
+                                            }
+                                            lines.push(linev);
+                                            token.push(quote);
+                                            begin.push(struct[struct.length - 1]);
+                                            stack.push(structval);
+                                            if (open === "{%") {
+                                                name = name.slice(0, name.indexOf(" "));
+                                                if (name.indexOf("(") > 0) {
+                                                    name = name.slice(0, name.indexOf("("));
+                                                }
+                                                store = [
+                                                    "autoescape",
+                                                    "block",
+                                                    "capture",
+                                                    "case",
+                                                    "comment",
+                                                    "embed",
+                                                    "filter",
+                                                    "for",
+                                                    "form",
+                                                    "if",
+                                                    "macro",
+                                                    "paginate",
+                                                    "raw",
+                                                    "sandbox",
+                                                    "spaceless",
+                                                    "tablerow",
+                                                    "unless",
+                                                    "verbatim"
+                                                ];
+                                                if (name === "else" || name === "elseif" || name === "when" || name === "elif") {
+                                                    return exit("external_else");
+                                                }
+                                                endlen = store.length - 1;
+                                                if (endlen > -1) {
+                                                    do {
+                                                        if (name === store[endlen]) {
+                                                            return exit("external_start");
+                                                        }
+                                                        if (name === "end" + store[endlen]) {
+                                                            return exit("external_end");
+                                                        }
+                                                        endlen = endlen - 1;
+                                                    } while (endlen > -1);
+                                                }
+                                            } else if (open === "{{") {
+                                                name   = quote.slice(2);
+                                                endlen = name.length;
+                                                start  = 0;
+                                                do {
+                                                    start = start + 1;
+                                                } while (
+                                                    start < endlen && (/\s/).test(name.charAt(start)) === false && name.charAt(start) !== "("
+                                                );
+                                                name = name.slice(0, start);
+                                                if (name.charAt(name.length - 2) === "}") {
+                                                    name = name.slice(0, name.length - 2);
+                                                }
+                                                if (name === "end") {
                                                     return exit("external_end");
                                                 }
+                                                if (name === "block" || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
+                                                    return exit("external_start");
+                                                }
                                             }
-                                        } else if (open === "{{") {
-                                            name   = quote.slice(2);
-                                            endlen = name.length;
-                                            start  = 0;
-                                            do {
-                                                start = start + 1;
-                                            } while (
-                                                start < endlen && (/\s/).test(name.charAt(start)) === false && name.charAt(start) !== "("
-                                            );
-                                            name = name.slice(0, start);
-                                            if (name.charAt(name.length - 2) === "}") {
-                                                name = name.slice(0, name.length - 2);
-                                            }
-                                            if (name === "end") {
-                                                return exit("external_end");
-                                            }
-                                            if (name === "block" || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
-                                                return exit("external_start");
-                                            }
+                                            return exit("external");
                                         }
-                                        return exit("external");
+                                        endlen = 0;
                                     }
-                                    endlen = 0;
+                                } else if (quote === b[a]) {
+                                    if (quote === "\"" || quote === "'") {
+                                        quote = "";
+                                    } else if (quote === "/" && (b[a] === "\r" || b[a] === "\n")) {
+                                        quote = "";
+                                    } else if (quote === "*" && b[a + 1] === "/") {
+                                        quote = "";
+                                    }
                                 }
-                            } else if (quote === b[a]) {
-                                if (quote === "\"" || quote === "'") {
-                                    quote = "";
-                                } else if (quote === "/" && (b[a] === "\r" || b[a] === "\n")) {
-                                    quote = "";
-                                } else if (quote === "*" && b[a + 1] === "/") {
-                                    quote = "";
-                                }
-                            }
+                                a = a + 1;
+                            } while (a < len);
                         }
                     },
                     //finds comments include those JS looking '//' comments
                     comment    = function parser_style_tokenize_comment(inline) {
-                        var aa        = 0,
+                        var aa        = a + 1,
                             bb        = 0,
                             out       = [b[a]],
                             type      = "comment",
@@ -6049,11 +6159,14 @@ Parse Framework
                         type = (inline === true && linev === 0)
                             ? "comment-inline"
                             : "comment";
-                        for (aa = a + 1; aa < len; aa = aa + 1) {
-                            out.push(b[aa]);
-                            if ((inline === false && b[aa - 1] === "*" && b[aa] === "/") || (inline === true && (b[aa + 1] === "\n" || b[aa + 1] === "\r"))) {
-                                break;
-                            }
+                        if (aa < len) {
+                            do {
+                                out.push(b[aa]);
+                                if ((inline === false && b[aa - 1] === "*" && b[aa] === "/") || (inline === true && (b[aa + 1] === "\n" || b[aa + 1] === "\r"))) {
+                                    break;
+                                }
+                                aa = aa + 1;
+                            } while (aa < len);
                         }
                         if (ltype === "item") {
                             bb = aa;
@@ -6150,7 +6263,7 @@ Parse Framework
                     },
                     //do fancy things to property types like: sorting, consolidating, and padding
                     properties = function parser_style_tokenize_properties() {
-                        var aa    = 0,
+                        var aa    = token.length - 1,
                             bb    = 1,
                             cc    = 0,
                             dd    = 0,
@@ -6165,14 +6278,18 @@ Parse Framework
                             sstak = [],
                             sbegn = [];
                         //identify properties and build out prop/val sets
-                        for (aa = token.length - 1; aa > -1; aa = aa - 1) {
+                        do {
                             if (types[aa] === "start") {
                                 bb = bb - 1;
                                 if (bb === 0) {
                                     next = aa;
                                     set.pop();
-                                    for (aa = set.length - 1; aa > -1; aa = aa - 1) {
-                                        set[aa].reverse();
+                                    aa = set.length - 1;
+                                    if (aa > -1) {
+                                        do {
+                                            set[aa].reverse();
+                                            aa = aa - 1;
+                                        } while (aa > -1);
                                     }
                                     break;
                                 }
@@ -6187,7 +6304,8 @@ Parse Framework
                             if (bb === 1 && (types[aa - 1] === "comment" || types[aa - 1] === "comment-inline" || types[aa - 1] === "semi" || types[aa - 1] === "end" || types[aa - 1] === "start") && types[aa] !== "start" && types[aa] !== "end") {
                                 set.push([]);
                             }
-                        }
+                            aa = aa - 1;
+                        } while (aa > -1);
                         //this reverse fixes the order of consecutive comments
                         set.reverse();
                         p.reverse();
@@ -6215,129 +6333,144 @@ Parse Framework
                                                 start = aa;
                                             }
                                         };
-                                    for (aa = aa; aa < leng; aa = aa + 1) {
-                                        if (token[set[aa][2]] !== undefined && token[set[aa][0]].indexOf(name) === 0) {
-                                            if (token[set[aa][0]] === name || token[set[aa][0]].indexOf(name + " ") === 0) {
-                                                yy       = yy + 1;
-                                                valsplit = token[set[aa][2]].split(" ");
-                                                if (valsplit.length === 1) {
-                                                    val = [
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]]
-                                                    ];
-                                                } else if (valsplit.length === 2) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[0], valsplit[1]
-                                                    ];
-                                                } else if (valsplit.length === 3) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[1]
-                                                    ];
-                                                } else if (valsplit.length === 4) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[3]
-                                                    ];
-                                                } else {
-                                                    return;
-                                                }
-                                                test = [true, true, true, true];
-                                            } else if (token[set[aa][0]].indexOf(name + "-bottom") === 0) {
-                                                store(2);
-                                            } else if (token[set[aa][0]].indexOf(name + "-left") === 0) {
-                                                store(3);
-                                            } else if (token[set[aa][0]].indexOf(name + "-right") === 0) {
-                                                store(1);
-                                            } else if (token[set[aa][0]].indexOf(name + "-top") === 0) {
-                                                store(0);
-                                            }
-                                        }
-                                        if (set[aa + 1] === undefined || token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
-                                            if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
-                                                set.splice(start + 1, yy);
-                                                leng = leng - yy;
-                                                aa   = aa - yy;
-                                                zz   = 0;
-                                                bb   = p.length;
-                                                do {
-                                                    if (p[zz] === set[start][0]) {
-                                                        break;
+                                    if (aa < leng) {
+                                        do {
+                                            if (token[set[aa][2]] !== undefined && token[set[aa][0]].indexOf(name) === 0) {
+                                                if (token[set[aa][0]] === name || token[set[aa][0]].indexOf(name + " ") === 0) {
+                                                    yy       = yy + 1;
+                                                    valsplit = token[set[aa][2]].split(" ");
+                                                    if (valsplit.length === 1) {
+                                                        val = [
+                                                            token[set[aa][2]],
+                                                            token[set[aa][2]],
+                                                            token[set[aa][2]],
+                                                            token[set[aa][2]]
+                                                        ];
+                                                    } else if (valsplit.length === 2) {
+                                                        val = [
+                                                            valsplit[0], valsplit[1], valsplit[0], valsplit[1]
+                                                        ];
+                                                    } else if (valsplit.length === 3) {
+                                                        val = [
+                                                            valsplit[0], valsplit[1], valsplit[2], valsplit[1]
+                                                        ];
+                                                    } else if (valsplit.length === 4) {
+                                                        val = [
+                                                            valsplit[0], valsplit[1], valsplit[2], valsplit[3]
+                                                        ];
+                                                    } else {
+                                                        return;
                                                     }
-                                                    zz = zz + 1;
-                                                } while (zz < bb);
-                                                if (zz < bb) {
-                                                    p.splice(zz + 1, yy);
+                                                    test = [true, true, true, true];
+                                                } else if (token[set[aa][0]].indexOf(name + "-bottom") === 0) {
+                                                    store(2);
+                                                } else if (token[set[aa][0]].indexOf(name + "-left") === 0) {
+                                                    store(3);
+                                                } else if (token[set[aa][0]].indexOf(name + "-right") === 0) {
+                                                    store(1);
+                                                } else if (token[set[aa][0]].indexOf(name + "-top") === 0) {
+                                                    store(0);
                                                 }
-                                                token[set[start][0]] = name;
-                                                if (zero.test(val[0]) === true) {
-                                                    val[0] = "0";
-                                                }
-                                                if (zero.test(val[1]) === true) {
-                                                    val[1] = "0";
-                                                }
-                                                if (zero.test(val[2]) === true) {
-                                                    val[2] = "0";
-                                                }
-                                                if (zero.test(val[3]) === true) {
-                                                    val[3] = "0";
-                                                }
-                                                if (val[1] === val[3]) {
-                                                    val.pop();
-                                                    if (val[0] === val[2]) {
+                                            }
+                                            if (set[aa + 1] === undefined || token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
+                                                if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
+                                                    set.splice(start + 1, yy);
+                                                    leng = leng - yy;
+                                                    aa   = aa - yy;
+                                                    zz   = 0;
+                                                    bb   = p.length;
+                                                    do {
+                                                        if (p[zz] === set[start][0]) {
+                                                            break;
+                                                        }
+                                                        zz = zz + 1;
+                                                    } while (zz < bb);
+                                                    if (zz < bb) {
+                                                        p.splice(zz + 1, yy);
+                                                    }
+                                                    token[set[start][0]] = name;
+                                                    if (zero.test(val[0]) === true) {
+                                                        val[0] = "0";
+                                                    }
+                                                    if (zero.test(val[1]) === true) {
+                                                        val[1] = "0";
+                                                    }
+                                                    if (zero.test(val[2]) === true) {
+                                                        val[2] = "0";
+                                                    }
+                                                    if (zero.test(val[3]) === true) {
+                                                        val[3] = "0";
+                                                    }
+                                                    if (val[1] === val[3]) {
                                                         val.pop();
-                                                        if (val[0] === val[1]) {
+                                                        if (val[0] === val[2]) {
                                                             val.pop();
+                                                            if (val[0] === val[1]) {
+                                                                val.pop();
+                                                            }
+                                                        }
+                                                    }
+                                                    token[set[start][2]] = val.join(" ");
+                                                    if (token[set[start][2]].indexOf("!important") > 0) {
+                                                        token[set[start][2]] = token[set[start][2]].replace(/\s!important/g, "") + " !i" +
+                                                                "mportant";
+                                                    }
+                                                    if (verticalop === true) {
+                                                        if (token[set[start][0]].charAt(token[set[start][0]].length - 1) === " ") {
+                                                            yy = token[set[start][0]].length - name.length;
+                                                            do {
+                                                                name = name + " ";
+                                                                yy   = yy - 1;
+                                                            } while (yy > 0);
                                                         }
                                                     }
                                                 }
-                                                token[set[start][2]] = val.join(" ");
-                                                if (token[set[start][2]].indexOf("!important") > 0) {
-                                                    token[set[start][2]] = token[set[start][2]].replace(/\s!important/g, "") + " !i" +
-                                                            "mportant";
-                                                }
-                                                if (verticalop === true) {
-                                                    if (token[set[start][0]].charAt(token[set[start][0]].length - 1) === " ") {
-                                                        yy = token[set[start][0]].length - name.length;
-                                                        do {
-                                                            name = name + " ";
-                                                            yy   = yy - 1;
-                                                        } while (yy > 0);
-                                                    }
-                                                }
+                                                break;
                                             }
-                                            break;
-                                        }
+                                            aa = aa + 1;
+                                        } while (aa < leng);
                                     }
                                 };
-                            for (aa = 0; aa < leng; aa = aa + 1) {
-                                if (types[set[aa][0]] === "property") {
-                                    if (token[set[aa][0]].indexOf("margin") === 0) {
-                                        fourcount("margin");
+                            aa = 0;
+                            if (aa < leng) {
+                                do {
+                                    if (types[set[aa][0]] === "property") {
+                                        if (token[set[aa][0]].indexOf("margin") === 0) {
+                                            fourcount("margin");
+                                        }
+                                        if (token[set[aa][0]].indexOf("padding") === 0) {
+                                            fourcount("padding");
+                                        }
                                     }
-                                    if (token[set[aa][0]].indexOf("padding") === 0) {
-                                        fourcount("padding");
-                                    }
-                                }
+                                    aa = aa + 1;
+                                } while (aa < leng);
                             }
                         }());
 
                         //pad out those property names so that the colons are vertically aligned
                         if (verticalop === true) {
                             bb = 0;
-                            for (aa = p.length - 1; aa > -1; aa = aa - 1) {
-                                if (token[p[aa]].length > bb && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                    bb = token[p[aa]].length;
-                                }
+                            aa = p.length - 1;
+                            if (aa > -1) {
+                                do {
+                                    if (token[p[aa]].length > bb && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
+                                        bb = token[p[aa]].length;
+                                    }
+                                    aa = aa - 1;
+                                } while (aa > -1);
                             }
-                            for (aa = p.length - 1; aa > -1; aa = aa - 1) {
-                                cc = bb - token[p[aa]].length;
-                                if (cc > 0 && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                    do {
-                                        token[p[aa]] = token[p[aa]] + " ";
-                                        cc           = cc - 1;
-                                    } while (cc > 0);
-                                }
+                            aa = p.length - 1;
+                            if (aa > -1) {
+                                do {
+                                    cc = bb - token[p[aa]].length;
+                                    if (cc > 0 && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
+                                        do {
+                                            token[p[aa]] = token[p[aa]] + " ";
+                                            cc           = cc - 1;
+                                        } while (cc > 0);
+                                    }
+                                    aa = aa - 1;
+                                } while (aa > -1);
                             }
                             if (endtest === false) {
                                 return;
@@ -6345,15 +6478,23 @@ Parse Framework
                         }
 
                         bb = set.length;
-                        for (aa = 0; aa < bb; aa = aa + 1) {
-                            dd = set[aa].length;
-                            for (cc = 0; cc < dd; cc = cc + 1) {
-                                stoke.push(token[set[aa][cc]]);
-                                stype.push(types[set[aa][cc]]);
-                                sline.push(lines[set[aa][cc]]);
-                                sstak.push(stack[set[aa][cc]]);
-                                sbegn.push(begin[set[aa][cc]]);
-                            }
+                        aa = 0;
+                        if (aa < bb) {
+                            do {
+                                dd = set[aa].length;
+                                cc = 0;
+                                if (cc < dd) {
+                                    do {
+                                        stoke.push(token[set[aa][cc]]);
+                                        stype.push(types[set[aa][cc]]);
+                                        sline.push(lines[set[aa][cc]]);
+                                        sstak.push(stack[set[aa][cc]]);
+                                        sbegn.push(begin[set[aa][cc]]);
+                                        cc = cc + 1;
+                                    } while (cc < dd);
+                                }
+                                aa = aa + 1;
+                            } while (aa < bb);
                         }
                         //replace a block's data with sorted analyzed data
                         token.splice(next + 1, token.length - next - 1);
@@ -6368,7 +6509,7 @@ Parse Framework
                         begin = begin.concat(sbegn);
                     };
                 //token building loop
-                for (a = 0; a < len; a = a + 1) {
+                do {
                     if (ltype !== "comment" && ltype !== "comment-inline" && ltype !== "" && options.topcoms === true) {
                         options.topcoms = false;
                     }
@@ -6497,7 +6638,8 @@ Parse Framework
                         }
                         buildtoken();
                     }
-                }
+                    a = a + 1;
+                } while (a < len);
                 if (endtest === false && verticalop === true) {
                     properties();
                 }
