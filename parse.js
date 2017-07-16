@@ -427,6 +427,10 @@ Parse Framework
             };
         lexer.markup = function parser_markup(source) {
 
+            //markup is two smaller lexers that work together:
+            //tag - evaluates markup and template tags
+            //content - evaluates text content and code for external lexers
+            //
             //type definitions:
             // * start      end     type
             // * <![CDATA[   ]]>    cdata
@@ -542,7 +546,6 @@ Parse Framework
                 minspace      = "",
                 list          = 0,
                 litag         = 0,
-                linepreserve  = 0,
                 cftransaction = false,
                 sgmlflag      = 0,
                 ext           = false,
@@ -753,7 +756,6 @@ Parse Framework
                         simple    = false,
                         preserve  = false,
                         stest     = false,
-                        liend     = false,
                         ignoreme  = false,
                         quotetest = false,
                         parseFail = false,
@@ -761,9 +763,6 @@ Parse Framework
                         earlyexit = false,
                         attribute = [],
                         attstore  = [],
-                        presend   = {
-                            cfquery: true
-                        },
 
                         //attribute name
                         arname    = function parser_markup_tag_name(x) {
@@ -957,11 +956,12 @@ Parse Framework
                             } else if (b[a + 4] !== undefined && b[a + 1].toLowerCase() === "x" && b[a + 2].toLowerCase() === "s" && b[a + 3].toLowerCase() === "l" && b[a + 4].toLowerCase() === ":" && b[a + 5].toLowerCase() === "t" && b[a + 6].toLowerCase() === "e" && b[a + 7].toLowerCase() === "x" && b[a + 8].toLowerCase() === "t" && (b[a + 9] === ">" || (/\s/).test(b[a + 9]) === true)) {
                                 end      = "</xsl:text>";
                                 preserve = true;
-                                ltype = "ignore";
+                                ltype    = "ignore";
                             } else if (b[a + 8] !== undefined && b[a + 1].toLowerCase() === "c" && b[a + 2].toLowerCase() === "f" && b[a + 3].toLowerCase() === "q" && b[a + 4].toLowerCase() === "u" && b[a + 5].toLowerCase() === "e" && b[a + 6].toLowerCase() === "r" && b[a + 7].toLowerCase() === "y" && (b[a + 8] === ">" || (/\s/).test(b[a + 8]))) {
-                                end          = ">";
-                                linepreserve = linepreserve + 1;
-                                ltype = "linepreserve";
+                                end        = ">";
+                                emptylines = emptylines + 1;
+                                preserve   = true;
+                                ltype      = "content_preserve";
                             } else if (b[a + 1] === "<") {
                                 if (b[a + 2] === "<") {
                                     end = ">>>";
@@ -1120,9 +1120,7 @@ Parse Framework
                         return;
                     }
 
-                    // This loop is the logic that parses tags and attributes If the attribute
-                    // data-parse-ignore is present the `ignore` flag is set. The ignore flag is
-                    // identical to the preserve flag
+                    // This is the real tag lexer. Everything that follows is attribute handling and edge cases
                     lastchar = end.charAt(end.length - 1);
                     if (a < c) {
                         do {
@@ -1524,28 +1522,14 @@ Parse Framework
 
                     igcount = 0;
                     element = lex.join("");
-
-                    //a type correction for template tags who have variable
-                    //start tag names but a consistent ending tag name
-                    if (element.indexOf("{{") === 0 && element.slice(element.length - 2) === "}}") {
-                        if (tagName(element) === "end") {
-                            ltype = "template_end";
-                        } else if (tagName(element) === "else") {
-                            ltype = "template_else";
-                        }
-                    } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
-                        if ((/^(<%\s+end\s+-?%>)$/).test(element) === true) {
-                            ltype = "template_end";
-                        } else if (((/\sdo\s/).test(element) === true && element.indexOf("-%>") === element.length - 3) || (/^(<%(%|-)?\s*if)/).test(element) === true) {
-                            ltype = "template_start";
-                        }
-                    }
-
                     tname = tagName(element);
 
-                    //html gets tag names in lowercase, if you want to preserve case sensitivity beautify as XML
-                    if (options.lang === "html" && element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
-                        element = element.toLowerCase();
+                    if (parent[parent.length - 1][1] === -1) {
+                        parent[parent.length - 1] = ["root", lengthMarkup];
+                    }
+
+                    if (preserve === false && options.lang !== "jsx") {
+                        element = element.replace(/\s+/g, " ");
                     }
 
                     //a quick hack to inject records for a type of template comments
@@ -1586,17 +1570,37 @@ Parse Framework
                         return;
                     }
 
+                    //a type correction for template tags who have variable
+                    //start tag names but a consistent ending tag name
+                    if (element.indexOf("{{") === 0 && element.slice(element.length - 2) === "}}") {
+                        if (tname === "end") {
+                            ltype = "template_end";
+                        } else if (tname === "else") {
+                            ltype = "template_else";
+                        }
+                    } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
+                        if ((/^(<%\s+end\s+-?%>)$/).test(element) === true) {
+                            ltype = "template_end";
+                        } else if (((/\sdo\s/).test(element) === true && element.indexOf("-%>") === element.length - 3) || (/^(<%(%|-)?\s*if)/).test(element) === true) {
+                            ltype = "template_start";
+                        }
+                    }
+
                     //update a flag for subatomic parsing in SGML tags
                     if (end !== "]>" && sgmlflag > 0 && element.charAt(element.length - 1) !== "[" && (element.slice(element.length - 2) === "]>" || (/^(<!((doctype)|(notation))\s)/i).test(element) === true)) {
                         sgmlflag = sgmlflag - 1;
                     }
 
-                    //fix singleton tags and sort attributes
+                    //attribute processing
                     if (attstore.length > 0) {
+
+                        //fix for singleton tags, since "/" at the end of the tag is not an attribute
                         if (attstore[attstore.length - 1] === "/") {
                             attstore.pop();
                             lex.splice(lex.length - 1, 0, "/");
                         }
+
+                        //reconnects attribute names to their respective values if separated on "="
                         f = attstore.length;
                         e = 1;
                         if (e < f) {
@@ -1614,73 +1618,73 @@ Parse Framework
                         if (objsortop === true && data.jscom[lengthMarkup] === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                             attstore = safeSort(attstore);
                         }
-                    }
 
-                    //creates the attributes object for the current record
-                    attr = (function parser_markup_attribute() {
-                        var ind    = 0,
-                            len    = attstore.length,
-                            obj    = {},
-                            eq     = 0,
-                            dq     = 0,
-                            sq     = 0,
-                            syntax = "<{\"'=/",
-                            slice  = "",
-                            store  = [],
-                            name   = "",
-                            cft    = cftags[tname];
-                        if (tname.slice(0, 3) === "cf_") {
-                            cft = "required";
-                        }
-                        if (objsortop === true && options.lang !== "jsx" && cft === undefined) {
-                            attstore = safeSort(attstore);
-                        }
-                        if (ind < len) {
-                            do {
-                                eq = attstore[ind].indexOf("=");
-                                dq = attstore[ind].indexOf("\"");
-                                sq = attstore[ind].indexOf("'");
-                                if (eq > -1 && store.length > 0) {
-                                    obj[store.join(" ")] = "";
-                                    store                = [];
-                                    obj[attstore[ind]]   = "";
-                                } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
-                                    store.push(attstore[ind]);
-                                } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
-                                    obj[attstore[ind]] = "";
-                                } else if (eq < 0 && cft === undefined) {
-                                    name = attstore[ind];
-                                    if (options.lang === "html" && cft === undefined) {
-                                        name = name.toLowerCase();
-                                    }
-                                    if (options.quoteConvert === "single") {
-                                        obj[name] = "'" + attstore[ind] + "'";
-                                    } else {
-                                        obj[name] = "\"" + attstore[ind] + "\"";
-                                    }
-                                } else {
-                                    slice = attstore[ind].slice(eq + 1);
-                                    if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
-                                        if (options.quoteConvert === "single") {
-                                            slice = "'" + slice + "'";
-                                        } else {
-                                            slice = "\"" + slice + "\"";
+                        //creates the attributes object for the current record
+                        attr = (function parser_markup_attribute() {
+                            var ind    = 0,
+                                len    = attstore.length,
+                                obj    = {},
+                                eq     = 0,
+                                dq     = 0,
+                                sq     = 0,
+                                syntax = "<{\"'=/",
+                                slice  = "",
+                                store  = [],
+                                name   = "",
+                                cft    = cftags[tname];
+                            if (tname.slice(0, 3) === "cf_") {
+                                cft = "required";
+                            }
+                            if (objsortop === true && options.lang !== "jsx" && cft === undefined) {
+                                attstore = safeSort(attstore);
+                            }
+                            if (ind < len) {
+                                do {
+                                    eq = attstore[ind].indexOf("=");
+                                    dq = attstore[ind].indexOf("\"");
+                                    sq = attstore[ind].indexOf("'");
+                                    if (eq > -1 && store.length > 0) {
+                                        obj[store.join(" ")] = "";
+                                        store                = [];
+                                        obj[attstore[ind]]   = "";
+                                    } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
+                                        store.push(attstore[ind]);
+                                    } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
+                                        obj[attstore[ind]] = "";
+                                    } else if (eq < 0 && cft === undefined) {
+                                        name = attstore[ind];
+                                        if (options.lang === "html" && cft === undefined) {
+                                            name = name.toLowerCase();
                                         }
+                                        if (options.quoteConvert === "single") {
+                                            obj[name] = "'" + attstore[ind] + "'";
+                                        } else {
+                                            obj[name] = "\"" + attstore[ind] + "\"";
+                                        }
+                                    } else {
+                                        slice = attstore[ind].slice(eq + 1);
+                                        if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
+                                            if (options.quoteConvert === "single") {
+                                                slice = "'" + slice + "'";
+                                            } else {
+                                                slice = "\"" + slice + "\"";
+                                            }
+                                        }
+                                        name = attstore[ind].slice(0, eq);
+                                        if (options.lang === "html" && cft === undefined) {
+                                            name = name.toLowerCase();
+                                        }
+                                        obj[name] = slice;
                                     }
-                                    name = attstore[ind].slice(0, eq);
-                                    if (options.lang === "html" && cft === undefined) {
-                                        name = name.toLowerCase();
-                                    }
-                                    obj[name] = slice;
-                                }
-                                ind = ind + 1;
-                            } while (ind < len);
-                        }
-                        if (store.length > 0) {
-                            obj[store.join(" ")] = "";
-                        }
-                        return obj;
-                    }());
+                                    ind = ind + 1;
+                                } while (ind < len);
+                            }
+                            if (store.length > 0) {
+                                obj[store.join(" ")] = "";
+                            }
+                            return obj;
+                        }());
+                    }
 
                     //a correction for false-positive parse failures
                     if (parseFail === true) {
@@ -1706,17 +1710,11 @@ Parse Framework
                     }
 
                     // cheat identifies HTML singleton elements as singletons even if formatted as
-                    // start tags
+                    // start tags, such as <br> (which is really <br/>)
                     cheat = (function parser_markup_tag_cheat() {
-                        var atty         = [],
-                            attn         = (typeof data.token[lengthMarkup] === "string")
-                                ? data.token[lengthMarkup]
-                                : "",
-                            atval        = "",
-                            type         = "",
+                        var cfval        = "",
                             d            = 0,
                             ee           = 1,
-                            cfval        = "",
                             ender        = (/(\/>)$/),
                             htmlsings    = {
                                 area       : "singleton",
@@ -1768,87 +1766,35 @@ Parse Framework
                                         aa = aa - 1;
                                     } while (aa > -1);
                                 }
+                                return false;
                             };
-                        if (presend["/" + tname] === true) {
-                            linepreserve = linepreserve - 1;
+                        if (tname === "/cfquery") {
+                            emptylines = emptylines - 1;
                         }
+
+                        //determine if the current tag is an HTML singleton and exit
                         if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) !== "/cf") {
-                            if (data.types[lengthMarkup - 1] === "singleton" && attn.charAt(attn.length - 2) !== "/" && "/" + tagName(attn) === tname) {
+                            quote = (typeof data.token[lengthMarkup] === "string")
+                                ? data.token[lengthMarkup]
+                                : "";
+                            if (data.types[lengthMarkup - 1] === "singleton" && quote.charAt(quote.length - 2) !== "/" && "/" + tagName(quote) === tname) {
                                 data.types[lengthMarkup - 1] = "start";
-                            } else if ((data.types[lengthMarkup - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && tname !== "/span" && tname !== "/div" && tname !== "/script" && (options.lang !== "html" || (options.lang === "html" && tname !== "/li")) && tname === "/" + tagName(data.token[lengthMarkup]) && options.tagmerge === true) {
+                            } else if (
+                                tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[lengthMarkup]) && options.tagmerge === true
+                                (data.types[lengthMarkup - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") &&
+                                (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))
+                            ) {
                                 lengthMarkup = recordPop(data);
                                 if (data.types[lengthMarkup] === "start") {
                                     data.token[lengthMarkup] = data.token[lengthMarkup].replace(/>$/, "/>");
                                 }
                                 data.types[lengthMarkup] = "singleton";
-                                singleton               = true;
-                                return;
+                                singleton                = true;
+                                return false;
                             }
-                        }
-                        d = attstore.length - 1;
-                        if (d > -1) {
-                            do {
-                                atty = arname(attstore[d]);
-                                if (atty[0] === "type") {
-                                    type = atty[1];
-                                    if (type.charAt(0) === "\"" || type.charAt(0) === "'") {
-                                        type = type.slice(1, type.length - 1);
-                                    }
-                                } else if (atty[0] === "src" && (tname === "embed" || tname === "img" || tname === "script" || tname === "iframe")) {
-                                    atval = atty[1];
-                                    if (atval.charAt(0) === "\"" || atval.charAt(0) === "'") {
-                                        atval = atval.slice(1, atval.length - 1);
-                                    }
-                                } else if (tname === "link" && atty === "href") {
-                                    atval = atty[1];
-                                    if (atval.charAt(0) === "\"" || atval.charAt(0) === "'") {
-                                        atval = atval.slice(1, atval.length - 1);
-                                    }
-                                }
-                                d = d - 1;
-                            } while (d > -1);
                         }
 
-                        if ((tname === "script" || tname === "style" || tname === "cfscript") && element.slice(element.length - 2) !== "/>") {
-                            //identify if there is embedded code requiring an external parser
-                            if (tname === "script" && (type === "" || type === "text/javascript" || type === "babel" || type === "module" || type === "application/javascript" || type === "application/x-javascript" || type === "text/ecmascript" || type === "application/ecmascript" || type === "text/jsx" || type === "application/jsx" || type === "text/cjs")) {
-                                ext = true;
-                            } else if (tname === "style" && (type === "" || type === "text/css")) {
-                                ext = true;
-                            } else if (tname === "cfscript") {
-                                ext = true;
-                            }
-                            if (ext === true) {
-                                d = a + 1;
-                                if (d < c) {
-                                    do {
-                                        if ((/\s/).test(b[d]) === false) {
-                                            if (b[d] === "<") {
-                                                if (b.slice(d + 1, d + 4).join("") === "!--") {
-                                                    d = d + 4;
-                                                    if (d < c) {
-                                                        do {
-                                                            if ((/\s/).test(b[d]) === false) {
-                                                                ext = false;
-                                                                break;
-                                                            }
-                                                            if (b[d] === "\n" || b[d] === "\r") {
-                                                                break;
-                                                            }
-                                                            d = d + 1;
-                                                        } while (d < c);
-                                                    }
-                                                } else if (b.slice(d + 1, d + 9).join("") !== "![CDATA[") {
-                                                    ext = false;
-                                                }
-                                            }
-                                            break;
-                                        }
-                                        d = d + 1;
-                                    } while (d < c);
-                                }
-                            }
-                        }
+                        //renames the types value for the following two template tags
                         if (tname === "/#assign" || tname === "/#global") {
                             d = lengthMarkup - 1;
                             if (d > -1) {
@@ -1872,60 +1818,8 @@ Parse Framework
                             }
                             return false;
                         }
-                        if (tname.charAt(0) === "#" && data.types[lengthMarkup] === "start" && (tname === "#assign" || tname === "#break" || tname === "#case" || tname === "#default" || tname === "#fallback" || tname === "#flush" || tname === "#ftl" || tname === "#global" || tname === "#import" || tname === "#include" || tname === "#local" || tname === "#t" || tname === "#lt" || tname === "#rt" || tname === "#nested" || tname === "#nt" || tname === "#recover" || tname === "#recurse" || tname === "#return" || tname === "#sep" || tname === "#setting" || tname === "#stop" || tname === "#visit")) {
-                            simple = true;
-                            return true;
-                        }
-                        if (options.lang === "html") {
-                            //simple means of looking for missing li end tags
-                            if (tname === "li") {
-                                if (litag === list && (list !== 0 || (list === 0 && lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") < 0))) {
-                                    d = lengthMarkup;
-                                    if (d > -1) {
-                                        do {
-                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
-                                                ee = ee - 1;
-                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
-                                                ee = ee + 1;
-                                            }
-                                            if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
-                                                liend = true;
-                                                break;
-                                            }
-                                            if (ee < 0) {
-                                                break;
-                                            }
-                                            d = d - 1;
-                                        } while (d > -1);
-                                    }
-                                } else {
-                                    litag = litag + 1;
-                                }
-                            } else if (tname === "/li" && litag === list) {
-                                litag = litag - 1;
-                            } else if (tname === "ul" || tname === "ol") {
-                                list = list + 1;
-                            } else if (tname === "/ul" || tname === "/ol") {
-                                if (litag === list) {
-                                    liend = true;
-                                    litag = litag - 1;
-                                }
-                                list = list - 1;
-                            }
-                            if (data.types[lengthMarkup] === "end" && htmlsings[tname.slice(1)] === "singleton" && tname !== "/cftransaction") {
-                                return fixsingleton();
-                            }
-                            if (htmlsings[tname] === "singleton") {
-                                if (options.correct === true && ender.test(element) === false) {
-                                    lex.pop();
-                                    lex.push(" ");
-                                    lex.push("/");
-                                    lex.push(">");
-                                    element = lex.join("");
-                                }
-                                return true;
-                            }
-                        }
+
+                        //determines if custom coldfusion tags are singletons
                         if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) === "/cf" && cftags[tname.slice(1)] !== undefined) {
                             cfval = cftags[tname.slice(1)];
                             if (tname === "/cftransaction") {
@@ -1939,6 +1833,8 @@ Parse Framework
                             }
                             return false;
                         }
+
+                        //processes all other coldfusion tags
                         if (tname.slice(0, 2) === "cf") {
                             if (tname === "cfelse" || tname === "cfelseif") {
                                 lengthMarkup = recordPush(data, {
@@ -1999,19 +1895,175 @@ Parse Framework
                             }
                             return false;
                         }
-                        if (options.lang === "dustjs" && data.types[lengthMarkup] === "template_start") {
-                            type  = element.charAt(1);
-                            atval = element.slice(element.length - 2);
-                            if ((atval === "/}" || atval.charAt(0) === type) && (type === "#" || type === "?" || type === "^" || type === "@" || type === "<" || type === "+")) {
-                                data.types[lengthMarkup] = "template";
+
+                        
+                        if (options.lang === "html") {
+                            //html gets tag names in lowercase, if you want to preserve case sensitivity beautify as XML
+                            if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
+                                element = element.toLowerCase();
+                            }
+
+                            //looks for HTML "li" tags that have no ending tag, which is valid in HTML
+                            if (tname === "li") {
+                                if (litag === list && (list !== 0 || (list === 0 && lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") < 0))) {
+                                    d = lengthMarkup;
+                                    if (d > -1) {
+                                        do {
+                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
+                                                ee = ee - 1;
+                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
+                                                ee = ee + 1;
+                                            }
+                                            if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
+                                                lengthMarkup = recordPush(data, {
+                                                    attrs: {},
+                                                    begin: parent[parent.length - 1][1],
+                                                    jscom: false,
+                                                    lines: data.lines[lengthMarkup],
+                                                    presv: false,
+                                                    stack: parent[parent.length - 1][0],
+                                                    token: "</li>",
+                                                    types: "end"
+                                                }, lengthMarkup);
+                                                data.lines[lengthMarkup - 1] = 0;
+                                                if (parent.length > 1) {
+                                                    parent.pop();
+                                                }
+                                                break;
+                                            }
+                                            if (ee < 0) {
+                                                break;
+                                            }
+                                            d = d - 1;
+                                        } while (d > -1);
+                                    }
+                                } else {
+                                    litag = litag + 1;
+                                }
+                            } else if (tname === "/li" && litag === list) {
+                                litag = litag - 1;
+                            } else if (tname === "ul" || tname === "ol") {
+                                list = list + 1;
+                            } else if (tname === "/ul" || tname === "/ol") {
+                                if (litag === list) {
+                                    lengthMarkup = recordPush(data, {
+                                        attrs: {},
+                                        begin: parent[parent.length - 1][1],
+                                        jscom: false,
+                                        lines: data.lines[lengthMarkup],
+                                        presv: false,
+                                        stack: parent[parent.length - 1][0],
+                                        token: "</li>",
+                                        types: "end"
+                                    }, lengthMarkup);
+                                    data.lines[lengthMarkup - 1] = 0;
+                                    if (parent.length > 1) {
+                                        parent.pop();
+                                    }
+                                    litag = litag - 1;
+                                }
+                                list = list - 1;
+                            }
+
+                            //generalized corrections for the handling of singleton tags
+                            if (data.types[lengthMarkup] === "end" && htmlsings[tname.slice(1)] === "singleton" && tname !== "/cftransaction") {
+                                return fixsingleton();
+                            }
+
+                            //inserts a trailing slash into singleton tags if they do not already have it
+                            if (htmlsings[tname] === "singleton") {
+                                if (options.correct === true && ender.test(element) === false) {
+                                    lex.pop();
+                                    lex.push(" ");
+                                    lex.push("/");
+                                    lex.push(">");
+                                    element = lex.join("");
+                                }
+                                return true;
                             }
                         }
+
                         return false;
                     }());
 
+                    //This escape flag is set in the cheat function
                     if (singleton === true) {
                         return;
                     }
+
+                    //tags with the following names are singletons
+                    if (tname.charAt(0) === "#" && data.types[lengthMarkup] === "start" && (tname === "#assign" || tname === "#break" || tname === "#case" || tname === "#default" || tname === "#fallback" || tname === "#flush" || tname === "#ftl" || tname === "#global" || tname === "#import" || tname === "#include" || tname === "#local" || tname === "#t" || tname === "#lt" || tname === "#rt" || tname === "#nested" || tname === "#nt" || tname === "#recover" || tname === "#recurse" || tname === "#return" || tname === "#sep" || tname === "#setting" || tname === "#stop" || tname === "#visit")) {
+                        simple = true;
+                    }
+
+                    //correction for dustjs tags to template singleton types
+                    if (options.lang === "dustjs" && data.types[lengthMarkup] === "template_start") {
+                        quote    = element.charAt(1);
+                        jsxquote = element.slice(element.length - 2);
+                        if ((jsxquote === "/}" || jsxquote.charAt(0) === quote) && (quote === "#" || quote === "?" || quote === "^" || quote === "@" || quote === "<" || quote === "+")) {
+                            data.types[lengthMarkup] = "template";
+                        }
+                    }
+
+                    //determine if the markup tag potentially contains code interpreted by a different lexer
+                    if ((tname === "script" || tname === "style" || tname === "cfscript") && element.slice(element.length - 2) !== "/>") {
+
+                        //get the attribute value for "type"
+                        e = attstore.length - 1;
+                        if (e > -1) {
+                            do {
+                                attribute = arname(attstore[e]);
+                                if (attribute[0] === "type") {
+                                    quote = attribute[1];
+                                    if (quote.charAt(0) === "\"" || quote.charAt(0) === "'") {
+                                        quote = quote.slice(1, quote.length - 1);
+                                    }
+                                    break;
+                                }
+                                e = e - 1;
+                            } while (e > -1);
+                        }
+
+                        //ext is flag to send information between the tag lexer and the content lexer
+                        if (tname === "script" && (quote === "" || quote === "text/javascript" || quote === "babel" || quote === "module" || quote === "application/javascript" || quote === "application/x-javascript" || quote === "text/ecmascript" || quote === "application/ecmascript" || quote === "text/jsx" || quote === "application/jsx" || quote === "text/cjs")) {
+                            ext = true;
+                        } else if (tname === "style" && (quote === "" || quote === "text/css")) {
+                            ext = true;
+                        } else if (tname === "cfscript") {
+                            ext = true;
+                        }
+                        if (ext === true) {
+                            e = a + 1;
+                            if (e < c) {
+                                do {
+                                    if ((/\s/).test(b[e]) === false) {
+                                        if (b[e] === "<") {
+                                            if (b.slice(e + 1, e + 4).join("") === "!--") {
+                                                e = e + 4;
+                                                if (e < c) {
+                                                    do {
+                                                        if ((/\s/).test(b[e]) === false) {
+                                                            ext = false;
+                                                            break;
+                                                        }
+                                                        if (b[e] === "\n" || b[e] === "\r") {
+                                                            break;
+                                                        }
+                                                        e = e + 1;
+                                                    } while (e < c);
+                                                }
+                                            } else if (b.slice(e + 1, e + 9).join("") !== "![CDATA[") {
+                                                ext = false;
+                                            }
+                                        }
+                                        break;
+                                    }
+                                    e = e + 1;
+                                } while (e < c);
+                            }
+                        }
+                    }
+
                     //am I a singleton or a start type?
                     if (simple === true && ignoreme === false) {
                         if (cheat === true || (lex[lex.length - 2] === "/" && lex[lex.length - 1] === ">")) {
@@ -2020,13 +2072,14 @@ Parse Framework
                             ltype = "start";
                         }
                     }
+
                     // additional logic is required to find the end of a tag with the attribute
                     // data-parse-ignore
                     if (simple === true && preserve === false && ignoreme === true && end === ">" && element.slice(element.length - 2) !== "/>") {
                         if (cheat === true) {
                             ltype = "singleton";
                         } else {
-                            preserve                = true;
+                            preserve                 = true;
                             data.presv[lengthMarkup] = true;
                             ltype = "ignore";
                             a     = a + 1;
@@ -2157,30 +2210,6 @@ Parse Framework
                         }
                     }
 
-                    // HTML5 does not require an end tag for an opening list item <li> this logic
-                    // temprorarily creates a pseudo end tag
-                    if (liend === true) {
-                        lengthMarkup = recordPush(data, {
-                            attrs: {},
-                            begin: parent[parent.length - 1][1],
-                            jscom: false,
-                            lines: data.lines[lengthMarkup],
-                            presv: false,
-                            stack: parent[parent.length - 1][0],
-                            token: "</li>",
-                            types: "end"
-                        }, lengthMarkup);
-                        data.lines[lengthMarkup - 1] = 0;
-                        if (parent.length > 1) {
-                            parent.pop();
-                        }
-                    }
-                    if (parent[parent.length - 1][1] === -1) {
-                        parent[parent.length - 1] = ["root", lengthMarkup];
-                    }
-                    if (preserve === false && options.lang !== "jsx") {
-                        element = element.replace(/\s+/g, " ");
-                    }
                     lengthMarkup = recordPush(data, {
                         attrs: attr,
                         begin: parent[parent.length - 1][1],
@@ -2191,6 +2220,8 @@ Parse Framework
                         token: element,
                         types: ltype
                     }, lengthMarkup);
+
+                    //sorts child elements
                     if (options.tagsort === true && data.types[lengthMarkup] === "end" && data.types[lengthMarkup - 1] !== "start") {
                         (function parser_markup_tag_sorttag() {
                             var children   = [],
@@ -2208,38 +2239,6 @@ Parse Framework
                                     stack: [],
                                     token: [],
                                     types: []
-                                },
-                                sortName   = function parser_markup_tag_sorttag_sortName(x, y) {
-                                    if (data.token[x[0]] < data.token[y[0]]) {
-                                        return 1;
-                                    }
-                                    return -1;
-                                },
-                                pushy      = function parser_markup_tag_sorttag_pushy(index) {
-                                    store
-                                        .attrs
-                                        .push(data.attrs[index]);
-                                    store
-                                        .begin
-                                        .push(data.begin[index]);
-                                    store
-                                        .stack
-                                        .push(data.stack[index]);
-                                    store
-                                        .jscom
-                                        .push(data.jscom[index]);
-                                    store
-                                        .lines
-                                        .push(data.lines[index]);
-                                    store
-                                        .presv
-                                        .push(data.presv[index]);
-                                    store
-                                        .token
-                                        .push(data.token[index]);
-                                    store
-                                        .types
-                                        .push(data.types[index]);
                                 };
                             bb = lengthMarkup - 1;
                             if (bb > -1) {
@@ -2273,16 +2272,43 @@ Parse Framework
                             bb = children.length - 1;
                             if (bb > -1) {
                                 do {
-                                    pushy(children[bb][0]);
+                                    recordPush(store, {
+                                        attrs: data.attrs[children[bb][0]],
+                                        begin: data.begin[children[bb][0]],
+                                        jscom: data.jscom[children[bb][0]],
+                                        lines: data.lines[children[bb][0]],
+                                        presv: data.presv[children[bb][0]],
+                                        stack: data.stack[children[bb][0]],
+                                        token: data.token[children[bb][0]],
+                                        types: data.types[children[bb][0]],
+                                    }, 0);
                                     if (children[bb][0] !== children[bb][1]) {
                                         d = children[bb][0] + 1;
                                         if (d < children[bb][1]) {
                                             do {
-                                                pushy(d);
+                                                recordPush(store, {
+                                                    attrs: data.attrs[d],
+                                                    begin: data.begin[d],
+                                                    jscom: data.jscom[d],
+                                                    lines: data.lines[d],
+                                                    presv: data.presv[d],
+                                                    stack: data.stack[d],
+                                                    token: data.token[d],
+                                                    types: data.types[d],
+                                                }, 0);
                                                 d = d + 1;
                                             } while (d < children[bb][1]);
                                         }
-                                        pushy(children[bb][1]);
+                                        recordPush(store, {
+                                            attrs: data.attrs[children[bb][1]],
+                                            begin: data.begin[children[bb][1]],
+                                            jscom: data.jscom[children[bb][1]],
+                                            lines: data.lines[children[bb][1]],
+                                            presv: data.presv[children[bb][1]],
+                                            stack: data.stack[children[bb][1]],
+                                            token: data.token[children[bb][1]],
+                                            types: data.types[children[bb][1]],
+                                        }, 0);
                                     }
                                     bb = bb - 1;
                                 } while (bb > -1);
@@ -2295,7 +2321,7 @@ Parse Framework
                             endData.stack = data.stack.pop();
                             endData.token = data.token.pop();
                             endData.types = data.types.pop();
-                            lengthMarkup = lengthMarkup - 1;
+                            lengthMarkup  = lengthMarkup - 1;
                             data.attrs    = data
                                 .attrs
                                 .slice(0, startStore)
@@ -2341,10 +2367,11 @@ Parse Framework
                             }, lengthMarkup);
                         }());
                     }
-                    e = lengthMarkup;
-                    if (data.types[e] === "start") {
-                        parent.push([tname, e]);
-                    } else if (data.types[e] === "end" && parent.length > 1) {
+
+                    //this is necessary to describe the structures that populate the begin and stack data
+                    if (data.types[lengthMarkup] === "start") {
+                        parent.push([tname, lengthMarkup]);
+                    } else if (data.types[lengthMarkup] === "end" && parent.length > 1) {
                         parent.pop();
                     }
                 },
@@ -2353,12 +2380,15 @@ Parse Framework
                         quote     = "",
                         ltoke     = "",
                         liner     = emptylines,
+                        name      = (ext === true)
+                            ? tagName(data.token[lengthMarkup])
+                            : "",
                         end       = "",
                         square    = (
                             data.types[lengthMarkup] === "template_start" && data.token[lengthMarkup].indexOf("<!") === 0 && data.token[lengthMarkup].indexOf("<![") < 0 && data.token[lengthMarkup].charAt(data.token[lengthMarkup].length - 1) === "["
                         ),
                         tailSpace = function parser_markup_content_tailSpace(spacey) {
-                            if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
+                            if (emptylines > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
                                 spacey = "";
                             }
                             return "";
@@ -2382,16 +2412,13 @@ Parse Framework
                                 return true;
                             }
                             return false;
-                        },
-                        name      = "";
-                    if (ext === true) {
-                        name = tagName(data.token[lengthMarkup]);
-                    }
+                        };
                     if (a < c) {
                         do {
                             if (b[a] === "\n") {
                                 lineNumber = lineNumber + 1;
                             }
+
                             // external code requires additional parsing to look for the appropriate end
                             // tag, but that end tag cannot be quoted or commented
                             if (ext === true) {
@@ -2411,6 +2438,8 @@ Parse Framework
                                         .slice(a, a + 10)
                                         .join("")
                                         .toLowerCase();
+
+                                    //cfscript requires use of the script lexer
                                     if (name === "cfscript" && end === "</cfscript") {
                                         a   = a - 1;
                                         ext = false;
@@ -2422,13 +2451,15 @@ Parse Framework
                                             begin: parent[parent.length - 1][1],
                                             jscom: false,
                                             lines: liner,
-                                            presv: (linepreserve > 0),
+                                            presv: (emptylines > 0),
                                             stack: parent[parent.length - 1][0],
                                             token: lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
                                             types: "cfscript"
                                         }, lengthMarkup);
                                         return;
                                     }
+
+                                    //script requires use of the script lexer
                                     if (name === "script") {
                                         if (a === c - 9) {
                                             end = end.slice(0, end.length - 1);
@@ -2446,7 +2477,7 @@ Parse Framework
                                                 begin: parent[parent.length - 1][1],
                                                 jscom: false,
                                                 lines: liner,
-                                                presv: (linepreserve > 0),
+                                                presv: (emptylines > 0),
                                                 stack: parent[parent.length - 1][0],
                                                 token: lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
                                                 types: "script"
@@ -2454,6 +2485,8 @@ Parse Framework
                                             return;
                                         }
                                     }
+
+                                    //style requires use of the style lexer
                                     if (name === "style") {
                                         if (a === c - 8) {
                                             end = end.slice(0, end.length - 1);
@@ -2473,7 +2506,7 @@ Parse Framework
                                                 begin: parent[parent.length - 1][1],
                                                 jscom: false,
                                                 lines: liner,
-                                                presv: (linepreserve > 0),
+                                                presv: (emptylines > 0),
                                                 stack: parent[parent.length - 1][0],
                                                 token: lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
                                                 types: "style"
@@ -2509,6 +2542,8 @@ Parse Framework
                                     }
                                 }
                             }
+
+                            //typically this logic is for artifacts nested with an SGML tag
                             if (square === true && b[a] === "]") {
                                 a = a - 1;
                                 if (options.content === true) {
@@ -2516,7 +2551,7 @@ Parse Framework
                                 } else if (options.textpreserve === true) {
                                     ltoke = minspace + lex.join("");
                                     liner = 0;
-                                } else if (linepreserve > 0) {
+                                } else if (emptylines > 0) {
                                     ltoke = minspace + lex.join("").replace(/(\s+)$/, tailSpace);
                                     liner = 0;
                                 } else {
@@ -2527,7 +2562,7 @@ Parse Framework
                                     begin: parent[parent.length - 1][1],
                                     jscom: false,
                                     lines: liner,
-                                    presv: (linepreserve > 0),
+                                    presv: (emptylines > 0),
                                     stack: parent[parent.length - 1][0],
                                     token: ltoke,
                                     types: "content"
@@ -2535,7 +2570,10 @@ Parse Framework
                                 return;
                             }
 
+                            //general content processing
                             if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.lang === "jsx" || options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
+
+                                //dustjs template handling
                                 if (options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
                                     if (options.content === true) {
@@ -2551,7 +2589,7 @@ Parse Framework
                                         begin: parent[parent.length - 1][1],
                                         jscom: false,
                                         lines: liner,
-                                        presv: (linepreserve > 0),
+                                        presv: (emptylines > 0),
                                         stack: parent[parent.length - 1][0],
                                         token: ltoke,
                                         types: "content"
@@ -2568,13 +2606,15 @@ Parse Framework
                                     }, lengthMarkup);
                                     return;
                                 }
+
+                                //regular content
                                 a = a - 1;
                                 if (options.content === true) {
                                     ltoke = "text";
                                 } else if (options.textpreserve === true) {
                                     ltoke = minspace + lex.join("");
                                     liner = 0;
-                                } else if (linepreserve > 0) {
+                                } else if (emptylines > 0) {
                                     ltoke = minspace + lex.join("").replace(/(\s+)$/, tailSpace);
                                     liner = 0;
                                 } else {
@@ -2585,7 +2625,7 @@ Parse Framework
                                     begin: parent[parent.length - 1][1],
                                     jscom: false,
                                     lines: liner,
-                                    presv: (linepreserve > 0),
+                                    presv: (emptylines > 0),
                                     stack: parent[parent.length - 1][0],
                                     token: ltoke,
                                     types: "content"
@@ -2596,6 +2636,8 @@ Parse Framework
                             a = a + 1;
                         } while (a < c);
                     }
+
+                    //regular content at the end of the supplied source
                     if (options.content === true) {
                         ltoke = "text";
                     } else if (options.textpreserve === true) {
@@ -2609,7 +2651,7 @@ Parse Framework
                         begin: parent[parent.length - 1][1],
                         jscom: false,
                         lines: liner,
-                        presv: (linepreserve > 0),
+                        presv: (emptylines > 0),
                         stack: parent[parent.length - 1][0],
                         token: ltoke,
                         types: "content"
@@ -2632,10 +2674,14 @@ Parse Framework
                     tag("]>");
                 } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && options.lang === "jekyll") {
                     tag("---");
-                } else if (b[a] === "#" && options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false && ((/\w/).test(b[a + 1]) === true || b[a + 1] === "*" || b[a + 1] === "#" || (b[a + 1] === "[" && b[a + 2] === "["))) {
-                    tag("");
-                } else if (b[a] === "$" && options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false && b[a + 1] !== "$" && b[a + 1] !== "=" && b[a + 1] !== "[") {
-                    tag("");
+                } else if (options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
+                    if (b[a] === "#" && ((/\w/).test(b[a + 1]) === true || b[a + 1] === "*" || b[a + 1] === "#" || (b[a + 1] === "[" && b[a + 2] === "["))) {
+                        tag("");
+                    } else if (b[a] === "$" && b[a + 1] !== "$" && b[a + 1] !== "=" && b[a + 1] !== "[") {
+                        tag("");
+                    } else {
+                        content();
+                    }
                 } else {
                     content();
                 }
