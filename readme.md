@@ -63,7 +63,7 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
 {
     attrs : [
         {}, {
-            class: '\'cat\''
+            "class": "\"cat\""
         }, {}, {}
     ],
     begin: [
@@ -90,12 +90,12 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
 
 If that parsed output were arranged as a table it would look something like:
 
-index | attrs          | begin | jscom |  lines | presv | stack  | token  | types
------ | -------------- | ----- | ----- | ------ | ----- | ------ | ------ | -----
-0     | {}             | 0     | false | 0      | false | 'root' | '<a>'  | 'start'
-1     | {class: 'cat'} | 0     | false | 0      | false | 'a'    | '<b >' | 'start'
-2     | {}             | 1     | false | 0      | false | 'b'    | '</b>' | 'end'
-3     | {}             | 0     | false | 0      | false | 'a'    | '</a>' | 'end'
+index | attrs                | begin | jscom |  lines | presv | stack  | token        | types
+----- | -------------------- | ----- | ----- | ------ | ----- | ------ | ------------ | -----
+0     | {}                   | 0     | false | 0      | false | 'root' | '&lt;a&gt;'  | 'start'
+1     | {"class": "\"cat\""} | 0     | false | 0      | false | 'a'    | '&lt;b &gt;' | 'start'
+2     | {}                   | 1     | false | 0      | false | 'b'    | '&lt;/b&gt;' | 'end'
+3     | {}                   | 0     | false | 0      | false | 'a'    | '&lt;/a&gt;' | 'end'
 
 ### Output arrays
 #### attrs
@@ -110,7 +110,14 @@ Regardless of the language or lexer used the values supplied in this array allow
 The *jscom* array stores a boolean indicating whether the current index is a JavaScript comment as markup element's attribute.  JavaScript comments have to be parsed according their delimiters without interference to other markup code qualities.
 
 #### lines
-The *lines* array stores the number of empty lines immediately preceeding the current item.  Many developers want the empty lines in their code preserved as the whitespace indicates a visual separation for areas of code.  The values in this array allow beautifiers to know where or up to how many lines should be inserted in the beautified output.
+The *lines* array stores a white space value.  A value of 0 means no white space preceeds the current token.  Any white space preceeding the token has a minimum value of 1 and the value increments for each instance of a new line character.  This is necessary because white space has meaning in markup, and so it must be accounted for even if doesn't contain new line characters.
+
+**To be extra clear:**
+
+* 0 - not preceeded by any white space
+* 1 - preceeded by white space that does not contain a new line character
+* 2 - preceeded by white space containing a single new line character
+* 3 - preceeded by white space containing two new line characters, which looks like a single empty line
 
 #### presv
 The *presv* array stores a boolean indicating if the current item should be preserved from any kind of manipulation in the beautifier.  Some examples of a preserved item would be a markup comment, certain templating tags, or a tag with the attribute *data-parse-preserve*.  Script and style code items always receive a value of false in this array.

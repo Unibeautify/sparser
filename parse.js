@@ -607,6 +607,7 @@ Parse Framework
                 c             = b.length,
                 linesMarkup   = 0,
                 lengthMarkup  = -1,
+                linepreserve  = 0,
                 list          = 0,
                 litag         = 0,
                 sgmlflag      = 0,
@@ -810,7 +811,7 @@ Parse Framework
                     ["none", -1]
                 ],
                 spacer        = function parser_markup_spacer() {
-                    linesMarkup = 0;
+                    linesMarkup = 1;
                     do {
                         if (b[a] === "\n") {
                             linesMarkup = linesMarkup + 1;
@@ -1077,10 +1078,10 @@ Parse Framework
                                 preserve = true;
                                 ltype    = "ignore";
                             } else if (b[a + 8] !== undefined && b[a + 1].toLowerCase() === "c" && b[a + 2].toLowerCase() === "f" && b[a + 3].toLowerCase() === "q" && b[a + 4].toLowerCase() === "u" && b[a + 5].toLowerCase() === "e" && b[a + 6].toLowerCase() === "r" && b[a + 7].toLowerCase() === "y" && (b[a + 8] === ">" || (/\s/).test(b[a + 8]))) {
-                                end         = ">";
-                                linesMarkup = linesMarkup + 1;
-                                preserve    = true;
-                                ltype       = "content_preserve";
+                                end          = ">";
+                                linepreserve = linepreserve + 1;
+                                preserve     = true;
+                                ltype        = "content_preserve";
                             } else if (b[a + 1] === "<") {
                                 if (b[a + 2] === "<") {
                                     end = ">>>";
@@ -1647,7 +1648,7 @@ Parse Framework
                     tname   = tagName(element);
 
                     if (parent[parent.length - 1][1] === -1) {
-                        parent[parent.length - 1] = ["root", lengthMarkup];
+                        parent[parent.length - 1] = ["root", 0];
                     }
 
                     if (preserve === false && options.lang !== "jsx") {
@@ -1895,7 +1896,7 @@ Parse Framework
                                 return false;
                             };
                         if (tname === "/cfquery") {
-                            linesMarkup = linesMarkup - 1;
+                            linepreserve = linepreserve - 1;
                         }
 
                         //determine if the current tag is an HTML singleton and exit
@@ -2534,7 +2535,7 @@ Parse Framework
                             data.types[lengthMarkup] === "template_start" && data.token[lengthMarkup].indexOf("<!") === 0 && data.token[lengthMarkup].indexOf("<![") < 0 && data.token[lengthMarkup].charAt(data.token[lengthMarkup].length - 1) === "["
                         ),
                         tailSpace = function parser_markup_content_tailSpace(spacey) {
-                            if (linesMarkup > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
+                            if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
                                 spacey = "";
                             }
                             return "";
@@ -2597,7 +2598,7 @@ Parse Framework
                                             begin: parent[parent.length - 1][1],
                                             jscom: false,
                                             lines: liner,
-                                            presv: (linesMarkup > 0),
+                                            presv: (linepreserve > 0),
                                             stack: parent[parent.length - 1][0],
                                             token: lex
                                                 .join("")
@@ -2627,7 +2628,7 @@ Parse Framework
                                                 begin: parent[parent.length - 1][1],
                                                 jscom: false,
                                                 lines: liner,
-                                                presv: (linesMarkup > 0),
+                                                presv: (linepreserve > 0),
                                                 stack: parent[parent.length - 1][0],
                                                 token: lex
                                                     .join("")
@@ -2660,7 +2661,7 @@ Parse Framework
                                                 begin: parent[parent.length - 1][1],
                                                 jscom: false,
                                                 lines: liner,
-                                                presv: (linesMarkup > 0),
+                                                presv: (linepreserve > 0),
                                                 stack: parent[parent.length - 1][0],
                                                 token: lex
                                                     .join("")
@@ -2725,7 +2726,7 @@ Parse Framework
                                     begin: parent[parent.length - 1][1],
                                     jscom: false,
                                     lines: liner,
-                                    presv: (linesMarkup > 0),
+                                    presv: (linepreserve > 0),
                                     stack: parent[parent.length - 1][0],
                                     token: ltoke,
                                     types: "content"
@@ -2797,7 +2798,7 @@ Parse Framework
                                     begin: parent[parent.length - 1][1],
                                     jscom: false,
                                     lines: liner,
-                                    presv: (linesMarkup > 0),
+                                    presv: (linepreserve > 0),
                                     stack: parent[parent.length - 1][0],
                                     token: ltoke,
                                     types: "content"
@@ -2826,7 +2827,7 @@ Parse Framework
                         begin: parent[parent.length - 1][1],
                         jscom: false,
                         lines: liner,
-                        presv: (linesMarkup > 0),
+                        presv: (linepreserve > 0),
                         stack: parent[parent.length - 1][0],
                         token: ltoke,
                         types: "content"
@@ -3009,6 +3010,7 @@ Parse Framework
                     // * paren based: method, expression, paren
                     // * data       : array, object
                     var aa     = 0,
+                        esc    = false,
                         wordx  = "",
                         wordy  = "",
                         record = {
@@ -3130,9 +3132,14 @@ Parse Framework
                     } else if (stacklist.length === 0) {
                         record.stack = "global";
                         record.begin = 0;
+                        esc          = true;
                     } else {
                         record.stack = stacklist[stacklist.length - 1][0];
                         record.begin = stacklist[stacklist.length - 1][1];
+                        esc          = true;
+                    }
+                    if (esc === false) {
+                        stacklist[stacklist.length - 1] = [record.stack, record.begin];
                     }
                     lengthScript = recordPush(data, record, lengthScript);
                     linesScript  = 0;
@@ -3222,6 +3229,7 @@ Parse Framework
                 word           = function parser_script_word() {
                     var f        = wordTest,
                         g        = 1,
+                        lex      = [],
                         build    = {},
                         output   = "",
                         nextitem = "",
@@ -3231,13 +3239,13 @@ Parse Framework
                             cherrypick(lengthScript - 3, 1, {});
                         };
                     do {
-                        build.push(c[f]);
+                        lex.push(c[f]);
                         if (c[f] === "\\") {
                             logError("Illegal escape in JavaScript", a);
                         }
                         f = f + 1;
                     } while (f < a);
-                    output   = build.join("");
+                    output   = lex.join("");
                     wordTest = -1;
                     if (lengthScript > 0 && output === "function" && data.token[lengthScript] === "(" && (data.token[lengthScript - 1] === "{" || data.token[lengthScript - 1] === "x{")) {
                         data.types[lengthScript] = "start";
@@ -4298,7 +4306,7 @@ Parse Framework
                     var localend  = b,
                         f         = a,
                         asitest   = false;
-                    linesScript = 0;
+                    linesScript = 1;
                     if (f < localend) {
                         do {
                             if (c[f] === "\n") {
@@ -4728,9 +4736,9 @@ Parse Framework
                         asifix();
                     }
                     if ((ltype === "comment" || ltype === "comment-inline") && data.token[lengthScript - 1] === ")") {
-                        ltoke              = data.token[lengthScript];
+                        ltoke                    = data.token[lengthScript];
                         data.token[lengthScript] = "{";
-                        ltype              = data.types[lengthScript];
+                        ltype                    = data.types[lengthScript];
                         data.types[lengthScript] = "start";
                     }
                 }
