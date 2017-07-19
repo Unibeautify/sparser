@@ -262,6 +262,7 @@ Parse Framework
                 var cc        = 0,
                     dd        = 0,
                     ee        = 0,
+                    ff        = 0,
                     behind    = length,
                     keys      = [],
                     keylen    = 0,
@@ -371,6 +372,7 @@ Parse Framework
                                                         token: data.token[ee],
                                                         types: data.types[ee]
                                                     }, 0);
+                                                    ff = ff + 1;
 
                                                     //remove extra commas
                                                     if (data.token[ee] === ",") {
@@ -416,6 +418,7 @@ Parse Framework
                                                     .types
                                                     .splice(ee, 0, "separator");
                                                 store.lines[ee - 1] = 0;
+                                                ff = ff + 1;
                                             }
                                             dd = dd + 1;
                                         } while (dd < keylen);
@@ -428,28 +431,28 @@ Parse Framework
                                     );
                                     data
                                         .attrs
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .begin
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .jscom
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .lines
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .presv
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .stack
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .token
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data
                                         .types
-                                        .splice(cc + 1, keylen);
+                                        .splice(cc + 1, ff);
                                     data.attrs  = data
                                         .attrs
                                         .concat(store.attrs);
@@ -4529,7 +4532,7 @@ Parse Framework
                         if (stacklist.length > 0 && stacklist[stacklist.length - 1][0] !== "object") {
                             asi(true);
                         } else if (options.objectSort === true) {
-                            lengthScript = objectSort(data, lengthScript);
+                            lengthScript = objectSort(data, lengthScript);console.log(data.token.slice(lengthScript - 50));
                         }
                         if (ltype === "comment" || ltype === "comment-inline") {
                             ltoke   = data.token[lengthScript];
