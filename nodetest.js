@@ -9,14 +9,28 @@
         parser  = require("./parse.js"),
         fs      = require("fs"),
         path    = require("path"),
+        startTime = [],
+        duration = "",
         options = {
             correct: true,
             html  : true,
             jsx   : false,
+            objectSort: true,
             source: "",
             type  : "script"
         },
+        timespan = function () {
+            var dec = function (time) {
+                    time[0] = time[0] * 1000000000;
+                    return time[0] + time[1];
+                },
+                end = dec(process.hrtime()),
+                sta = dec(startTime),
+                dur = (end - sta) / 1000000;
+            return "Parser executed in " + dur + " milliseconds.";
+        },
         source  = process.argv[2],
+        duration = "",
         display = function () {
             var a    = 0,
                 b    = output.attrs.length,
@@ -48,6 +62,8 @@
                 console.log(str.join(""));
                 a = a + 1;
             } while (a < b);
+            console.log("");
+            console.log(duration);
         };
     if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
         fs.stat(source, function (err, stats) {
@@ -65,14 +81,19 @@
                     return console.log(errf);
                 }
                 options.source = data;
+                startTime = process.hrtime();
                 output = parser(options);
+                duration = timespan();
                 display();
                 //console.log(output);
             });
         });
     } else {
         options.source = source;
+        startTime = process.hrtime();
         output = parser(options);
+        duration = timespan();
+        display();
         //console.log(output);
     }
 }());

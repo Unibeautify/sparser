@@ -258,12 +258,11 @@ Parse Framework
                 }
                 return ascend(array);
             },
-            objectSort = function parser_objectSort(data) {
+            objectSort = function parser_objectSort(data, length) {
                 var cc        = 0,
                     dd        = 0,
                     ee        = 0,
-                    startlen  = data.token.length - 1,
-                    behind    = startlen,
+                    behind    = length,
                     keys      = [],
                     keylen    = 0,
                     keyend    = 0,
@@ -275,14 +274,14 @@ Parse Framework
                             do {
                                 xx = xx + 1;
                             } while (
-                                xx < startlen && (data.types[xx] === "comment" || data.types[xx] === "comment-inline")
+                                xx < length && (data.types[xx] === "comment" || data.types[xx] === "comment-inline")
                             );
                         }
                         if (data.types[yy] === "comment" || data.types[yy] === "comment-inline") {
                             do {
                                 yy = yy + 1;
                             } while (
-                                yy < startlen && (data.types[yy] === "comment" || data.types[yy] === "comment-inline")
+                                yy < length && (data.types[yy] === "comment" || data.types[yy] === "comment-inline")
                             );
                         }
                         if (data.token[xx].toLowerCase() > data.token[yy].toLowerCase()) {
@@ -336,7 +335,7 @@ Parse Framework
                                 behind = front - 1;
                             }
                         }
-                        if (dd < 0 && cc < startlen) {
+                        if (dd < 0 && cc < length) {
                             if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
                                 ee = keys[keys.length - 1][0];
                                 if (data.types[ee - 1] !== "comment-inline") {
@@ -362,30 +361,16 @@ Parse Framework
                                             ee = keys[dd][0];
                                             if (ee < keyend) {
                                                 do {
-                                                    store
-                                                        .attrs
-                                                        .push(data.attrs[ee]);
-                                                    store
-                                                        .begin
-                                                        .push(data.begin[ee]);
-                                                    store
-                                                        .jscom
-                                                        .push(data.jscom[ee]);
-                                                    store
-                                                        .lines
-                                                        .push(data.lines[ee]);
-                                                    store
-                                                        .presv
-                                                        .push(data.presv[ee]);
-                                                    store
-                                                        .stack
-                                                        .push(data.stack[ee]);
-                                                    store
-                                                        .token
-                                                        .push(data.token[ee]);
-                                                    store
-                                                        .types
-                                                        .push(data.types[ee]);
+                                                    recordPush(store, {
+                                                        attrs: data.attrs[ee],
+                                                        begin: data.begin[ee],
+                                                        jscom: data.jscom[ee],
+                                                        lines: data.lines[ee],
+                                                        presv: data.presv[ee],
+                                                        stack: data.stack[ee],
+                                                        token: data.token[ee],
+                                                        types: data.types[ee]
+                                                    }, 0);
 
                                                     //remove extra commas
                                                     if (data.token[ee] === ",") {
@@ -394,9 +379,9 @@ Parse Framework
                                                         commaTest = false;
                                                     }
                                                     ee = ee + 1;
-                                                } while (ee < keylen);
+                                                } while (ee < keyend);
                                             }
-                                            if (commaTest === false) {
+                                            if (commaTest === false && dd < keylen - 1) {
                                                 ee = store.types.length - 1;
                                                 if (store.types[ee] === "comment" || store.types[ee] === "comment-inline") {
                                                     do {
@@ -441,33 +426,6 @@ Parse Framework
                                     } while (
                                         ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
                                     );
-                                    if (options.endcomma === "never" || options.endcomma === "multiline") {
-                                        store
-                                            .attrs
-                                            .splice(ee, 1);
-                                        store
-                                            .begin
-                                            .splice(ee, 1);
-                                        store
-                                            .jscom
-                                            .splice(ee, 1);
-                                        store
-                                            .lines
-                                            .splice(ee, 1);
-                                        store
-                                            .presv
-                                            .splice(ee, 1);
-                                        store
-                                            .stack
-                                            .splice(ee, 1);
-                                        store
-                                            .token
-                                            .splice(ee, 1);
-                                        store
-                                            .types
-                                            .splice(ee, 1);
-                                    }
-                                    keylen = data.token.length - (cc + 1);
                                     data
                                         .attrs
                                         .splice(cc + 1, keylen);
@@ -516,34 +474,15 @@ Parse Framework
                                     data.types  = data
                                         .types
                                         .concat(store.types);
-                                    ee          = data.token.length;
-                                    store.token = [cc];
-                                    cc          = cc + 1;
-                                    if (cc < ee) {
-                                        do {
-                                            if (data.types[cc] === "start") {
-                                                store
-                                                    .token
-                                                    .push(cc);
-                                            }
-                                            data.begin[cc] = store.token[store.token.length - 1];
-                                            if (data.types[cc] === "end") {
-                                                store
-                                                    .token
-                                                    .pop();
-                                            }
-                                            cc = cc + 1;
-                                        } while (cc < ee);
-                                    }
-                                } else if (options.endcomma === "always" && data.types[ee - 1] !== "start") {
-                                    tokenpush(true, 0);
+                                    return data.token.length - 1;
                                 }
                             }
-                            return;
+                            return length;
                         }
                         cc = cc - 1;
                     } while (cc > -1);
                 }
+                return length;
             };
         lexer.markup = function parser_markup(source) {
 
@@ -2871,7 +2810,6 @@ Parse Framework
             var sourcemap      = [
                     0, ""
                 ],
-                objsortop      = false,
                 json           = (options.lang === "json"),
                 data           = {
                     attrs: [],
@@ -3460,7 +3398,7 @@ Parse Framework
                 // immediately follow
                 commaComment   = function parser_script_commacomment() {
                     var x = lengthScript;
-                    if (data.stack[x] === "object" && objsortop === true) {
+                    if (data.stack[x] === "object" && options.objectSort === true) {
                         ltoke = ",";
                         ltype = "separator";
                         asifix();
@@ -3578,17 +3516,6 @@ Parse Framework
                     }
                     ltoke = ";";
                     ltype = "separator";
-                    aa = aa + 1;
-                    cherrypick(aa, 0, {
-                        attrs: {},
-                        begin: data.begin[aa],
-                        jscom: false,
-                        lines: linesScript,
-                        presv: false,
-                        stack: data.stack[aa],
-                        token: "x;",
-                        types: "separator"
-                    });
                     stackPush();
                     if (brace[brace.length - 1] === "x{" && nextchar !== "}") {
                         blockinsert();
@@ -3614,10 +3541,12 @@ Parse Framework
                         applyStore = function parser_script_plusplus_applyStore() {
                             var x = 0,
                                 y = store.length;
-                            do {
-                                lengthScript = recordPush(data, store[x], lengthScript);
-                                x = x + 1;
-                            } while (x < y);
+                            if (x < y) {
+                                do {
+                                    lengthScript = recordPush(data, store[x], lengthScript);
+                                    x = x + 1;
+                                } while (x < y);
+                            }
                         },
                         next       = "";
                     tokea   = data.token[lengthScript];
@@ -3808,10 +3737,12 @@ Parse Framework
                         applyStore = function parser_script_plusplus_applyStore() {
                             var x = 0,
                                 y = store.length;
-                            do {
-                                lengthScript = recordPush(data, store[x], lengthScript);
-                                x = x + 1;
-                            } while (x < y);
+                            if (x < y) {
+                                do {
+                                    lengthScript = recordPush(data, store[x], lengthScript);
+                                    x = x + 1;
+                                } while (x < y);
+                            }
                         };
                     end    = function parser_script_plusequal_end() {
                         walk = data.begin[walk] - 1;
@@ -4597,8 +4528,8 @@ Parse Framework
                         }
                         if (stacklist.length > 0 && stacklist[stacklist.length - 1][0] !== "object") {
                             asi(true);
-                        } else if (objsortop === true) {
-                            objSort();
+                        } else if (options.objectSort === true) {
+                            lengthScript = objectSort(data, lengthScript);
                         }
                         if (ltype === "comment" || ltype === "comment-inline") {
                             ltoke   = data.token[lengthScript];
@@ -5050,9 +4981,9 @@ Parse Framework
                     token: [],
                     types: []
                 },
+                lengthStyle = -1,
                 colors     = [],
                 output     = "",
-                objsortop  = false,
                 verticalop = false,
                 colorNames = {
                     aliceblue           : 0.9288006825347457,
@@ -5202,1376 +5133,1370 @@ Parse Framework
                     whitesmoke          : 0.913098651793419,
                     yellow              : 0.9278,
                     yellowgreen         : 0.5076295720870697
-                };
-            (function parser_style_options() {
-                objsortop  = (
-                    options.objsort === true || options.objsort === "true" || options.objsort === "all" || options.objsort === "css"
-                );
-                verticalop = (
-                    options.compressedcss === false && (options.vertical === true || options.vertical === "true" || options.vertical === "all" || options.vertical === "css")
-                );
-            }());
-            (function parser_style_tokenize() {
-                var a          = 0,
-                    b          = options
-                        .source
-                        .split(""),
-                    len        = source.length,
-                    ltype      = "",
-                    space      = "",
-                    endtest    = false,
-                    struct     = [0],
-                    mapper     = [],
-                    structval  = "root",
-                    nosort     = [],
-                    esctest    = function parser_style_tokenize_esctest(xx) {
-                        var yy = xx;
-                        do {
-                            xx = xx - 1;
-                        } while (xx > 0 && b[xx] === "\\");
-                        if ((yy - xx) % 2 === 0) {
-                            return true;
-                        }
-                        return false;
-                    }, // Since I am already identifying value types this is a good place to do some
-                    // quick analysis and clean up on certain value conditions. These things are
-                    // being corrected:
-                    //  * fractional values missing a leading 0 are    provided a leading 0
-                    // * 0 values with a dimension indicator    (px, em) have the dimension
-                    // indicator    removed
-                    //  * eliminate unnecessary leading 0s
-                    //  * url values that are not quoted are wrapped    in double quote characters
-                    // * color values are set to lowercase and    reduced from 6 to 3 digits if
-                    // appropriate
-                    value      = function parser_style_tokenize_item_value(val, font) {
-                        var x          = val.split(""),
-                            leng       = x.length,
-                            cc         = 0,
-                            dd         = 0,
-                            items      = [],
-                            block      = "",
-                            values     = [],
-                            qchar      = "",
-                            qreg       = {},
-                            transition = (token[token.length - 3] === "transition"),
-                            colorPush  = function parser_style_tokenize_item_value_colorPush(value) {
-                                var vl = value.toLowerCase();
-                                if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
-                                    colors.push(value);
-                                } else if ((/^(rgba?\()/).test(vl) === true) {
-                                    colors.push(value);
-                                } else if (colorNames[vl] !== undefined) {
-                                    colors.push(value);
-                                }
-                                return value;
-                            };
-                        if (options.quoteConvert === "double") {
-                            qchar = "\"";
-                        } else if (options.quoteConvert === "single") {
-                            qchar = "'";
-                        }
-                        // this loop identifies containment so that tokens/sub-tokens are correctly
-                        // taken
-                        if (cc < leng) {
-                            do {
-                                items.push(x[cc]);
-                                if (block === "") {
-                                    if (x[cc] === "\"") {
-                                        block = "\"";
-                                        dd    = dd + 1;
-                                    } else if (x[cc] === "'") {
-                                        block = "'";
-                                        dd    = dd + 1;
-                                    } else if (x[cc] === "(") {
-                                        block = ")";
-                                        dd    = dd + 1;
-                                    } else if (x[cc] === "[") {
-                                        block = "]";
-                                        dd    = dd + 1;
-                                    }
-                                } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
-                                    dd = dd + 1;
-                                } else if (x[cc] === block) {
-                                    dd = dd - 1;
-                                    if (dd === 0) {
-                                        block = "";
-                                    }
-                                }
-                                if (block === "" && x[cc] === " ") {
-                                    items.pop();
-                                    values.push(colorPush(items.join("")));
-                                    items = [];
-                                }
-                                cc = cc + 1;
-                            } while (cc < leng);
-                        }
-                        values.push(colorPush(items.join("")));
-                        leng = values.length;
-                        //This is where the rules mentioned above are applied
-                        cc   = 0;
-                        if (cc < leng) {
-                            do {
-                                if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
-                                    values[cc] = "0" + values[cc];
-                                } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
-                                    values[cc] = values[cc].replace(/^(0+\.)/, ".");
-                                } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
-                                    values[cc] = "0";
-                                } else if ((/^(0+)/).test(values[cc]) === true) {
-                                    values[cc] = values[cc].replace(/0+/, "0");
-                                    if ((/\d/).test(values[cc].charAt(1)) === true) {
-                                        values[cc] = values[cc].substr(1);
-                                    }
-                                } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
-                                    block = values[cc].charAt(values[cc].indexOf("url(") + 4);
-                                    if (block !== "@" && block !== "{" && block !== "<") {
-                                        if (qchar === "") {
-                                            values[cc] = values[cc]
-                                                .replace(/url\(\s*('|")?/, "url(\"")
-                                                .replace(/(('|")?\s*\))$/, "\")");
-                                        } else {
-                                            values[cc] = values[cc]
-                                                .replace(/url\(\s*('|")?/, "url(" + qchar)
-                                                .replace(/(('|")?\s*\))$/, qchar + ")");
-                                        }
-                                    }
-                                } else if (font === true) {
-                                    if (qchar === "'") {
-                                        values[cc] = values[cc].replace(/"/g, "'");
-                                    } else {
-                                        values[cc] = values[cc].replace(/'/g, "\"");
-                                    }
-                                } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
-                                    qreg       = new RegExp(qchar, "g");
-                                    values[cc] = qchar + values[cc]
-                                        .slice(1, values[cc].length - 1)
-                                        .replace(qreg, "\\" + qchar) + qchar;
-                                }
-                                cc = cc + 1;
-                            } while (cc < leng);
-                        }
-                        return values.join(" ");
-                    },
-                    //map location of empty lines for beautification
-                    spacer     = function parser_style_tokenize_space(end) {
-                        var slen = space
-                                .split(lf)
-                                .length - 1,
-                            val  = 0;
-                        if (token.length === 0 && slen > 0) {
-                            slen = slen + 1;
-                        }
-                        if (slen > 0 && options.preserve > 0) {
-                            if (slen > options.preserve) {
-                                val = options.preserve + 1;
-                            } else {
-                                val = slen;
+                },
+                a          = 0,
+                b          = options
+                    .source
+                    .split(""),
+                len        = source.length,
+                ltype      = "",
+                space      = "",
+                endtest    = false,
+                struct     = [0],
+                mapper     = [],
+                structval  = "root",
+                nosort     = [],
+                esctest    = function parser_style_tokenize_esctest(xx) {
+                    var yy = xx;
+                    do {
+                        xx = xx - 1;
+                    } while (xx > 0 && b[xx] === "\\");
+                    if ((yy - xx) % 2 === 0) {
+                        return true;
+                    }
+                    return false;
+                }, // Since I am already identifying value types this is a good place to do some
+                // quick analysis and clean up on certain value conditions. These things are
+                // being corrected:
+                //  * fractional values missing a leading 0 are    provided a leading 0
+                // * 0 values with a dimension indicator    (px, em) have the dimension
+                // indicator    removed
+                //  * eliminate unnecessary leading 0s
+                //  * url values that are not quoted are wrapped    in double quote characters
+                // * color values are set to lowercase and    reduced from 6 to 3 digits if
+                // appropriate
+                value      = function parser_style_tokenize_item_value(val, font) {
+                    var x          = val.split(""),
+                        leng       = x.length,
+                        cc         = 0,
+                        dd         = 0,
+                        items      = [],
+                        block      = "",
+                        values     = [],
+                        qchar      = "",
+                        qreg       = {},
+                        transition = (data.token[lengthStyle - 2] === "transition"),
+                        colorPush  = function parser_style_tokenize_item_value_colorPush(value) {
+                            var vl = value.toLowerCase();
+                            if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
+                                colors.push(value);
+                            } else if ((/^(rgba?\()/).test(vl) === true) {
+                                colors.push(value);
+                            } else if (colorNames[vl] !== undefined) {
+                                colors.push(value);
                             }
-                        } else if (space.length > 1) {
-                            val = 1;
-                        } else if (slen === 0 && data.types[data.types.length - 1] === "comment" && data.types[data.types.length - 2] !== "comment") {
-                            data.types[data.types.length - 1] = "comment-inline";
+                            return value;
+                        };
+                    if (options.quoteConvert === "double") {
+                        qchar = "\"";
+                    } else if (options.quoteConvert === "single") {
+                        qchar = "'";
+                    }
+                    // this loop identifies containment so that tokens/sub-tokens are correctly
+                    // taken
+                    if (cc < leng) {
+                        do {
+                            items.push(x[cc]);
+                            if (block === "") {
+                                if (x[cc] === "\"") {
+                                    block = "\"";
+                                    dd    = dd + 1;
+                                } else if (x[cc] === "'") {
+                                    block = "'";
+                                    dd    = dd + 1;
+                                } else if (x[cc] === "(") {
+                                    block = ")";
+                                    dd    = dd + 1;
+                                } else if (x[cc] === "[") {
+                                    block = "]";
+                                    dd    = dd + 1;
+                                }
+                            } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
+                                dd = dd + 1;
+                            } else if (x[cc] === block) {
+                                dd = dd - 1;
+                                if (dd === 0) {
+                                    block = "";
+                                }
+                            }
+                            if (block === "" && x[cc] === " ") {
+                                items.pop();
+                                values.push(colorPush(items.join("")));
+                                items = [];
+                            }
+                            cc = cc + 1;
+                        } while (cc < leng);
+                    }
+                    values.push(colorPush(items.join("")));
+                    leng = values.length;
+                    //This is where the rules mentioned above are applied
+                    cc   = 0;
+                    if (cc < leng) {
+                        do {
+                            if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
+                                values[cc] = "0" + values[cc];
+                            } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
+                                values[cc] = values[cc].replace(/^(0+\.)/, ".");
+                            } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
+                                values[cc] = "0";
+                            } else if ((/^(0+)/).test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(/0+/, "0");
+                                if ((/\d/).test(values[cc].charAt(1)) === true) {
+                                    values[cc] = values[cc].substr(1);
+                                }
+                            } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
+                                block = values[cc].charAt(values[cc].indexOf("url(") + 4);
+                                if (block !== "@" && block !== "{" && block !== "<") {
+                                    if (qchar === "") {
+                                        values[cc] = values[cc]
+                                            .replace(/url\(\s*('|")?/, "url(\"")
+                                            .replace(/(('|")?\s*\))$/, "\")");
+                                    } else {
+                                        values[cc] = values[cc]
+                                            .replace(/url\(\s*('|")?/, "url(" + qchar)
+                                            .replace(/(('|")?\s*\))$/, qchar + ")");
+                                    }
+                                }
+                            } else if (font === true) {
+                                if (qchar === "'") {
+                                    values[cc] = values[cc].replace(/"/g, "'");
+                                } else {
+                                    values[cc] = values[cc].replace(/'/g, "\"");
+                                }
+                            } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
+                                qreg       = new RegExp(qchar, "g");
+                                values[cc] = qchar + values[cc]
+                                    .slice(1, values[cc].length - 1)
+                                    .replace(qreg, "\\" + qchar) + qchar;
+                            }
+                            cc = cc + 1;
+                        } while (cc < leng);
+                    }
+                    return values.join(" ");
+                },
+                //map location of empty lines for beautification
+                spacer     = function parser_style_tokenize_space(end) {
+                    var slen = space
+                            .split(lf)
+                            .length - 1,
+                        val  = 0;
+                    if (lengthStyle < 0 && slen > 0) {
+                        slen = slen + 1;
+                    }
+                    if (slen > 0 && options.preserve > 0) {
+                        if (slen > options.preserve) {
+                            val = options.preserve + 1;
+                        } else {
+                            val = slen;
                         }
-                        if (slen > 1 && end === true && options.preserve > 0) {
-                            space = "";
-                            return val;
-                        }
+                    } else if (space.length > 1) {
+                        val = 1;
+                    } else if (slen === 0 && data.types[lengthStyle] === "comment" && data.types[lengthStyle] !== "comment") {
+                        data.types[lengthStyle] = "comment-inline";
+                    }
+                    if (slen > 1 && end === true && options.preserve > 0) {
                         space = "";
                         return val;
-                    },
-                    //sort parsed properties intelligently
-                    /*objSort    = function parser_style_tokenize_objSort() {
-                        var cc        = 0,
-                            dd        = 0,
-                            ee        = 0,
-                            startlen  = token.length - 1,
-                            end       = startlen,
-                            keys      = [],
-                            keylen    = 0,
-                            keyend    = 0,
-                            start     = 0,
-                            sort      = function parser_style_tokenize_objSort_sort(x, y) {
-                                var xx = x[0],
-                                    yy = y[0];
-                                if (types[xx] === "comment" || types[xx] === "comment-inline") {
-                                    do {
-                                        xx = xx + 1;
-                                    } while (
-                                        xx < startlen && (types[xx] === "comment" || types[xx] === "comment-inline")
-                                    );
-                                }
-                                if (types[yy] === "comment" || types[yy] === "comment-inline") {
-                                    do {
-                                        yy = yy + 1;
-                                    } while (
-                                        yy < startlen && (types[yy] === "comment" || types[yy] === "comment-inline")
-                                    );
-                                }
-                                if (types[xx] < types[yy]) {
-                                    return -1;
-                                }
-                                if (types[xx] === types[yy] && token[xx].toLowerCase() < token[yy].toLowerCase()) {
-                                    return -1;
-                                }
-                                return 1;
-                            },
-                            semiTest  = true,
-                            pairToken = [],
-                            pairTypes = [],
-                            pairLines = [],
-                            pairStack = [],
-                            pairBegin = [];
-                        if (types[end] === "comment" || types[end] === "comment-inline") {
-                            do {
-                                end = end - 1;
-                            } while (
-                                end > 0 && (types[end] === "comment" || types[end] === "comment-inline")
-                            );
+                    }
+                    space = "";
+                    return val;
+                },
+                //sort parsed properties intelligently
+                /*objSort    = function parser_style_tokenize_objSort() {
+                    var cc        = 0,
+                        dd        = 0,
+                        ee        = 0,
+                        startlen  = token.length - 1,
+                        end       = startlen,
+                        keys      = [],
+                        keylen    = 0,
+                        keyend    = 0,
+                        start     = 0,
+                        sort      = function parser_style_tokenize_objSort_sort(x, y) {
+                            var xx = x[0],
+                                yy = y[0];
+                            if (types[xx] === "comment" || types[xx] === "comment-inline") {
+                                do {
+                                    xx = xx + 1;
+                                } while (
+                                    xx < startlen && (types[xx] === "comment" || types[xx] === "comment-inline")
+                                );
+                            }
+                            if (types[yy] === "comment" || types[yy] === "comment-inline") {
+                                do {
+                                    yy = yy + 1;
+                                } while (
+                                    yy < startlen && (types[yy] === "comment" || types[yy] === "comment-inline")
+                                );
+                            }
+                            if (types[xx] < types[yy]) {
+                                return -1;
+                            }
+                            if (types[xx] === types[yy] && token[xx].toLowerCase() < token[yy].toLowerCase()) {
+                                return -1;
+                            }
+                            return 1;
+                        },
+                        semiTest  = true,
+                        pairToken = [],
+                        pairTypes = [],
+                        pairLines = [],
+                        pairStack = [],
+                        pairBegin = [];
+                    if (types[end] === "comment" || types[end] === "comment-inline") {
+                        do {
+                            end = end - 1;
+                        } while (
+                            end > 0 && (types[end] === "comment" || types[end] === "comment-inline")
+                        );
+                    }
+                    for (cc = startlen; cc > -1; cc = cc - 1) {
+                        if (types[cc] === "end") {
+                            dd = dd + 1;
                         }
-                        for (cc = startlen; cc > -1; cc = cc - 1) {
-                            if (types[cc] === "end") {
-                                dd = dd + 1;
-                            }
-                            if (types[cc] === "start") {
-                                dd = dd - 1;
-                            }
-                            if (dd === 0) {
-                                if ((types[cc] === "property" || types[cc] === "selector" || types[cc] === "propvar") && types[cc - 1] !== "property" && types[cc - 1] !== "selector") {
-                                    start = cc;
-                                    if (types[end + 1] === "comment-inline") {
-                                        end = end + 1;
-                                    }
-                                    if (types[start - 1] === "comment") {
-                                        do {
-                                            start = start - 1;
-                                        } while (start > -1 && types[start - 1] === "comment");
-                                    }
-                                    keys.push([
-                                        start, end + 1,
-                                        false
-                                    ]);
-                                    end = start - 1;
+                        if (types[cc] === "start") {
+                            dd = dd - 1;
+                        }
+                        if (dd === 0) {
+                            if ((types[cc] === "property" || types[cc] === "selector" || types[cc] === "propvar") && types[cc - 1] !== "property" && types[cc - 1] !== "selector") {
+                                start = cc;
+                                if (types[end + 1] === "comment-inline") {
+                                    end = end + 1;
                                 }
+                                if (types[start - 1] === "comment") {
+                                    do {
+                                        start = start - 1;
+                                    } while (start > -1 && types[start - 1] === "comment");
+                                }
+                                keys.push([
+                                    start, end + 1,
+                                    false
+                                ]);
+                                end = start - 1;
                             }
-                            if (dd < 0 && cc < startlen) {
-                                if (keys.length > 1 && (types[cc - 1] === "selector" || types[cc - 1] === "propvar" || (types[cc - 2] === "propvar" && types[cc - 1] === "value") || token[cc - 1] === "=" || token[cc - 1] === ":" || token[cc - 1] === "[" || token[cc - 1] === "{" || (token[cc - 1] === "," && structval !== "map") || cc === 0)) {
-                                    if (structval === "map" && token[token.length - 1] !== ",") {
-                                        token.push(",");
-                                        types.push("semi");
-                                        lines.push(0);
-                                        stack.push(stack[stack.length - 1]);
-                                        begin.push(begin[begin.length - 1]);
-                                        keys[0][1] = keys[0][1] + 1;
-                                    }
-                                    keys.sort(sort);
-                                    keylen   = keys.length;
-                                    semiTest = false;
-                                    for (dd = 0; dd < keylen; dd = dd + 1) {
-                                        keyend = keys[dd][1];
-                                        for (ee = keys[dd][0]; ee < keyend; ee = ee + 1) {
-                                            pairToken.push(token[ee]);
-                                            pairTypes.push(types[ee]);
-                                            pairLines.push(lines[ee]);
-                                            pairStack.push(stack[ee]);
-                                            pairBegin.push(begin[ee]);
-                                            if ((token[ee] === ";" && structval === "block") || (token[ee] === "," && structval === "map") || token[ee] === "}") {
-                                                semiTest = true;
-                                            } else if ((structval === "block" && token[ee] !== ";") && (structval === "map" && token[ee] !== ",") && token[ee] !== "}" && types[ee] !== "comment" && types[ee] !== "comment-inline") {
-                                                semiTest = false;
-                                            }
-                                        }
-                                        if (semiTest === false) {
-                                            ee = pairTypes.length - 1;
-                                            if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
-                                                do {
-                                                    ee = ee - 1;
-                                                } while (
-                                                    ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                                );
-                                            }
-                                            ee = ee + 1;
-                                            if (structval === "map") {
-                                                pairToken.splice(ee, 0, ",");
-                                            } else {
-                                                pairToken.splice(ee, 0, ";");
-                                            }
-                                            pairTypes.splice(ee, 0, "semi");
-                                            pairStack.splice(ee, 0, pairStack[ee]);
-                                            pairBegin.splice(ee, 0, pairBegin[ee]);
-                                            if (pairLines[ee - 1] > 0) {
-                                                pairLines[ee - 1] = 0;
-                                                pairLines.splice(ee, 0, 1);
-                                            } else {
-                                                pairLines.splice(ee, 0, 0);
-                                            }
+                        }
+                        if (dd < 0 && cc < startlen) {
+                            if (keys.length > 1 && (types[cc - 1] === "selector" || types[cc - 1] === "propvar" || (types[cc - 2] === "propvar" && types[cc - 1] === "value") || token[cc - 1] === "=" || token[cc - 1] === ":" || token[cc - 1] === "[" || token[cc - 1] === "{" || (token[cc - 1] === "," && structval !== "map") || cc === 0)) {
+                                if (structval === "map" && token[token.length - 1] !== ",") {
+                                    token.push(",");
+                                    types.push("semi");
+                                    lines.push(0);
+                                    stack.push(stack[stack.length - 1]);
+                                    begin.push(begin[begin.length - 1]);
+                                    keys[0][1] = keys[0][1] + 1;
+                                }
+                                keys.sort(sort);
+                                keylen   = keys.length;
+                                semiTest = false;
+                                for (dd = 0; dd < keylen; dd = dd + 1) {
+                                    keyend = keys[dd][1];
+                                    for (ee = keys[dd][0]; ee < keyend; ee = ee + 1) {
+                                        pairToken.push(token[ee]);
+                                        pairTypes.push(types[ee]);
+                                        pairLines.push(lines[ee]);
+                                        pairStack.push(stack[ee]);
+                                        pairBegin.push(begin[ee]);
+                                        if ((token[ee] === ";" && structval === "block") || (token[ee] === "," && structval === "map") || token[ee] === "}") {
+                                            semiTest = true;
+                                        } else if ((structval === "block" && token[ee] !== ";") && (structval === "map" && token[ee] !== ",") && token[ee] !== "}" && types[ee] !== "comment" && types[ee] !== "comment-inline") {
+                                            semiTest = false;
                                         }
                                     }
-                                    ee = pairTypes.length - 1;
-                                    if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
-                                        do {
-                                            ee = ee - 1;
-                                        } while (
-                                            ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                        );
-                                    }
-                                    keylen = token.length - (cc + 1);
-                                    token.splice(cc + 1, keylen);
-                                    types.splice(cc + 1, keylen);
-                                    lines.splice(cc + 1, keylen);
-                                    stack.splice(cc + 1, keylen);
-                                    begin.splice(cc + 1, keylen);
-                                    token = token.concat(pairToken);
-                                    types = types.concat(pairTypes);
-                                    lines = lines.concat(pairLines);
-                                    stack = stack.concat(pairStack);
-                                    begin = begin.concat(pairBegin);
-                                    if (structval === "map") {
-                                        cc = token.length - 1;
-                                        if (types[cc].indexOf("comment") === 0) {
+                                    if (semiTest === false) {
+                                        ee = pairTypes.length - 1;
+                                        if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
                                             do {
-                                                cc = cc - 1;
-                                            } while (types[cc].indexOf("comment") === 0);
+                                                ee = ee - 1;
+                                            } while (
+                                                ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
+                                            );
                                         }
-                                        if (token[cc] === ",") {
-                                            token.splice(cc, 1);
-                                            types.splice(cc, 1);
-                                            lines.splice(cc, 1);
-                                            stack.splice(cc, 1);
-                                            begin.splice(cc, 1);
+                                        ee = ee + 1;
+                                        if (structval === "map") {
+                                            pairToken.splice(ee, 0, ",");
+                                        } else {
+                                            pairToken.splice(ee, 0, ";");
+                                        }
+                                        pairTypes.splice(ee, 0, "semi");
+                                        pairStack.splice(ee, 0, pairStack[ee]);
+                                        pairBegin.splice(ee, 0, pairBegin[ee]);
+                                        if (pairLines[ee - 1] > 0) {
+                                            pairLines[ee - 1] = 0;
+                                            pairLines.splice(ee, 0, 1);
+                                        } else {
+                                            pairLines.splice(ee, 0, 0);
                                         }
                                     }
                                 }
-                                return;
+                                ee = pairTypes.length - 1;
+                                if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
+                                    do {
+                                        ee = ee - 1;
+                                    } while (
+                                        ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
+                                    );
+                                }
+                                keylen = token.length - (cc + 1);
+                                token.splice(cc + 1, keylen);
+                                types.splice(cc + 1, keylen);
+                                lines.splice(cc + 1, keylen);
+                                stack.splice(cc + 1, keylen);
+                                begin.splice(cc + 1, keylen);
+                                token = token.concat(pairToken);
+                                types = types.concat(pairTypes);
+                                lines = lines.concat(pairLines);
+                                stack = stack.concat(pairStack);
+                                begin = begin.concat(pairBegin);
+                                if (structval === "map") {
+                                    cc = token.length - 1;
+                                    if (types[cc].indexOf("comment") === 0) {
+                                        do {
+                                            cc = cc - 1;
+                                        } while (types[cc].indexOf("comment") === 0);
+                                    }
+                                    if (token[cc] === ",") {
+                                        token.splice(cc, 1);
+                                        types.splice(cc, 1);
+                                        lines.splice(cc, 1);
+                                        stack.splice(cc, 1);
+                                        begin.splice(cc, 1);
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                    }
+                },*/
+                //the generic token builder
+                buildtoken = function parser_style_tokenize_build() {
+                    var aa         = a,
+                        bb         = 0,
+                        out        = [],
+                        block      = [],
+                        outy       = "",
+                        record     = {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            types: "",
+                            token: ""
+                        },
+                        mappy      = 0,
+                        comma      = (
+                            lengthStyle > -1 && data.token[lengthStyle].charAt(data.token[lengthStyle].length - 1) === ","
+                        ),
+                        linev      = spacer(false),
+                        spacestart = function () {
+                            if ((/\s/).test(b[aa + 1]) === true) {
+                                do {
+                                    aa = aa + 1;
+                                } while ((/\s/).test(b[aa + 1]) === true);
+                            }
+                        };
+                    //this loop accounts for grouping mechanisms
+                    if (aa < len) {
+                        do {
+                            out.push(b[aa]);
+                            if (b[aa - 1] !== "\\" || esctest(aa) === false) {
+                                if (b[aa] === "\"" && block[block.length - 1] !== "'") {
+                                    if (block[block.length - 1] === "\"") {
+                                        block.pop();
+                                    } else {
+                                        block.push("\"");
+                                    }
+                                } else if (b[aa] === "'" && block[block.length - 1] !== "\"") {
+                                    if (block[block.length - 1] === "'") {
+                                        block.pop();
+                                    } else {
+                                        block.push("'");
+                                    }
+                                } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'") {
+                                    if (b[aa] === "(") {
+                                        mappy = mappy + 1;
+                                        block.push(")");
+                                        spacestart();
+                                    } else if (b[aa] === "[") {
+                                        block.push("]");
+                                        spacestart();
+                                    } else if (b[aa] === "#" && b[aa + 1] === "{") {
+                                        out.push("{");
+                                        aa = aa + 1;
+                                        block.push("}");
+                                        spacestart();
+                                    } else if (b[aa] === block[block.length - 1]) {
+                                        block.pop();
+                                        if ((/\s/).test(out[out.length - 2]) === true) {
+                                            out.pop();
+                                            do {
+                                                out.pop();
+                                            } while ((/\s/).test(out[out.length - 1]) === true);
+                                            out.push(b[aa]);
+                                        }
+                                    }
+                                }
+                            }
+                            if (structval === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
+                                if (b[aa + 1] === ")" && data.token[lengthStyle] === "(") {
+                                    token.pop();
+                                    types.pop();
+                                    lines.pop();
+                                    stack.pop();
+                                    begin.pop();
+                                    struct.pop();
+                                    structval = data.stack[lengthStyle];
+                                    out       = ["("];
+                                    aa        = a - 1;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if (b[aa + 1] === ":") {
+                                bb = aa;
+                                if ((/\s/).test(b[bb]) === true) {
+                                    do {
+                                        bb = bb - 1;
+                                    } while ((/\s/).test(b[bb]) === true);
+                                }
+                                outy = b
+                                    .slice(bb - 6, bb + 1)
+                                    .join("");
+                                if (outy.indexOf("filter") === outy.length - 6 || outy.indexOf("progid") === outy.length - 6) {
+                                    outy = "filter";
+                                }
+                            }
+                            if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === false) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
+                                bb = out.length - 1;
+                                if ((/\s/).test(out[bb]) === true) {
+                                    do {
+                                        bb = bb - 1;
+                                        aa = aa - 1;
+                                        out.pop();
+                                    } while ((/\s/).test(out[bb]) === true);
+                                }
+                                break;
+                            }
+                            if (out[0] === "@" && block.length === 0 && (b[aa + 1] === "\"" || b[aa + 1] === "'")) {
+                                break;
+                            }
+                            aa = aa + 1;
+                        } while (aa < len);
+                    }
+                    a = aa;
+                    if (structval === "map" && out[0] === "(") {
+                        mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
+                    }
+                    if (comma === true && structval !== "map" && data.types[lengthStyle] !== "comment" && data.types[lengthStyle] !== "comment-inline") {
+                        data.token[lengthStyle] = data.token[lengthStyle] + out
+                            .join(
+                                ""
+                            )
+                            .replace(/\s+/g, " ")
+                            .replace(/^\s/, "")
+                            .replace(/\s$/, "");
+                        return;
+                    }
+                    record.token = out.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
+                    if (data.token[lengthStyle].indexOf("extend(") === 0) {
+                        ltype = "pseudo";
+                    } else if ("\"'".indexOf(data.token[lengthStyle].charAt(0)) > -1 && data.types[lengthStyle] === "propvar") {
+                        ltype = "item";
+                    } else if (out[0] === "@" || out[0] === "$") {
+                        if (data.types[lengthStyle] === "colon" && (data.types[lengthStyle - 1] === "property" || data.types[lengthStyle - 1] === "propvar")) {
+                            ltype = "value";
+                        } else {
+                            ltype = "propvar";
+                            outy = data.token[lengthStyle];
+                            aa   = outy.indexOf("(");
+                            if (outy.charAt(outy.length - 1) === ")" && aa > 0) {
+                                outy                              = outy.slice(aa + 1, outy.length - 1);
+                                data.token[lengthStyle] = data
+                                    .token[lengthStyle]
+                                    .slice(0, aa + 1) + value(outy, false) + ")";
                             }
                         }
-                    },*/
-                    //the generic token builder
-                    buildtoken = function parser_style_tokenize_build() {
-                        var aa         = a,
-                            bb         = 0,
-                            out        = [],
-                            block      = [],
-                            outy       = "",
-                            mappy      = 0,
-                            comma      = (
-                                token.length > 0 && token[token.length - 1].charAt(token[token.length - 1].length - 1) === ","
-                            ),
-                            linev      = spacer(false),
-                            spacestart = function () {
-                                if ((/\s/).test(b[aa + 1]) === true) {
+                    } else {
+                        ltype = "item";
+                    }
+                    record.type = ltype;
+                    lengthStyle = recordPush(data, record, lengthStyle);
+                },
+                
+                // Some tokens receive a generic type named 'item' because their type is unknown
+                // until we know the following syntax.  This function replaces the type 'item'
+                // with something more specific.
+                item       = function parser_style_tokenize_item(type) {
+                    var aa    = lengthStyle + 1,
+                        bb    = 0,
+                        coms  = [],
+                        tokel = (lengthStyle > 0)
+                            ? data.token[lengthStyle - 1]
+                            : "",
+                        toked = tokel.slice(tokel.length - 2);
+                    //backtrack through immediately prior comments to find the correct token
+                    if (ltype === "comment" || ltype === "comment-inline") {
+                        do {
+                            aa    = aa - 1;
+                            ltype = data.types[aa];
+                            coms.push(data.token[aa]);
+                        } while (aa > 0 && (ltype === "comment" || ltype === "comment-inline"));
+                    } else {
+                        aa = aa - 1;
+                    }
+                    //if the last non-comment type is 'item' then id it
+                    if (ltype === "item" && data.types[aa].indexOf("external") < 0) {
+                        if (type === "start") {
+                            if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "comment-inline" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.types[aa - 1].indexOf("external") < 0) {
+                                (function parser_style_tokenize_item_selparts() {
+                                    var parts = [],
+                                        cc    = aa,
+                                        dd    = 0;
                                     do {
-                                        aa = aa + 1;
-                                    } while ((/\s/).test(b[aa + 1]) === true);
+                                        parts.push(data.token[cc]);
+                                        if (data.lines[cc] > 0 && data.token[cc] === ":" && data.token[cc - 1] !== ":") {
+                                            parts.push(" ");
+                                        } else if (data.token[cc] !== ":") {
+                                            parts.push(" ");
+                                        }
+                                        cc = cc - 1;
+                                    } while (
+                                        cc > -1 && data.types[cc] !== "comment" && data.types[cc] !== "comment-inline" && data.types[cc] !== "end" && data.types[cc] !== "start" && data.types[cc] !== "semi" && data.types[cc] !== undefined
+                                    );
+                                    parts.reverse();
+                                    cc = cc + 1;
+                                    dd = aa - cc;
+                                    token.splice(cc, dd);
+                                    types.splice(cc, dd);
+                                    lines.splice(cc, dd);
+                                    stack.splice(cc, dd);
+                                    begin.splice(cc, dd);
+                                    aa        = aa - dd;
+                                    data.token[aa] = parts
+                                        .join("")
+                                        .replace(/:\u0020/g, ":")
+                                        .replace(/(\s*,\s*)/g, ",");
+                                }());
+                            } else {
+                                data.token[aa] = data.token[aa].replace(/(\s*,\s*)/g, ",");
+                            }
+                            if (options.compressedcss === true) {
+                                data.token[aa] = data.token[aa]
+                                    .replace(/\s*&/, " &")
+                                    .replace(/\s*>\s*/g, ">")
+                                    .replace(/:\s+/g, ":")
+                                    .replace(/^(\s+)/, "")
+                                    .replace(/(\s+)$/, "");
+                            } else {
+                                token[aa] = token[aa]
+                                    .replace(/\s*&/, " &")
+                                    .replace(/\s*>\s*/g, " > ")
+                                    .replace(/:\s+/g, ": ")
+                                    .replace(/^(\s+)/, "")
+                                    .replace(/(\s+)$/, "");
+                            }
+                            (function parser_style_tokenize_item_selectorsort() {
+                                var y    = 0,
+                                    slen = token[aa].length,
+                                    z    = "",
+                                    mark = 0,
+                                    list = [];
+                                if (y < slen) {
+                                    do {
+                                        if (z === "" && token[aa].charAt(y) === ",") {
+                                            list.push(token[aa].slice(mark, y));
+                                            mark = y + 1;
+                                        } else if (token[aa].charAt(y) === "\"" || token[aa].charAt(y) === "'" || token[aa].charAt(y) === "(" || token[aa].charAt(y) === "{") {
+                                            z = token[aa].charAt(y);
+                                        } else if (token[aa].charAt(y) === z && (z === "\"" || z === "''")) {
+                                            z = "";
+                                        } else if (token[aa].charAt(y) === ")" && z === "(") {
+                                            z = "";
+                                        } else if (token[aa].charAt(y) === "}" && z === "{") {
+                                            z = "";
+                                        }
+                                        y = y + 1;
+                                    } while (y < slen);
                                 }
-                            };
-                        //this loop accounts for grouping mechanisms
-                        if (aa < len) {
-                            do {
-                                out.push(b[aa]);
-                                if (b[aa - 1] !== "\\" || esctest(aa) === false) {
-                                    if (b[aa] === "\"" && block[block.length - 1] !== "'") {
-                                        if (block[block.length - 1] === "\"") {
-                                            block.pop();
-                                        } else {
-                                            block.push("\"");
-                                        }
-                                    } else if (b[aa] === "'" && block[block.length - 1] !== "\"") {
-                                        if (block[block.length - 1] === "'") {
-                                            block.pop();
-                                        } else {
-                                            block.push("'");
-                                        }
-                                    } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'") {
-                                        if (b[aa] === "(") {
-                                            mappy = mappy + 1;
-                                            block.push(")");
-                                            spacestart();
-                                        } else if (b[aa] === "[") {
-                                            block.push("]");
-                                            spacestart();
-                                        } else if (b[aa] === "#" && b[aa + 1] === "{") {
-                                            out.push("{");
-                                            aa = aa + 1;
-                                            block.push("}");
-                                            spacestart();
-                                        } else if (b[aa] === block[block.length - 1]) {
-                                            block.pop();
-                                            if ((/\s/).test(out[out.length - 2]) === true) {
-                                                out.pop();
-                                                do {
-                                                    out.pop();
-                                                } while ((/\s/).test(out[out.length - 1]) === true);
-                                                out.push(b[aa]);
-                                            }
-                                        }
-                                    }
-                                }
-                                if (structval === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
-                                    if (b[aa + 1] === ")" && token[token.length - 1] === "(") {
+                                list.push(token[aa].slice(mark, y));
+                                list.sort();
+                                token[aa] = list
+                                    .join(",")
+                                    .replace(/^(\s+)/, "");
+                            }());
+                            types[aa] = "selector";
+                            ltype     = "selector";
+                        } else if (type === "end") {
+                            types[aa] = "value";
+                            ltype     = "value";
+                            token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
+                            if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
+                                data.token[aa] = value(data.token[aa], true);
+                            } else {
+                                data.token[aa] = value(data.token[aa], false);
+                            }
+                            //take comments out until the 'item' is found and then put the comments back
+                            if (data.token[data.token.length - 2] === "{") {
+                                data.types[data.types.length - 1] = "propvar";
+                            } else if (structval === "block") {
+                                if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
+                                    aa = coms.length - 1;
+                                    do {
                                         token.pop();
                                         types.pop();
                                         lines.pop();
                                         stack.pop();
                                         begin.pop();
-                                        struct.pop();
-                                        structval = stack[stack.length - 1];
-                                        out       = ["("];
-                                        aa        = a - 1;
-                                    } else {
-                                        break;
-                                    }
-                                }
-                                if (b[aa + 1] === ":") {
-                                    bb = aa;
-                                    if ((/\s/).test(b[bb]) === true) {
-                                        do {
-                                            bb = bb - 1;
-                                        } while ((/\s/).test(b[bb]) === true);
-                                    }
-                                    outy = b
-                                        .slice(bb - 6, bb + 1)
-                                        .join("");
-                                    if (outy.indexOf("filter") === outy.length - 6 || outy.indexOf("progid") === outy.length - 6) {
-                                        outy = "filter";
-                                    }
-                                }
-                                if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === false) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
-                                    bb = out.length - 1;
-                                    if ((/\s/).test(out[bb]) === true) {
-                                        do {
-                                            bb = bb - 1;
-                                            aa = aa - 1;
-                                            out.pop();
-                                        } while ((/\s/).test(out[bb]) === true);
-                                    }
-                                    break;
-                                }
-                                if (out[0] === "@" && block.length === 0 && (b[aa + 1] === "\"" || b[aa + 1] === "'")) {
-                                    break;
-                                }
-                                aa = aa + 1;
-                            } while (aa < len);
-                        }
-                        a = aa;
-                        if (structval === "map" && out[0] === "(") {
-                            mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
-                        }
-                        if (comma === true && structval !== "map" && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
-                            data.token[data.token.length - 1] = data.token[data.token.length - 1] + out
-                                .join(
-                                    ""
-                                )
-                                .replace(/\s+/g, " ")
-                                .replace(/^\s/, "")
-                                .replace(/\s$/, "");
-                            return;
-                        }
-                        token.push(
-                            out.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "")
-                        );
-                        begin.push(struct[struct.length - 1]);
-                        stack.push(structval);
-                        lines.push(linev);
-                        if (token[token.length - 1].indexOf("extend(") === 0) {
-                            ltype = "pseudo";
-                            types.push("pseudo");
-                        } else if ("\"'".indexOf(data.token[data.token.length - 1].charAt(0)) > -1 && data.types[data.types.length - 1] === "propvar") {
-                            ltype = "item";
-                            types.push("value");
-                        } else if (out[0] === "@" || out[0] === "$") {
-                            if (data.types[data.types.length - 1] === "colon" && (data.types[data.types.length - 2] === "property" || data.types[data.types.length - 2] === "propvar")) {
-                                ltype = "value";
-                                types.push("value");
-                            } else {
-                                ltype = "propvar";
-                                types.push("propvar");
-                                outy = data.token[data.token.length - 1];
-                                aa   = outy.indexOf("(");
-                                if (outy.charAt(outy.length - 1) === ")" && aa > 0) {
-                                    outy                              = outy.slice(aa + 1, outy.length - 1);
-                                    data.token[data.token.length - 1] = data
-                                        .token[data.token.length - 1]
-                                        .slice(0, aa + 1) + value(outy, false) + ")";
+                                        aa = aa - 1;
+                                    } while (aa > 0);
+                                    token.push(";");
+                                    stack.push(structval);
+                                    begin.push(struct[struct.length - 1]);
+                                    types.push("semi");
+                                    lines.push(spacer(false));
+                                    bb = coms.length - 1;
+                                    do {
+                                        token.push(coms[aa]);
+                                        if (coms[aa].indexOf("//") === 0 && lines[lines.length - 1] === 0) {
+                                            types.push("comment-inline");
+                                        } else {
+                                            types.push("comment");
+                                        }
+                                        stack.push(structval);
+                                        begin.push(struct[struct.length - 1]);
+                                        lines.push(0);
+                                        aa = aa + 1;
+                                    } while (aa < bb);
+                                } else {
+                                    token.push(";");
+                                    stack.push(structval);
+                                    begin.push(struct[struct.length - 1]);
+                                    types.push("semi");
+                                    lines.push(spacer(false));
                                 }
                             }
-                        } else {
-                            ltype = "item";
-                            types.push("item");
-                        }
-                    }, // Some tokens receive a generic type named 'item' because their type is unknown
-                    // until we know the following syntax.  This function replaces the type 'item'
-                    // with something more specific.
-                    item       = function parser_style_tokenize_item(type) {
-                        var aa    = types.length,
-                            bb    = 0,
-                            coms  = [],
-                            tokel = (token.length > 1)
-                                ? token[token.length - 2]
-                                : "",
-                            toked = tokel.slice(tokel.length - 2);
-                        //backtrack through immediately prior comments to find the correct token
-                        if (ltype === "comment" || ltype === "comment-inline") {
-                            do {
-                                aa    = aa - 1;
-                                ltype = types[aa];
-                                coms.push(token[aa]);
-                            } while (aa > 0 && (ltype === "comment" || ltype === "comment-inline"));
-                        } else {
-                            aa = aa - 1;
-                        }
-                        //if the last non-comment type is 'item' then id it
-                        if (ltype === "item" && types[aa].indexOf("external") < 0) {
-                            if (type === "start") {
-                                if (types[aa - 1] !== "comment" && types[aa - 1] !== "comment-inline" && types[aa - 1] !== "end" && types[aa - 1] !== "start" && types[aa - 1] !== "semi" && types[aa - 1] !== undefined && types[aa - 1].indexOf("external") < 0) {
-                                    (function parser_style_tokenize_item_selparts() {
-                                        var parts = [],
-                                            cc    = aa,
-                                            dd    = 0;
-                                        do {
-                                            parts.push(token[cc]);
-                                            if (lines[cc] > 0 && token[cc] === ":" && token[cc - 1] !== ":") {
-                                                parts.push(" ");
-                                            } else if (token[cc] !== ":") {
-                                                parts.push(" ");
-                                            }
-                                            cc = cc - 1;
-                                        } while (
-                                            cc > -1 && types[cc] !== "comment" && types[cc] !== "comment-inline" && types[cc] !== "end" && types[cc] !== "start" && types[cc] !== "semi" && types[cc] !== undefined
-                                        );
-                                        parts.reverse();
-                                        cc = cc + 1;
-                                        dd = aa - cc;
-                                        token.splice(cc, dd);
-                                        types.splice(cc, dd);
-                                        lines.splice(cc, dd);
-                                        stack.splice(cc, dd);
-                                        begin.splice(cc, dd);
-                                        aa        = aa - dd;
-                                        token[aa] = parts
-                                            .join("")
-                                            .replace(/:\u0020/g, ":")
-                                            .replace(/(\s*,\s*)/g, ",");
-                                    }());
-                                } else {
-                                    token[aa] = token[aa].replace(/(\s*,\s*)/g, ",");
-                                }
-                                if (options.compressedcss === true) {
-                                    token[aa] = token[aa]
-                                        .replace(/\s*&/, " &")
-                                        .replace(/\s*>\s*/g, ">")
-                                        .replace(/:\s+/g, ":")
-                                        .replace(/^(\s+)/, "")
-                                        .replace(/(\s+)$/, "");
-                                } else {
-                                    token[aa] = token[aa]
-                                        .replace(/\s*&/, " &")
-                                        .replace(/\s*>\s*/g, " > ")
-                                        .replace(/:\s+/g, ": ")
-                                        .replace(/^(\s+)/, "")
-                                        .replace(/(\s+)$/, "");
-                                }
-                                (function parser_style_tokenize_item_selectorsort() {
-                                    var y    = 0,
-                                        slen = token[aa].length,
-                                        z    = "",
-                                        mark = 0,
-                                        list = [];
-                                    if (y < slen) {
-                                        do {
-                                            if (z === "" && token[aa].charAt(y) === ",") {
-                                                list.push(token[aa].slice(mark, y));
-                                                mark = y + 1;
-                                            } else if (token[aa].charAt(y) === "\"" || token[aa].charAt(y) === "'" || token[aa].charAt(y) === "(" || token[aa].charAt(y) === "{") {
-                                                z = token[aa].charAt(y);
-                                            } else if (token[aa].charAt(y) === z && (z === "\"" || z === "''")) {
-                                                z = "";
-                                            } else if (token[aa].charAt(y) === ")" && z === "(") {
-                                                z = "";
-                                            } else if (token[aa].charAt(y) === "}" && z === "{") {
-                                                z = "";
-                                            }
-                                            y = y + 1;
-                                        } while (y < slen);
-                                    }
-                                    list.push(token[aa].slice(mark, y));
-                                    list.sort();
-                                    token[aa] = list
-                                        .join(",")
-                                        .replace(/^(\s+)/, "");
-                                }());
-                                types[aa] = "selector";
-                                ltype     = "selector";
-                            } else if (type === "end") {
+                        } else if (type === "semi") {
+                            if (types[aa - 1] === "colon") {
                                 types[aa] = "value";
                                 ltype     = "value";
                                 token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
-                                if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
-                                    data.token[aa] = value(data.token[aa], true);
+                                if (options.quoteConvert !== "none" && (token[aa - 2] === "font" || token[aa - 2] === "font-family")) {
+                                    token[aa] = value(token[aa], true);
                                 } else {
-                                    data.token[aa] = value(data.token[aa], false);
+                                    token[aa] = value(token[aa], false);
                                 }
-                                //take comments out until the 'item' is found and then put the comments back
-                                if (data.token[data.token.length - 2] === "{") {
-                                    data.types[data.types.length - 1] = "propvar";
-                                } else if (structval === "block") {
-                                    if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
-                                        aa = coms.length - 1;
-                                        do {
-                                            token.pop();
-                                            types.pop();
-                                            lines.pop();
-                                            stack.pop();
-                                            begin.pop();
-                                            aa = aa - 1;
-                                        } while (aa > 0);
-                                        token.push(";");
-                                        stack.push(structval);
-                                        begin.push(struct[struct.length - 1]);
-                                        types.push("semi");
-                                        lines.push(spacer(false));
-                                        bb = coms.length - 1;
-                                        do {
-                                            token.push(coms[aa]);
-                                            if (coms[aa].indexOf("//") === 0 && lines[lines.length - 1] === 0) {
-                                                types.push("comment-inline");
-                                            } else {
-                                                types.push("comment");
-                                            }
-                                            stack.push(structval);
-                                            begin.push(struct[struct.length - 1]);
-                                            lines.push(0);
-                                            aa = aa + 1;
-                                        } while (aa < bb);
-                                    } else {
-                                        token.push(";");
-                                        stack.push(structval);
-                                        begin.push(struct[struct.length - 1]);
-                                        types.push("semi");
-                                        lines.push(spacer(false));
-                                    }
-                                }
-                            } else if (type === "semi") {
-                                if (types[aa - 1] === "colon") {
-                                    types[aa] = "value";
-                                    ltype     = "value";
-                                    token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
-                                    if (options.quoteConvert !== "none" && (token[aa - 2] === "font" || token[aa - 2] === "font-family")) {
-                                        token[aa] = value(token[aa], true);
-                                    } else {
-                                        token[aa] = value(token[aa], false);
-                                    }
-                                } else {
-                                    //properties without values are considered variables
-                                    if (types[aa] !== "value") {
-                                        if (types[aa] === "item" && types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
-                                            if (isNaN(token[token.length - 1]) === true) {
-                                                token[token.length - 2] = tokel + token.pop();
-                                            } else {
-                                                token[token.length - 2] = tokel + " " + token.pop();
-                                            }
-                                            types.pop();
-                                            return;
+                            } else {
+                                //properties without values are considered variables
+                                if (types[aa] !== "value") {
+                                    if (types[aa] === "item" && types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
+                                        if (isNaN(token[token.length - 1]) === true) {
+                                            token[token.length - 2] = tokel + token.pop();
+                                        } else {
+                                            token[token.length - 2] = tokel + " " + token.pop();
                                         }
-                                        types[aa] = "propvar";
-                                        ltype     = "propvar";
+                                        types.pop();
+                                        return;
                                     }
-                                    if (token[aa].indexOf("\"") > 0) {
-                                        bb        = token[aa].indexOf("\"");
+                                    types[aa] = "propvar";
+                                    ltype     = "propvar";
+                                }
+                                if (token[aa].indexOf("\"") > 0) {
+                                    bb        = token[aa].indexOf("\"");
+                                    a         = a - (token[aa].length - bb);
+                                    token[aa] = token[aa].slice(0, bb);
+                                    buildtoken();
+                                } else if (token[aa].indexOf("'") > 0) {
+                                    bb        = token[aa].indexOf("'");
+                                    a         = a - (token[aa].length - bb);
+                                    token[aa] = token[aa].slice(0, bb);
+                                    buildtoken();
+                                } else if ((/\s/).test(token[aa]) === true) {
+                                    bb = token[aa]
+                                        .replace(/\s/, " ")
+                                        .indexOf(" ");
+                                    if (bb < token[aa].indexOf("(") && bb < token[aa].indexOf("[")) {
                                         a         = a - (token[aa].length - bb);
                                         token[aa] = token[aa].slice(0, bb);
                                         buildtoken();
-                                    } else if (token[aa].indexOf("'") > 0) {
-                                        bb        = token[aa].indexOf("'");
-                                        a         = a - (token[aa].length - bb);
-                                        token[aa] = token[aa].slice(0, bb);
-                                        buildtoken();
-                                    } else if ((/\s/).test(token[aa]) === true) {
-                                        bb = token[aa]
-                                            .replace(/\s/, " ")
-                                            .indexOf(" ");
-                                        if (bb < token[aa].indexOf("(") && bb < token[aa].indexOf("[")) {
-                                            a         = a - (token[aa].length - bb);
-                                            token[aa] = token[aa].slice(0, bb);
-                                            buildtoken();
-                                        }
                                     }
                                 }
-                            } else if (type === "colon") {
-                                types[aa] = "property";
-                                ltype     = "property";
-                            } else if (token[aa].charAt(0) === "@" && ((types[aa - 2] !== "propvar" && types[aa - 2] !== "property") || types[aa - 1] === "semi")) {
-                                types[aa] = "propvar";
-                                ltype     = "propvar";
                             }
+                        } else if (type === "colon") {
+                            types[aa] = "property";
+                            ltype     = "property";
+                        } else if (token[aa].charAt(0) === "@" && ((types[aa - 2] !== "propvar" && types[aa - 2] !== "property") || types[aa - 1] === "semi")) {
+                            types[aa] = "propvar";
+                            ltype     = "propvar";
                         }
-                    },
-                    external   = function parser_style_tokenize_external(open, end) {
-                        var store  = [],
-                            quote  = "",
-                            name   = "",
-                            endlen = 0,
-                            start  = open.length,
-                            linev  = spacer(false),
-                            exit   = function parser_style_tokenize_external_exit(typename) {
-                                var endtype = data.types[data.types.length - 2];
-                                if (ltype === "item") {
-                                    if (endtype === "colon") {
-                                        data.types[data.types.length - 1] = "value";
-                                    } else {
-                                        item(endtype);
-                                    }
+                    }
+                },
+                external   = function parser_style_tokenize_external(open, end) {
+                    var store  = [],
+                        quote  = "",
+                        name   = "",
+                        endlen = 0,
+                        start  = open.length,
+                        linev  = spacer(false),
+                        exit   = function parser_style_tokenize_external_exit(typename) {
+                            var endtype = data.types[data.types.length - 2];
+                            if (ltype === "item") {
+                                if (endtype === "colon") {
+                                    data.types[data.types.length - 1] = "value";
+                                } else {
+                                    item(endtype);
                                 }
-                                types.push(typename);
-                            };
-                        nosort[nosort.length - 1] = true;
-                        if (a < len) {
-                            do {
-                                store.push(b[a]);
-                                if (quote === "") {
-                                    if (b[a] === "\"") {
-                                        quote = "\"";
-                                    } else if (b[a] === "'") {
-                                        quote = "'";
-                                    } else if (b[a] === "/") {
-                                        if (b[a + 1] === "/") {
-                                            quote = "/";
-                                        } else if (b[a + 1] === "*") {
-                                            quote = "*";
+                            }
+                            types.push(typename);
+                        };
+                    nosort[nosort.length - 1] = true;
+                    if (a < len) {
+                        do {
+                            store.push(b[a]);
+                            if (quote === "") {
+                                if (b[a] === "\"") {
+                                    quote = "\"";
+                                } else if (b[a] === "'") {
+                                    quote = "'";
+                                } else if (b[a] === "/") {
+                                    if (b[a + 1] === "/") {
+                                        quote = "/";
+                                    } else if (b[a + 1] === "*") {
+                                        quote = "*";
+                                    }
+                                } else if (b[a + 1] === end.charAt(0)) {
+                                    do {
+                                        endlen = endlen + 1;
+                                        a      = a + 1;
+                                        store.push(b[a]);
+                                    } while (a < len && endlen < end.length && b[a + 1] === end.charAt(endlen));
+                                    if (endlen === end.length) {
+                                        quote = store.join("");
+                                        if ((/\s/).test(quote.charAt(start)) === true) {
+                                            do {
+                                                start = start + 1;
+                                            } while ((/\s/).test(quote.charAt(start)) === true);
                                         }
-                                    } else if (b[a + 1] === end.charAt(0)) {
+                                        endlen = start;
                                         do {
                                             endlen = endlen + 1;
-                                            a      = a + 1;
-                                            store.push(b[a]);
-                                        } while (a < len && endlen < end.length && b[a + 1] === end.charAt(endlen));
-                                        if (endlen === end.length) {
-                                            quote = store.join("");
-                                            if ((/\s/).test(quote.charAt(start)) === true) {
-                                                do {
-                                                    start = start + 1;
-                                                } while ((/\s/).test(quote.charAt(start)) === true);
-                                            }
-                                            endlen = start;
-                                            do {
-                                                endlen = endlen + 1;
-                                            } while (endlen < end.length && (/\s/).test(quote.charAt(endlen)) === false);
-                                            if (endlen === quote.length) {
-                                                endlen = endlen - end.length;
-                                            }
-                                            if (open === "{%") {
-                                                if (quote.indexOf("{%-") === 0) {
-                                                    quote = quote
-                                                        .replace(/^(\{%-\s*)/, "{%- ")
-                                                        .replace(/(\s*-%\})$/, " -%}");
-                                                    name  = quote.slice(4);
-                                                } else {
-                                                    quote = quote
-                                                        .replace(/^(\{%\s*)/, "{% ")
-                                                        .replace(/(\s*%\})$/, " %}");
-                                                    name  = quote.slice(3);
-                                                }
-                                            }
-                                            if (open === "{{") {
-                                                quote = quote
-                                                    .replace(/^(\{\{\s+)/, "{{")
-                                                    .replace(/(\s+\}\})$/, "}}");
-                                            }
-                                            if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
-                                                ltype                             = "value";
-                                                data.types[data.types.length - 1] = "value";
-                                                if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
-                                                    data.token[data.token.length - 1] = data.token[data.token.length - 1] +
-                                                            quote;
-                                                } else {
-                                                    data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " +
-                                                            quote;
-                                                }
-                                                return;
-                                            }
-                                            lines.push(linev);
-                                            token.push(quote);
-                                            begin.push(struct[struct.length - 1]);
-                                            stack.push(structval);
-                                            if (open === "{%") {
-                                                name = name.slice(0, name.indexOf(" "));
-                                                if (name.indexOf("(") > 0) {
-                                                    name = name.slice(0, name.indexOf("("));
-                                                }
-                                                store = [
-                                                    "autoescape",
-                                                    "block",
-                                                    "capture",
-                                                    "case",
-                                                    "comment",
-                                                    "embed",
-                                                    "filter",
-                                                    "for",
-                                                    "form",
-                                                    "if",
-                                                    "macro",
-                                                    "paginate",
-                                                    "raw",
-                                                    "sandbox",
-                                                    "spaceless",
-                                                    "tablerow",
-                                                    "unless",
-                                                    "verbatim"
-                                                ];
-                                                if (name === "else" || name === "elseif" || name === "when" || name === "elif") {
-                                                    return exit("external_else");
-                                                }
-                                                endlen = store.length - 1;
-                                                if (endlen > -1) {
-                                                    do {
-                                                        if (name === store[endlen]) {
-                                                            return exit("external_start");
-                                                        }
-                                                        if (name === "end" + store[endlen]) {
-                                                            return exit("external_end");
-                                                        }
-                                                        endlen = endlen - 1;
-                                                    } while (endlen > -1);
-                                                }
-                                            } else if (open === "{{") {
-                                                name   = quote.slice(2);
-                                                endlen = name.length;
-                                                start  = 0;
-                                                do {
-                                                    start = start + 1;
-                                                } while (
-                                                    start < endlen && (/\s/).test(name.charAt(start)) === false && name.charAt(start) !== "("
-                                                );
-                                                name = name.slice(0, start);
-                                                if (name.charAt(name.length - 2) === "}") {
-                                                    name = name.slice(0, name.length - 2);
-                                                }
-                                                if (name === "end") {
-                                                    return exit("external_end");
-                                                }
-                                                if (name === "block" || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
-                                                    return exit("external_start");
-                                                }
-                                            }
-                                            return exit("external");
+                                        } while (endlen < end.length && (/\s/).test(quote.charAt(endlen)) === false);
+                                        if (endlen === quote.length) {
+                                            endlen = endlen - end.length;
                                         }
-                                        endlen = 0;
+                                        if (open === "{%") {
+                                            if (quote.indexOf("{%-") === 0) {
+                                                quote = quote
+                                                    .replace(/^(\{%-\s*)/, "{%- ")
+                                                    .replace(/(\s*-%\})$/, " -%}");
+                                                name  = quote.slice(4);
+                                            } else {
+                                                quote = quote
+                                                    .replace(/^(\{%\s*)/, "{% ")
+                                                    .replace(/(\s*%\})$/, " %}");
+                                                name  = quote.slice(3);
+                                            }
+                                        }
+                                        if (open === "{{") {
+                                            quote = quote
+                                                .replace(/^(\{\{\s+)/, "{{")
+                                                .replace(/(\s+\}\})$/, "}}");
+                                        }
+                                        if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
+                                            ltype                             = "value";
+                                            data.types[data.types.length - 1] = "value";
+                                            if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
+                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] +
+                                                        quote;
+                                            } else {
+                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " +
+                                                        quote;
+                                            }
+                                            return;
+                                        }
+                                        lines.push(linev);
+                                        token.push(quote);
+                                        begin.push(struct[struct.length - 1]);
+                                        stack.push(structval);
+                                        if (open === "{%") {
+                                            name = name.slice(0, name.indexOf(" "));
+                                            if (name.indexOf("(") > 0) {
+                                                name = name.slice(0, name.indexOf("("));
+                                            }
+                                            store = [
+                                                "autoescape",
+                                                "block",
+                                                "capture",
+                                                "case",
+                                                "comment",
+                                                "embed",
+                                                "filter",
+                                                "for",
+                                                "form",
+                                                "if",
+                                                "macro",
+                                                "paginate",
+                                                "raw",
+                                                "sandbox",
+                                                "spaceless",
+                                                "tablerow",
+                                                "unless",
+                                                "verbatim"
+                                            ];
+                                            if (name === "else" || name === "elseif" || name === "when" || name === "elif") {
+                                                return exit("external_else");
+                                            }
+                                            endlen = store.length - 1;
+                                            if (endlen > -1) {
+                                                do {
+                                                    if (name === store[endlen]) {
+                                                        return exit("external_start");
+                                                    }
+                                                    if (name === "end" + store[endlen]) {
+                                                        return exit("external_end");
+                                                    }
+                                                    endlen = endlen - 1;
+                                                } while (endlen > -1);
+                                            }
+                                        } else if (open === "{{") {
+                                            name   = quote.slice(2);
+                                            endlen = name.length;
+                                            start  = 0;
+                                            do {
+                                                start = start + 1;
+                                            } while (
+                                                start < endlen && (/\s/).test(name.charAt(start)) === false && name.charAt(start) !== "("
+                                            );
+                                            name = name.slice(0, start);
+                                            if (name.charAt(name.length - 2) === "}") {
+                                                name = name.slice(0, name.length - 2);
+                                            }
+                                            if (name === "end") {
+                                                return exit("external_end");
+                                            }
+                                            if (name === "block" || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
+                                                return exit("external_start");
+                                            }
+                                        }
+                                        return exit("external");
                                     }
-                                } else if (quote === b[a]) {
-                                    if (quote === "\"" || quote === "'") {
-                                        quote = "";
-                                    } else if (quote === "/" && (b[a] === "\r" || b[a] === "\n")) {
-                                        quote = "";
-                                    } else if (quote === "*" && b[a + 1] === "/") {
-                                        quote = "";
-                                    }
+                                    endlen = 0;
                                 }
-                                a = a + 1;
-                            } while (a < len);
-                        }
-                    },
-                    //finds comments include those JS looking '//' comments
-                    comment    = function parser_style_tokenize_comment(inline) {
-                        var aa        = a + 1,
-                            bb        = 0,
-                            out       = [b[a]],
-                            type      = "comment",
-                            extra     = "",
-                            spareType = [],
-                            spareToke = [],
-                            spareLine = [],
-                            spareBegn = [],
-                            spareStak = [],
-                            linev     = spacer(false);
-                        type = (inline === true && linev === 0)
-                            ? "comment-inline"
-                            : "comment";
-                        if (aa < len) {
-                            do {
-                                out.push(b[aa]);
-                                if ((inline === false && b[aa - 1] === "*" && b[aa] === "/") || (inline === true && (b[aa + 1] === "\n" || b[aa + 1] === "\r"))) {
-                                    break;
+                            } else if (quote === b[a]) {
+                                if (quote === "\"" || quote === "'") {
+                                    quote = "";
+                                } else if (quote === "/" && (b[a] === "\r" || b[a] === "\n")) {
+                                    quote = "";
+                                } else if (quote === "*" && b[a + 1] === "/") {
+                                    quote = "";
                                 }
-                                aa = aa + 1;
-                            } while (aa < len);
-                        }
-                        if (ltype === "item") {
-                            bb = aa;
-                            do {
-                                bb = bb + 1;
-                                if (b[bb] === "/") {
-                                    if (b[bb + 1] === "*" || b[bb + 1] === "/") {
-                                        extra = b[bb + 1];
-                                    } else if (b[bb - 1] === "*" && extra === "*") {
-                                        extra = "";
-                                        bb    = bb + 1;
-                                    }
-                                } else if ((b[bb] === "\n" || b[bb] === "\r") && extra === "/") {
+                            }
+                            a = a + 1;
+                        } while (a < len);
+                    }
+                },
+                //finds comments include those JS looking '//' comments
+                comment    = function parser_style_tokenize_comment(inline) {
+                    var aa        = a + 1,
+                        bb        = 0,
+                        out       = [b[a]],
+                        type      = "comment",
+                        extra     = "",
+                        spareType = [],
+                        spareToke = [],
+                        spareLine = [],
+                        spareBegn = [],
+                        spareStak = [],
+                        linev     = spacer(false);
+                    type = (inline === true && linev === 0)
+                        ? "comment-inline"
+                        : "comment";
+                    if (aa < len) {
+                        do {
+                            out.push(b[aa]);
+                            if ((inline === false && b[aa - 1] === "*" && b[aa] === "/") || (inline === true && (b[aa + 1] === "\n" || b[aa + 1] === "\r"))) {
+                                break;
+                            }
+                            aa = aa + 1;
+                        } while (aa < len);
+                    }
+                    if (ltype === "item") {
+                        bb = aa;
+                        do {
+                            bb = bb + 1;
+                            if (b[bb] === "/") {
+                                if (b[bb + 1] === "*" || b[bb + 1] === "/") {
+                                    extra = b[bb + 1];
+                                } else if (b[bb - 1] === "*" && extra === "*") {
                                     extra = "";
                                     bb    = bb + 1;
                                 }
-                            } while (
-                                bb < len && ((extra === "" && (/\s/).test(b[bb]) === true) || extra !== "")
-                            );
-                            if (b[bb] === "{") {
-                                item("start");
-                            } else if (b[bb] === "}") {
-                                item("end");
-                            } else if (b[bb] === ";") {
-                                item("semi");
-                            } else if (b[bb] === ":") {
-                                item("colon");
-                            } else {
-                                item();
+                            } else if ((b[bb] === "\n" || b[bb] === "\r") && extra === "/") {
+                                extra = "";
+                                bb    = bb + 1;
                             }
+                        } while (
+                            bb < len && ((extra === "" && (/\s/).test(b[bb]) === true) || extra !== "")
+                        );
+                        if (b[bb] === "{") {
+                            item("start");
+                        } else if (b[bb] === "}") {
+                            item("end");
+                        } else if (b[bb] === ";") {
+                            item("semi");
+                        } else if (b[bb] === ":") {
+                            item("colon");
+                        } else {
+                            item();
                         }
-                        a = aa;
-                        if (token.length > 0 && (ltype === "selector" || ltype === "propvar") && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
+                    }
+                    a = aa;
+                    if (token.length > 0 && (ltype === "selector" || ltype === "propvar") && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
+                        spareToke.push(token[token.length - 1]);
+                        token.pop();
+                        types.pop();
+                        lines.pop();
+                        begin.pop();
+                        stack.pop();
+                        begin.push(struct[struct.length - 1]);
+                        stack.push(structval);
+                        token.push(out.join(""));
+                        types.push(type);
+                        lines.push(linev);
+                        begin.push(struct[struct.length - 1]);
+                        stack.push(structval);
+                        token.push(spareToke[0]);
+                        if (ltype === "propvar") {
+                            types.push("propvar");
+                        } else {
+                            types.push("selector");
+                        }
+                        lines.push(0);
+                    } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
+                        do {
                             spareToke.push(token[token.length - 1]);
+                            spareType.push(types[types.length - 1]);
+                            spareLine.push(lines[lines.length - 1]);
+                            spareStak.push(stack[stack.length - 1]);
+                            spareBegn.push(begin[begin.length - 1]);
                             token.pop();
                             types.pop();
                             lines.pop();
-                            begin.pop();
                             stack.pop();
-                            begin.push(struct[struct.length - 1]);
-                            stack.push(structval);
-                            token.push(out.join(""));
-                            types.push(type);
-                            lines.push(linev);
-                            begin.push(struct[struct.length - 1]);
-                            stack.push(structval);
-                            token.push(spareToke[0]);
-                            if (ltype === "propvar") {
-                                types.push("propvar");
-                            } else {
-                                types.push("selector");
-                            }
-                            lines.push(0);
-                        } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
-                            do {
-                                spareToke.push(token[token.length - 1]);
-                                spareType.push(types[types.length - 1]);
-                                spareLine.push(lines[lines.length - 1]);
-                                spareStak.push(stack[stack.length - 1]);
-                                spareBegn.push(begin[begin.length - 1]);
-                                token.pop();
-                                types.pop();
-                                lines.pop();
-                                stack.pop();
-                                begin.pop();
-                            } while (
-                                types.length > 1 && data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start"
-                            );
-                            token.push(out.join(""));
-                            types.push(type);
-                            lines.push(linev);
-                            stack.push(structval);
-                            begin.push(struct[struct.length - 1]);
-                            do {
-                                token.push(spareToke[spareToke.length - 1]);
-                                types.push(spareType[spareType.length - 1]);
-                                lines.push(spareLine[spareLine.length - 1]);
-                                stack.push(spareStak[spareStak.length - 1]);
-                                begin.push(spareBegn[spareBegn.length - 1]);
-                                spareToke.pop();
-                                spareType.pop();
-                                spareLine.pop();
-                                spareStak.pop();
-                                spareBegn.pop();
-                            } while (spareToke.length > 0);
-                        } else {
-                            ltype = type;
-                            types.push(type);
-                            token.push(out.join(""));
-                            lines.push(linev);
-                            stack.push(structval);
-                            begin.push(struct[struct.length - 1]);
-                        }
-                    },
-                    //do fancy things to property types like: sorting, consolidating, and padding
-                    properties = function parser_style_tokenize_properties() {
-                        var aa    = token.length - 1,
-                            bb    = 1,
-                            cc    = 0,
-                            dd    = 0,
-                            p     = [],
-                            set   = [
-                                []
-                            ],
-                            next  = 0,
-                            stoke = [],
-                            stype = [],
-                            sline = [],
-                            sstak = [],
-                            sbegn = [];
-                        //identify properties and build out prop/val sets
+                            begin.pop();
+                        } while (
+                            types.length > 1 && data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start"
+                        );
+                        token.push(out.join(""));
+                        types.push(type);
+                        lines.push(linev);
+                        stack.push(structval);
+                        begin.push(struct[struct.length - 1]);
                         do {
-                            if (types[aa] === "start") {
-                                bb = bb - 1;
-                                if (bb === 0) {
-                                    next = aa;
-                                    set.pop();
-                                    aa = set.length - 1;
-                                    if (aa > -1) {
-                                        do {
-                                            set[aa].reverse();
-                                            aa = aa - 1;
-                                        } while (aa > -1);
-                                    }
-                                    break;
+                            token.push(spareToke[spareToke.length - 1]);
+                            types.push(spareType[spareType.length - 1]);
+                            lines.push(spareLine[spareLine.length - 1]);
+                            stack.push(spareStak[spareStak.length - 1]);
+                            begin.push(spareBegn[spareBegn.length - 1]);
+                            spareToke.pop();
+                            spareType.pop();
+                            spareLine.pop();
+                            spareStak.pop();
+                            spareBegn.pop();
+                        } while (spareToke.length > 0);
+                    } else {
+                        ltype = type;
+                        types.push(type);
+                        token.push(out.join(""));
+                        lines.push(linev);
+                        stack.push(structval);
+                        begin.push(struct[struct.length - 1]);
+                    }
+                },
+                //do fancy things to property types like: sorting, consolidating, and padding
+                properties = function parser_style_tokenize_properties() {
+                    var aa    = token.length - 1,
+                        bb    = 1,
+                        cc    = 0,
+                        dd    = 0,
+                        p     = [],
+                        set   = [
+                            []
+                        ],
+                        next  = 0,
+                        stoke = [],
+                        stype = [],
+                        sline = [],
+                        sstak = [],
+                        sbegn = [];
+                    //identify properties and build out prop/val sets
+                    do {
+                        if (types[aa] === "start") {
+                            bb = bb - 1;
+                            if (bb === 0) {
+                                next = aa;
+                                set.pop();
+                                aa = set.length - 1;
+                                if (aa > -1) {
+                                    do {
+                                        set[aa].reverse();
+                                        aa = aa - 1;
+                                    } while (aa > -1);
                                 }
-                            }
-                            if (types[aa] === "end") {
-                                bb = bb + 1;
-                            }
-                            if (bb === 1 && (types[aa] === "property" || (types[aa] === "propvar" && types[aa + 1] === "colon"))) {
-                                p.push(aa);
-                            }
-                            set[set.length - 1].push(aa);
-                            if (bb === 1 && (types[aa - 1] === "comment" || types[aa - 1] === "comment-inline" || types[aa - 1] === "semi" || types[aa - 1] === "end" || types[aa - 1] === "start") && types[aa] !== "start" && types[aa] !== "end") {
-                                set.push([]);
-                            }
-                            aa = aa - 1;
-                        } while (aa > -1);
-                        //this reverse fixes the order of consecutive comments
-                        set.reverse();
-                        p.reverse();
-
-                        //consolidate margin and padding
-                        (function parser_style_tokenize_properties_propcheck() {
-                            var leng      = set.length,
-                                fourcount = function parser_style_tokenize_properties_propcheck_fourcount(name) {
-                                    var test     = [
-                                            false, false, false, false
-                                        ],
-                                        val      = [
-                                            "0", "0", "0", "0"
-                                        ],
-                                        zero     = (/^(0+([a-z]+|%))/),
-                                        start    = aa,
-                                        yy       = -1,
-                                        zz       = 0,
-                                        valsplit = [],
-                                        store    = function parser_style_tokenize_properties_propcheck_fourcount_store(
-                                            side
-                                        ) {
-                                            yy         = yy + 1;
-                                            val[side]  = token[set[aa][2]];
-                                            test[side] = true;
-                                            if (start < 0) {
-                                                start = aa;
-                                            }
-                                        };
-                                    if (aa < leng) {
-                                        do {
-                                            if (token[set[aa][2]] !== undefined && token[set[aa][0]].indexOf(name) === 0) {
-                                                if (token[set[aa][0]] === name || token[set[aa][0]].indexOf(name + " ") === 0) {
-                                                    yy       = yy + 1;
-                                                    valsplit = token[set[aa][2]].split(" ");
-                                                    if (valsplit.length === 1) {
-                                                        val = [
-                                                            token[set[aa][2]],
-                                                            token[set[aa][2]],
-                                                            token[set[aa][2]],
-                                                            token[set[aa][2]]
-                                                        ];
-                                                    } else if (valsplit.length === 2) {
-                                                        val = [
-                                                            valsplit[0], valsplit[1], valsplit[0], valsplit[1]
-                                                        ];
-                                                    } else if (valsplit.length === 3) {
-                                                        val = [
-                                                            valsplit[0], valsplit[1], valsplit[2], valsplit[1]
-                                                        ];
-                                                    } else if (valsplit.length === 4) {
-                                                        val = [
-                                                            valsplit[0], valsplit[1], valsplit[2], valsplit[3]
-                                                        ];
-                                                    } else {
-                                                        return;
-                                                    }
-                                                    test = [true, true, true, true];
-                                                } else if (token[set[aa][0]].indexOf(name + "-bottom") === 0) {
-                                                    store(2);
-                                                } else if (token[set[aa][0]].indexOf(name + "-left") === 0) {
-                                                    store(3);
-                                                } else if (token[set[aa][0]].indexOf(name + "-right") === 0) {
-                                                    store(1);
-                                                } else if (token[set[aa][0]].indexOf(name + "-top") === 0) {
-                                                    store(0);
-                                                }
-                                            }
-                                            if (set[aa + 1] === undefined || token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
-                                                if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
-                                                    set.splice(start + 1, yy);
-                                                    leng = leng - yy;
-                                                    aa   = aa - yy;
-                                                    zz   = 0;
-                                                    bb   = p.length;
-                                                    do {
-                                                        if (p[zz] === set[start][0]) {
-                                                            break;
-                                                        }
-                                                        zz = zz + 1;
-                                                    } while (zz < bb);
-                                                    if (zz < bb) {
-                                                        p.splice(zz + 1, yy);
-                                                    }
-                                                    token[set[start][0]] = name;
-                                                    if (zero.test(val[0]) === true) {
-                                                        val[0] = "0";
-                                                    }
-                                                    if (zero.test(val[1]) === true) {
-                                                        val[1] = "0";
-                                                    }
-                                                    if (zero.test(val[2]) === true) {
-                                                        val[2] = "0";
-                                                    }
-                                                    if (zero.test(val[3]) === true) {
-                                                        val[3] = "0";
-                                                    }
-                                                    if (val[1] === val[3]) {
-                                                        val.pop();
-                                                        if (val[0] === val[2]) {
-                                                            val.pop();
-                                                            if (val[0] === val[1]) {
-                                                                val.pop();
-                                                            }
-                                                        }
-                                                    }
-                                                    token[set[start][2]] = val.join(" ");
-                                                    if (token[set[start][2]].indexOf("!important") > 0) {
-                                                        token[set[start][2]] = token[set[start][2]].replace(/\s!important/g, "") + " !i" +
-                                                                "mportant";
-                                                    }
-                                                    if (verticalop === true) {
-                                                        if (token[set[start][0]].charAt(token[set[start][0]].length - 1) === " ") {
-                                                            yy = token[set[start][0]].length - name.length;
-                                                            do {
-                                                                name = name + " ";
-                                                                yy   = yy - 1;
-                                                            } while (yy > 0);
-                                                        }
-                                                    }
-                                                }
-                                                break;
-                                            }
-                                            aa = aa + 1;
-                                        } while (aa < leng);
-                                    }
-                                };
-                            aa = 0;
-                            if (aa < leng) {
-                                do {
-                                    if (types[set[aa][0]] === "property") {
-                                        if (token[set[aa][0]].indexOf("margin") === 0) {
-                                            fourcount("margin");
-                                        }
-                                        if (token[set[aa][0]].indexOf("padding") === 0) {
-                                            fourcount("padding");
-                                        }
-                                    }
-                                    aa = aa + 1;
-                                } while (aa < leng);
-                            }
-                        }());
-
-                        //pad out those property names so that the colons are vertically aligned
-                        if (verticalop === true) {
-                            bb = 0;
-                            aa = p.length - 1;
-                            if (aa > -1) {
-                                do {
-                                    if (token[p[aa]].length > bb && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                        bb = token[p[aa]].length;
-                                    }
-                                    aa = aa - 1;
-                                } while (aa > -1);
-                            }
-                            aa = p.length - 1;
-                            if (aa > -1) {
-                                do {
-                                    cc = bb - token[p[aa]].length;
-                                    if (cc > 0 && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                        do {
-                                            token[p[aa]] = token[p[aa]] + " ";
-                                            cc           = cc - 1;
-                                        } while (cc > 0);
-                                    }
-                                    aa = aa - 1;
-                                } while (aa > -1);
-                            }
-                            if (endtest === false) {
-                                return;
+                                break;
                             }
                         }
+                        if (types[aa] === "end") {
+                            bb = bb + 1;
+                        }
+                        if (bb === 1 && (types[aa] === "property" || (types[aa] === "propvar" && types[aa + 1] === "colon"))) {
+                            p.push(aa);
+                        }
+                        set[set.length - 1].push(aa);
+                        if (bb === 1 && (types[aa - 1] === "comment" || types[aa - 1] === "comment-inline" || types[aa - 1] === "semi" || types[aa - 1] === "end" || types[aa - 1] === "start") && types[aa] !== "start" && types[aa] !== "end") {
+                            set.push([]);
+                        }
+                        aa = aa - 1;
+                    } while (aa > -1);
+                    //this reverse fixes the order of consecutive comments
+                    set.reverse();
+                    p.reverse();
 
-                        bb = set.length;
-                        aa = 0;
-                        if (aa < bb) {
-                            do {
-                                dd = set[aa].length;
-                                cc = 0;
-                                if (cc < dd) {
+                    //consolidate margin and padding
+                    (function parser_style_tokenize_properties_propcheck() {
+                        var leng      = set.length,
+                            fourcount = function parser_style_tokenize_properties_propcheck_fourcount(name) {
+                                var test     = [
+                                        false, false, false, false
+                                    ],
+                                    val      = [
+                                        "0", "0", "0", "0"
+                                    ],
+                                    zero     = (/^(0+([a-z]+|%))/),
+                                    start    = aa,
+                                    yy       = -1,
+                                    zz       = 0,
+                                    valsplit = [],
+                                    store    = function parser_style_tokenize_properties_propcheck_fourcount_store(
+                                        side
+                                    ) {
+                                        yy         = yy + 1;
+                                        val[side]  = token[set[aa][2]];
+                                        test[side] = true;
+                                        if (start < 0) {
+                                            start = aa;
+                                        }
+                                    };
+                                if (aa < leng) {
                                     do {
-                                        stoke.push(token[set[aa][cc]]);
-                                        stype.push(types[set[aa][cc]]);
-                                        sline.push(lines[set[aa][cc]]);
-                                        sstak.push(stack[set[aa][cc]]);
-                                        sbegn.push(begin[set[aa][cc]]);
-                                        cc = cc + 1;
-                                    } while (cc < dd);
+                                        if (token[set[aa][2]] !== undefined && token[set[aa][0]].indexOf(name) === 0) {
+                                            if (token[set[aa][0]] === name || token[set[aa][0]].indexOf(name + " ") === 0) {
+                                                yy       = yy + 1;
+                                                valsplit = token[set[aa][2]].split(" ");
+                                                if (valsplit.length === 1) {
+                                                    val = [
+                                                        token[set[aa][2]],
+                                                        token[set[aa][2]],
+                                                        token[set[aa][2]],
+                                                        token[set[aa][2]]
+                                                    ];
+                                                } else if (valsplit.length === 2) {
+                                                    val = [
+                                                        valsplit[0], valsplit[1], valsplit[0], valsplit[1]
+                                                    ];
+                                                } else if (valsplit.length === 3) {
+                                                    val = [
+                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[1]
+                                                    ];
+                                                } else if (valsplit.length === 4) {
+                                                    val = [
+                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[3]
+                                                    ];
+                                                } else {
+                                                    return;
+                                                }
+                                                test = [true, true, true, true];
+                                            } else if (token[set[aa][0]].indexOf(name + "-bottom") === 0) {
+                                                store(2);
+                                            } else if (token[set[aa][0]].indexOf(name + "-left") === 0) {
+                                                store(3);
+                                            } else if (token[set[aa][0]].indexOf(name + "-right") === 0) {
+                                                store(1);
+                                            } else if (token[set[aa][0]].indexOf(name + "-top") === 0) {
+                                                store(0);
+                                            }
+                                        }
+                                        if (set[aa + 1] === undefined || token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
+                                            if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
+                                                set.splice(start + 1, yy);
+                                                leng = leng - yy;
+                                                aa   = aa - yy;
+                                                zz   = 0;
+                                                bb   = p.length;
+                                                do {
+                                                    if (p[zz] === set[start][0]) {
+                                                        break;
+                                                    }
+                                                    zz = zz + 1;
+                                                } while (zz < bb);
+                                                if (zz < bb) {
+                                                    p.splice(zz + 1, yy);
+                                                }
+                                                token[set[start][0]] = name;
+                                                if (zero.test(val[0]) === true) {
+                                                    val[0] = "0";
+                                                }
+                                                if (zero.test(val[1]) === true) {
+                                                    val[1] = "0";
+                                                }
+                                                if (zero.test(val[2]) === true) {
+                                                    val[2] = "0";
+                                                }
+                                                if (zero.test(val[3]) === true) {
+                                                    val[3] = "0";
+                                                }
+                                                if (val[1] === val[3]) {
+                                                    val.pop();
+                                                    if (val[0] === val[2]) {
+                                                        val.pop();
+                                                        if (val[0] === val[1]) {
+                                                            val.pop();
+                                                        }
+                                                    }
+                                                }
+                                                token[set[start][2]] = val.join(" ");
+                                                if (token[set[start][2]].indexOf("!important") > 0) {
+                                                    token[set[start][2]] = token[set[start][2]].replace(/\s!important/g, "") + " !i" +
+                                                            "mportant";
+                                                }
+                                                if (verticalop === true) {
+                                                    if (token[set[start][0]].charAt(token[set[start][0]].length - 1) === " ") {
+                                                        yy = token[set[start][0]].length - name.length;
+                                                        do {
+                                                            name = name + " ";
+                                                            yy   = yy - 1;
+                                                        } while (yy > 0);
+                                                    }
+                                                }
+                                            }
+                                            break;
+                                        }
+                                        aa = aa + 1;
+                                    } while (aa < leng);
+                                }
+                            };
+                        aa = 0;
+                        if (aa < leng) {
+                            do {
+                                if (types[set[aa][0]] === "property") {
+                                    if (token[set[aa][0]].indexOf("margin") === 0) {
+                                        fourcount("margin");
+                                    }
+                                    if (token[set[aa][0]].indexOf("padding") === 0) {
+                                        fourcount("padding");
+                                    }
                                 }
                                 aa = aa + 1;
-                            } while (aa < bb);
+                            } while (aa < leng);
                         }
-                        //replace a block's data with sorted analyzed data
-                        token.splice(next + 1, token.length - next - 1);
-                        types.splice(next + 1, types.length - next - 1);
-                        lines.splice(next + 1, lines.length - next - 1);
-                        stack.splice(next + 1, stack.length - next - 1);
-                        begin.splice(next + 1, begin.length - next - 1);
-                        token = token.concat(stoke);
-                        types = types.concat(stype);
-                        lines = lines.concat(sline);
-                        stack = stack.concat(sstak);
-                        begin = begin.concat(sbegn);
-                    };
-                //token building loop
-                do {
-                    if (ltype !== "comment" && ltype !== "comment-inline" && ltype !== "" && options.topcoms === true) {
-                        options.topcoms = false;
+                    }());
+
+                    //pad out those property names so that the colons are vertically aligned
+                    if (verticalop === true) {
+                        bb = 0;
+                        aa = p.length - 1;
+                        if (aa > -1) {
+                            do {
+                                if (token[p[aa]].length > bb && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
+                                    bb = token[p[aa]].length;
+                                }
+                                aa = aa - 1;
+                            } while (aa > -1);
+                        }
+                        aa = p.length - 1;
+                        if (aa > -1) {
+                            do {
+                                cc = bb - token[p[aa]].length;
+                                if (cc > 0 && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
+                                    do {
+                                        token[p[aa]] = token[p[aa]] + " ";
+                                        cc           = cc - 1;
+                                    } while (cc > 0);
+                                }
+                                aa = aa - 1;
+                            } while (aa > -1);
+                        }
+                        if (endtest === false) {
+                            return;
+                        }
                     }
-                    if ((/\s/).test(b[a]) === true) {
-                        space = space + b[a];
-                    } else if (b[a] === "/" && b[a + 1] === "*") {
-                        comment(false);
-                    } else if (b[a] === "/" && b[a + 1] === "/") {
-                        comment(true);
-                    } else if (b[a] === "<" && b[a + 1] === "?" && b[a + 2] === "p" && b[a + 3] === "h" && b[a + 4] === "p") {
-                        //php
-                        external("<?php", "?>");
-                    } else if (b[a] === "<" && b[a + 1] === "%") {
-                        //asp
-                        external("<%", "%>");
-                    } else if (b[a] === "{" && b[a + 1] === "%") {
-                        //asp
-                        external("{%", "%}");
-                    } else if (b[a] === "{" && b[a + 1] === "{" && b[a + 2] === "{") {
-                        //mustache
-                        external("{{{", "}}}");
-                    } else if (b[a] === "{" && b[a + 1] === "{") {
-                        //handlebars
-                        external("{{", "}}");
-                    } else if (b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] === "#") {
-                        //ssi
-                        external("<!--#", "-->");
-                    } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
-                        types.push("external_else");
-                        token.push("@else");
-                        lines.push(0);
-                        stack.push(stack[stack.length - 1]);
-                        begin.push(begin[begin.length - 1]);
-                        a = a + 4;
-                    } else if (b[a] === "{" || (b[a] === "(" && data.token[data.token.length - 1] === ":" && data.types[data.types.length - 2] === "propvar")) {
-                        if (b[a] === "{" && data.token[data.token.length - 2] === ":") {
-                            data.types[data.types.length - 1] = "pseudo";
-                        }
-                        item("start");
-                        struct.push(token.length);
-                        ltype = "start";
-                        types.push("start");
-                        token.push(b[a]);
-                        begin.push(token.length);
-                        if (b[a] === "(") {
-                            structval = "map";
-                            stack.push("map");
-                            mapper.push(0);
-                        } else {
-                            structval = "block";
-                            stack.push("block");
-                        }
-                        nosort.push(false);
-                        lines.push(spacer(false));
-                    } else if (b[a] === "}" || (b[a] === ")" && structval === "map" && mapper[mapper.length - 1] === 0)) {
-                        endtest = true;
-                        if (b[a] === "}" && data.types[data.types.length - 1] === "item" && data.token[data.token.length - 2] === "{" && data.token[data.token.length - 3] !== undefined && data.token[data.token.length - 3].charAt(data.token[data.token.length - 3].length - 1) === "@") {
-                            data.token[data.token.length - 3] = data.token[data.token.length - 3] + "{" +
-                                    data.token[data.token.length - 1] + "}";
-                            token.pop();
-                            token.pop();
-                            types.pop();
-                            types.pop();
-                            lines.pop();
-                            lines.pop();
-                            stack.pop();
-                            stack.pop();
-                            begin.pop();
-                            begin.pop();
-                        } else {
-                            if (b[a] === ")") {
-                                mapper.pop();
-                            } else if (b[a] === "}" && ltype === "value" && token[token.length - 1] !== ";") {
-                                token.push(";");
-                                types.push("semi");
-                                lines.push(0);
-                                stack.push("block");
-                                begin.push(begin[begin.length - 1]);
+
+                    bb = set.length;
+                    aa = 0;
+                    if (aa < bb) {
+                        do {
+                            dd = set[aa].length;
+                            cc = 0;
+                            if (cc < dd) {
+                                do {
+                                    stoke.push(token[set[aa][cc]]);
+                                    stype.push(types[set[aa][cc]]);
+                                    sline.push(lines[set[aa][cc]]);
+                                    sstak.push(stack[set[aa][cc]]);
+                                    sbegn.push(begin[set[aa][cc]]);
+                                    cc = cc + 1;
+                                } while (cc < dd);
                             }
-                            item("end");
-                            properties();
-                            ltype = "end";
-                            if (objsortop === true && nosort[nosort.length - 1] === false) {
-                                objSort();
-                            }
-                            nosort.pop();
-                            types.push("end");
-                            token.push(b[a]);
-                            lines.push(spacer(false));
-                            stack.push(structval);
-                            begin.push(struct[struct.length - 1]);
-                        }
-                        struct.pop();
-                        if (token[struct[struct.length - 1]] === "{") {
-                            structval = "block";
-                        } else if (token[struct[struct.length - 1]] === "(") {
-                            structval = "map";
-                        } else {
-                            structval = "root";
-                        }
-                    } else if (b[a] === ";" || (b[a] === "," && structval === "map")) {
-                        item("semi");
-                        if (data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start" && esctest(a) === false) {
-                            ltype = "semi";
+                            aa = aa + 1;
+                        } while (aa < bb);
+                    }
+                    //replace a block's data with sorted analyzed data
+                    token.splice(next + 1, token.length - next - 1);
+                    types.splice(next + 1, types.length - next - 1);
+                    lines.splice(next + 1, lines.length - next - 1);
+                    stack.splice(next + 1, stack.length - next - 1);
+                    begin.splice(next + 1, begin.length - next - 1);
+                    token = token.concat(stoke);
+                    types = types.concat(stype);
+                    lines = lines.concat(sline);
+                    stack = stack.concat(sstak);
+                    begin = begin.concat(sbegn);
+                };
+            //token building loop
+            do {
+                if (ltype !== "comment" && ltype !== "comment-inline" && ltype !== "" && options.topcoms === true) {
+                    options.topcoms = false;
+                }
+                if ((/\s/).test(b[a]) === true) {
+                    space = space + b[a];
+                } else if (b[a] === "/" && b[a + 1] === "*") {
+                    comment(false);
+                } else if (b[a] === "/" && b[a + 1] === "/") {
+                    comment(true);
+                } else if (b[a] === "<" && b[a + 1] === "?" && b[a + 2] === "p" && b[a + 3] === "h" && b[a + 4] === "p") {
+                    //php
+                    external("<?php", "?>");
+                } else if (b[a] === "<" && b[a + 1] === "%") {
+                    //asp
+                    external("<%", "%>");
+                } else if (b[a] === "{" && b[a + 1] === "%") {
+                    //asp
+                    external("{%", "%}");
+                } else if (b[a] === "{" && b[a + 1] === "{" && b[a + 2] === "{") {
+                    //mustache
+                    external("{{{", "}}}");
+                } else if (b[a] === "{" && b[a + 1] === "{") {
+                    //handlebars
+                    external("{{", "}}");
+                } else if (b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] === "#") {
+                    //ssi
+                    external("<!--#", "-->");
+                } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
+                    types.push("external_else");
+                    token.push("@else");
+                    lines.push(0);
+                    stack.push(stack[stack.length - 1]);
+                    begin.push(begin[begin.length - 1]);
+                    a = a + 4;
+                } else if (b[a] === "{" || (b[a] === "(" && data.token[data.token.length - 1] === ":" && data.types[data.types.length - 2] === "propvar")) {
+                    if (b[a] === "{" && data.token[data.token.length - 2] === ":") {
+                        data.types[data.types.length - 1] = "pseudo";
+                    }
+                    item("start");
+                    struct.push(token.length);
+                    ltype = "start";
+                    types.push("start");
+                    token.push(b[a]);
+                    begin.push(token.length);
+                    if (b[a] === "(") {
+                        structval = "map";
+                        stack.push("map");
+                        mapper.push(0);
+                    } else {
+                        structval = "block";
+                        stack.push("block");
+                    }
+                    nosort.push(false);
+                    lines.push(spacer(false));
+                } else if (b[a] === "}" || (b[a] === ")" && structval === "map" && mapper[mapper.length - 1] === 0)) {
+                    endtest = true;
+                    if (b[a] === "}" && data.types[data.types.length - 1] === "item" && data.token[data.token.length - 2] === "{" && data.token[data.token.length - 3] !== undefined && data.token[data.token.length - 3].charAt(data.token[data.token.length - 3].length - 1) === "@") {
+                        data.token[data.token.length - 3] = data.token[data.token.length - 3] + "{" +
+                                data.token[data.token.length - 1] + "}";
+                        token.pop();
+                        token.pop();
+                        types.pop();
+                        types.pop();
+                        lines.pop();
+                        lines.pop();
+                        stack.pop();
+                        stack.pop();
+                        begin.pop();
+                        begin.pop();
+                    } else {
+                        if (b[a] === ")") {
+                            mapper.pop();
+                        } else if (b[a] === "}" && ltype === "value" && token[token.length - 1] !== ";") {
+                            token.push(";");
                             types.push("semi");
-                            token.push(b[a]);
-                            lines.push(spacer(false));
-                            stack.push(structval);
+                            lines.push(0);
+                            stack.push("block");
                             begin.push(begin[begin.length - 1]);
                         }
-                        space = "";
-                    } else if (b[a] === ":" && data.types[data.types.length - 1] !== "end") {
-                        item("colon");
-                        types.push("colon");
-                        token.push(":");
-                        if ((/\s/).test(b[a - 1]) === true) {
-                            lines.push(1);
-                        } else {
-                            lines.push(0);
+                        item("end");
+                        properties();
+                        ltype = "end";
+                        if (options.objectSort === true && nosort[nosort.length - 1] === false) {
+                            lengthStyle = objectSort(data, lengthStyle);
                         }
-                        ltype = "colon";
-                        space = "";
-                    } else {
-                        if (structval === "map" && b[a] === "(") {
-                            mapper[mapper.length - 1] = mapper[mapper.length - 1] + 1;
-                        }
-                        buildtoken();
+                        nosort.pop();
+                        types.push("end");
+                        token.push(b[a]);
+                        lines.push(spacer(false));
+                        stack.push(structval);
+                        begin.push(struct[struct.length - 1]);
                     }
-                    a = a + 1;
-                } while (a < len);
-                if (endtest === false && verticalop === true) {
-                    properties();
+                    struct.pop();
+                    if (token[struct[struct.length - 1]] === "{") {
+                        structval = "block";
+                    } else if (token[struct[struct.length - 1]] === "(") {
+                        structval = "map";
+                    } else {
+                        structval = "root";
+                    }
+                } else if (b[a] === ";" || (b[a] === "," && structval === "map")) {
+                    item("semi");
+                    if (data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start" && esctest(a) === false) {
+                        ltype = "semi";
+                        types.push("semi");
+                        token.push(b[a]);
+                        lines.push(spacer(false));
+                        stack.push(structval);
+                        begin.push(begin[begin.length - 1]);
+                    }
+                    space = "";
+                } else if (b[a] === ":" && data.types[data.types.length - 1] !== "end") {
+                    item("colon");
+                    types.push("colon");
+                    token.push(":");
+                    if ((/\s/).test(b[a - 1]) === true) {
+                        lines.push(1);
+                    } else {
+                        lines.push(0);
+                    }
+                    ltype = "colon";
+                    space = "";
+                } else {
+                    if (structval === "map" && b[a] === "(") {
+                        mapper[mapper.length - 1] = mapper[mapper.length - 1] + 1;
+                    }
+                    buildtoken();
                 }
-            }());
+                a = a + 1;
+            } while (a < len);
+            if (endtest === false && verticalop === true) {
+                properties();
+            }
 
             return {
                 attrs: attrs,
@@ -6588,5 +6513,8 @@ Parse Framework
     };
     if (typeof module === "object" && typeof module.parent === "object") {
         module.exports = parser;
+    }
+    if (typeof window === "object" && typeof location === "object") {
+        window.parser = parser;
     }
 }());
