@@ -142,3 +142,14 @@ This section will list intentional exceptions to the basic rules and parsing beh
 
 * Token array values are generally strings, but can be arrays in the cases where one lexer hands off to another.
 * Markup elements with the attribute named *data-parse-ignore* will be processed into a string and their corresponding types value will be *singleton*.  This prevents the element from alteration due to beautifiers and it includes are descendant artifacts within the element.  For backwards compatibility the attribute name *data-prettydiff-ignore* will continue to be accepted and will be the only mention of a beautifier in the parser logic.
+
+## FAQ
+
+### Why is this so much slower than Esprima or Acorn?
+Esprima and Acorn produce heirarchical object trees.  These require less logic (and machine resources) to produce and so are faster to write.  Unfortunately it requires substantially more logic *and time* to walk an object tree than it does to iterate an array, which means the output from this parser requires less work to access in a fraction of the time.  Overall, with consideration for both write **and output read** operations, this parser is faster.
+
+### Why is the code so big?
+This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.
+
+### Why not just use Babel.js?
+Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort.
