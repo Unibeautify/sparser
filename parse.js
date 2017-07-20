@@ -4532,7 +4532,7 @@ Parse Framework
                         if (stacklist.length > 0 && stacklist[stacklist.length - 1][0] !== "object") {
                             asi(true);
                         } else if (options.objectSort === true) {
-                            lengthScript = objectSort(data, lengthScript);console.log(data.token.slice(lengthScript - 50));
+                            lengthScript = objectSort(data, lengthScript);
                         }
                         if (ltype === "comment" || ltype === "comment-inline") {
                             ltoke   = data.token[lengthScript];
@@ -4985,6 +4985,7 @@ Parse Framework
                     types: []
                 },
                 lengthStyle = -1,
+                linesStyle = 0,
                 colors     = [],
                 output     = "",
                 verticalop = false,

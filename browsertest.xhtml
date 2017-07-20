@@ -11,19 +11,24 @@
         <style type="text/css">
             body{font-family:monospace;margin:1em;text-size:10px}
             h1{margin-top:0}
-            .input label{display:block}
-            .input textarea{background:#eee;display:block;height:20em;width:100%;}
-            tr.odd{background:#eeeeec}
+
+            table{border-collapse:collapse;box-shadow:0.1em 0.1em 0.5em #999;display:table}
+            thead{display:table-header-group}
+            tbody{display:table-row-group}
+            thead th{background:#ddc}
+            tbody .numb{text-align:right}
             tbody tr.odd:hover,
             tbody tr.even:hover{background:#def}
+            tr{display:table-row}
             th,
-            td{border:0.1em solid #cca;min-width:3em;padding:0.2em 0.4em}
-            thead th,
-            .header th{background:#ddc;text-align:left}
-            #tabledata {border-collapse:collapse;box-shadow:0.1em 0.1em 0.5em #999}
-            tbody .numb{text-align:right}
-            #parsetime span{display:block}
+            td{border:0.1em solid #cca;display:table-cell;min-width:3em;padding:0.2em 0.4em}
+
             li span{color:#070;font-weight:bold}
+
+            .header th{background:#ddc;text-align:left}
+            tr.odd{background:#eeeeec !important}
+            .input label{display:block}
+            .input textarea{background:#eee;display:block;height:20em;width:100%;}
         </style>
     </head>
     <body>
@@ -31,6 +36,7 @@
         <ul>
             <li id="timeparse">Parser time : <span></span></li>
             <li id="timetotal">Browser time: <span></span></li>
+            <li id="language">Lang guessed: <span></span></li>
         </ul>
         <div class="input">
             <label for="input">Input</label>
@@ -41,104 +47,115 @@
             <div id="data"></div>
         </div>
         <script type="application/javascript" src="parse.js"></script>
+        <script type="application/javascript" src="language.js"></script>
         <script type="application/javascript">
             <![CDATA[
-            (function () {
+            (function web() {
                 "use strict";
                 var input   = document.getElementById("input"),
-                    builder = function (data) {
-                        var a     = 0,
-                            len   = data.attrs.length,
-                            table = document.createElement("table"),
-                            body  = document.createElement("thead"),
-                            cell  = function (text, type, row, className) {
-                                var el = document.createElement(type);
-                                if (className !== "") {
-                                    el.setAttribute("class", className);
-                                }
-                                el.innerHTML = text;
-                                row.appendChild(el);
-                            },
-                            row   = function () {
-                                var tr = document.createElement("tr");
-                                cell(a, "th", tr, "numb");
-                                cell(JSON.stringify(data.attrs[a]), "td", tr, "");
-                                cell(data.begin[a], "td", tr, "numb");
-                                cell(data.jscom[a], "td", tr, "");
-                                cell(data.lines[a], "td", tr, "numb");
-                                cell(data.presv[a], "td", tr, "");
-                                cell(data.stack[a], "td", tr, "");
-                                cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
-                                cell(data.types[a], "td", tr, "");
-                                if (a % 2 === 0) {
-                                    tr.setAttribute("class", "even");
-                                } else {
-                                    tr.setAttribute("class", "odd");
-                                }
-                                body.appendChild(tr);
-                            },
-                            header = function (parent) {
-                                var tr   = document.createElement("tr");
-                                cell("index", "th", tr, "numb");
-                                cell("attrs", "th", tr, "");
-                                cell("begin", "th", tr, "numb");
-                                cell("jscom", "th", tr, "");
-                                cell("lines", "th", tr, "numb");
-                                cell("presv", "th", tr, "");
-                                cell("stack", "th", tr, "");
-                                cell("token", "th", tr, "");
-                                cell("types", "th", tr, "");
-                                tr.setAttribute("class", "header");
-                                parent.appendChild(tr);
-                            };
-                        table.setAttribute("id", "tabledata");
-                        header(body);
-                        table.appendChild(body);
-                        body = document.createElement("tbody");
-                        table.appendChild(body);
-                        if (len === 0) {
-                            return;
-                        }
-                        do {
-                            if (a % 100 === 0 && a > 0) {
-                                header(body);
-                            }
-                            row();
-                            a = a + 1;
-                        } while (a < len);
-                        document.getElementById("data").innerHTML = "";
-                        document.getElementById("data").appendChild(table);
+                    options = {
+                        correct: true,
+                        objectSort: true,
+                        source: "",
+                        type  : "script"
                     },
-                    handler = function () {
+                    handler = function web_handler() {
                         var value = input.value,
                             startTime = 0,
                             startTotal = Math.round(performance.now() * 1000),
-                            options = {
-                                correct: true,
-                                objectSort: true,
-                                source: value,
-                                type  : "script"
-                            },
-                            output = {};
+                            lang   = window.language.auto(value, "javascript"),
+                            output = {},
+                            builder = function web_builder(data) {
+                                var a     = 0,
+                                    len   = data.attrs.length,
+                                    table = document.createElement("table"),
+                                    body  = document.createElement("thead"),
+                                    cell  = function web_handler_builder_cell(text, type, row, className) {
+                                        var el = document.createElement(type);
+                                        if (className !== "") {
+                                            el.setAttribute("class", className);
+                                        }
+                                        el.innerHTML = text;
+                                        row.appendChild(el);
+                                    },
+                                    row   = function web_handler_builder_row() {
+                                        var tr = document.createElement("tr");
+                                        cell(a, "th", tr, "numb");
+                                        cell(JSON.stringify(data.attrs[a]), "td", tr, "");
+                                        cell(data.begin[a], "td", tr, "numb");
+                                        cell(data.jscom[a], "td", tr, "");
+                                        cell(data.lines[a], "td", tr, "numb");
+                                        cell(data.presv[a], "td", tr, "");
+                                        cell(data.stack[a], "td", tr, "");
+                                        cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                        cell(data.types[a], "td", tr, "");
+                                        if (a % 2 === 0) {
+                                            tr.setAttribute("class", "even");
+                                        } else {
+                                            tr.setAttribute("class", "odd");
+                                        }
+                                        body.appendChild(tr);
+                                    },
+                                    header = function web_handler_builder_header(parent) {
+                                        var tr   = document.createElement("tr");
+                                        cell("index", "th", tr, "numb");
+                                        cell("attrs", "th", tr, "");
+                                        cell("begin", "th", tr, "numb");
+                                        cell("jscom", "th", tr, "");
+                                        cell("lines", "th", tr, "numb");
+                                        cell("presv", "th", tr, "");
+                                        cell("stack", "th", tr, "");
+                                        cell("token", "th", tr, "");
+                                        cell("types", "th", tr, "");
+                                        tr.setAttribute("class", "header");
+                                        parent.appendChild(tr);
+                                    };
+                                header(body);
+                                table.appendChild(body);
+                                body = document.createElement("tbody");
+                                table.appendChild(body);
+                                if (len === 0) {
+                                    return;
+                                }
+                                do {
+                                    if (data.token[a] === undefined) {
+                                        return;
+                                    }
+                                    if (a % 100 === 0 && a > 0) {
+                                        header(body);
+                                    }
+                                    row();
+                                    a = a + 1;
+                                } while (a < len);
+                                document.getElementById("data").innerHTML = "";
+                                document.getElementById("data").appendChild(table);
+                            };
+                        options.lang = lang[0];
+                        options.type = lang[1];console.log(lang[1]);
+                        document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
+                        if (options.type === "javascript") {
+                            options.type = "script";
+                        }
+                        options.source = value;
                         startTime = Math.round(performance.now() * 1000);
                         output = window.parser(options);
-                        (function () {
+                        (function web_handler_perfParse() {
                             var endTime = Math.round(performance.now() * 1000),
-                                time = (endTime - startTime) / 1000000;
-                            document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " seconds.";
+                                time = (endTime - startTime) / 1000;
+                            document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
                         builder(output);
-                        if (typeof localStorage === "object") {
+                        if (Object.keys(window).indexOf("localStorage") > -1) {
                             localStorage.parseCode = value;
                         }
-                        (function () {
+                        (function web_handler_perfTotal() {
                             var endTime = Math.round(performance.now() * 1000),
-                                time = (endTime - startTotal) / 1000000;
-                            document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " seconds.";
+                                time = (endTime - startTotal) / 1000;
+                            document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
                     };
                 input.onkeyup = handler;
-                if (typeof localStorage === "object" && localStorage.parseCode !== undefined) {
+                if (Object.keys(window).indexOf("localStorage") > -1 && window["localStorage"].parseCode !== undefined) {
                     input.value = localStorage.parseCode;
                 }
             }());

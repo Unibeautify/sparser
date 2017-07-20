@@ -1,14 +1,20 @@
 # Parse Framework
-
-**This is still early.  For status and progress please see the Github issues.**
+**This is still early.  For status and progress please see the Github issues and follow the latest branch.**
 
 This is slowly coming together.  The code now runs, but I am asserting this is ready.  There is still a lot I need to validate, document, and provide tests against.
 
 ## Overview
-
 The parser will consist of three lexers named: markup, script, and style.  The markup parser will handle all markup related languages.  The script parser will parse all C like languages, but C and C++ are not yet support.  The style parser will parse languages similar to CSS, LESS, and SCSS.
 
 There is no lexer for languages that use white space as a primary syntax mechanism, which means more than just defining comments or inserting semicolons.  As such there is no support for languages like Jade or Sass.
+
+## Files
+
+* **parse.js** - This is the only file that matters.  Everything else is for maintenance and support.
+* nodetest.js - An interface to quickly run the parser with Node.js with formatted output.
+* browsertest.xhtml - An interface to quickly run the parser in a browser with formatted output.
+* language.js - A library used in nodetest.js and browsertest.xhtml to conveniently guess at the submitted language.
+* httpserver.js - In some browsers working with files from the file scheme is a pain in the ass, so let's use Node to fake it.
 
 ## Input
 The input will be a single object of certain defined properties.  I haven't revised this from the Pretty Diff code but it will change drastically.  Please follow issue #3 to keep updated on this progress.
