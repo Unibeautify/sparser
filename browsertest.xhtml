@@ -131,7 +131,7 @@
                                 document.getElementById("data").appendChild(table);
                             };
                         options.lang = lang[0];
-                        options.type = lang[1];console.log(lang[1]);
+                        options.type = lang[1];
                         document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
                         if (options.type === "javascript") {
                             options.type = "script";
@@ -153,8 +153,18 @@
                                 time = (endTime - startTotal) / 1000;
                             document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
+                    },
+                    backspace = function web_backspace(event) {
+                        var e = event || window.event,
+                            f = e.srcElement || e.target;
+                        if (e.keyCode === 8 && f.nodeName !== "textarea") {
+                            e.preventDefault();
+                            return false;
+                        }
                     };
                 input.onkeyup = handler;
+                document.onkeypress = backspace;
+                document.onkeydown = backspace;
                 if (Object.keys(window).indexOf("localStorage") > -1 && window["localStorage"].parseCode !== undefined) {
                     input.value = localStorage.parseCode;
                 }

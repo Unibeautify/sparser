@@ -5162,11 +5162,11 @@ Parse Framework
                 }, // Since I am already identifying value types this is a good place to do some
                 // quick analysis and clean up on certain value conditions. These things are
                 // being corrected:
-                //  * fractional values missing a leading 0 are    provided a leading 0
+                // * fractional values missing a leading 0 are    provided a leading 0
                 // * 0 values with a dimension indicator    (px, em) have the dimension
                 // indicator    removed
-                //  * eliminate unnecessary leading 0s
-                //  * url values that are not quoted are wrapped    in double quote characters
+                // * eliminate unnecessary leading 0s
+                // * url values that are not quoted are wrapped    in double quote characters
                 // * color values are set to lowercase and    reduced from 6 to 3 digits if
                 // appropriate
                 value      = function parser_style_tokenize_item_value(val, font) {
@@ -5305,172 +5305,6 @@ Parse Framework
                     space = "";
                     return val;
                 },
-                //sort parsed properties intelligently
-                /*objSort    = function parser_style_tokenize_objSort() {
-                    var cc        = 0,
-                        dd        = 0,
-                        ee        = 0,
-                        startlen  = token.length - 1,
-                        end       = startlen,
-                        keys      = [],
-                        keylen    = 0,
-                        keyend    = 0,
-                        start     = 0,
-                        sort      = function parser_style_tokenize_objSort_sort(x, y) {
-                            var xx = x[0],
-                                yy = y[0];
-                            if (types[xx] === "comment" || types[xx] === "comment-inline") {
-                                do {
-                                    xx = xx + 1;
-                                } while (
-                                    xx < startlen && (types[xx] === "comment" || types[xx] === "comment-inline")
-                                );
-                            }
-                            if (types[yy] === "comment" || types[yy] === "comment-inline") {
-                                do {
-                                    yy = yy + 1;
-                                } while (
-                                    yy < startlen && (types[yy] === "comment" || types[yy] === "comment-inline")
-                                );
-                            }
-                            if (types[xx] < types[yy]) {
-                                return -1;
-                            }
-                            if (types[xx] === types[yy] && token[xx].toLowerCase() < token[yy].toLowerCase()) {
-                                return -1;
-                            }
-                            return 1;
-                        },
-                        semiTest  = true,
-                        pairToken = [],
-                        pairTypes = [],
-                        pairLines = [],
-                        pairStack = [],
-                        pairBegin = [];
-                    if (types[end] === "comment" || types[end] === "comment-inline") {
-                        do {
-                            end = end - 1;
-                        } while (
-                            end > 0 && (types[end] === "comment" || types[end] === "comment-inline")
-                        );
-                    }
-                    for (cc = startlen; cc > -1; cc = cc - 1) {
-                        if (types[cc] === "end") {
-                            dd = dd + 1;
-                        }
-                        if (types[cc] === "start") {
-                            dd = dd - 1;
-                        }
-                        if (dd === 0) {
-                            if ((types[cc] === "property" || types[cc] === "selector" || types[cc] === "propvar") && types[cc - 1] !== "property" && types[cc - 1] !== "selector") {
-                                start = cc;
-                                if (types[end + 1] === "comment-inline") {
-                                    end = end + 1;
-                                }
-                                if (types[start - 1] === "comment") {
-                                    do {
-                                        start = start - 1;
-                                    } while (start > -1 && types[start - 1] === "comment");
-                                }
-                                keys.push([
-                                    start, end + 1,
-                                    false
-                                ]);
-                                end = start - 1;
-                            }
-                        }
-                        if (dd < 0 && cc < startlen) {
-                            if (keys.length > 1 && (types[cc - 1] === "selector" || types[cc - 1] === "propvar" || (types[cc - 2] === "propvar" && types[cc - 1] === "value") || token[cc - 1] === "=" || token[cc - 1] === ":" || token[cc - 1] === "[" || token[cc - 1] === "{" || (token[cc - 1] === "," && structval !== "map") || cc === 0)) {
-                                if (structval === "map" && token[token.length - 1] !== ",") {
-                                    token.push(",");
-                                    types.push("semi");
-                                    lines.push(0);
-                                    stack.push(stack[stack.length - 1]);
-                                    begin.push(begin[begin.length - 1]);
-                                    keys[0][1] = keys[0][1] + 1;
-                                }
-                                keys.sort(sort);
-                                keylen   = keys.length;
-                                semiTest = false;
-                                for (dd = 0; dd < keylen; dd = dd + 1) {
-                                    keyend = keys[dd][1];
-                                    for (ee = keys[dd][0]; ee < keyend; ee = ee + 1) {
-                                        pairToken.push(token[ee]);
-                                        pairTypes.push(types[ee]);
-                                        pairLines.push(lines[ee]);
-                                        pairStack.push(stack[ee]);
-                                        pairBegin.push(begin[ee]);
-                                        if ((token[ee] === ";" && structval === "block") || (token[ee] === "," && structval === "map") || token[ee] === "}") {
-                                            semiTest = true;
-                                        } else if ((structval === "block" && token[ee] !== ";") && (structval === "map" && token[ee] !== ",") && token[ee] !== "}" && types[ee] !== "comment" && types[ee] !== "comment-inline") {
-                                            semiTest = false;
-                                        }
-                                    }
-                                    if (semiTest === false) {
-                                        ee = pairTypes.length - 1;
-                                        if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
-                                            do {
-                                                ee = ee - 1;
-                                            } while (
-                                                ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                            );
-                                        }
-                                        ee = ee + 1;
-                                        if (structval === "map") {
-                                            pairToken.splice(ee, 0, ",");
-                                        } else {
-                                            pairToken.splice(ee, 0, ";");
-                                        }
-                                        pairTypes.splice(ee, 0, "semi");
-                                        pairStack.splice(ee, 0, pairStack[ee]);
-                                        pairBegin.splice(ee, 0, pairBegin[ee]);
-                                        if (pairLines[ee - 1] > 0) {
-                                            pairLines[ee - 1] = 0;
-                                            pairLines.splice(ee, 0, 1);
-                                        } else {
-                                            pairLines.splice(ee, 0, 0);
-                                        }
-                                    }
-                                }
-                                ee = pairTypes.length - 1;
-                                if (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline") {
-                                    do {
-                                        ee = ee - 1;
-                                    } while (
-                                        ee > 0 && (pairTypes[ee] === "comment" || pairTypes[ee] === "comment-inline")
-                                    );
-                                }
-                                keylen = token.length - (cc + 1);
-                                token.splice(cc + 1, keylen);
-                                types.splice(cc + 1, keylen);
-                                lines.splice(cc + 1, keylen);
-                                stack.splice(cc + 1, keylen);
-                                begin.splice(cc + 1, keylen);
-                                token = token.concat(pairToken);
-                                types = types.concat(pairTypes);
-                                lines = lines.concat(pairLines);
-                                stack = stack.concat(pairStack);
-                                begin = begin.concat(pairBegin);
-                                if (structval === "map") {
-                                    cc = token.length - 1;
-                                    if (types[cc].indexOf("comment") === 0) {
-                                        do {
-                                            cc = cc - 1;
-                                        } while (types[cc].indexOf("comment") === 0);
-                                    }
-                                    if (token[cc] === ",") {
-                                        token.splice(cc, 1);
-                                        types.splice(cc, 1);
-                                        lines.splice(cc, 1);
-                                        stack.splice(cc, 1);
-                                        begin.splice(cc, 1);
-                                    }
-                                }
-                            }
-                            return;
-                        }
-                    }
-                },*/
                 //the generic token builder
                 buildtoken = function parser_style_tokenize_build() {
                     var aa         = a,
