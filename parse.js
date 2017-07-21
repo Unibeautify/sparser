@@ -1,6 +1,7 @@
 /*
 Parse Framework
 */
+/*global location, module, window*/
 
 (function parse_init() {
     "use strict";
@@ -4987,7 +4988,6 @@ Parse Framework
                 lengthStyle = -1,
                 linesStyle = 0,
                 colors     = [],
-                output     = "",
                 verticalop = false,
                 colorNames = {
                     aliceblue           : 0.9288006825347457,
@@ -5492,7 +5492,6 @@ Parse Framework
                         comma      = (
                             lengthStyle > -1 && data.token[lengthStyle].charAt(data.token[lengthStyle].length - 1) === ","
                         ),
-                        linev      = spacer(false),
                         spacestart = function () {
                             if ((/\s/).test(b[aa + 1]) === true) {
                                 do {
@@ -5544,11 +5543,7 @@ Parse Framework
                             }
                             if (structval === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
                                 if (b[aa + 1] === ")" && data.token[lengthStyle] === "(") {
-                                    token.pop();
-                                    types.pop();
-                                    lines.pop();
-                                    stack.pop();
-                                    begin.pop();
+                                    lengthStyle = recordPop(data, lengthStyle).length;
                                     struct.pop();
                                     structval = data.stack[lengthStyle];
                                     out       = ["("];
@@ -5671,11 +5666,11 @@ Parse Framework
                                     parts.reverse();
                                     cc = cc + 1;
                                     dd = aa - cc;
-                                    token.splice(cc, dd);
-                                    types.splice(cc, dd);
-                                    lines.splice(cc, dd);
-                                    stack.splice(cc, dd);
-                                    begin.splice(cc, dd);
+                                    data.token.splice(cc, dd);
+                                    data.types.splice(cc, dd);
+                                    data.lines.splice(cc, dd);
+                                    data.stack.splice(cc, dd);
+                                    data.begin.splice(cc, dd);
                                     aa        = aa - dd;
                                     data.token[aa] = parts
                                         .join("")
@@ -5693,7 +5688,7 @@ Parse Framework
                                     .replace(/^(\s+)/, "")
                                     .replace(/(\s+)$/, "");
                             } else {
-                                token[aa] = token[aa]
+                                data.token[aa] = data.token[aa]
                                     .replace(/\s*&/, " &")
                                     .replace(/\s*>\s*/g, " > ")
                                     .replace(/:\s+/g, ": ")
@@ -5702,135 +5697,145 @@ Parse Framework
                             }
                             (function parser_style_tokenize_item_selectorsort() {
                                 var y    = 0,
-                                    slen = token[aa].length,
+                                    toke = data.token[aa],
+                                    slen = toke.length,
                                     z    = "",
                                     mark = 0,
                                     list = [];
                                 if (y < slen) {
                                     do {
-                                        if (z === "" && token[aa].charAt(y) === ",") {
-                                            list.push(token[aa].slice(mark, y));
+                                        if (z === "" && toke.charAt(y) === ",") {
+                                            list.push(toke.slice(mark, y));
                                             mark = y + 1;
-                                        } else if (token[aa].charAt(y) === "\"" || token[aa].charAt(y) === "'" || token[aa].charAt(y) === "(" || token[aa].charAt(y) === "{") {
-                                            z = token[aa].charAt(y);
-                                        } else if (token[aa].charAt(y) === z && (z === "\"" || z === "''")) {
+                                        } else if (toke.charAt(y) === "\"" || toke.charAt(y) === "'" || toke.charAt(y) === "(" || toke.charAt(y) === "{") {
+                                            z = toke.charAt(y);
+                                        } else if (toke.charAt(y) === z && (z === "\"" || z === "''")) {
                                             z = "";
-                                        } else if (token[aa].charAt(y) === ")" && z === "(") {
+                                        } else if (toke.charAt(y) === ")" && z === "(") {
                                             z = "";
-                                        } else if (token[aa].charAt(y) === "}" && z === "{") {
+                                        } else if (toke.charAt(y) === "}" && z === "{") {
                                             z = "";
                                         }
                                         y = y + 1;
                                     } while (y < slen);
                                 }
-                                list.push(token[aa].slice(mark, y));
+                                list.push(toke.slice(mark, y));
                                 list.sort();
-                                token[aa] = list
+                                data.token[aa] = list
                                     .join(",")
                                     .replace(/^(\s+)/, "");
                             }());
-                            types[aa] = "selector";
+                            data.types[aa] = "selector";
                             ltype     = "selector";
                         } else if (type === "end") {
-                            types[aa] = "value";
+                            data.types[aa] = "value";
                             ltype     = "value";
-                            token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
+                            data.token[aa] = data.token[aa].replace(/\s*!\s+important/, " !important");
                             if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
                                 data.token[aa] = value(data.token[aa], true);
                             } else {
                                 data.token[aa] = value(data.token[aa], false);
                             }
                             //take comments out until the 'item' is found and then put the comments back
-                            if (data.token[data.token.length - 2] === "{") {
-                                data.types[data.types.length - 1] = "propvar";
+                            if (data.token[lengthStyle - 1] === "{") {
+                                data.types[lengthStyle] = "propvar";
                             } else if (structval === "block") {
                                 if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                     aa = coms.length - 1;
                                     do {
-                                        token.pop();
-                                        types.pop();
-                                        lines.pop();
-                                        stack.pop();
-                                        begin.pop();
+                                        lengthStyle = recordPop(data, lengthStyle).length;
                                         aa = aa - 1;
                                     } while (aa > 0);
-                                    token.push(";");
-                                    stack.push(structval);
-                                    begin.push(struct[struct.length - 1]);
-                                    types.push("semi");
-                                    lines.push(spacer(false));
+                                    lengthStyle = recordPush(data, {
+                                        attrs: {},
+                                        begin: struct[struct.length - 1],
+                                        jscom: false,
+                                        lines: linesStyle,
+                                        presv: false,
+                                        stack: structval,
+                                        token: ";",
+                                        types: "semi"
+                                    }, lengthStyle);
                                     bb = coms.length - 1;
                                     do {
-                                        token.push(coms[aa]);
-                                        if (coms[aa].indexOf("//") === 0 && lines[lines.length - 1] === 0) {
-                                            types.push("comment-inline");
-                                        } else {
-                                            types.push("comment");
-                                        }
-                                        stack.push(structval);
-                                        begin.push(struct[struct.length - 1]);
-                                        lines.push(0);
+                                        lengthStyle = recordPush(data, {
+                                            attrs: {},
+                                            begin: struct[struct.length - 1],
+                                            jscom: false,
+                                            lines: linesStyle,
+                                            presv: false,
+                                            stack: structval,
+                                            token: coms[aa],
+                                            types: (coms[aa].indexOf("//") === 0 && data.lines[lengthStyle] === 0)
+                                                ? "comment-inline"
+                                                : "comment"
+                                        }, lengthStyle);
                                         aa = aa + 1;
                                     } while (aa < bb);
                                 } else {
-                                    token.push(";");
-                                    stack.push(structval);
-                                    begin.push(struct[struct.length - 1]);
-                                    types.push("semi");
-                                    lines.push(spacer(false));
+                                    lengthStyle = recordPush(data, {
+                                        attrs: {},
+                                        begin: struct[struct.length - 1],
+                                        jscom: false,
+                                        lines: linesStyle,
+                                        presv: false,
+                                        stack: structval,
+                                        token: ";",
+                                        types: "semi"
+                                    }, lengthStyle);
                                 }
                             }
                         } else if (type === "semi") {
-                            if (types[aa - 1] === "colon") {
-                                types[aa] = "value";
+                            if (data.types[aa - 1] === "colon") {
+                                data.types[aa] = "value";
                                 ltype     = "value";
-                                token[aa] = token[aa].replace(/\s*!\s+important/, " !important");
-                                if (options.quoteConvert !== "none" && (token[aa - 2] === "font" || token[aa - 2] === "font-family")) {
-                                    token[aa] = value(token[aa], true);
+                                data.token[aa] = data.token[aa].replace(/\s*!\s+important/, " !important");
+                                if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
+                                    data.token[aa] = value(data.token[aa], true);
                                 } else {
-                                    token[aa] = value(token[aa], false);
+                                    data.token[aa] = value(data.token[aa], false);
                                 }
                             } else {
                                 //properties without values are considered variables
-                                if (types[aa] !== "value") {
-                                    if (types[aa] === "item" && types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
-                                        if (isNaN(token[token.length - 1]) === true) {
-                                            token[token.length - 2] = tokel + token.pop();
+                                if (data.types[aa] !== "value") {
+                                    if (data.types[aa] === "item" && data.types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
+                                        if (isNaN(data.token[lengthStyle]) === true) {
+                                            data.token[lengthStyle - 1] = tokel + data.token.pop();
                                         } else {
-                                            token[token.length - 2] = tokel + " " + token.pop();
+                                            data.token[lengthStyle - 1] = tokel + " " + data.token.pop();
                                         }
-                                        types.pop();
+                                        data.types.pop();
                                         return;
                                     }
-                                    types[aa] = "propvar";
+                                    data.types[aa] = "propvar";
                                     ltype     = "propvar";
                                 }
-                                if (token[aa].indexOf("\"") > 0) {
-                                    bb        = token[aa].indexOf("\"");
-                                    a         = a - (token[aa].length - bb);
-                                    token[aa] = token[aa].slice(0, bb);
+                                if (data.token[aa].indexOf("\"") > 0) {
+                                    bb        = data.token[aa].indexOf("\"");
+                                    a         = a - (data.token[aa].length - bb);
+                                    data.token[aa] = data.token[aa].slice(0, bb);
                                     buildtoken();
-                                } else if (token[aa].indexOf("'") > 0) {
-                                    bb        = token[aa].indexOf("'");
-                                    a         = a - (token[aa].length - bb);
-                                    token[aa] = token[aa].slice(0, bb);
+                                } else if (data.token[aa].indexOf("'") > 0) {
+                                    bb        = data.token[aa].indexOf("'");
+                                    a         = a - (data.token[aa].length - bb);
+                                    data.token[aa] = data.token[aa].slice(0, bb);
                                     buildtoken();
-                                } else if ((/\s/).test(token[aa]) === true) {
-                                    bb = token[aa]
+                                } else if ((/\s/).test(data.token[aa]) === true) {
+                                    bb = data.token[aa]
                                         .replace(/\s/, " ")
                                         .indexOf(" ");
-                                    if (bb < token[aa].indexOf("(") && bb < token[aa].indexOf("[")) {
-                                        a         = a - (token[aa].length - bb);
-                                        token[aa] = token[aa].slice(0, bb);
+                                    if (bb < data.token[aa].indexOf("(") && bb < data.token[aa].indexOf("[")) {
+                                        a         = a - (data.token[aa].length - bb);
+                                        data.token[aa] = data.token[aa].slice(0, bb);
                                         buildtoken();
                                     }
                                 }
                             }
                         } else if (type === "colon") {
-                            types[aa] = "property";
+                            data.types[aa] = "property";
                             ltype     = "property";
-                        } else if (token[aa].charAt(0) === "@" && ((types[aa - 2] !== "propvar" && types[aa - 2] !== "property") || types[aa - 1] === "semi")) {
-                            types[aa] = "propvar";
+                        } else if (data.token[aa].charAt(0) === "@" && ((data.types[aa - 2] !== "propvar" && data.types[aa - 2] !== "property") || data.types[aa - 1] === "semi")) {
+                            data.types[aa] = "propvar";
                             ltype     = "propvar";
                         }
                     }
@@ -5843,15 +5848,15 @@ Parse Framework
                         start  = open.length,
                         linev  = spacer(false),
                         exit   = function parser_style_tokenize_external_exit(typename) {
-                            var endtype = data.types[data.types.length - 2];
+                            var endtype = data.types[lengthStyle - 1];
                             if (ltype === "item") {
                                 if (endtype === "colon") {
-                                    data.types[data.types.length - 1] = "value";
+                                    data.types[lengthStyle] = "value";
                                 } else {
                                     item(endtype);
                                 }
                             }
-                            types.push(typename);
+                            data.types.push(typename);
                         };
                     nosort[nosort.length - 1] = true;
                     if (a < len) {
@@ -5906,22 +5911,22 @@ Parse Framework
                                                 .replace(/^(\{\{\s+)/, "{{")
                                                 .replace(/(\s+\}\})$/, "}}");
                                         }
-                                        if (ltype === "item" && data.types[data.types.length - 2] === "colon" && (data.types[data.types.length - 3] === "property" || data.types[data.types.length - 3] === "propvar")) {
+                                        if (ltype === "item" && data.types[lengthStyle - 1] === "colon" && (data.types[lengthStyle - 2] === "property" || data.types[lengthStyle - 2] === "propvar")) {
                                             ltype                             = "value";
-                                            data.types[data.types.length - 1] = "value";
-                                            if (isNaN(data.token[data.token.length - 1]) === true && data.token[data.token.length - 1].charAt(data.token[data.token.length - 1].length - 1) !== ")") {
-                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] +
+                                            data.types[lengthStyle] = "value";
+                                            if (isNaN(data.token[lengthStyle]) === true && data.token[lengthStyle].charAt(data.token[lengthStyle].length - 1) !== ")") {
+                                                data.token[lengthStyle] = data.token[lengthStyle] +
                                                         quote;
                                             } else {
-                                                data.token[data.token.length - 1] = data.token[data.token.length - 1] + " " +
+                                                data.token[lengthStyle] = data.token[lengthStyle] + " " +
                                                         quote;
                                             }
                                             return;
                                         }
-                                        lines.push(linev);
-                                        token.push(quote);
-                                        begin.push(struct[struct.length - 1]);
-                                        stack.push(structval);
+                                        data.lines.push(linev);
+                                        data.token.push(quote);
+                                        data.begin.push(struct[struct.length - 1]);
+                                        data.stack.push(structval);
                                         if (open === "{%") {
                                             name = name.slice(0, name.indexOf(" "));
                                             if (name.indexOf("(") > 0) {
@@ -6055,53 +6060,63 @@ Parse Framework
                         }
                     }
                     a = aa;
-                    if (token.length > 0 && (ltype === "selector" || ltype === "propvar") && data.types[data.types.length - 1] !== "comment" && data.types[data.types.length - 1] !== "comment-inline") {
-                        spareToke.push(token[token.length - 1]);
-                        token.pop();
-                        types.pop();
-                        lines.pop();
-                        begin.pop();
-                        stack.pop();
-                        begin.push(struct[struct.length - 1]);
-                        stack.push(structval);
-                        token.push(out.join(""));
-                        types.push(type);
-                        lines.push(linev);
-                        begin.push(struct[struct.length - 1]);
-                        stack.push(structval);
-                        token.push(spareToke[0]);
-                        if (ltype === "propvar") {
-                            types.push("propvar");
-                        } else {
-                            types.push("selector");
-                        }
-                        lines.push(0);
+                    if (lengthStyle > -1 && (ltype === "selector" || ltype === "propvar") && data.types[lengthStyle] !== "comment" && data.types[lengthStyle] !== "comment-inline") {
+                        spareToke.push(data.token[lengthStyle]);
+                        lengthStyle = recordPop(data, lengthStyle).length;
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: out.join(""),
+                            types: type
+                        }, lengthStyle);
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: spareToke[0],
+                            types: (ltype === "propvar")
+                                ? "propvar"
+                                : "selector"
+                        }, lengthStyle);
                     } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
                         do {
-                            spareToke.push(token[token.length - 1]);
-                            spareType.push(types[types.length - 1]);
-                            spareLine.push(lines[lines.length - 1]);
-                            spareStak.push(stack[stack.length - 1]);
-                            spareBegn.push(begin[begin.length - 1]);
-                            token.pop();
-                            types.pop();
-                            lines.pop();
-                            stack.pop();
-                            begin.pop();
+                            spareToke.push(data.token[lengthStyle]);
+                            spareType.push(data.types[lengthStyle]);
+                            spareLine.push(data.lines[lengthStyle]);
+                            spareStak.push(data.stack[lengthStyle]);
+                            spareBegn.push(data.begin[lengthStyle]);
+                            lengthStyle = recordPop(data, lengthStyle).length;
                         } while (
-                            types.length > 1 && data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start"
+                            lengthStyle > 0 && data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start"
                         );
-                        token.push(out.join(""));
-                        types.push(type);
-                        lines.push(linev);
-                        stack.push(structval);
-                        begin.push(struct[struct.length - 1]);
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: out.join(""),
+                            types: type
+                        }, lengthStyle);
                         do {
-                            token.push(spareToke[spareToke.length - 1]);
-                            types.push(spareType[spareType.length - 1]);
-                            lines.push(spareLine[spareLine.length - 1]);
-                            stack.push(spareStak[spareStak.length - 1]);
-                            begin.push(spareBegn[spareBegn.length - 1]);
+                            lengthStyle = recordPush(data, {
+                                attrs: {},
+                                begin: spareBegn[spareBegn.length - 1],
+                                jscom: false,
+                                lines: linesStyle,
+                                presv: false,
+                                stack: spareStak[spareStak.length - 1],
+                                token: spareToke[spareToke.length - 1],
+                                types: spareType[spareType.length - 1]
+                            }, lengthStyle);
                             spareToke.pop();
                             spareType.pop();
                             spareLine.pop();
@@ -6110,16 +6125,21 @@ Parse Framework
                         } while (spareToke.length > 0);
                     } else {
                         ltype = type;
-                        types.push(type);
-                        token.push(out.join(""));
-                        lines.push(linev);
-                        stack.push(structval);
-                        begin.push(struct[struct.length - 1]);
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: out.join(""),
+                            types: type
+                        }, lengthStyle);
                     }
                 },
                 //do fancy things to property types like: sorting, consolidating, and padding
                 properties = function parser_style_tokenize_properties() {
-                    var aa    = token.length - 1,
+                    var aa    = lengthStyle,
                         bb    = 1,
                         cc    = 0,
                         dd    = 0,
@@ -6135,7 +6155,7 @@ Parse Framework
                         sbegn = [];
                     //identify properties and build out prop/val sets
                     do {
-                        if (types[aa] === "start") {
+                        if (data.types[aa] === "start") {
                             bb = bb - 1;
                             if (bb === 0) {
                                 next = aa;
@@ -6150,14 +6170,14 @@ Parse Framework
                                 break;
                             }
                         }
-                        if (types[aa] === "end") {
+                        if (data.types[aa] === "end") {
                             bb = bb + 1;
                         }
-                        if (bb === 1 && (types[aa] === "property" || (types[aa] === "propvar" && types[aa + 1] === "colon"))) {
+                        if (bb === 1 && (data.types[aa] === "property" || (data.types[aa] === "propvar" && data.types[aa + 1] === "colon"))) {
                             p.push(aa);
                         }
                         set[set.length - 1].push(aa);
-                        if (bb === 1 && (types[aa - 1] === "comment" || types[aa - 1] === "comment-inline" || types[aa - 1] === "semi" || types[aa - 1] === "end" || types[aa - 1] === "start") && types[aa] !== "start" && types[aa] !== "end") {
+                        if (bb === 1 && (data.types[aa - 1] === "comment" || data.types[aa - 1] === "comment-inline" || data.types[aa - 1] === "semi" || data.types[aa - 1] === "end" || data.types[aa - 1] === "start") && data.types[aa] !== "start" && data.types[aa] !== "end") {
                             set.push([]);
                         }
                         aa = aa - 1;
@@ -6185,7 +6205,7 @@ Parse Framework
                                         side
                                     ) {
                                         yy         = yy + 1;
-                                        val[side]  = token[set[aa][2]];
+                                        val[side]  = data.token[set[aa][2]];
                                         test[side] = true;
                                         if (start < 0) {
                                             start = aa;
@@ -6193,16 +6213,16 @@ Parse Framework
                                     };
                                 if (aa < leng) {
                                     do {
-                                        if (token[set[aa][2]] !== undefined && token[set[aa][0]].indexOf(name) === 0) {
-                                            if (token[set[aa][0]] === name || token[set[aa][0]].indexOf(name + " ") === 0) {
+                                        if (data.token[set[aa][2]] !== undefined && data.token[set[aa][0]].indexOf(name) === 0) {
+                                            if (data.token[set[aa][0]] === name || data.token[set[aa][0]].indexOf(name + " ") === 0) {
                                                 yy       = yy + 1;
-                                                valsplit = token[set[aa][2]].split(" ");
+                                                valsplit = data.token[set[aa][2]].split(" ");
                                                 if (valsplit.length === 1) {
                                                     val = [
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]],
-                                                        token[set[aa][2]]
+                                                        data.token[set[aa][2]],
+                                                        data.token[set[aa][2]],
+                                                        data.token[set[aa][2]],
+                                                        data.token[set[aa][2]]
                                                     ];
                                                 } else if (valsplit.length === 2) {
                                                     val = [
@@ -6220,17 +6240,17 @@ Parse Framework
                                                     return;
                                                 }
                                                 test = [true, true, true, true];
-                                            } else if (token[set[aa][0]].indexOf(name + "-bottom") === 0) {
+                                            } else if (data.token[set[aa][0]].indexOf(name + "-bottom") === 0) {
                                                 store(2);
-                                            } else if (token[set[aa][0]].indexOf(name + "-left") === 0) {
+                                            } else if (data.token[set[aa][0]].indexOf(name + "-left") === 0) {
                                                 store(3);
-                                            } else if (token[set[aa][0]].indexOf(name + "-right") === 0) {
+                                            } else if (data.token[set[aa][0]].indexOf(name + "-right") === 0) {
                                                 store(1);
-                                            } else if (token[set[aa][0]].indexOf(name + "-top") === 0) {
+                                            } else if (data.token[set[aa][0]].indexOf(name + "-top") === 0) {
                                                 store(0);
                                             }
                                         }
-                                        if (set[aa + 1] === undefined || token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
+                                        if (set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
                                             if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
                                                 set.splice(start + 1, yy);
                                                 leng = leng - yy;
@@ -6246,7 +6266,7 @@ Parse Framework
                                                 if (zz < bb) {
                                                     p.splice(zz + 1, yy);
                                                 }
-                                                token[set[start][0]] = name;
+                                                data.token[set[start][0]] = name;
                                                 if (zero.test(val[0]) === true) {
                                                     val[0] = "0";
                                                 }
@@ -6268,14 +6288,14 @@ Parse Framework
                                                         }
                                                     }
                                                 }
-                                                token[set[start][2]] = val.join(" ");
-                                                if (token[set[start][2]].indexOf("!important") > 0) {
-                                                    token[set[start][2]] = token[set[start][2]].replace(/\s!important/g, "") + " !i" +
+                                                data.token[set[start][2]] = val.join(" ");
+                                                if (data.token[set[start][2]].indexOf("!important") > 0) {
+                                                    data.token[set[start][2]] = data.token[set[start][2]].replace(/\s!important/g, "") + " !i" +
                                                             "mportant";
                                                 }
                                                 if (verticalop === true) {
-                                                    if (token[set[start][0]].charAt(token[set[start][0]].length - 1) === " ") {
-                                                        yy = token[set[start][0]].length - name.length;
+                                                    if (data.token[set[start][0]].charAt(data.token[set[start][0]].length - 1) === " ") {
+                                                        yy = data.token[set[start][0]].length - name.length;
                                                         do {
                                                             name = name + " ";
                                                             yy   = yy - 1;
@@ -6292,11 +6312,11 @@ Parse Framework
                         aa = 0;
                         if (aa < leng) {
                             do {
-                                if (types[set[aa][0]] === "property") {
-                                    if (token[set[aa][0]].indexOf("margin") === 0) {
+                                if (data.types[set[aa][0]] === "property") {
+                                    if (data.token[set[aa][0]].indexOf("margin") === 0) {
                                         fourcount("margin");
                                     }
-                                    if (token[set[aa][0]].indexOf("padding") === 0) {
+                                    if (data.token[set[aa][0]].indexOf("padding") === 0) {
                                         fourcount("padding");
                                     }
                                 }
@@ -6304,36 +6324,6 @@ Parse Framework
                             } while (aa < leng);
                         }
                     }());
-
-                    //pad out those property names so that the colons are vertically aligned
-                    if (verticalop === true) {
-                        bb = 0;
-                        aa = p.length - 1;
-                        if (aa > -1) {
-                            do {
-                                if (token[p[aa]].length > bb && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                    bb = token[p[aa]].length;
-                                }
-                                aa = aa - 1;
-                            } while (aa > -1);
-                        }
-                        aa = p.length - 1;
-                        if (aa > -1) {
-                            do {
-                                cc = bb - token[p[aa]].length;
-                                if (cc > 0 && token[p[aa]] !== "filter" && token[p[aa]] !== "progid") {
-                                    do {
-                                        token[p[aa]] = token[p[aa]] + " ";
-                                        cc           = cc - 1;
-                                    } while (cc > 0);
-                                }
-                                aa = aa - 1;
-                            } while (aa > -1);
-                        }
-                        if (endtest === false) {
-                            return;
-                        }
-                    }
 
                     bb = set.length;
                     aa = 0;
@@ -6343,11 +6333,11 @@ Parse Framework
                             cc = 0;
                             if (cc < dd) {
                                 do {
-                                    stoke.push(token[set[aa][cc]]);
-                                    stype.push(types[set[aa][cc]]);
-                                    sline.push(lines[set[aa][cc]]);
-                                    sstak.push(stack[set[aa][cc]]);
-                                    sbegn.push(begin[set[aa][cc]]);
+                                    stoke.push(data.token[set[aa][cc]]);
+                                    stype.push(data.types[set[aa][cc]]);
+                                    sline.push(data.lines[set[aa][cc]]);
+                                    sstak.push(data.stack[set[aa][cc]]);
+                                    sbegn.push(data.begin[set[aa][cc]]);
                                     cc = cc + 1;
                                 } while (cc < dd);
                             }
@@ -6355,16 +6345,16 @@ Parse Framework
                         } while (aa < bb);
                     }
                     //replace a block's data with sorted analyzed data
-                    token.splice(next + 1, token.length - next - 1);
-                    types.splice(next + 1, types.length - next - 1);
-                    lines.splice(next + 1, lines.length - next - 1);
-                    stack.splice(next + 1, stack.length - next - 1);
-                    begin.splice(next + 1, begin.length - next - 1);
-                    token = token.concat(stoke);
-                    types = types.concat(stype);
-                    lines = lines.concat(sline);
-                    stack = stack.concat(sstak);
-                    begin = begin.concat(sbegn);
+                    data.token.splice(next + 1, data.token.length - next - 1);
+                    data.types.splice(next + 1, data.types.length - next - 1);
+                    data.lines.splice(next + 1, data.lines.length - next - 1);
+                    data.stack.splice(next + 1, data.stack.length - next - 1);
+                    data.begin.splice(next + 1, data.begin.length - next - 1);
+                    data.token = data.token.concat(stoke);
+                    data.types = data.types.concat(stype);
+                    data.lines = data.lines.concat(sline);
+                    data.stack = data.stack.concat(sstak);
+                    data.begin = data.begin.concat(sbegn);
                 };
             //token building loop
             do {
@@ -6396,56 +6386,62 @@ Parse Framework
                     //ssi
                     external("<!--#", "-->");
                 } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
-                    types.push("external_else");
-                    token.push("@else");
-                    lines.push(0);
-                    stack.push(stack[stack.length - 1]);
-                    begin.push(begin[begin.length - 1]);
+                    lengthStyle = recordPush(data, {
+                        attrs: {},
+                        begin: data.begin[lengthStyle],
+                        jscom: false,
+                        lines: linesStyle,
+                        presv: false,
+                        stack: data.stack[lengthStyle],
+                        token: "@else",
+                        types: "external_else"
+                    }, lengthStyle);
                     a = a + 4;
-                } else if (b[a] === "{" || (b[a] === "(" && data.token[data.token.length - 1] === ":" && data.types[data.types.length - 2] === "propvar")) {
-                    if (b[a] === "{" && data.token[data.token.length - 2] === ":") {
-                        data.types[data.types.length - 1] = "pseudo";
+                } else if (b[a] === "{" || (b[a] === "(" && data.token[lengthStyle] === ":" && data.types[lengthStyle - 1] === "propvar")) {
+                    if (b[a] === "{" && data.token[lengthStyle - 1] === ":") {
+                        data.types[lengthStyle] = "pseudo";
                     }
                     item("start");
-                    struct.push(token.length);
+                    struct.push(lengthStyle + 1);
                     ltype = "start";
-                    types.push("start");
-                    token.push(b[a]);
-                    begin.push(token.length);
                     if (b[a] === "(") {
                         structval = "map";
-                        stack.push("map");
                         mapper.push(0);
                     } else {
                         structval = "block";
-                        stack.push("block");
                     }
+                    lengthStyle = recordPush(data, {
+                        attrs: {},
+                        begin: lengthStyle + 1,
+                        jscom: false,
+                        lines: linesStyle,
+                        presv: false,
+                        stack: structval,
+                        token: b[a],
+                        types: "start"
+                    }, lengthStyle);
                     nosort.push(false);
-                    lines.push(spacer(false));
                 } else if (b[a] === "}" || (b[a] === ")" && structval === "map" && mapper[mapper.length - 1] === 0)) {
                     endtest = true;
-                    if (b[a] === "}" && data.types[data.types.length - 1] === "item" && data.token[data.token.length - 2] === "{" && data.token[data.token.length - 3] !== undefined && data.token[data.token.length - 3].charAt(data.token[data.token.length - 3].length - 1) === "@") {
-                        data.token[data.token.length - 3] = data.token[data.token.length - 3] + "{" +
-                                data.token[data.token.length - 1] + "}";
-                        token.pop();
-                        token.pop();
-                        types.pop();
-                        types.pop();
-                        lines.pop();
-                        lines.pop();
-                        stack.pop();
-                        stack.pop();
-                        begin.pop();
-                        begin.pop();
+                    if (b[a] === "}" && data.types[lengthStyle] === "item" && data.token[lengthStyle - 1] === "{" && data.token[lengthStyle - 2] !== undefined && data.token[lengthStyle - 2].charAt(data.token[lengthStyle - 2].length - 1) === "@") {
+                        data.token[lengthStyle - 2] = data.token[lengthStyle - 2] + "{" +
+                                data.token[lengthStyle] + "}";
+                        lengthStyle = recordPop(data, lengthStyle).length;
+                        lengthStyle = recordPop(data, lengthStyle).length;
                     } else {
                         if (b[a] === ")") {
                             mapper.pop();
-                        } else if (b[a] === "}" && ltype === "value" && token[token.length - 1] !== ";") {
-                            token.push(";");
-                            types.push("semi");
-                            lines.push(0);
-                            stack.push("block");
-                            begin.push(begin[begin.length - 1]);
+                        } else if (b[a] === "}" && ltype === "value" && data.token[lengthStyle] !== ";") {
+                            lengthStyle = recordPush(data, {
+                                attrs: {},
+                                begin: data.begin[lengthStyle],
+                                jscom: false,
+                                lines: linesStyle,
+                                presv: false,
+                                stack: "block",
+                                token: ";",
+                                types: "semi"
+                            }, lengthStyle);
                         }
                         item("end");
                         properties();
@@ -6454,40 +6450,53 @@ Parse Framework
                             lengthStyle = objectSort(data, lengthStyle);
                         }
                         nosort.pop();
-                        types.push("end");
-                        token.push(b[a]);
-                        lines.push(spacer(false));
-                        stack.push(structval);
-                        begin.push(struct[struct.length - 1]);
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: struct[struct.length - 1],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: b[a],
+                            types: "end"
+                        }, lengthStyle);
                     }
                     struct.pop();
-                    if (token[struct[struct.length - 1]] === "{") {
+                    if (data.token[struct[struct.length - 1]] === "{") {
                         structval = "block";
-                    } else if (token[struct[struct.length - 1]] === "(") {
+                    } else if (data.token[struct[struct.length - 1]] === "(") {
                         structval = "map";
                     } else {
                         structval = "root";
                     }
                 } else if (b[a] === ";" || (b[a] === "," && structval === "map")) {
                     item("semi");
-                    if (data.types[data.types.length - 1] !== "semi" && data.types[data.types.length - 1] !== "start" && esctest(a) === false) {
+                    if (data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start" && esctest(a) === false) {
+                        lengthStyle = recordPush(data, {
+                            attrs: {},
+                            begin: data.begin[lengthStyle],
+                            jscom: false,
+                            lines: linesStyle,
+                            presv: false,
+                            stack: structval,
+                            token: b[a],
+                            types: "semi"
+                        }, lengthStyle);
                         ltype = "semi";
-                        types.push("semi");
-                        token.push(b[a]);
-                        lines.push(spacer(false));
-                        stack.push(structval);
-                        begin.push(begin[begin.length - 1]);
                     }
                     space = "";
-                } else if (b[a] === ":" && data.types[data.types.length - 1] !== "end") {
+                } else if (b[a] === ":" && data.types[lengthStyle] !== "end") {
                     item("colon");
-                    types.push("colon");
-                    token.push(":");
-                    if ((/\s/).test(b[a - 1]) === true) {
-                        lines.push(1);
-                    } else {
-                        lines.push(0);
-                    }
+                    lengthStyle = recordPush(data, {
+                        attrs: {},
+                        begin: data.begin[lengthStyle],
+                        jscom: false,
+                        lines: linesStyle,
+                        presv: false,
+                        stack: structval,
+                        token: ":",
+                        types: "colon"
+                    }, lengthStyle);
                     ltype = "colon";
                     space = "";
                 } else {
@@ -6502,16 +6511,7 @@ Parse Framework
                 properties();
             }
 
-            return {
-                attrs: attrs,
-                begin: begin,
-                jscom: jscom,
-                lines: lines,
-                presv: presv,
-                stack: stack,
-                token: token,
-                types: types
-            };
+            return data;
         };
         return lexer[options.type](options.source);
     };
