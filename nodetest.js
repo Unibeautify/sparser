@@ -11,6 +11,10 @@
         fs        = require("fs"),
         path      = require("path"),
         startTime = [],
+        color     = function (numb) {
+            return "\u001b[1m\u001b[" + numb + "m";
+        },
+        clear     = "\u001b[39m\u001b[0m",
         lang      = [],
         duration  = "",
         options   = {
@@ -29,7 +33,7 @@
                 end = dec(process.hrtime()),
                 sta = dec(startTime),
                 dur = (end - sta) / 1000000;
-            return "Parser executed in \u001b[32m\u001b[1m" + dur + "\u001b[0m\u001b[39m milliseconds.";
+            return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
         },
         source    = process.argv[2],
         duration  = "",
@@ -71,15 +75,18 @@
             } while (a < b);
             console.log("");
             console.log(duration);
-            console.log("Presumed language is \u001b[33m\u001b[1m" + lang[2] + "\u001b[0m\u001b[39m");
+            console.log("Presumed language is " + color(33) + lang[2] + clear);
+            if (global.parseerror !== undefined && global.parseerror !== "") {
+                console.log(color(31) + "Error:" + clear + " " + global.parseerror);
+            }
         };
     if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
         fs.stat(source, function (err, stats) {
             if (err !== null) {
                 if (err.toString().indexOf("no such file or directory") > 0) {
                     return console.log(
-                        "Presumed input is a file but such a \u001b[1m\u001b[31mfile name does not exis" +
-                        "t\u001b[0m\u001b[39m as " + path.resolve(source)
+                        "Presumed input is a file but such a " + color("31") + "file name does not exist" +
+                        clear + " as " + path.resolve(source)
                     );
                 }
                 return console.log(err);
@@ -103,7 +110,7 @@
             });
         });
     } else {
-        lang           = language.auto(data);
+        lang           = language.auto(process.argv[2]);
         options.lang   = lang[0];
         options.type   = lang[1]; 
         options.source = source;

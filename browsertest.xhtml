@@ -24,6 +24,7 @@
             td{border:0.1em solid #cca;display:table-cell;min-width:3em;padding:0.2em 0.4em}
 
             li span{color:#070;font-weight:bold}
+            #errors span{color: #c00}
 
             .header th{background:#ddc;text-align:left}
             tr.odd{background:#eeeeec !important}
@@ -37,6 +38,7 @@
             <li id="timeparse">Parser time : <span></span></li>
             <li id="timetotal">Browser time: <span></span></li>
             <li id="language">Lang guessed: <span></span></li>
+            <li id="errors">Parse errors: <span></span></li>
         </ul>
         <div class="input">
             <label for="input">Input</label>
@@ -153,6 +155,11 @@
                                 time = (endTime - startTotal) / 1000;
                             document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
+                        if (window.parseerror !== undefined) {
+                            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = window.parseerror;
+                        } else {
+                            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
+                        }
                     },
                     backspace = function web_backspace(event) {
                         var e = event || window.event,
@@ -165,6 +172,9 @@
                 input.onkeyup = handler;
                 document.onkeypress = backspace;
                 document.onkeydown = backspace;
+                window.onerror = function (msg, source) {
+                    document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
+                };
                 if (Object.keys(window).indexOf("localStorage") > -1 && window["localStorage"].parseCode !== undefined) {
                     input.value = localStorage.parseCode;
                 }

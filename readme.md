@@ -145,11 +145,14 @@ This section will list intentional exceptions to the basic rules and parsing beh
 
 ## FAQ
 
+### Why a table instead of a tree like other parsers?
+Arrays are faster to access at execution time potentially allowing consumers to write much faster applications.  Arrays are also simple to reason about and manipulate while it is hard to reason about deeply nested objects without traversing such objects.
+
 ### Why is this so much slower than Esprima or Acorn?
-Esprima and Acorn produce heirarchical object trees.  These require less logic (and machine resources) to produce and so are faster to write.  Unfortunately it requires substantially more logic *and time* to walk an object tree than it does to iterate an array, which means the output from this parser requires less work to access in a fraction of the time.  Overall, with consideration for both write **and output read** operations, this parser is faster.
+Esprima and Acorn support a more narror set of features and languages.  While this allows those other parsers to execute faster it pushes a great deal of work down the line to consuming applications.
 
 ### Why is the code so big?
 This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.
 
 ### Why not just use Babel.js?
-Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort.
+Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort.  In short, this parser scales faster and wider than Babel.
