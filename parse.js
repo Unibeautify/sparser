@@ -432,62 +432,6 @@ Parse Framework
                     return length;
                 };
             lexer.markup = function parser_markup(source) {
-
-                // markup is two smaller lexers that work together: tag - evaluates markup and
-                // template tags content - evaluates text content and code for external lexers
-                //
-                //type definitions:
-                // * start      end     type
-                // * <![CDATA[   ]]>    cdata
-                // * <!--       -->     comment
-                // * <#--       -->     comment
-                // * <%--       --%>    comment
-                // * {!         !}      comment
-                // * <!--[if    -->     conditional
-                // * text       text    content
-                // * </         >       end
-                // * <pre       </pre>  ignore (html only)
-                // * text       text    script
-                // * <!         >       sgml
-                // * <          />      singleton
-                // * <          >       start
-                // * text       text    style
-                // * <!--#      -->     template
-                // * <%         %>      template
-                // * {{{        }}}     template
-                // * {{         }}      template
-                // * {%         %}      template
-                // * [%         %]      template
-                // * {@         @}      template
-                // * {#         #}      template
-                // * {#         /}      template
-                // * {?         /}      template
-                // * {^         /}      template
-                // * {@         /}      template
-                // * {<         /}      template
-                // * {+         /}      template
-                // * {~         }       template
-                // * <?         ?>      template
-                // * {:else}            template_else
-                // * <#else     >       template_else
-                // * {@}else{@}         template_else
-                // * <%}else{%>         template_else
-                // * {{         }}      template_end
-                // * <%\s*}     %>      template_end
-                // * [%\s*}     %]      template_end
-                // * {@\s*}     @}      template_end
-                // * {          }       template_end
-                // * {{#        }}      template_start
-                // * <%         {\s*%>  template_start
-                // * [%         {\s*%]  template_start
-                // * {@         {\s*@}  template_start
-                // * {#         }       template_start
-                // * {?         }       template_start
-                // * {^         }       template_start
-                // * {@         }       template_start
-                // * {<         }       template_start
-                // * {+         }       template_start
-                // * <?xml      ?>      xml
                 var a             = 0,
                     b             = source.split(""),
                     c             = b.length,
@@ -736,6 +680,63 @@ Parse Framework
 
                     //parses tags, attributes, and template elements
                     tag           = function parser_markup_tag(end) {
+                        
+                        // markup is two smaller lexers that work together: tag - evaluates markup and
+                        // template tags content - evaluates text content and code for external lexers
+                        //
+                        //type definitions:
+                        // * start      end     type
+                        // * <![CDATA[   ]]>    cdata
+                        // * <!--       -->     comment
+                        // * <#--       -->     comment
+                        // * <%--       --%>    comment
+                        // * {!         !}      comment
+                        // * <!--[if    -->     conditional
+                        // * text       text    content
+                        // * </         >       end
+                        // * <pre       </pre>  ignore (html only)
+                        // * text       text    script
+                        // * <!         >       sgml
+                        // * <          />      singleton
+                        // * <          >       start
+                        // * text       text    style
+                        // * <!--#      -->     template
+                        // * <%         %>      template
+                        // * {{{        }}}     template
+                        // * {{         }}      template
+                        // * {%         %}      template
+                        // * [%         %]      template
+                        // * {@         @}      template
+                        // * {#         #}      template
+                        // * {#         /}      template
+                        // * {?         /}      template
+                        // * {^         /}      template
+                        // * {@         /}      template
+                        // * {<         /}      template
+                        // * {+         /}      template
+                        // * {~         }       template
+                        // * <?         ?>      template
+                        // * {:else}            template_else
+                        // * <#else     >       template_else
+                        // * {@}else{@}         template_else
+                        // * <%}else{%>         template_else
+                        // * {{         }}      template_end
+                        // * <%\s*}     %>      template_end
+                        // * [%\s*}     %]      template_end
+                        // * {@\s*}     @}      template_end
+                        // * {          }       template_end
+                        // * {{#        }}      template_start
+                        // * <%         {\s*%>  template_start
+                        // * [%         {\s*%]  template_start
+                        // * {@         {\s*@}  template_start
+                        // * {#         }       template_start
+                        // * {?         }       template_start
+                        // * {^         }       template_start
+                        // * {@         }       template_start
+                        // * {<         }       template_start
+                        // * {+         }       template_start
+                        // * <?xml      ?>      xml
+                        
                         var bcount    = 0,
                             e         = 0,
                             f         = 0,
@@ -2288,6 +2289,7 @@ Parse Framework
                             square    = (
                                 data.types[lengthMarkup] === "template_start" && data.token[lengthMarkup].indexOf("<!") === 0 && data.token[lengthMarkup].indexOf("<![") < 0 && data.token[lengthMarkup].charAt(data.token[lengthMarkup].length - 1) === "["
                             ),
+                            external  = {},
                             record    = {
                                 attrs: {},
                                 begin: parent[parent.length - 1][1],
@@ -2354,12 +2356,14 @@ Parse Framework
                                             if (lex.length < 1) {
                                                 break;
                                             }
-                                            record.token = lex
+                                            external = lexer.script(lex
                                                 .join("")
                                                 .replace(/^(\s+)/, "")
-                                                .replace(/(\s+)$/, "");
-                                            record.types = "cfscript";
+                                                .replace(/(\s+)$/, ""));
+                                            record.token = (lengthMarkup + 2) + "," + (lengthMarkup + external.token.length + 1);
+                                            record.types = "external";
                                             lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            lengthMarkup = recordConcat(data, external);
                                             break;
                                         }
 
@@ -2376,12 +2380,14 @@ Parse Framework
                                                 if (lex.length < 1) {
                                                     break;
                                                 }
-                                                record.token = lex
+                                                external = lexer.script(lex
                                                     .join("")
                                                     .replace(/^(\s+)/, "")
-                                                    .replace(/(\s+)$/, "");
-                                                record.types = "script";
+                                                    .replace(/(\s+)$/, ""));
+                                                record.token = (lengthMarkup + 2) + "," + (lengthMarkup + external.token.length + 1);
+                                                record.types = "external";
                                                 lengthMarkup = recordPush(data, record, lengthMarkup);
+                                                lengthMarkup = recordConcat(data, external);
                                                 break;
                                             }
                                         }
@@ -2401,12 +2407,14 @@ Parse Framework
                                                 if (lex.length < 1) {
                                                     break;
                                                 }
-                                                record.token = lex
+                                                external = lexer.style(lex
                                                     .join("")
                                                     .replace(/^(\s+)/, "")
-                                                    .replace(/(\s+)$/, "");
-                                                record.types = "style";
+                                                    .replace(/(\s+)$/, ""));
+                                                record.token = (lengthMarkup + 2) + "," + (lengthMarkup + external.token.length + 1);
+                                                record.types = "external";
                                                 lengthMarkup = recordPush(data, record, 0);
+                                                lengthMarkup = recordConcat(data, external);
                                                 break;
                                             }
                                         }
@@ -2596,9 +2604,7 @@ Parse Framework
                     scolon         = 0,
                     a              = 0,
                     b              = source.length,
-                    c              = options
-                        .source
-                        .split(""),
+                    c              = source.split(""),
                     ltoke          = "",
                     ltype          = "",
                     lword          = [],
@@ -4021,7 +4027,13 @@ Parse Framework
                     // like React JSX.
                     markup         = function parser_script_markup() {
                         var output     = [],
-                            outstring  = "",
+                            markdata   = function parser_script_markup_markdata() {
+                                var mdata = lexer.markup(output.join(""));
+                                ltype = "external";
+                                ltoke = (lengthScript + 2) + "," + (lengthScript + mdata.token.length + 1);
+                                stackPush();
+                                lengthScript = recordConcat(data, mdata);
+                            },
                             curlytest  = false,
                             endtag     = false,
                             anglecount = 0,
@@ -4043,7 +4055,7 @@ Parse Framework
                         if (c[a] === "<" && c[a + 1] === ">") {
                             a     = a + 1;
                             ltype = "generic";
-                            return "<>";
+                            ltoke = "<>";
                         }
                         if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "literal" || (ltype === "word" && ltoke !== "return")))) {
                             ltype = "operator";
@@ -4093,9 +4105,10 @@ Parse Framework
                                                 }
                                                 ltype = "generic";
                                                 a     = d;
-                                                return generics
+                                                ltoke = generics
                                                     .join("")
                                                     .replace(/\s+/g, " ");
+                                                return stackPush();
                                             }
                                         }
                                         if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
@@ -4145,10 +4158,10 @@ Parse Framework
                                     tagcount = tagcount + 1;
                                 }
                                 if (anglecount === 0 && curlycount === 0 && tagcount < 1) {
-                                    ltype = "markup";
                                     next  = nextchar(2, false);
                                     if (next.charAt(0) !== "<") {
-                                        return lexer.markup(output.join(""));
+                                        // if followed by nonmarkup
+                                        return markdata();
                                     }
                                     // catch additional trailing tag sets
                                     if (next.charAt(0) === "<" && syntaxnum.indexOf(next.charAt(1)) < 0 && (/\s/).test(next.charAt(1)) === false) {
@@ -4161,19 +4174,20 @@ Parse Framework
                                                 break;
                                             }
                                             if (syntaxnum.indexOf(c[d]) > -1) {
-                                                return lexer.markup(output.join(""));
+                                                // if followed by additional markup tags
+                                                return markdata();
                                             }
                                         } while (d < b);
                                     } else {
-                                        return lexer.markup(output.join(""));
+                                        // if a nonmarkup "<" follows markup
+                                        return markdata();
                                     }
                                 }
                                 endtag = false;
                             }
                             a = a + 1;
                         } while (a < b);
-                        ltype = "markup";
-                        return lexer.markup(output.join(""));
+                        return markdata();
                     },
                     //operations for end types: ), ], }
                     end            = function parser_script_end(x) {
@@ -4496,8 +4510,7 @@ Parse Framework
                         stackPush();
                     } else if (c[a] === "<") {
                         //markup
-                        ltoke = markup();
-                        stackPush();
+                        markup();
                     } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                         //comment block
                         ltoke = generic("/*", "*\/");
@@ -4900,9 +4913,7 @@ Parse Framework
                         yellowgreen         : 0.5076295720870697
                     },
                     a          = 0,
-                    b          = options
-                        .source
-                        .split(""),
+                    b          = source.split(""),
                     len        = source.length,
                     ltype      = "",
                     space      = "",

@@ -41,6 +41,8 @@
             var a   = 0,
                 b   = output.attrs.length,
                 str = [],
+                lextype = [lang[1]],
+                lexend  = [b],
                 pad = function (x, y) {
                     var cc = x
                             .toString()
@@ -61,6 +63,13 @@
             );
             do {
                 str = [];
+                if (lextype[lextype.length - 1] === "markup") {
+                    str.push("\u001b[31m");
+                } else if (lextype[lextype.length - 1] === "script") {
+                    str.push("\u001b[32m");
+                } else if (lextype[lextype.length - 1] === "style") {
+                    str.push("\u001b[33m");
+                }
                 pad(a, 5);
                 pad(output.begin[a], 5);
                 pad(output.jscom[a], 5);
@@ -70,7 +79,28 @@
                 pad(output.types[a], 11);
                 pad(JSON.stringify(output.attrs[a]), 11);
                 str.push(output.token[a].replace(/\s/g, " "));
+                str.push("\u001b[39m");
                 console.log(str.join(""));
+                if (output.types[a] === "external") {
+                    lexend.push(Number(output.token[a].split(",")[1]));
+                    if (lextype[lextype.length - 1] === "markup") {
+                        if (output.stack[a] === "script" || output.stack[a] === "cfscript") {
+                            lextype.push("script");
+                        } else if (output.stack[a] === "markup") {
+                            lextype.push("markup");
+                        } else if (output.stack[a] === "style") {
+                            lextype.push("style");
+                        }
+                    } else if (lextype[lextype.length - 1] === "script") {
+                        if (output.token[a + 1].indexOf("<") === 0) {
+                            lextype.push("markup");
+                        }
+                    }
+                }
+                if (a === lexend[lexend.length - 1]) {
+                    lextype.pop();
+                    lexend.pop();
+                }
                 a = a + 1;
             } while (a < b);
             console.log("");

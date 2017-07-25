@@ -18,16 +18,29 @@
             thead th{background:#ddc}
             tbody .numb{text-align:right}
             tbody tr.odd:hover,
-            tbody tr.even:hover{background:#def}
+            tbody tr.even:hover{background:#ffa}
             tr{display:table-row}
             th,
-            td{border:0.1em solid #cca;display:table-cell;min-width:3em;padding:0.2em 0.4em}
+            td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em}
 
             li span{color:#070;font-weight:bold}
             #errors span{color: #c00}
-
-            .header th{background:#ddc;text-align:left}
-            tr.odd{background:#eeeeec}
+            .header th{background:#ddd;text-align:left}
+            .markup td,
+            .markup th{border-color: #933;color:#600}
+            .markup.odd{background: #fee}
+            .markup.even{background: #fdd}
+            .style td,
+            .style th{border-color: #66f;color:#009}
+            .style.odd{background: #eef8ff}
+            .style.even{background: #ddeeff}
+            .script td,
+            .script th{border-color: #060;color:#040}
+            .script.odd{background: #eefff8}
+            .script.even{background: #ded}
+            .key .markup{background:#fee;color:#600}
+            .key .script{background:#eefff8;color:#040}
+            .key .style{background:#eef8ff;color:#009}
             .input label{display:block}
             .input textarea{background:#eee;display:block;height:20em;width:100%;}
         </style>
@@ -46,6 +59,12 @@
         </div>
         <div class="output">
             <h2>Output</h2>
+            <p>A colorful visual hint is added to help identify which lexer processed which records:</p>
+            <ul class="key">
+                <li class="markup">Red for markup</li>
+                <li class="script">Green for script</li>
+                <li class="style">Blue for style</li>
+            </ul>
             <div id="data"></div>
         </div>
         <script type="application/javascript" src="parse.js"></script>
@@ -68,11 +87,14 @@
                             lang   = window.language.auto(value, "javascript"),
                             output = {},
                             builder = function web_builder(data) {
-                                var a     = 0,
-                                    len   = data.attrs.length,
-                                    table = document.createElement("table"),
-                                    body  = document.createElement("thead"),
-                                    cell  = function web_handler_builder_cell(text, type, row, className) {
+                                var a         = 0,
+                                    len       = data.attrs.length,
+                                    table     = document.createElement("table"),
+                                    body      = document.createElement("thead"),
+                                    lexend    = [len],
+                                    lextype   = [lang[1]],
+                                    typevalue = "",
+                                    cell      = function web_handler_builder_cell(text, type, row, className) {
                                         var el = document.createElement(type);
                                         if (className !== "") {
                                             el.setAttribute("class", className);
@@ -80,10 +102,10 @@
                                         el.innerHTML = text;
                                         row.appendChild(el);
                                     },
-                                    row   = function web_handler_builder_row() {
+                                    row       = function web_handler_builder_row() {
                                         var tr = document.createElement("tr");
                                         cell(a, "th", tr, "numb");
-                                        cell(JSON.stringify(data.attrs[a]), "td", tr, "");
+                                        cell(JSON.stringify(data.attrs[a]).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.begin[a], "td", tr, "numb");
                                         cell(data.jscom[a], "td", tr, "");
                                         cell(data.lines[a], "td", tr, "numb");
@@ -92,13 +114,13 @@
                                         cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.types[a], "td", tr, "");
                                         if (a % 2 === 0) {
-                                            tr.setAttribute("class", "even");
+                                            tr.setAttribute("class", lextype[lextype.length - 1] + " even");
                                         } else {
-                                            tr.setAttribute("class", "odd");
+                                            tr.setAttribute("class", lextype[lextype.length - 1] + " odd");
                                         }
                                         body.appendChild(tr);
                                     },
-                                    header = function web_handler_builder_header(parent) {
+                                    header    = function web_handler_builder_header(parent) {
                                         var tr   = document.createElement("tr");
                                         cell("index", "th", tr, "numb");
                                         cell("attrs", "th", tr, "");
@@ -127,6 +149,26 @@
                                         header(body);
                                     }
                                     row();
+                                    if (data.types[a] === "external") {
+                                        lexend.push(Number(data.token[a].split(",")[1]));
+                                        if (lextype[lextype.length - 1] === "markup") {
+                                            if (data.stack[a] === "script" || data.stack[a] === "cfscript") {
+                                                lextype.push("script");
+                                            } else if (data.stack[a] === "markup") {
+                                                lextype.push("markup");
+                                            } else if (data.stack[a] === "style") {
+                                                lextype.push("style");
+                                            }
+                                        } else if (lextype[lextype.length - 1] === "script") {
+                                            if (data.token[a + 1].indexOf("<") === 0) {
+                                                lextype.push("markup");
+                                            }
+                                        }
+                                    }
+                                    if (a === lexend[lexend.length - 1]) {
+                                        lextype.pop();
+                                        lexend.pop();
+                                    }
                                     a = a + 1;
                                 } while (a < len);
                                 document.getElementById("data").innerHTML = "";
@@ -146,10 +188,10 @@
                                 time = (endTime - startTime) / 1000;
                             document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
-                        builder(output);
                         if (Object.keys(window).indexOf("localStorage") > -1) {
                             localStorage.parseCode = value;
                         }
+                        builder(output);
                         (function web_handler_perfTotal() {
                             var endTime = Math.round(performance.now() * 1000),
                                 time = (endTime - startTotal) / 1000;
