@@ -55,7 +55,7 @@ Parse Framework
                 },
                 recordConcat = function parser_concat(data, array) {
                     datanames.forEach(function parser_recordConcat_datanames(value) {
-                        data[value].concat(array[value]);
+                        data[value] = data[value].concat(array[value]);
                     });
                     return data.types.length - 1;
                 },
@@ -691,7 +691,7 @@ Parse Framework
                     },
                     parseError    = [],
                     parent        = [
-                        ["none", -1]
+                        ["none", 0]
                     ],
                     spacer        = function parser_markup_spacer() {
                         linesMarkup = 1;
@@ -2037,6 +2037,7 @@ Parse Framework
                             } else {
                                 ltype = "start";
                             }
+                            record.types = ltype;
                         }
 
                         // additional logic is required to find the end of a tag with the attribute
@@ -2279,6 +2280,7 @@ Parse Framework
                             quote     = "",
                             ltoke     = "",
                             liner     = linesMarkup,
+                            now       = a,
                             name      = (ext === true)
                                 ? tagName(data.token[lengthMarkup])
                                 : "",
@@ -2324,9 +2326,6 @@ Parse Framework
                             };
                         if (a < c) {
                             do {
-                                if (b[a] === "\n") {
-                                    lineNumber = lineNumber + 1;
-                                }
 
                                 // external code requires additional parsing to look for the appropriate end
                                 // tag, but that end tag cannot be quoted or commented
@@ -2353,7 +2352,7 @@ Parse Framework
                                             a   = a - 1;
                                             ext = false;
                                             if (lex.length < 1) {
-                                                return;
+                                                break;
                                             }
                                             record.token = lex
                                                 .join("")
@@ -2361,8 +2360,7 @@ Parse Framework
                                                 .replace(/(\s+)$/, "");
                                             record.types = "cfscript";
                                             lengthMarkup = recordPush(data, record, lengthMarkup);
-                                            linesMarkup = 0;
-                                            return;
+                                            break;
                                         }
 
                                         //script requires use of the script lexer
@@ -2376,7 +2374,7 @@ Parse Framework
                                                 a   = a - 1;
                                                 ext = false;
                                                 if (lex.length < 1) {
-                                                    return;
+                                                    break;
                                                 }
                                                 record.token = lex
                                                     .join("")
@@ -2384,8 +2382,7 @@ Parse Framework
                                                     .replace(/(\s+)$/, "");
                                                 record.types = "script";
                                                 lengthMarkup = recordPush(data, record, lengthMarkup);
-                                                linesMarkup = 0;
-                                                return;
+                                                break;
                                             }
                                         }
 
@@ -2402,7 +2399,7 @@ Parse Framework
                                                 a   = a - 1;
                                                 ext = false;
                                                 if (lex.length < 1) {
-                                                    return;
+                                                    break;
                                                 }
                                                 record.token = lex
                                                     .join("")
@@ -2410,8 +2407,7 @@ Parse Framework
                                                     .replace(/(\s+)$/, "");
                                                 record.types = "style";
                                                 lengthMarkup = recordPush(data, record, 0);
-                                                linesMarkup = 0;
-                                                return;
+                                                break;
                                             }
                                         }
                                     } else if (quote === b[a] && (quote === "\"" || quote === "'" || quote === "`" || (quote === "*" && b[a + 1] === "/")) && esctest() === false) {
@@ -2464,8 +2460,7 @@ Parse Framework
                                     }
                                     record.token = ltoke;
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
-                                    linesMarkup = 0;
-                                    return;
+                                    break;
                                 }
 
                                 //general content processing
@@ -2491,8 +2486,7 @@ Parse Framework
                                         record.types = "template_else";
                                         record.presv = false;
                                         lengthMarkup = recordPush(data, record, lengthMarkup);
-                                        linesMarkup = 0;
-                                        return;
+                                        break;
                                     }
 
                                     //regular content
@@ -2514,29 +2508,46 @@ Parse Framework
                                     }
                                     record.token = ltoke;
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
-                                    linesMarkup = 0;
-                                    return;
+                                    break;
                                 }
                                 lex.push(b[a]);
                                 a = a + 1;
                             } while (a < c);
                         }
 
-                        //regular content at the end of the supplied source
-                        if (options.content === true) {
-                            ltoke = "text";
-                        } else if (options.textpreserve === true) {
-                            ltoke = minspace + lex.join("");
-                            liner = 0;
+                        if (a > now && a < c) {
+                            if ((/\s/).test(b[a]) === true) {
+                                (function parser_markup_content_space() {
+                                    var x = a;
+                                    linesMarkup = 1;
+                                    do {
+                                        if (b[x] === "\n") {
+                                            lineNumber  = lineNumber + 1;
+                                            linesMarkup = linesMarkup + 1;
+                                        }
+                                        x = x - 1;
+                                    } while (x > now && (/\s/).test(b[x]) === true);
+                                }());
+                            } else {
+                                linesMarkup = 0;
+                            }
                         } else {
-                            ltoke = lex
-                                .join("")
-                                .replace(/(\s+)$/, tailSpace);
+
+                            //regular content at the end of the supplied source
+                            if (options.content === true) {
+                                ltoke = "text";
+                            } else if (options.textpreserve === true) {
+                                ltoke = minspace + lex.join("");
+                                liner = 0;
+                            } else {
+                                ltoke = lex
+                                    .join("")
+                                    .replace(/(\s+)$/, tailSpace);
+                            }
+                            record = ltoke;
+                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            linesMarkup = 0;
                         }
-                        record = ltoke;
-                        lengthMarkup = recordPush(data, record, lengthMarkup);
-                        linesMarkup = 0;
-                        return;
                     };
 
                 do {
@@ -2824,7 +2835,7 @@ Parse Framework
                         lengthScript = recordPush(data, record, lengthScript);
                         linesScript  = 0;
                     },
-                    //inserts ending curly brace
+                    //inserts ending curly brace (where absent)
                     blockinsert    = function parser_script_blockinsert() {
                         var next = nextchar(5, false),
                             g    = lengthScript;
@@ -4010,6 +4021,7 @@ Parse Framework
                     // like React JSX.
                     markup         = function parser_script_markup() {
                         var output     = [],
+                            outstring  = "",
                             curlytest  = false,
                             endtag     = false,
                             anglecount = 0,
@@ -4136,7 +4148,7 @@ Parse Framework
                                     ltype = "markup";
                                     next  = nextchar(2, false);
                                     if (next.charAt(0) !== "<") {
-                                        return output.join("");
+                                        return lexer.markup(output.join(""));
                                     }
                                     // catch additional trailing tag sets
                                     if (next.charAt(0) === "<" && syntaxnum.indexOf(next.charAt(1)) < 0 && (/\s/).test(next.charAt(1)) === false) {
@@ -4149,11 +4161,11 @@ Parse Framework
                                                 break;
                                             }
                                             if (syntaxnum.indexOf(c[d]) > -1) {
-                                                return output.join("");
+                                                return lexer.markup(output.join(""));
                                             }
                                         } while (d < b);
                                     } else {
-                                        return output.join("");
+                                        return lexer.markup(output.join(""));
                                     }
                                 }
                                 endtag = false;
@@ -4161,7 +4173,7 @@ Parse Framework
                             a = a + 1;
                         } while (a < b);
                         ltype = "markup";
-                        return output.join("");
+                        return lexer.markup(output.join(""));
                     },
                     //operations for end types: ), ], }
                     end            = function parser_script_end(x) {
@@ -5687,16 +5699,13 @@ Parse Framework
                                 []
                             ],
                             next  = 0,
-                            store = {
-                                attrs: [],
-                                begin: [],
-                                jscom: [],
-                                lines: [],
-                                presv: [],
-                                stack: [],
-                                token: [],
-                                types: []
-                            },
+                            store = (function parser_style_properties_store() {
+                                var output = {};
+                                datanames.forEach(function parser_style_properties_store_datanames(value) {
+                                    output[value] = [];
+                                });
+                                return output;
+                            }()),
                             recordStore = function parser_style_properties_recordStore(index) {
                                 var output = {};
                                 datanames.forEach(function parser_style_properties_recordStore_datanames(value) {
