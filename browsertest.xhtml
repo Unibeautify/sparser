@@ -61,9 +61,9 @@
             <h2>Output</h2>
             <p>A colorful visual hint is added to help identify which lexer processed which records:</p>
             <ul class="key">
-                <li class="markup">Red for markup</li>
-                <li class="script">Green for script</li>
-                <li class="style">Blue for style</li>
+                <li class="markup">Red for markup lexer</li>
+                <li class="script">Green for script lexer</li>
+                <li class="style">Blue for style lexer</li>
             </ul>
             <div id="data"></div>
         </div>
@@ -91,8 +91,6 @@
                                     len       = data.attrs.length,
                                     table     = document.createElement("table"),
                                     body      = document.createElement("thead"),
-                                    lexend    = [len],
-                                    lextype   = [lang[1]],
                                     typevalue = "",
                                     cell      = function web_handler_builder_cell(text, type, row, className) {
                                         var el = document.createElement(type);
@@ -107,16 +105,16 @@
                                         cell(a, "th", tr, "numb");
                                         cell(JSON.stringify(data.attrs[a]).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.begin[a], "td", tr, "numb");
-                                        cell(data.jscom[a], "td", tr, "");
+                                        cell(data.lexer[a], "td", tr, "");
                                         cell(data.lines[a], "td", tr, "numb");
                                         cell(data.presv[a], "td", tr, "");
                                         cell(data.stack[a], "td", tr, "");
                                         cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.types[a], "td", tr, "");
                                         if (a % 2 === 0) {
-                                            tr.setAttribute("class", lextype[lextype.length - 1] + " even");
+                                            tr.setAttribute("class", data.lexer[a] + " even");
                                         } else {
-                                            tr.setAttribute("class", lextype[lextype.length - 1] + " odd");
+                                            tr.setAttribute("class", data.lexer[a] + " odd");
                                         }
                                         body.appendChild(tr);
                                     },
@@ -125,7 +123,7 @@
                                         cell("index", "th", tr, "numb");
                                         cell("attrs", "th", tr, "");
                                         cell("begin", "th", tr, "numb");
-                                        cell("jscom", "th", tr, "");
+                                        cell("lexer", "th", tr, "");
                                         cell("lines", "th", tr, "numb");
                                         cell("presv", "th", tr, "");
                                         cell("stack", "th", tr, "");
@@ -142,33 +140,10 @@
                                     return;
                                 }
                                 do {
-                                    if (data.token[a] === undefined) {
-                                        return;
-                                    }
                                     if (a % 100 === 0 && a > 0) {
                                         header(body);
                                     }
                                     row();
-                                    if (data.types[a] === "external") {
-                                        lexend.push(Number(data.token[a].split(",")[1]));
-                                        if (lextype[lextype.length - 1] === "markup") {
-                                            if (data.stack[a] === "script" || data.stack[a] === "cfscript") {
-                                                lextype.push("script");
-                                            } else if (data.stack[a] === "markup") {
-                                                lextype.push("markup");
-                                            } else if (data.stack[a] === "style") {
-                                                lextype.push("style");
-                                            }
-                                        } else if (lextype[lextype.length - 1] === "script") {
-                                            if (data.token[a + 1].indexOf("<") === 0) {
-                                                lextype.push("markup");
-                                            }
-                                        }
-                                    }
-                                    if (a === lexend[lexend.length - 1]) {
-                                        lextype.pop();
-                                        lexend.pop();
-                                    }
                                     a = a + 1;
                                 } while (a < len);
                                 document.getElementById("data").innerHTML = "";
