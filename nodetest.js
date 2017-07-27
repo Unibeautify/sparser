@@ -54,22 +54,33 @@
                         } while (dd > 0);
                     }
                     str.push(" | ");
-                };
-            console.log(
-                "index | begin | jscom | lines | presv | stack       | types       | attrs     " +
-                "  | token"
-            );
+                },
+                heading = "index | begin | lexer  | lines | presv | stack       | types       | attrs     " +
+                        "  | token";
+            console.log(heading);
             do {
+                if (a % 100 === 0) {
+                    console.log("");
+                    console.log(heading);
+                }
                 str = [];
+                if (output.lexer[a] === "markup") {
+                    str.push("\u001b[31m");
+                } else if (output.lexer[a] === "script") {
+                    str.push("\u001b[32m");
+                } else if (output.lexer[a] === "style") {
+                    str.push("\u001b[33m");
+                }
                 pad(a, 5);
                 pad(output.begin[a], 5);
-                pad(output.jscom[a], 5);
+                pad(output.lexer[a], 5);
                 pad(output.lines[a], 5);
                 pad(output.presv[a], 5);
                 pad(output.stack[a], 11);
                 pad(output.types[a], 11);
                 pad(JSON.stringify(output.attrs[a]), 11);
                 str.push(output.token[a].replace(/\s/g, " "));
+                str.push("\u001b[39m");
                 console.log(str.join(""));
                 a = a + 1;
             } while (a < b);
