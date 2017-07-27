@@ -55,7 +55,7 @@ There will be a single format for output that will be uniform for all operations
 
 * attrs
 * begin
-* jscom
+* lexer
 * lines
 * presv
 * stack
@@ -75,8 +75,8 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
     begin: [
         0, 0, 1, 0
     ],
-    jscom: [
-        false, false, false, false
+    lexer: [
+        "markup", "markup", "markup", "markup"
     ],
     lines: [
         0, 0, 0, 0
@@ -96,12 +96,12 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
 
 If that parsed output were arranged as a table it would look something like:
 
-index | attrs                | begin | jscom |  lines | presv | stack  | token        | types
------ | -------------------- | ----- | ----- | ------ | ----- | ------ | ------------ | -----
-0     | {}                   | 0     | false | 0      | false | 'root' | '&lt;a&gt;'  | 'start'
-1     | {"class": "\"cat\""} | 0     | false | 0      | false | 'a'    | '&lt;b &gt;' | 'start'
-2     | {}                   | 1     | false | 0      | false | 'b'    | '&lt;/b&gt;' | 'end'
-3     | {}                   | 0     | false | 0      | false | 'a'    | '&lt;/a&gt;' | 'end'
+index | attrs                | begin | lexer    |  lines | presv | stack  | token        | types
+----- | -------------------- | ----- | -------- | ------ | ----- | ------ | ------------ | -----
+0     | {}                   | 0     | "markup" | 0      | false | 'root' | '&lt;a&gt;'  | 'start'
+1     | {"class": "\"cat\""} | 0     | "markup" | 0      | false | 'a'    | '&lt;b &gt;' | 'start'
+2     | {}                   | 1     | "markup" | 0      | false | 'b'    | '&lt;/b&gt;' | 'end'
+3     | {}                   | 0     | "markup" | 0      | false | 'a'    | '&lt;/a&gt;' | 'end'
 
 ### Output arrays
 #### attrs
@@ -112,8 +112,8 @@ The *begin* array stores a number representing the index where the parent struct
 
 Regardless of the language or lexer used the values supplied in this array allow walking of the code's structure from any local point to the global/root location.
 
-#### jscom
-The *jscom* array stores a boolean indicating whether the current index is a JavaScript comment as markup element's attribute.  JavaScript comments have to be parsed according their delimiters without interference to other markup code qualities.
+#### lexer
+The *lexer* array indicates which parsed the given record. This data is helpful working with documents that require multiple lexers, such as HTML with embedded JavaScript or CSS. It is particularly helpful when working with JSX and TSX as these documents can interchange between the markup and script lexers recursively.
 
 #### lines
 The *lines* array stores a white space value.  A value of 0 means no white space preceeds the current token.  Any white space preceeding the token has a minimum value of 1 and the value increments for each instance of a new line character.  This is necessary because white space has meaning in markup, and so it must be accounted for even if doesn't contain new line characters.

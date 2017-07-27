@@ -21,6 +21,7 @@ Parse Framework
                     : "\n",
                 linesSpace = 0,
                 lineNumber = 1,
+                recordCount = -1,
                 datanames  = ["attrs", "begin", "lexer", "lines", "presv", "stack", "token", "types"],
                 parsetable = {},
                 structure  = [["global", 0]],
@@ -44,12 +45,14 @@ Parse Framework
                         output[value] = data[value].pop();
                     });
                     output.length = length;
+                    recordCount   = recordCount - 1;
                     return output;
                 },
                 recordPush = function parser_recordPush(data, record, length) {
                     datanames.forEach(function parser_recordPush_datanames(value) {
                         data[value].push(record[value]);
                     });
+                    recordCount = recordCount + 1;
                     return length + 1;
                 },
                 recordSplice = function parser_splice(spliceData) {
@@ -62,18 +65,21 @@ Parse Framework
                         datanames.forEach(function parser_recordSplice_datanames(value) {
                             spliceData.data[value].splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
                         });
+                        recordCount = (recordCount - spliceData.howmany) + 1;
                         return (spliceData.length - spliceData.howmany) + 1;
                     }
                     datanames.forEach(function parser_recordSplice_datanames(value) {
                         spliceData.data[value].splice(spliceData.index, spliceData.howmany);
                     });
+                    recordCount = recordCount - spliceData.howmany;
                     return spliceData.length - spliceData.howmany;
                 },
                 recordConcat = function parser_concat(data, array) {
                     datanames.forEach(function parser_recordConcat_datanames(value) {
                         data[value] = data[value].concat(array[value]);
                     });
-                    return data.types.length - 1;
+                    recordCount = recordCount + array.token.length
+                    return data.token.length - 1;
                 },
                 safeSort   = function parser_safeSort(array, operation, recursive) {
                     var arTest  = function safeSort_arTest(item) {
@@ -447,7 +453,7 @@ Parse Framework
                     }
                     return length;
                 };
-            lexer.markup = function parser_markup(source, offset) {
+            lexer.markup = function parser_markup(source) {
                 var a             = 0,
                     b             = source.split(""),
                     c             = b.length,
@@ -1008,6 +1014,7 @@ Parse Framework
                                     record.token = "{";
                                     record.types = "script";
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    structure.push(["block", recordCount]);
                                     return;
                                 } else if (options.lang === "dustjs") {
                                     if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
@@ -1137,8 +1144,6 @@ Parse Framework
                                 }
                                 if (preserve === true || (/\s/).test(b[a]) === false) {
                                     lex.push(b[a]);
-                                } else if (lex[lex.length - 1] !== " ") {
-                                    lex.push(" ");
                                 }
                                 if (comment === true) {
                                     quote = "";
@@ -1741,15 +1746,9 @@ Parse Framework
                                                 } else {
                                                     data.types[aa] = "start";
                                                 }
-                                                if (Object.keys(data.attrs[aa]).length > 0) {
-                                                    data.token[aa] = data
-                                                        .token[aa]
-                                                        .replace(/(\s*\/>)$/, " >");
-                                                } else {
-                                                    data.token[aa] = data
-                                                        .token[aa]
-                                                        .replace(/(\s*\/>)$/, ">");
-                                                }
+                                                data.token[aa] = data
+                                                    .token[aa]
+                                                    .replace(/(\s*\/>)$/, ">");
                                                 return false;
                                             }
                                             aa = aa - 1;
@@ -2270,11 +2269,7 @@ Parse Framework
                         // this is necessary to describe the structures that populate the begin and
                         // stack data
                         if (data.types[lengthMarkup] === "start") {
-                            if (offset === 0) {
-                                structure.push([tname, lengthMarkup]);
-                            } else {
-                                structure.push([tname, lengthMarkup + offset + 1]);
-                            }
+                            structure.push([tname, recordCount]);
                         } else if (data.types[lengthMarkup] === "end") {
                             structure.pop();
                         }
@@ -2351,7 +2346,6 @@ Parse Framework
                                             quote = b[a];
                                         } else if (b[a] === "}" && jsxbrace === true) {
                                             ext      = false;
-                                            structure[structure.length - 1] = ["block", lengthMarkup + offset];
                                             external = lexer.script(lex
                                                 .join("")
                                                 .replace(/^(\s+)/, "")
@@ -2360,6 +2354,7 @@ Parse Framework
                                             record.token = "}";
                                             record.types = "script";
                                             lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            structure.pop();
                                             break;
                                         }
                                         end = b
@@ -2602,7 +2597,7 @@ Parse Framework
 
                 return data;
             };
-            lexer.script = function parser_script(source, offset) {
+            lexer.script = function parser_script(source) {
                 var sourcemap      = [
                         0, ""
                     ],
@@ -4021,7 +4016,7 @@ Parse Framework
                             syntax     = "=<>+-*?|^:&.,;%(){}[]~",
                             applyMarkup = function parser_script_markup_applyMarkup() {
                                 if (ltoke === "(") {
-                                    structure[structure.length - 1] = ["paren", lengthScript + offset];
+                                    structure[structure.length - 1] = ["paren", recordCount];
                                 }
                                 lengthScript = recordConcat(data, lexer.markup(output.join(""), lengthScript));
                             };
@@ -4444,17 +4439,10 @@ Parse Framework
                     if (classy.length > 0) {
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
-                    if (offset === 0) {
-                        structure.push([
-                            data.stack[lengthScript],
-                            lengthScript
-                        ]);
-                    } else {
-                        structure.push([
-                            data.stack[lengthScript],
-                            lengthScript + offset + 1
-                        ]);
-                    }
+                    structure.push([
+                        data.stack[lengthScript],
+                        recordCount
+                    ]);
                 };
                 do {
                     if ((/\s/).test(c[a])) {
@@ -4748,7 +4736,7 @@ Parse Framework
 
                 return data;
             };
-            lexer.style  = function parser_style(source, offset) {
+            lexer.style  = function parser_style(source) {
                 var data       = (function parser_style_data() {
                         var output = {};
                         datanames.forEach(function parser_style_data_datanames(value) {
@@ -6072,7 +6060,7 @@ Parse Framework
 
                 return data;
             };
-            parsetable   = lexer[options.type](options.source, 0);
+            parsetable   = lexer[options.type](options.source);
 
             (function parse_checkLengths() {
                 var a    = 0,
