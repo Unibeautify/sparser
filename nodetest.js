@@ -39,7 +39,7 @@
         duration  = "",
         display   = function () {
             var a   = 0,
-                b   = output.attrs.length,
+                b   = output.token.length,
                 str = [],
                 pad = function (x, y) {
                     var cc = x
@@ -55,13 +55,15 @@
                     }
                     str.push(" | ");
                 },
-                heading = "index | begin | lexer  | lines | presv | stack       | types       | attrs     " +
-                        "  | token";
+                heading = "index | begin | lexer  | lines | presv | stack       | types       | token",
+                bar     = "------|-------|--------|-------|-------|-------------|-------------|------";
             console.log(heading);
+            console.log(bar);
             do {
                 if (a % 100 === 0) {
                     console.log("");
                     console.log(heading);
+                    console.log(bar);
                 }
                 str = [];
                 if (output.lexer[a] === "markup") {
@@ -78,7 +80,6 @@
                 pad(output.presv[a], 5);
                 pad(output.stack[a], 11);
                 pad(output.types[a], 11);
-                pad(JSON.stringify(output.attrs[a]), 11);
                 str.push(output.token[a].replace(/\s/g, " "));
                 str.push("\u001b[39m");
                 console.log(str.join(""));

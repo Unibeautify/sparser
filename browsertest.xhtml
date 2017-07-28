@@ -78,6 +78,7 @@
                         correct: true,
                         objectSort: true,
                         source: "",
+                        //tagsort: true,
                         type  : "script"
                     },
                     handler = function web_handler() {
@@ -88,7 +89,7 @@
                             output = {},
                             builder = function web_builder(data) {
                                 var a         = 0,
-                                    len       = data.attrs.length,
+                                    len       = data.token.length,
                                     table     = document.createElement("table"),
                                     body      = document.createElement("thead"),
                                     typevalue = "",
@@ -103,14 +104,13 @@
                                     row       = function web_handler_builder_row() {
                                         var tr = document.createElement("tr");
                                         cell(a, "th", tr, "numb");
-                                        cell(JSON.stringify(data.attrs[a]).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.begin[a], "td", tr, "numb");
                                         cell(data.lexer[a], "td", tr, "");
                                         cell(data.lines[a], "td", tr, "numb");
                                         cell(data.presv[a], "td", tr, "");
                                         cell(data.stack[a], "td", tr, "");
-                                        cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.types[a], "td", tr, "");
+                                        cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         if (a % 2 === 0) {
                                             tr.setAttribute("class", data.lexer[a] + " even");
                                         } else {
@@ -121,14 +121,13 @@
                                     header    = function web_handler_builder_header(parent) {
                                         var tr   = document.createElement("tr");
                                         cell("index", "th", tr, "numb");
-                                        cell("attrs", "th", tr, "");
                                         cell("begin", "th", tr, "numb");
                                         cell("lexer", "th", tr, "");
                                         cell("lines", "th", tr, "numb");
                                         cell("presv", "th", tr, "");
                                         cell("stack", "th", tr, "");
-                                        cell("token", "th", tr, "");
                                         cell("types", "th", tr, "");
+                                        cell("token", "th", tr, "");
                                         tr.setAttribute("class", "header");
                                         parent.appendChild(tr);
                                     };
@@ -155,6 +154,9 @@
                         if (options.type === "javascript") {
                             options.type = "script";
                         }
+                        if (Object.keys(window).indexOf("localStorage") > -1) {
+                            localStorage.parseCode = value;
+                        }
                         options.source = value;
                         startTime = Math.round(performance.now() * 1000);
                         output = window.parser(options);
@@ -163,9 +165,6 @@
                                 time = (endTime - startTime) / 1000;
                             document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
-                        if (Object.keys(window).indexOf("localStorage") > -1) {
-                            localStorage.parseCode = value;
-                        }
                         builder(output);
                         (function web_handler_perfTotal() {
                             var endTime = Math.round(performance.now() * 1000),

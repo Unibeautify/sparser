@@ -52,8 +52,7 @@ The default language values, when not specified, are:
 
 ## Output
 There will be a single format for output that will be uniform for all operations.  The output will be an object storing 8 arrays.  Each array represents a specific type of description and, provided one exception in the token array, will contain only 1 data type.
-
-* attrs
+ 
 * begin
 * lexer
 * lines
@@ -67,46 +66,39 @@ Each of these keys will store an array and all these arrays will contain the sam
 Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
 ```
 {
-    attrs : [
-        {}, {
-            "class": "\"cat\""
-        }, {}, {}
-    ],
     begin: [
-        0, 0, 1, 0
+        0, 0, 1, 1, 0
     ],
     lexer: [
-        "markup", "markup", "markup", "markup"
+        "markup", "markup", "markup", "markup", "markup"
     ],
     lines: [
-        0, 0, 0, 0
+        0, 0, 0, 0, 0
     ],
     presv: [
-        false, false, false, false
+        false, false, false, false, false
     ],
     stack: [
-        'root', 'a', 'b', 'a'
+        'global', 'a', 'b', 'b', 'a'
     ],
     token: [
-        '<a>', '<b >', '</b>', '</a>'
+        '<a>', '<b>', 'class="cat"', '</b>', '</a>'
     ],
-    types: ['start', 'start', 'end', 'end'];
+    types: ['start', 'start', 'attribute', 'end', 'end'];
 }
 ```
 
 If that parsed output were arranged as a table it would look something like:
 
-index | attrs                | begin | lexer    |  lines | presv | stack  | token        | types
------ | -------------------- | ----- | -------- | ------ | ----- | ------ | ------------ | -----
-0     | {}                   | 0     | "markup" | 0      | false | 'root' | '&lt;a&gt;'  | 'start'
-1     | {"class": "\"cat\""} | 0     | "markup" | 0      | false | 'a'    | '&lt;b &gt;' | 'start'
-2     | {}                   | 1     | "markup" | 0      | false | 'b'    | '&lt;/b&gt;' | 'end'
-3     | {}                   | 0     | "markup" | 0      | false | 'a'    | '&lt;/a&gt;' | 'end'
+index | begin | lexer    |  lines | presv | stack    | token         | types
+----- | ----- | -------- | ------ | ----- | -------- | ------------- | -----
+0     | 0     | "markup" | 0      | false | 'global' | '&lt;a&gt;'   | 'start'
+1     | 0     | "markup" | 0      | false | 'a'      | '&lt;b &gt;'  | 'start'
+2     | 1     | "markup" | 0      | false | 'b'      | 'class="cat"' | 'attribute'
+3     | 1     | "markup" | 0      | false | 'b'      | '&lt;/b&gt;'  | 'end'
+4     | 0     | "markup" | 0      | false | 'a'      | '&lt;/a&gt;'  | 'end'
 
 ### Output arrays
-#### attrs
-The *attrs* array stores attributes from markup tags.  Every index will contain an object which is empty by default.  This object will only populate with keys if the source code passes through the markup lexer, the given item is either a start tag or a self-closing tag, and if there are attributes stored on the current item.  The key name will be attribute name and its value will be attribute's value stored as a string type.  If an attribute is present without a corresponding value, such as `<input checked>`, the value will match the attribute's name.
-
 #### begin
 The *begin* array stores a number representing the index where the parent structure starts.  In markup language this value would represent the index for the parent element.  In style based langauges it would store the index where the parent block opens.  In script based langauges it would store the index where the current structure opens whether that structure is a block, parenthesis, array, or something else.
 

@@ -22,7 +22,7 @@ Parse Framework
                 linesSpace = 0,
                 lineNumber = 1,
                 recordCount = -1,
-                datanames  = ["attrs", "begin", "lexer", "lines", "presv", "stack", "token", "types"],
+                datanames  = ["begin", "lexer", "lines", "presv", "stack", "token", "types"],
                 parsetable = {},
                 structure  = [["global", 0]],
                 spacer     = function parser_spacer(args) {
@@ -61,7 +61,7 @@ Parse Framework
                     // * howmany - How many indexes to remove
                     // * record - A new record to insert
                     // * length - The length counter
-                    if (spliceData.record !== undefined && typeof spliceData.record.attrs === "object") {
+                    if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
                         datanames.forEach(function parser_recordSplice_datanames(value) {
                             spliceData.data[value].splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
                         });
@@ -83,10 +83,10 @@ Parse Framework
                 },
                 safeSort   = function parser_safeSort(array, operation, recursive) {
                     var arTest  = function safeSort_arTest(item) {
-                            if (typeof item !== "object" || item.length === undefined || item.length < 2) {
-                                return false;
+                            if (Array.isArray(item) === true) {
+                                return true;
                             }
-                            return true;
+                            return false;
                         },
                         extref  = function safeSort__extref() {
                             //worthless function for backwards compatibility with older versions of V8 node.
@@ -307,7 +307,6 @@ Parse Framework
                         },
                         commaTest = true,
                         store     = {
-                            attrs: [],
                             begin: [],
                             lexer: [],
                             lines: [],
@@ -378,7 +377,6 @@ Parse Framework
                                                 if (ee < keyend) {
                                                     do {
                                                         recordPush(store, {
-                                                            attrs: data.attrs[ee],
                                                             begin: data.begin[ee],
                                                             lexer: data.lexer[ee],
                                                             lines: data.lines[ee],
@@ -413,7 +411,6 @@ Parse Framework
                                                         index: ee,
                                                         howmany: 0,
                                                         record: {
-                                                            attrs: {},
                                                             begin: cc,
                                                             lexer: "markup",
                                                             lines: store.lines[ee - 1],
@@ -465,7 +462,6 @@ Parse Framework
                     minspace      = "",
                     cftransaction = false,
                     ext           = false,
-                    objsortop     = false,
                     data          = (function parser_data() {
                         var output = {};
                         datanames.forEach(function parser_data_datanames(value) {
@@ -742,7 +738,7 @@ Parse Framework
                         // * {<         }       template_start
                         // * {+         }       template_start
                         // * <?xml      ?>      xml
-                        
+
                         var bcount    = 0,
                             e         = 0,
                             f         = 0,
@@ -773,9 +769,7 @@ Parse Framework
                             lex       = [],
                             attribute = [],
                             attstore  = [],
-                            attr      = {},
                             record    = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "markup",
                                 lines: linesSpace,
@@ -807,8 +801,8 @@ Parse Framework
                                 return true;
                             },
 
-                            //attribute builder
-                            attrpush  = function parser_markup_tag_attrpush(quotes) {
+                            // attribute lexer
+                            attributeLexer  = function parser_markup_tag_attributeLexer(quotes) {
                                 var atty = "",
                                     name = "",
                                     aa   = 0,
@@ -877,6 +871,115 @@ Parse Framework
                                     attstore.push(atty);
                                 }
                                 attribute = [];
+                            },
+                            
+                            // attribute parser
+                            attributeRecord = function parser_markup_tag_attributeRecord() {
+                                var ind    = 0,
+                                    len    = attstore.length,
+                                    obj    = {},
+                                    eq     = 0,
+                                    dq     = 0,
+                                    sq     = 0,
+                                    syntax = "<{\"'=/",
+                                    slice  = "",
+                                    store  = [],
+                                    name   = "",
+                                    cft    = cftags[tname.toLowerCase().replace(/\/$/, "")];
+
+                                if (attstore.length < 1) {
+                                    return;
+                                }
+
+                                // fix for singleton tags, since "/" at the end of the tag is not an attribute
+                                if (attstore[attstore.length - 1] === "/") {
+                                    attstore.pop();
+                                    lex.splice(lex.length - 1, 0, "/");
+                                }
+
+                                // reconnects attribute names to their respective values if separated on "="
+                                eq = attstore.length;
+                                dq = 1;
+                                if (dq < eq) {
+                                    do {
+                                        name = attstore[dq - 1];
+                                        if (name.charAt(name.length - 1) === "=" && attstore[dq].indexOf("=") < 0) {
+                                            attstore[dq - 1] = name + attstore[dq];
+                                            attstore.splice(dq, 1);
+                                            eq = eq - 1;
+                                            dq = dq - 1;
+                                        }
+                                        dq = dq + 1;
+                                    } while (dq < eq);
+                                }
+
+                                // sort the attributes
+                                if (options.tagsort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                                    attstore     = safeSort(attstore);
+                                    record.presv = true;
+                                } else {
+                                    record.presv = false;
+                                }
+
+                                // preparation for a coldfusion edge case
+                                if (tname.slice(0, 3).toLowerCase() === "cf_") {
+                                    cft = "required";
+                                }
+
+                                record.begin = structure[structure.length - 1][1];
+                                record.lines = 0;
+                                record.stack = structure[structure.length - 1][0];
+                                record.types = "attribute";
+
+
+                                if (ind < len) {
+                                    do {
+                                        eq = attstore[ind].indexOf("=");
+                                        dq = attstore[ind].indexOf("\"");
+                                        sq = attstore[ind].indexOf("'");
+
+                                        if (eq > -1 && store.length > 0) {
+                                            // put certain attributes together for coldfusion
+                                            record.token = store.join(" ");
+                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            record.token = attstore[ind];
+                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            store        = [];
+                                        } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
+                                            // put certain attributes together for coldfusion
+                                            store.push(attstore[ind]);
+                                        } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
+                                            // tags stored as attributes of other tags
+                                            record.token = attstore[ind];
+                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        } else if (eq < 0 && cft === undefined) {
+                                            // in most markup languages an attribute without an expressed value has its name as its string value
+                                            name = attstore[ind];
+                                            if (options.lang === "html") {
+                                                name = name.toLowerCase();
+                                            }
+                                            record.token = name + "=\"" + attstore[ind] + "\"";
+                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        } else {
+                                            // separates out the attribute name from its value
+                                            slice = attstore[ind].slice(eq + 1);
+                                            if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
+                                                slice = "\"" + slice + "\"";
+                                            }
+                                            name = attstore[ind].slice(0, eq);
+                                            if (options.lang === "html" && cft === undefined) {
+                                                name = name.toLowerCase();
+                                            }
+                                            record.token = name + "=" + slice;
+                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        }
+                                        ind = ind + 1;
+                                    } while (ind < len);
+                                }
+                                if (store.length > 0) {
+                                    record.token = store.join(" ");
+                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                }
                             };
                         ext    = false;
 
@@ -1231,7 +1334,7 @@ Parse Framework
                                                                     } else {
                                                                         quote   = "";
                                                                         igcount = 0;
-                                                                        attrpush(false);
+                                                                        attributeLexer(false);
                                                                         break;
                                                                     }
                                                                 }
@@ -1248,7 +1351,7 @@ Parse Framework
                                                                 a = a - 1;
                                                             }
                                                             if (attribute.length > 0) {
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                             }
                                                             break;
                                                         }
@@ -1313,7 +1416,7 @@ Parse Framework
                                                             } else if (jsxcount === 0 || (jsxcount === 1 && attribute[0] === "{")) {
                                                                 //if there is an unquoted space attribute is complete
                                                                 attribute.pop();
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                                 stest = true;
                                                                 break;
                                                             }
@@ -1325,7 +1428,7 @@ Parse Framework
                                                         if (parncount === 0) {
                                                             quote = "";
                                                             if (b[a + 1] === end.charAt(0)) {
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                                 break;
                                                             }
                                                         }
@@ -1406,7 +1509,7 @@ Parse Framework
                                                                 } while (e > -1);
                                                             }
                                                             if (e < 0) {
-                                                                attrpush(true);
+                                                                attributeLexer(true);
                                                                 if (b[a + 1] === lastchar) {
                                                                     break;
                                                                 }
@@ -1512,8 +1615,8 @@ Parse Framework
                                             }
                                         }
                                     }
-                                    a = a + 1;
                                 }
+                                a = a + 1;
                             } while (a < c);
                         }
 
@@ -1561,8 +1664,8 @@ Parse Framework
                             record.token = element;
                             record.types = "comment";
                             lengthMarkup = recordPush(data, record, lengthMarkup);
-                            record.token = "{% comment %}";
-                            record.types = "template_start";
+                            record.token = "{% endcomment %}";
+                            record.types = "template_end";
                             lengthMarkup = recordPush(data, record, lengthMarkup);
                             return;
                         }
@@ -1588,102 +1691,6 @@ Parse Framework
                             sgmlflag = sgmlflag - 1;
                         }
 
-                        //attribute processing
-                        if (attstore.length > 0) {
-
-                            //fix for singleton tags, since "/" at the end of the tag is not an attribute
-                            if (attstore[attstore.length - 1] === "/") {
-                                attstore.pop();
-                                lex.splice(lex.length - 1, 0, "/");
-                            }
-
-                            //reconnects attribute names to their respective values if separated on "="
-                            f = attstore.length;
-                            e = 1;
-                            if (e < f) {
-                                do {
-                                    quote = attstore[e - 1];
-                                    if (quote.charAt(quote.length - 1) === "=" && attstore[e].indexOf("=") < 0) {
-                                        attstore[e - 1] = quote + attstore[e];
-                                        attstore.splice(e, 1);
-                                        f = f - 1;
-                                        e = e - 1;
-                                    }
-                                    e = e + 1;
-                                } while (e < f);
-                            }
-                            if (objsortop === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
-                                attstore = safeSort(attstore);
-                            }
-
-                            //creates the attributes object for the current record
-                            attr = (function parser_markup_attribute() {
-                                var ind    = 0,
-                                    len    = attstore.length,
-                                    obj    = {},
-                                    eq     = 0,
-                                    dq     = 0,
-                                    sq     = 0,
-                                    syntax = "<{\"'=/",
-                                    slice  = "",
-                                    store  = [],
-                                    name   = "",
-                                    cft    = cftags[tname];
-                                if (tname.slice(0, 3) === "cf_") {
-                                    cft = "required";
-                                }
-                                if (objsortop === true && options.lang !== "jsx" && cft === undefined) {
-                                    attstore = safeSort(attstore);
-                                }
-                                if (ind < len) {
-                                    do {
-                                        eq = attstore[ind].indexOf("=");
-                                        dq = attstore[ind].indexOf("\"");
-                                        sq = attstore[ind].indexOf("'");
-                                        if (eq > -1 && store.length > 0) {
-                                            obj[store.join(" ")] = "";
-                                            store                = [];
-                                            obj[attstore[ind]]   = "";
-                                        } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
-                                            store.push(attstore[ind]);
-                                        } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
-                                            obj[attstore[ind]] = "";
-                                        } else if (eq < 0 && cft === undefined) {
-                                            name = attstore[ind];
-                                            if (options.lang === "html" && cft === undefined) {
-                                                name = name.toLowerCase();
-                                            }
-                                            if (options.quoteConvert === "single") {
-                                                obj[name] = "'" + attstore[ind] + "'";
-                                            } else {
-                                                obj[name] = "\"" + attstore[ind] + "\"";
-                                            }
-                                        } else {
-                                            slice = attstore[ind].slice(eq + 1);
-                                            if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
-                                                if (options.quoteConvert === "single") {
-                                                    slice = "'" + slice + "'";
-                                                } else {
-                                                    slice = "\"" + slice + "\"";
-                                                }
-                                            }
-                                            name = attstore[ind].slice(0, eq);
-                                            if (options.lang === "html" && cft === undefined) {
-                                                name = name.toLowerCase();
-                                            }
-                                            obj[name] = slice;
-                                        }
-                                        ind = ind + 1;
-                                    } while (ind < len);
-                                }
-                                if (store.length > 0) {
-                                    obj[store.join(" ")] = "";
-                                }
-                                return obj;
-                            }());
-                            record.attrs = attr;
-                        }
-
                         //a correction for false-positive parse failures
                         if (parseFail === true) {
                             if (element.indexOf("<!--<![") === 0) {
@@ -1694,6 +1701,9 @@ Parse Framework
                                 if (element.indexOf("</") > 0) {
                                     record.types = "end";
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    if (structure.length > 1) {
+                                        structure.pop();
+                                    }
                                     return;
                                 }
                             }
@@ -1740,7 +1750,7 @@ Parse Framework
                                                     return false;
                                                 }
                                             }
-                                            if (bb === 0 && typeof data.token[aa] === "string" && data.token[aa].toLowerCase().indexOf(vname) === 1) {
+                                            if (bb === 0 && typeof data.token[aa].toLowerCase().indexOf(vname) === 1) {
                                                 if (cftags[tagName(data.token[aa])] !== undefined) {
                                                     data.types[aa] = "template_start";
                                                 } else {
@@ -1762,9 +1772,7 @@ Parse Framework
 
                             //determine if the current tag is an HTML singleton and exit
                             if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) !== "/cf") {
-                                quote = (typeof data.token[lengthMarkup] === "string")
-                                    ? data.token[lengthMarkup]
-                                    : "";
+                                quote = data.token[lengthMarkup];
                                 if (data.types[lengthMarkup - 1] === "singleton" && quote.charAt(quote.length - 2) !== "/" && "/" + tagName(quote) === tname) {
                                     data.types[lengthMarkup - 1] = "start";
                                 } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[lengthMarkup]) && options.tagmerge === true(data.types[lengthMarkup - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
@@ -1790,7 +1798,7 @@ Parse Framework
                                         } else if (data.types[d] === "end" || data.types[d] === "template_end") {
                                             ee = ee + 1;
                                         }
-                                        if (ee === 1 && typeof data.token[d] === "string") {
+                                        if (ee === 1) {
                                             if ((data.token[d].indexOf("<#assign") === 0 && tname === "/#assign") || (data.token[d].indexOf("<#global") === 0 && tname === "/#global")) {
                                                 data.types[d] = "template_start";
                                                 return false;
@@ -1860,6 +1868,7 @@ Parse Framework
                                     record.types = "template_start";
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
                                     singleton    = true;
+                                    structure.push([tname, recordCount]);
                                 }
                                 return false;
                             }
@@ -1883,13 +1892,11 @@ Parse Framework
                                                     ee = ee + 1;
                                                 }
                                                 if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
-                                                    record.attrs                 = {};
                                                     record.lines                 = data.lines[lengthMarkup];
                                                     record.presv                 = false;
                                                     record.token                 = "</li>";
                                                     record.types                 = "end";
                                                     lengthMarkup                 = recordPush(data, record, lengthMarkup);
-                                                    record.attrs                 = attr;
                                                     record.lines                 = linesSpace;
                                                     record.presv                 = preserve;
                                                     record.token                 = element;
@@ -1913,13 +1920,11 @@ Parse Framework
                                     list = list + 1;
                                 } else if (tname === "/ul" || tname === "/ol") {
                                     if (litag === list) {
-                                        record.attrs                 = {};
                                         record.lines                 = data.lines[lengthMarkup];
                                         record.presv                 = false;
                                         record.token                 = "</li>";
                                         record.types                 = "end";
                                         lengthMarkup                 = recordPush(data, record, lengthMarkup);
-                                        record.attrs                 = attr;
                                         record.lines                 = linesSpace;
                                         record.presv                 = preserve;
                                         record.token                 = element;
@@ -1954,6 +1959,7 @@ Parse Framework
 
                         //This escape flag is set in the cheat function
                         if (singleton === true) {
+                            attributeRecord();
                             return;
                         }
 
@@ -2180,6 +2186,16 @@ Parse Framework
 
                         lengthMarkup = recordPush(data, record, lengthMarkup);
 
+                        // this is necessary to describe the structures that populate the begin and
+                        // stack data
+                        if (data.types[lengthMarkup] === "start" || data.types[lengthMarkup] === "template_start") {
+                            structure.push([tname, recordCount]);
+                        } else if ((data.types[lengthMarkup] === "end" || data.types[lengthMarkup] === "template_end") && structure.length > 1) {
+                            structure.pop();
+                        }
+
+                        attributeRecord();
+
                         //sorts child elements
                         if (options.tagsort === true && data.types[lengthMarkup] === "end" && data.types[lengthMarkup - 1] !== "start") {
                             (function parser_markup_tag_sorttag() {
@@ -2266,14 +2282,6 @@ Parse Framework
                             }());
                         }
 
-                        // this is necessary to describe the structures that populate the begin and
-                        // stack data
-                        if (data.types[lengthMarkup] === "start") {
-                            structure.push([tname, recordCount]);
-                        } else if (data.types[lengthMarkup] === "end") {
-                            structure.pop();
-                        }
-
                         linesSpace = 0;
                     },
                     content       = function parser_markup_content() {
@@ -2292,7 +2300,6 @@ Parse Framework
                             ),
                             external  = {},
                             record    = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "markup",
                                 lines: liner,
@@ -2451,7 +2458,7 @@ Parse Framework
                                     }
                                 }
 
-                                //typically this logic is for artifacts nested with an SGML tag
+                                //typically this logic is for artifacts nested within an SGML tag
                                 if (square === true && b[a] === "]") {
                                     a = a - 1;
                                     if (options.content === true) {
@@ -2715,7 +2722,6 @@ Parse Framework
                             wordx  = "",
                             wordy  = "",
                             record = {
-                                attrs: {},
                                 begin: lengthScript,
                                 lexer: "script",
                                 lines: linesSpace,
@@ -3040,7 +3046,6 @@ Parse Framework
                                 }
                                 do {
                                     build = {
-                                        attrs: data.attrs[g],
                                         begin: data.begin[g],
                                         lexer: data.lexer[g],
                                         lines: data.lines[g],
@@ -3172,7 +3177,6 @@ Parse Framework
                                 index  : x,
                                 howmany: 0,
                                 record : {
-                                    attrs: {},
                                     begin: data.begin[x],
                                     lexer: "script",
                                     lines: linesSpace,
@@ -3565,7 +3569,6 @@ Parse Framework
                             index  : aa,
                             howmany: 0,
                             record : {
-                                attrs: {},
                                 begin: data.begin[aa],
                                 lexer: "script",
                                 lines: linesSpace,
@@ -5040,7 +5043,6 @@ Parse Framework
                             block      = [],
                             outy       = "",
                             record     = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5191,7 +5193,6 @@ Parse Framework
                             bb     = 0,
                             coms   = [],
                             record = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5479,7 +5480,6 @@ Parse Framework
                                                 return;
                                             }
                                             record = {
-                                                attrs: {},
                                                 begin: structure[structure.length - 1][1],
                                                 lexer: "style",
                                                 lines: linesSpace,
@@ -5626,7 +5626,6 @@ Parse Framework
                         if (lengthStyle > -1 && (ltype === "selector" || ltype === "propvar") && data.types[lengthStyle] !== "comment" && data.types[lengthStyle] !== "comment-inline") {
                             lengthStyle = recordPop(data, lengthStyle).length;
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5636,7 +5635,6 @@ Parse Framework
                                 types: type
                             }, lengthStyle);
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: 0,
@@ -5655,7 +5653,6 @@ Parse Framework
                                 lengthStyle > 0 && data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start"
                             );
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5671,7 +5668,6 @@ Parse Framework
                         } else {
                             ltype = type;
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5938,7 +5934,6 @@ Parse Framework
                         template("<!--#", "-->");
                     } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: data.begin[lengthStyle],
                             lexer: "style",
                             lines: linesSpace,
@@ -5962,7 +5957,6 @@ Parse Framework
                             structure.push(["block", lengthStyle + 1]);
                         }
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: structure[structure.length - 1][1],
                             lexer: "style",
                             lines: linesSpace,
@@ -5985,7 +5979,6 @@ Parse Framework
                                 mapper.pop();
                             } else if (b[a] === "}" && ltype === "value" && data.token[lengthStyle] !== ";") {
                                 lengthStyle = recordPush(data, {
-                                    attrs: {},
                                     begin: data.begin[lengthStyle],
                                     lexer: "style",
                                     lines: linesSpace,
@@ -6004,7 +5997,6 @@ Parse Framework
                             }
                             nosort.pop();
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -6020,7 +6012,6 @@ Parse Framework
                         item("semi");
                         if (data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start" && esctest(a) === false) {
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -6035,7 +6026,6 @@ Parse Framework
                     } else if (b[a] === ":" && data.types[lengthStyle] !== "end") {
                         item("colon");
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: structure[structure.length - 1][1],
                             lexer: "style",
                             lines: linesSpace,
