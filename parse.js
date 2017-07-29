@@ -78,7 +78,6 @@ Parse Framework
                     datanames.forEach(function parser_recordConcat_datanames(value) {
                         data[value] = data[value].concat(array[value]);
                     });
-                    recordCount = recordCount + array.token.length
                     return data.token.length - 1;
                 },
                 safeSort   = function parser_safeSort(array, operation, recursive) {
@@ -470,186 +469,6 @@ Parse Framework
                         return output;
                     }()),
 
-                    //cftags is a list of supported coldfusion tags
-                    // * required - means must have a separate matching end tag
-                    // * optional - means the tag could have a separate end tag, but is probably a
-                    // singleton
-                    // * prohibited - means there is not corresponding end tag
-                    cftags        = {
-                        "cfabort"               : "prohibited",
-                        "cfajaximport"          : "optional",
-                        "cfajaxproxy"           : "optional",
-                        "cfapplet"              : "prohibited",
-                        "cfapplication"         : "prohibited",
-                        "cfargument"            : "prohibited",
-                        "cfassociate"           : "prohibited",
-                        "cfauthenticate"        : "prohibited",
-                        "cfbreak"               : "prohibited",
-                        "cfcache"               : "optional",
-                        "cfcalendar"            : "optional",
-                        "cfcase"                : "required",
-                        "cfcatch"               : "required",
-                        "cfchart"               : "optional",
-                        "cfchartdata"           : "prohibited",
-                        "cfchartseries"         : "optional",
-                        "cfclient"              : "required",
-                        "cfclientsettings"      : "optional",
-                        "cfcol"                 : "prohibited",
-                        "cfcollection"          : "prohibited",
-                        "cfcomponent"           : "required",
-                        "cfcontent"             : "optional",
-                        "cfcontinue"            : "prohibited",
-                        "cfcookie"              : "prohibited",
-                        "cfdbinfo"              : "prohibited",
-                        "cfdefaultcase"         : "required",
-                        "cfdirectory"           : "prohibited",
-                        "cfdiv"                 : "optional",
-                        "cfdocument"            : "optional",
-                        "cfdocumentitem"        : "optional",
-                        "cfdocumentsection"     : "optional",
-                        "cfdump"                : "optional",
-                        "cfelse"                : "prohibited",
-                        "cfelseif"              : "prohibited",
-                        "cferror"               : "prohibited",
-                        "cfexchangecalendar"    : "optional",
-                        "cfexchangeconnection"  : "optional",
-                        "cfexchangecontact"     : "optional",
-                        "cfexchangeconversation": "optional",
-                        "cfexchangefilter"      : "optional",
-                        "cfexchangefolder"      : "optional",
-                        "cfexchangemail"        : "optional",
-                        "cfexchangetask"        : "optional",
-                        "cfexecute"             : "required",
-                        "cfexit"                : "prohibited",
-                        "cffeed"                : "prohibited",
-                        "cffile"                : "optional",
-                        "cffileupload"          : "optional",
-                        "cffinally"             : "required",
-                        "cfflush"               : "prohibited",
-                        "cfform"                : "required",
-                        "cfformgroup"           : "required",
-                        "cfformitem"            : "optional",
-                        "cfforward"             : "prohibited",
-                        "cfftp"                 : "prohibited",
-                        "cffunction"            : "required",
-                        "cfgraph"               : "required",
-                        "cfgraphdata"           : "prohibited",
-                        "cfgrid"                : "required",
-                        "cfgridcolumn"          : "optional",
-                        "cfgridrow"             : "optional",
-                        "cfgridupdate"          : "optional",
-                        "cfheader"              : "prohibited",
-                        "cfhtmlbody"            : "optional",
-                        "cfhtmlhead"            : "optional",
-                        "cfhtmltopdf"           : "optional",
-                        "cfhtmltopdfitem"       : "optional",
-                        "cfhttp"                : "optional",
-                        "cfhttpparam"           : "prohibited",
-                        "cfif"                  : "required",
-                        "cfimage"               : "prohibited",
-                        "cfimap"                : "prohibited",
-                        "cfimapfilter"          : "optional",
-                        "cfimport"              : "prohibited",
-                        "cfinclude"             : "prohibited",
-                        "cfindex"               : "prohibited",
-                        "cfinput"               : "prohibited",
-                        "cfinsert"              : "prohibited",
-                        "cfinterface"           : "required",
-                        "cfinvoke"              : "optional",
-                        "cfinvokeargument"      : "prohibited",
-                        "cflayout"              : "optional",
-                        "cflayoutarea"          : "optional",
-                        "cfldap"                : "prohibited",
-                        "cflocation"            : "prohibited",
-                        "cflock"                : "required",
-                        "cflog"                 : "prohibited",
-                        "cflogic"               : "required",
-                        "cfloginuser"           : "prohibited",
-                        "cflogout"              : "prohibited",
-                        "cfloop"                : "required",
-                        "cfmail"                : "required",
-                        "cfmailparam"           : "prohibited",
-                        "cfmailpart"            : "required",
-                        "cfmap"                 : "optional",
-                        "cfmapitem"             : "optional",
-                        "cfmediaplayer"         : "optional",
-                        "cfmenu"                : "required",
-                        "cfmenuitem"            : "optional",
-                        "cfmessagebox"          : "optional",
-                        "cfmodule"              : "optional",
-                        "cfNTauthenticate"      : "optional",
-                        "cfoauth"               : "optional",
-                        "cfobject"              : "prohibited",
-                        "cfobjectcache"         : "prohibited",
-                        "cfoutput"              : "required",
-                        "cfpageencoding"        : "optional",
-                        "cfparam"               : "prohibited",
-                        "cfpdf"                 : "optional",
-                        "cfpdfform"             : "optional",
-                        "cfpdfformparam"        : "optional",
-                        "cfpdfparam"            : "prohibited",
-                        "cfpdfsubform"          : "required",
-                        "cfpod"                 : "optional",
-                        "cfpop"                 : "prohibited",
-                        "cfpresentation"        : "required",
-                        "cfpresentationslide"   : "optional",
-                        "cfpresenter"           : "optional",
-                        "cfprint"               : "optional",
-                        "cfprocessingdirective" : "optional",
-                        "cfprocparam"           : "prohibited",
-                        "cfprocresult"          : "prohibited",
-                        "cfprogressbar"         : "optional",
-                        "cfproperty"            : "prohibited",
-                        "cfquery"               : "required",
-                        "cfqueryparam"          : "prohibited",
-                        "cfregistry"            : "prohibited",
-                        "cfreport"              : "optional",
-                        "cfreportparam"         : "optional",
-                        "cfrethrow"             : "prohibited",
-                        "cfretry"               : "prohibited",
-                        "cfreturn"              : "prohibited",
-                        "cfsavecontent"         : "required",
-                        "cfschedule"            : "prohibited",
-                        "cfscript"              : "required",
-                        "cfsearch"              : "prohibited",
-                        "cfselect"              : "required",
-                        "cfservlet"             : "prohibited",
-                        "cfservletparam"        : "prohibited",
-                        "cfset"                 : "prohibited",
-                        "cfsetting"             : "optional",
-                        "cfsharepoint"          : "optional",
-                        "cfsilent"              : "required",
-                        "cfsleep"               : "prohibited",
-                        "cfslider"              : "prohibited",
-                        "cfspreadsheet"         : "optional",
-                        "cfsprydataset"         : "optional",
-                        "cfstatic"              : "required",
-                        "cfstopwatch"           : "required",
-                        "cfstoredproc"          : "optional",
-                        "cfswitch"              : "required",
-                        "cftable"               : "required",
-                        "cftextarea"            : "optional",
-                        "cfthread"              : "optional",
-                        "cfthrow"               : "prohibited",
-                        "cftimer"               : "required",
-                        "cftooltip"             : "required",
-                        "cftrace"               : "optional",
-                        "cftransaction"         : "required",
-                        "cftree"                : "required",
-                        "cftreeitem"            : "optional",
-                        "cftry"                 : "required",
-                        "cfupdate"              : "prohibited",
-                        "cfvideo"               : "prohibited",
-                        "cfvideoplayer"         : "optional",
-                        "cfwddx"                : "prohibited",
-                        "cfwebsocket"           : "optional",
-                        "cfwhile"               : "required",
-                        "cfwindow"              : "optional",
-                        "cfx_"                  : "prohibited",
-                        "cfxml"                 : "required",
-                        "cfzip"                 : "optional",
-                        "cfzipparam"            : "prohibited"
-                    },
                     parseError    = [],
                     // Find the lowercase tag name of the provided token.
                     tagName       = function parser_markup_tagName(el) {
@@ -778,7 +597,186 @@ Parse Framework
                                 token: "",
                                 types: ""
                             },
-
+                            //cftags is a list of supported coldfusion tags
+                            // * required - means must have a separate matching end tag
+                            // * optional - means the tag could have a separate end tag, but is probably a
+                            // singleton
+                            // * prohibited - means there is not corresponding end tag
+                            cftags        = {
+                                "cfabort"               : "prohibited",
+                                "cfajaximport"          : "optional",
+                                "cfajaxproxy"           : "optional",
+                                "cfapplet"              : "prohibited",
+                                "cfapplication"         : "prohibited",
+                                "cfargument"            : "prohibited",
+                                "cfassociate"           : "prohibited",
+                                "cfauthenticate"        : "prohibited",
+                                "cfbreak"               : "prohibited",
+                                "cfcache"               : "optional",
+                                "cfcalendar"            : "optional",
+                                "cfcase"                : "required",
+                                "cfcatch"               : "required",
+                                "cfchart"               : "optional",
+                                "cfchartdata"           : "prohibited",
+                                "cfchartseries"         : "optional",
+                                "cfclient"              : "required",
+                                "cfclientsettings"      : "optional",
+                                "cfcol"                 : "prohibited",
+                                "cfcollection"          : "prohibited",
+                                "cfcomponent"           : "required",
+                                "cfcontent"             : "optional",
+                                "cfcontinue"            : "prohibited",
+                                "cfcookie"              : "prohibited",
+                                "cfdbinfo"              : "prohibited",
+                                "cfdefaultcase"         : "required",
+                                "cfdirectory"           : "prohibited",
+                                "cfdiv"                 : "optional",
+                                "cfdocument"            : "optional",
+                                "cfdocumentitem"        : "optional",
+                                "cfdocumentsection"     : "optional",
+                                "cfdump"                : "optional",
+                                "cfelse"                : "prohibited",
+                                "cfelseif"              : "prohibited",
+                                "cferror"               : "prohibited",
+                                "cfexchangecalendar"    : "optional",
+                                "cfexchangeconnection"  : "optional",
+                                "cfexchangecontact"     : "optional",
+                                "cfexchangeconversation": "optional",
+                                "cfexchangefilter"      : "optional",
+                                "cfexchangefolder"      : "optional",
+                                "cfexchangemail"        : "optional",
+                                "cfexchangetask"        : "optional",
+                                "cfexecute"             : "required",
+                                "cfexit"                : "prohibited",
+                                "cffeed"                : "prohibited",
+                                "cffile"                : "optional",
+                                "cffileupload"          : "optional",
+                                "cffinally"             : "required",
+                                "cfflush"               : "prohibited",
+                                "cfform"                : "required",
+                                "cfformgroup"           : "required",
+                                "cfformitem"            : "optional",
+                                "cfforward"             : "prohibited",
+                                "cfftp"                 : "prohibited",
+                                "cffunction"            : "required",
+                                "cfgraph"               : "required",
+                                "cfgraphdata"           : "prohibited",
+                                "cfgrid"                : "required",
+                                "cfgridcolumn"          : "optional",
+                                "cfgridrow"             : "optional",
+                                "cfgridupdate"          : "optional",
+                                "cfheader"              : "prohibited",
+                                "cfhtmlbody"            : "optional",
+                                "cfhtmlhead"            : "optional",
+                                "cfhtmltopdf"           : "optional",
+                                "cfhtmltopdfitem"       : "optional",
+                                "cfhttp"                : "optional",
+                                "cfhttpparam"           : "prohibited",
+                                "cfif"                  : "required",
+                                "cfimage"               : "prohibited",
+                                "cfimap"                : "prohibited",
+                                "cfimapfilter"          : "optional",
+                                "cfimport"              : "prohibited",
+                                "cfinclude"             : "prohibited",
+                                "cfindex"               : "prohibited",
+                                "cfinput"               : "prohibited",
+                                "cfinsert"              : "prohibited",
+                                "cfinterface"           : "required",
+                                "cfinvoke"              : "optional",
+                                "cfinvokeargument"      : "prohibited",
+                                "cflayout"              : "optional",
+                                "cflayoutarea"          : "optional",
+                                "cfldap"                : "prohibited",
+                                "cflocation"            : "prohibited",
+                                "cflock"                : "required",
+                                "cflog"                 : "prohibited",
+                                "cflogic"               : "required",
+                                "cfloginuser"           : "prohibited",
+                                "cflogout"              : "prohibited",
+                                "cfloop"                : "required",
+                                "cfmail"                : "required",
+                                "cfmailparam"           : "prohibited",
+                                "cfmailpart"            : "required",
+                                "cfmap"                 : "optional",
+                                "cfmapitem"             : "optional",
+                                "cfmediaplayer"         : "optional",
+                                "cfmenu"                : "required",
+                                "cfmenuitem"            : "optional",
+                                "cfmessagebox"          : "optional",
+                                "cfmodule"              : "optional",
+                                "cfNTauthenticate"      : "optional",
+                                "cfoauth"               : "optional",
+                                "cfobject"              : "prohibited",
+                                "cfobjectcache"         : "prohibited",
+                                "cfoutput"              : "required",
+                                "cfpageencoding"        : "optional",
+                                "cfparam"               : "prohibited",
+                                "cfpdf"                 : "optional",
+                                "cfpdfform"             : "optional",
+                                "cfpdfformparam"        : "optional",
+                                "cfpdfparam"            : "prohibited",
+                                "cfpdfsubform"          : "required",
+                                "cfpod"                 : "optional",
+                                "cfpop"                 : "prohibited",
+                                "cfpresentation"        : "required",
+                                "cfpresentationslide"   : "optional",
+                                "cfpresenter"           : "optional",
+                                "cfprint"               : "optional",
+                                "cfprocessingdirective" : "optional",
+                                "cfprocparam"           : "prohibited",
+                                "cfprocresult"          : "prohibited",
+                                "cfprogressbar"         : "optional",
+                                "cfproperty"            : "prohibited",
+                                "cfquery"               : "required",
+                                "cfqueryparam"          : "prohibited",
+                                "cfregistry"            : "prohibited",
+                                "cfreport"              : "optional",
+                                "cfreportparam"         : "optional",
+                                "cfrethrow"             : "prohibited",
+                                "cfretry"               : "prohibited",
+                                "cfreturn"              : "prohibited",
+                                "cfsavecontent"         : "required",
+                                "cfschedule"            : "prohibited",
+                                "cfscript"              : "required",
+                                "cfsearch"              : "prohibited",
+                                "cfselect"              : "required",
+                                "cfservlet"             : "prohibited",
+                                "cfservletparam"        : "prohibited",
+                                "cfset"                 : "prohibited",
+                                "cfsetting"             : "optional",
+                                "cfsharepoint"          : "optional",
+                                "cfsilent"              : "required",
+                                "cfsleep"               : "prohibited",
+                                "cfslider"              : "prohibited",
+                                "cfspreadsheet"         : "optional",
+                                "cfsprydataset"         : "optional",
+                                "cfstatic"              : "required",
+                                "cfstopwatch"           : "required",
+                                "cfstoredproc"          : "optional",
+                                "cfswitch"              : "required",
+                                "cftable"               : "required",
+                                "cftextarea"            : "optional",
+                                "cfthread"              : "optional",
+                                "cfthrow"               : "prohibited",
+                                "cftimer"               : "required",
+                                "cftooltip"             : "required",
+                                "cftrace"               : "optional",
+                                "cftransaction"         : "required",
+                                "cftree"                : "required",
+                                "cftreeitem"            : "optional",
+                                "cftry"                 : "required",
+                                "cfupdate"              : "prohibited",
+                                "cfvideo"               : "prohibited",
+                                "cfvideoplayer"         : "optional",
+                                "cfwddx"                : "prohibited",
+                                "cfwebsocket"           : "optional",
+                                "cfwhile"               : "required",
+                                "cfwindow"              : "optional",
+                                "cfx_"                  : "prohibited",
+                                "cfxml"                 : "required",
+                                "cfzip"                 : "optional",
+                                "cfzipparam"            : "prohibited"
+                            },
                             //attribute name
                             arname    = function parser_markup_tag_name(x) {
                                 var eq = x.indexOf("=");
@@ -877,7 +875,6 @@ Parse Framework
                             attributeRecord = function parser_markup_tag_attributeRecord() {
                                 var ind    = 0,
                                     len    = attstore.length,
-                                    obj    = {},
                                     eq     = 0,
                                     dq     = 0,
                                     sq     = 0,
@@ -885,7 +882,15 @@ Parse Framework
                                     slice  = "",
                                     store  = [],
                                     name   = "",
-                                    cft    = cftags[tname.toLowerCase().replace(/\/$/, "")];
+                                    cft    = cftags[tname.toLowerCase().replace(/\/$/, "")],
+                                    jsxAttribute = function parser_markup_tag_attributeRecord_jsxAttribute(str) {
+                                        if ((/\s/).test(str) === true) {
+                                            record.lines = str.split("\n").length + 1;
+                                        } else {
+                                            record.lines = 0;
+                                        }
+                                        return "";
+                                    };
 
                                 if (attstore.length < 1) {
                                     return;
@@ -926,11 +931,10 @@ Parse Framework
                                     cft = "required";
                                 }
 
-                                record.begin = structure[structure.length - 1][1];
+                                record.begin = lengthMarkup;
                                 record.lines = 0;
-                                record.stack = structure[structure.length - 1][0];
+                                record.stack = tname.replace(/\/$/, "");
                                 record.types = "attribute";
-
 
                                 if (ind < len) {
                                     do {
@@ -970,8 +974,27 @@ Parse Framework
                                             if (options.lang === "html" && cft === undefined) {
                                                 name = name.toLowerCase();
                                             }
-                                            record.token = name + "=" + slice;
-                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            if (options.lang === "jsx" && (/^(\s*\{)/).test(slice) === true) {
+                                                if (ind === 0 && (ltype === "singleton" || ltype === "template")) {
+                                                    structure.push([tagName(element).replace(/\/$/, ""), recordCount]);
+                                                }
+                                                record.token = name + "={";
+                                                record.begin = structure[structure.length - 1][1];
+                                                lengthMarkup = recordPush(data, record, lengthMarkup);
+                                                name         = slice.replace(/^(\s*\{)/, "").replace(/(\}\s*)$/, jsxAttribute);
+                                                structure.push(["attribute", recordCount]);
+                                                lengthMarkup = recordConcat(data, lexer.script(name));
+                                                record.token = "}";
+                                                record.begin = record.begin + 1;
+                                                lengthMarkup = recordPush(data, record, lengthMarkup);
+                                                structure.pop();
+                                                if (ind === len - 1 && (ltype === "singleton" || ltype === "template")) {
+                                                    structure.pop();
+                                                }
+                                            } else {
+                                                record.token = name + "=" + slice;
+                                                lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            }
                                         }
                                         ind = ind + 1;
                                     } while (ind < len);
@@ -1119,7 +1142,8 @@ Parse Framework
                                     lengthMarkup = recordPush(data, record, lengthMarkup);
                                     structure.push(["block", recordCount]);
                                     return;
-                                } else if (options.lang === "dustjs") {
+                                }
+                                if (options.lang === "dustjs") {
                                     if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                         a            = a + 6;
                                         earlyexit    = true;
@@ -1644,9 +1668,8 @@ Parse Framework
                         record.token = element;
                         record.types = ltype;
                         tname        = tagName(element);
-
-                        if (structure[structure.length - 1][1] < 1) {
-                            structure[structure.length - 1] = ["global", 0];
+                        if ((/^(\/?cf)/i).test(tname) ===  true) {
+                            tname = tname.toLowerCase().replace(/\/$/, "").replace(/^\//, "");
                         }
 
                         if (preserve === false && options.lang !== "jsx") {
@@ -1750,8 +1773,8 @@ Parse Framework
                                                     return false;
                                                 }
                                             }
-                                            if (bb === 0 && typeof data.token[aa].toLowerCase().indexOf(vname) === 1) {
-                                                if (cftags[tagName(data.token[aa])] !== undefined) {
+                                            if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
+                                                if (cftags[tname] !== undefined) {
                                                     data.types[aa] = "template_start";
                                                 } else {
                                                     data.types[aa] = "start";
@@ -1814,8 +1837,8 @@ Parse Framework
                             }
 
                             //determines if custom coldfusion tags are singletons
-                            if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) === "/cf" && cftags[tname.slice(1)] !== undefined) {
-                                cfval = cftags[tname.slice(1)];
+                            cfval = cftags[tname];
+                            if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) === "/cf" && cfval !== undefined) {
                                 if (tname === "/cftransaction") {
                                     cftransaction = false;
                                 }
@@ -1876,7 +1899,7 @@ Parse Framework
                             if (options.lang === "html") {
                                 // html gets tag names in lowercase, if you want to preserve case sensitivity
                                 // beautify as XML
-                                if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
+                                if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
                                     element = element.toLowerCase();
                                 }
 
@@ -2025,7 +2048,7 @@ Parse Framework
                                                             e = e + 1;
                                                         } while (e < c);
                                                     }
-                                                } else if (b.slice(e + 1, e + 9).join("") !== "![CDATA[") {
+                                                } else if (b.slice(e + 1, e + 9).join("") === "![CDATA[") {
                                                     ext = false;
                                                 }
                                             }
@@ -2124,7 +2147,7 @@ Parse Framework
                             element = lex.join("");
                         }
 
-                        //some template tags can be evaluated as a block start/end based on syntax alone
+                        // some template tags can be evaluated as a block start/end based on syntax alone
                         if (lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") > -1) {
                             if (element.slice(0, 2) === "{%") {
                                 lex = [
@@ -2184,11 +2207,23 @@ Parse Framework
                             }
                         }
 
-                        lengthMarkup = recordPush(data, record, lengthMarkup);
+                        // identify script hidden within a CDATA escape
+                        if (ltype === "cdata" && record.stack === "script") {
+                            structure.push(["cdata", recordCount]);
+                            element      = element.replace(/^(\s*<\!\[cdata\[)/i, "").replace(/(\]\]>\s*)$/, "");
+                            record.token = "<![CDATA[";
+                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            lengthMarkup = recordConcat(data, lexer.script(element));
+                            record.token = "]]>";
+                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            structure.pop();
+                        } else {
+                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                        }
 
                         // this is necessary to describe the structures that populate the begin and
                         // stack data
-                        if (data.types[lengthMarkup] === "start" || data.types[lengthMarkup] === "template_start") {
+                        if (data.types[lengthMarkup] === "start" || data.types[lengthMarkup] === "template_start" || data.types[lengthMarkup] === "content_preserve") {
                             structure.push([tname, recordCount]);
                         } else if ((data.types[lengthMarkup] === "end" || data.types[lengthMarkup] === "template_end") && structure.length > 1) {
                             structure.pop();
@@ -2292,7 +2327,7 @@ Parse Framework
                             liner     = linesSpace,
                             now       = a,
                             name      = (ext === true)
-                                ? tagName(data.token[lengthMarkup])
+                                ? tagName(data.token[data.begin[lengthMarkup]].toLowerCase())
                                 : "",
                             end       = "",
                             square    = (
@@ -2722,11 +2757,11 @@ Parse Framework
                             wordx  = "",
                             wordy  = "",
                             record = {
-                                begin: lengthScript,
+                                begin: recordCount,
                                 lexer: "script",
                                 lines: linesSpace,
                                 presv: false,
-                                stack: "",
+                                stack: structure[structure.length - 1][0],
                                 token: ltoke,
                                 types: ltype
                             };
@@ -3327,6 +3362,9 @@ Parse Framework
                         tokec   = data.token[lengthScript - 2];
                         end     = function parser_script_plusplus_end() {
                             walk = data.begin[walk] - 1;
+                            if (walk === data.begin[walk] - 1) {
+                                return;
+                            }
                             if (data.types[walk] === "end") {
                                 parser_script_plusplus_end();
                             } else if (data.token[walk - 1] === ".") {
@@ -4290,7 +4328,7 @@ Parse Framework
                             }
                             if (structure.length > 0 && structure[structure.length - 1][0] !== "object") {
                                 asi(true);
-                            } else if (options.objectSort === true) {
+                            } else if (options.objectSort === true && data.stack[0] !== "attribute") {
                                 lengthScript = objectSort(data, lengthScript);
                             }
                             if (ltype === "comment" || ltype === "comment-inline") {
@@ -6052,6 +6090,7 @@ Parse Framework
             };
             parsetable   = lexer[options.type](options.source);
 
+            // validate that all the data arrays are the same length
             (function parse_checkLengths() {
                 var a    = 0,
                     b    = 0,

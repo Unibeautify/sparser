@@ -124,7 +124,7 @@ The *presv* array stores a boolean indicating if the current item should be pres
 The *stack* array stores strings that describe the current structure where the item resides from the code.  In markup code the value is the tag name for the parent element at the index in the *begin* array.  In script and style code the value is a generic description of the current structure, such as: function, object, or class.
 
 #### token
-The *token* array generally contains a string of the current item.  In cases where a lexer has to hand off to a different lexer the value is a child parse table instead of a string.  One example is style and script tags in HTML documents.  In the case of JSX or TSX langauges the exchange between lexers could be recursive producing a depth of nested parse tables.  **Don't assume the value of a token index will be a string, because every once in a while it will be an array.**
+The *token* array contains a string of the current item.  Markup attributes will be a separate tokens immediately following their parent element and also explicitly indicating associate via the *begin* and *stack* data fields.
 
 #### types
 The *types* array contains a string that describes the token value according to a generalized category name.
@@ -132,7 +132,6 @@ The *types* array contains a string that describes the token value according to 
 ## Things to be aware of
 This section will list intentional exceptions to the basic rules and parsing behavior.
 
-* Token array values are generally strings, but can be arrays in the cases where one lexer hands off to another.
 * Markup elements with the attribute named *data-parse-ignore* will be processed into a string and their corresponding types value will be *singleton*.  This prevents the element from alteration due to beautifiers and it includes are descendant artifacts within the element.  For backwards compatibility the attribute name *data-prettydiff-ignore* will continue to be accepted and will be the only mention of a beautifier in the parser logic.
 
 ## FAQ
