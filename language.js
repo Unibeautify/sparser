@@ -135,6 +135,9 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                             if ((/final\s+static/).test(sample) === true) {
                                 return output("java");
                             }
+                            if ((/(\(|\}|\?|,|(return)|(=>?))\s*</).test(sample) === true) {
+                                return output("jsx");
+                            }
                             return output("javascript");
                         }
                         return output("unknown");

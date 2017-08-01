@@ -22,7 +22,7 @@ Parse Framework
                 linesSpace = 0,
                 lineNumber = 1,
                 recordCount = -1,
-                datanames  = ["attrs", "begin", "lexer", "lines", "presv", "stack", "token", "types"],
+                datanames  = ["begin", "lexer", "lines", "presv", "stack", "token", "types"],
                 parsetable = {},
                 structure  = [["global", 0]],
                 spacer     = function parser_spacer(args) {
@@ -39,20 +39,24 @@ Parse Framework
                     } while (args.index < args.end);
                     return args.index;
                 },
-                recordPop  = function parser_recordPop(data, length) {
+                recordPop  = function parser_recordPop(data, count, length) {
                     var output = {};
                     datanames.forEach(function parser_recordPop_datanames(value) {
                         output[value] = data[value].pop();
                     });
                     output.length = length;
-                    recordCount   = recordCount - 1;
+                    if (count === true) {
+                        recordCount = recordCount - 1;
+                    }
                     return output;
                 },
-                recordPush = function parser_recordPush(data, record, length) {
+                recordPush = function parser_recordPush(data, record, count, length) {
                     datanames.forEach(function parser_recordPush_datanames(value) {
                         data[value].push(record[value]);
                     });
-                    recordCount = recordCount + 1;
+                    if (count === true) {
+                        recordCount = recordCount + 1;
+                    }
                     return length + 1;
                 },
                 recordSplice = function parser_splice(spliceData) {
@@ -61,32 +65,29 @@ Parse Framework
                     // * howmany - How many indexes to remove
                     // * record - A new record to insert
                     // * length - The length counter
-                    if (spliceData.record !== undefined && typeof spliceData.record.attrs === "object") {
+                    if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
                         datanames.forEach(function parser_recordSplice_datanames(value) {
                             spliceData.data[value].splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
                         });
-                        recordCount = (recordCount - spliceData.howmany) + 1;
                         return (spliceData.length - spliceData.howmany) + 1;
                     }
                     datanames.forEach(function parser_recordSplice_datanames(value) {
                         spliceData.data[value].splice(spliceData.index, spliceData.howmany);
                     });
-                    recordCount = recordCount - spliceData.howmany;
                     return spliceData.length - spliceData.howmany;
                 },
                 recordConcat = function parser_concat(data, array) {
                     datanames.forEach(function parser_recordConcat_datanames(value) {
                         data[value] = data[value].concat(array[value]);
                     });
-                    recordCount = recordCount + array.token.length
                     return data.token.length - 1;
                 },
                 safeSort   = function parser_safeSort(array, operation, recursive) {
                     var arTest  = function safeSort_arTest(item) {
-                            if (typeof item !== "object" || item.length === undefined || item.length < 2) {
-                                return false;
+                            if (Array.isArray(item) === true) {
+                                return true;
                             }
-                            return true;
+                            return false;
                         },
                         extref  = function safeSort__extref() {
                             //worthless function for backwards compatibility with older versions of V8 node.
@@ -307,7 +308,6 @@ Parse Framework
                         },
                         commaTest = true,
                         store     = {
-                            attrs: [],
                             begin: [],
                             lexer: [],
                             lines: [],
@@ -378,7 +378,6 @@ Parse Framework
                                                 if (ee < keyend) {
                                                     do {
                                                         recordPush(store, {
-                                                            attrs: data.attrs[ee],
                                                             begin: data.begin[ee],
                                                             lexer: data.lexer[ee],
                                                             lines: data.lines[ee],
@@ -386,7 +385,7 @@ Parse Framework
                                                             stack: data.stack[ee],
                                                             token: data.token[ee],
                                                             types: data.types[ee]
-                                                        }, 0);
+                                                        }, false, 0);
                                                         ff = ff + 1;
 
                                                         //remove extra commas
@@ -413,12 +412,11 @@ Parse Framework
                                                         index: ee,
                                                         howmany: 0,
                                                         record: {
-                                                            attrs: {},
-                                                            begin: cc,
-                                                            lexer: "markup",
+                                                            begin: store.begin[ee - 1],
+                                                            lexer: store.lexer[ee - 1],
                                                             lines: store.lines[ee - 1],
                                                             presv: false,
-                                                            stack: "object",
+                                                            stack: store.stack[ee - 1],
                                                             token: ",",
                                                             types: "separator"
                                                         },
@@ -453,6 +451,14 @@ Parse Framework
                     }
                     return length;
                 };
+            structure.pop = function parser_structure_pop() {
+                var len = structure.length - 1,
+                    arr = structure[len];
+                if (len > 0) {
+                    structure.splice(len, 1);
+                }
+                return arr;
+            };
             lexer.markup = function parser_markup(source) {
                 var a             = 0,
                     b             = source.split(""),
@@ -465,7 +471,6 @@ Parse Framework
                     minspace      = "",
                     cftransaction = false,
                     ext           = false,
-                    objsortop     = false,
                     data          = (function parser_data() {
                         var output = {};
                         datanames.forEach(function parser_data_datanames(value) {
@@ -474,186 +479,6 @@ Parse Framework
                         return output;
                     }()),
 
-                    //cftags is a list of supported coldfusion tags
-                    // * required - means must have a separate matching end tag
-                    // * optional - means the tag could have a separate end tag, but is probably a
-                    // singleton
-                    // * prohibited - means there is not corresponding end tag
-                    cftags        = {
-                        "cfabort"               : "prohibited",
-                        "cfajaximport"          : "optional",
-                        "cfajaxproxy"           : "optional",
-                        "cfapplet"              : "prohibited",
-                        "cfapplication"         : "prohibited",
-                        "cfargument"            : "prohibited",
-                        "cfassociate"           : "prohibited",
-                        "cfauthenticate"        : "prohibited",
-                        "cfbreak"               : "prohibited",
-                        "cfcache"               : "optional",
-                        "cfcalendar"            : "optional",
-                        "cfcase"                : "required",
-                        "cfcatch"               : "required",
-                        "cfchart"               : "optional",
-                        "cfchartdata"           : "prohibited",
-                        "cfchartseries"         : "optional",
-                        "cfclient"              : "required",
-                        "cfclientsettings"      : "optional",
-                        "cfcol"                 : "prohibited",
-                        "cfcollection"          : "prohibited",
-                        "cfcomponent"           : "required",
-                        "cfcontent"             : "optional",
-                        "cfcontinue"            : "prohibited",
-                        "cfcookie"              : "prohibited",
-                        "cfdbinfo"              : "prohibited",
-                        "cfdefaultcase"         : "required",
-                        "cfdirectory"           : "prohibited",
-                        "cfdiv"                 : "optional",
-                        "cfdocument"            : "optional",
-                        "cfdocumentitem"        : "optional",
-                        "cfdocumentsection"     : "optional",
-                        "cfdump"                : "optional",
-                        "cfelse"                : "prohibited",
-                        "cfelseif"              : "prohibited",
-                        "cferror"               : "prohibited",
-                        "cfexchangecalendar"    : "optional",
-                        "cfexchangeconnection"  : "optional",
-                        "cfexchangecontact"     : "optional",
-                        "cfexchangeconversation": "optional",
-                        "cfexchangefilter"      : "optional",
-                        "cfexchangefolder"      : "optional",
-                        "cfexchangemail"        : "optional",
-                        "cfexchangetask"        : "optional",
-                        "cfexecute"             : "required",
-                        "cfexit"                : "prohibited",
-                        "cffeed"                : "prohibited",
-                        "cffile"                : "optional",
-                        "cffileupload"          : "optional",
-                        "cffinally"             : "required",
-                        "cfflush"               : "prohibited",
-                        "cfform"                : "required",
-                        "cfformgroup"           : "required",
-                        "cfformitem"            : "optional",
-                        "cfforward"             : "prohibited",
-                        "cfftp"                 : "prohibited",
-                        "cffunction"            : "required",
-                        "cfgraph"               : "required",
-                        "cfgraphdata"           : "prohibited",
-                        "cfgrid"                : "required",
-                        "cfgridcolumn"          : "optional",
-                        "cfgridrow"             : "optional",
-                        "cfgridupdate"          : "optional",
-                        "cfheader"              : "prohibited",
-                        "cfhtmlbody"            : "optional",
-                        "cfhtmlhead"            : "optional",
-                        "cfhtmltopdf"           : "optional",
-                        "cfhtmltopdfitem"       : "optional",
-                        "cfhttp"                : "optional",
-                        "cfhttpparam"           : "prohibited",
-                        "cfif"                  : "required",
-                        "cfimage"               : "prohibited",
-                        "cfimap"                : "prohibited",
-                        "cfimapfilter"          : "optional",
-                        "cfimport"              : "prohibited",
-                        "cfinclude"             : "prohibited",
-                        "cfindex"               : "prohibited",
-                        "cfinput"               : "prohibited",
-                        "cfinsert"              : "prohibited",
-                        "cfinterface"           : "required",
-                        "cfinvoke"              : "optional",
-                        "cfinvokeargument"      : "prohibited",
-                        "cflayout"              : "optional",
-                        "cflayoutarea"          : "optional",
-                        "cfldap"                : "prohibited",
-                        "cflocation"            : "prohibited",
-                        "cflock"                : "required",
-                        "cflog"                 : "prohibited",
-                        "cflogic"               : "required",
-                        "cfloginuser"           : "prohibited",
-                        "cflogout"              : "prohibited",
-                        "cfloop"                : "required",
-                        "cfmail"                : "required",
-                        "cfmailparam"           : "prohibited",
-                        "cfmailpart"            : "required",
-                        "cfmap"                 : "optional",
-                        "cfmapitem"             : "optional",
-                        "cfmediaplayer"         : "optional",
-                        "cfmenu"                : "required",
-                        "cfmenuitem"            : "optional",
-                        "cfmessagebox"          : "optional",
-                        "cfmodule"              : "optional",
-                        "cfNTauthenticate"      : "optional",
-                        "cfoauth"               : "optional",
-                        "cfobject"              : "prohibited",
-                        "cfobjectcache"         : "prohibited",
-                        "cfoutput"              : "required",
-                        "cfpageencoding"        : "optional",
-                        "cfparam"               : "prohibited",
-                        "cfpdf"                 : "optional",
-                        "cfpdfform"             : "optional",
-                        "cfpdfformparam"        : "optional",
-                        "cfpdfparam"            : "prohibited",
-                        "cfpdfsubform"          : "required",
-                        "cfpod"                 : "optional",
-                        "cfpop"                 : "prohibited",
-                        "cfpresentation"        : "required",
-                        "cfpresentationslide"   : "optional",
-                        "cfpresenter"           : "optional",
-                        "cfprint"               : "optional",
-                        "cfprocessingdirective" : "optional",
-                        "cfprocparam"           : "prohibited",
-                        "cfprocresult"          : "prohibited",
-                        "cfprogressbar"         : "optional",
-                        "cfproperty"            : "prohibited",
-                        "cfquery"               : "required",
-                        "cfqueryparam"          : "prohibited",
-                        "cfregistry"            : "prohibited",
-                        "cfreport"              : "optional",
-                        "cfreportparam"         : "optional",
-                        "cfrethrow"             : "prohibited",
-                        "cfretry"               : "prohibited",
-                        "cfreturn"              : "prohibited",
-                        "cfsavecontent"         : "required",
-                        "cfschedule"            : "prohibited",
-                        "cfscript"              : "required",
-                        "cfsearch"              : "prohibited",
-                        "cfselect"              : "required",
-                        "cfservlet"             : "prohibited",
-                        "cfservletparam"        : "prohibited",
-                        "cfset"                 : "prohibited",
-                        "cfsetting"             : "optional",
-                        "cfsharepoint"          : "optional",
-                        "cfsilent"              : "required",
-                        "cfsleep"               : "prohibited",
-                        "cfslider"              : "prohibited",
-                        "cfspreadsheet"         : "optional",
-                        "cfsprydataset"         : "optional",
-                        "cfstatic"              : "required",
-                        "cfstopwatch"           : "required",
-                        "cfstoredproc"          : "optional",
-                        "cfswitch"              : "required",
-                        "cftable"               : "required",
-                        "cftextarea"            : "optional",
-                        "cfthread"              : "optional",
-                        "cfthrow"               : "prohibited",
-                        "cftimer"               : "required",
-                        "cftooltip"             : "required",
-                        "cftrace"               : "optional",
-                        "cftransaction"         : "required",
-                        "cftree"                : "required",
-                        "cftreeitem"            : "optional",
-                        "cftry"                 : "required",
-                        "cfupdate"              : "prohibited",
-                        "cfvideo"               : "prohibited",
-                        "cfvideoplayer"         : "optional",
-                        "cfwddx"                : "prohibited",
-                        "cfwebsocket"           : "optional",
-                        "cfwhile"               : "required",
-                        "cfwindow"              : "optional",
-                        "cfx_"                  : "prohibited",
-                        "cfxml"                 : "required",
-                        "cfzip"                 : "optional",
-                        "cfzipparam"            : "prohibited"
-                    },
                     parseError    = [],
                     // Find the lowercase tag name of the provided token.
                     tagName       = function parser_markup_tagName(el) {
@@ -742,7 +567,7 @@ Parse Framework
                         // * {<         }       template_start
                         // * {+         }       template_start
                         // * <?xml      ?>      xml
-                        
+
                         var bcount    = 0,
                             e         = 0,
                             f         = 0,
@@ -773,9 +598,7 @@ Parse Framework
                             lex       = [],
                             attribute = [],
                             attstore  = [],
-                            attr      = {},
                             record    = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "markup",
                                 lines: linesSpace,
@@ -784,7 +607,186 @@ Parse Framework
                                 token: "",
                                 types: ""
                             },
-
+                            //cftags is a list of supported coldfusion tags
+                            // * required - means must have a separate matching end tag
+                            // * optional - means the tag could have a separate end tag, but is probably a
+                            // singleton
+                            // * prohibited - means there is not corresponding end tag
+                            cftags        = {
+                                "cfabort"               : "prohibited",
+                                "cfajaximport"          : "optional",
+                                "cfajaxproxy"           : "optional",
+                                "cfapplet"              : "prohibited",
+                                "cfapplication"         : "prohibited",
+                                "cfargument"            : "prohibited",
+                                "cfassociate"           : "prohibited",
+                                "cfauthenticate"        : "prohibited",
+                                "cfbreak"               : "prohibited",
+                                "cfcache"               : "optional",
+                                "cfcalendar"            : "optional",
+                                "cfcase"                : "required",
+                                "cfcatch"               : "required",
+                                "cfchart"               : "optional",
+                                "cfchartdata"           : "prohibited",
+                                "cfchartseries"         : "optional",
+                                "cfclient"              : "required",
+                                "cfclientsettings"      : "optional",
+                                "cfcol"                 : "prohibited",
+                                "cfcollection"          : "prohibited",
+                                "cfcomponent"           : "required",
+                                "cfcontent"             : "optional",
+                                "cfcontinue"            : "prohibited",
+                                "cfcookie"              : "prohibited",
+                                "cfdbinfo"              : "prohibited",
+                                "cfdefaultcase"         : "required",
+                                "cfdirectory"           : "prohibited",
+                                "cfdiv"                 : "optional",
+                                "cfdocument"            : "optional",
+                                "cfdocumentitem"        : "optional",
+                                "cfdocumentsection"     : "optional",
+                                "cfdump"                : "optional",
+                                "cfelse"                : "prohibited",
+                                "cfelseif"              : "prohibited",
+                                "cferror"               : "prohibited",
+                                "cfexchangecalendar"    : "optional",
+                                "cfexchangeconnection"  : "optional",
+                                "cfexchangecontact"     : "optional",
+                                "cfexchangeconversation": "optional",
+                                "cfexchangefilter"      : "optional",
+                                "cfexchangefolder"      : "optional",
+                                "cfexchangemail"        : "optional",
+                                "cfexchangetask"        : "optional",
+                                "cfexecute"             : "required",
+                                "cfexit"                : "prohibited",
+                                "cffeed"                : "prohibited",
+                                "cffile"                : "optional",
+                                "cffileupload"          : "optional",
+                                "cffinally"             : "required",
+                                "cfflush"               : "prohibited",
+                                "cfform"                : "required",
+                                "cfformgroup"           : "required",
+                                "cfformitem"            : "optional",
+                                "cfforward"             : "prohibited",
+                                "cfftp"                 : "prohibited",
+                                "cffunction"            : "required",
+                                "cfgraph"               : "required",
+                                "cfgraphdata"           : "prohibited",
+                                "cfgrid"                : "required",
+                                "cfgridcolumn"          : "optional",
+                                "cfgridrow"             : "optional",
+                                "cfgridupdate"          : "optional",
+                                "cfheader"              : "prohibited",
+                                "cfhtmlbody"            : "optional",
+                                "cfhtmlhead"            : "optional",
+                                "cfhtmltopdf"           : "optional",
+                                "cfhtmltopdfitem"       : "optional",
+                                "cfhttp"                : "optional",
+                                "cfhttpparam"           : "prohibited",
+                                "cfif"                  : "required",
+                                "cfimage"               : "prohibited",
+                                "cfimap"                : "prohibited",
+                                "cfimapfilter"          : "optional",
+                                "cfimport"              : "prohibited",
+                                "cfinclude"             : "prohibited",
+                                "cfindex"               : "prohibited",
+                                "cfinput"               : "prohibited",
+                                "cfinsert"              : "prohibited",
+                                "cfinterface"           : "required",
+                                "cfinvoke"              : "optional",
+                                "cfinvokeargument"      : "prohibited",
+                                "cflayout"              : "optional",
+                                "cflayoutarea"          : "optional",
+                                "cfldap"                : "prohibited",
+                                "cflocation"            : "prohibited",
+                                "cflock"                : "required",
+                                "cflog"                 : "prohibited",
+                                "cflogic"               : "required",
+                                "cfloginuser"           : "prohibited",
+                                "cflogout"              : "prohibited",
+                                "cfloop"                : "required",
+                                "cfmail"                : "required",
+                                "cfmailparam"           : "prohibited",
+                                "cfmailpart"            : "required",
+                                "cfmap"                 : "optional",
+                                "cfmapitem"             : "optional",
+                                "cfmediaplayer"         : "optional",
+                                "cfmenu"                : "required",
+                                "cfmenuitem"            : "optional",
+                                "cfmessagebox"          : "optional",
+                                "cfmodule"              : "optional",
+                                "cfNTauthenticate"      : "optional",
+                                "cfoauth"               : "optional",
+                                "cfobject"              : "prohibited",
+                                "cfobjectcache"         : "prohibited",
+                                "cfoutput"              : "required",
+                                "cfpageencoding"        : "optional",
+                                "cfparam"               : "prohibited",
+                                "cfpdf"                 : "optional",
+                                "cfpdfform"             : "optional",
+                                "cfpdfformparam"        : "optional",
+                                "cfpdfparam"            : "prohibited",
+                                "cfpdfsubform"          : "required",
+                                "cfpod"                 : "optional",
+                                "cfpop"                 : "prohibited",
+                                "cfpresentation"        : "required",
+                                "cfpresentationslide"   : "optional",
+                                "cfpresenter"           : "optional",
+                                "cfprint"               : "optional",
+                                "cfprocessingdirective" : "optional",
+                                "cfprocparam"           : "prohibited",
+                                "cfprocresult"          : "prohibited",
+                                "cfprogressbar"         : "optional",
+                                "cfproperty"            : "prohibited",
+                                "cfquery"               : "required",
+                                "cfqueryparam"          : "prohibited",
+                                "cfregistry"            : "prohibited",
+                                "cfreport"              : "optional",
+                                "cfreportparam"         : "optional",
+                                "cfrethrow"             : "prohibited",
+                                "cfretry"               : "prohibited",
+                                "cfreturn"              : "prohibited",
+                                "cfsavecontent"         : "required",
+                                "cfschedule"            : "prohibited",
+                                "cfscript"              : "required",
+                                "cfsearch"              : "prohibited",
+                                "cfselect"              : "required",
+                                "cfservlet"             : "prohibited",
+                                "cfservletparam"        : "prohibited",
+                                "cfset"                 : "prohibited",
+                                "cfsetting"             : "optional",
+                                "cfsharepoint"          : "optional",
+                                "cfsilent"              : "required",
+                                "cfsleep"               : "prohibited",
+                                "cfslider"              : "prohibited",
+                                "cfspreadsheet"         : "optional",
+                                "cfsprydataset"         : "optional",
+                                "cfstatic"              : "required",
+                                "cfstopwatch"           : "required",
+                                "cfstoredproc"          : "optional",
+                                "cfswitch"              : "required",
+                                "cftable"               : "required",
+                                "cftextarea"            : "optional",
+                                "cfthread"              : "optional",
+                                "cfthrow"               : "prohibited",
+                                "cftimer"               : "required",
+                                "cftooltip"             : "required",
+                                "cftrace"               : "optional",
+                                "cftransaction"         : "required",
+                                "cftree"                : "required",
+                                "cftreeitem"            : "optional",
+                                "cftry"                 : "required",
+                                "cfupdate"              : "prohibited",
+                                "cfvideo"               : "prohibited",
+                                "cfvideoplayer"         : "optional",
+                                "cfwddx"                : "prohibited",
+                                "cfwebsocket"           : "optional",
+                                "cfwhile"               : "required",
+                                "cfwindow"              : "optional",
+                                "cfx_"                  : "prohibited",
+                                "cfxml"                 : "required",
+                                "cfzip"                 : "optional",
+                                "cfzipparam"            : "prohibited"
+                            },
                             //attribute name
                             arname    = function parser_markup_tag_name(x) {
                                 var eq = x.indexOf("=");
@@ -807,8 +809,8 @@ Parse Framework
                                 return true;
                             },
 
-                            //attribute builder
-                            attrpush  = function parser_markup_tag_attrpush(quotes) {
+                            // attribute lexer
+                            attributeLexer  = function parser_markup_tag_attributeLexer(quotes) {
                                 var atty = "",
                                     name = "",
                                     aa   = 0,
@@ -877,6 +879,139 @@ Parse Framework
                                     attstore.push(atty);
                                 }
                                 attribute = [];
+                            },
+                            
+                            // attribute parser
+                            attributeRecord = function parser_markup_tag_attributeRecord() {
+                                var ind    = 0,
+                                    len    = attstore.length,
+                                    eq     = 0,
+                                    dq     = 0,
+                                    sq     = 0,
+                                    syntax = "<{\"'=/",
+                                    slice  = "",
+                                    store  = [],
+                                    name   = "",
+                                    cft    = cftags[tname.toLowerCase().replace(/\/$/, "")],
+                                    jsxAttribute = function parser_markup_tag_attributeRecord_jsxAttribute(str) {
+                                        if ((/\s/).test(str) === true) {
+                                            record.lines = str.split("\n").length + 1;
+                                        } else {
+                                            record.lines = 0;
+                                        }
+                                        return "";
+                                    };
+
+                                if (attstore.length < 1) {
+                                    return;
+                                }
+
+                                // fix for singleton tags, since "/" at the end of the tag is not an attribute
+                                if (attstore[attstore.length - 1] === "/") {
+                                    attstore.pop();
+                                    lex.splice(lex.length - 1, 0, "/");
+                                }
+
+                                // reconnects attribute names to their respective values if separated on "="
+                                eq = attstore.length;
+                                dq = 1;
+                                if (dq < eq) {
+                                    do {
+                                        name = attstore[dq - 1];
+                                        if (name.charAt(name.length - 1) === "=" && attstore[dq].indexOf("=") < 0) {
+                                            attstore[dq - 1] = name + attstore[dq];
+                                            attstore.splice(dq, 1);
+                                            eq = eq - 1;
+                                            dq = dq - 1;
+                                        }
+                                        dq = dq + 1;
+                                    } while (dq < eq);
+                                }
+
+                                // sort the attributes
+                                if (options.tagsort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                                    attstore     = safeSort(attstore);
+                                    record.presv = true;
+                                } else {
+                                    record.presv = false;
+                                }
+
+                                // preparation for a coldfusion edge case
+                                if (tname.slice(0, 3).toLowerCase() === "cf_") {
+                                    cft = "required";
+                                }
+
+                                record.begin = structure[structure.length - 1][1];
+                                record.lines = 0;
+                                record.stack = tname.replace(/\/$/, "");
+                                record.types = "attribute";
+
+                                if (ind < len) {
+                                    do {
+                                        eq = attstore[ind].indexOf("=");
+                                        dq = attstore[ind].indexOf("\"");
+                                        sq = attstore[ind].indexOf("'");
+
+                                        if (eq > -1 && store.length > 0) {
+                                            // put certain attributes together for coldfusion
+                                            record.token = store.join(" ");
+                                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                            record.token = attstore[ind];
+                                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                            store        = [];
+                                        } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
+                                            // put certain attributes together for coldfusion
+                                            store.push(attstore[ind]);
+                                        } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
+                                            // tags stored as attributes of other tags
+                                            record.token = attstore[ind];
+                                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                        } else if (eq < 0 && cft === undefined) {
+                                            // in most markup languages an attribute without an expressed value has its name as its string value
+                                            name = attstore[ind];
+                                            if (options.lang === "html") {
+                                                name = name.toLowerCase();
+                                            }
+                                            record.token = name + "=\"" + attstore[ind] + "\"";
+                                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                        } else {
+                                            // separates out the attribute name from its value
+                                            slice = attstore[ind].slice(eq + 1);
+                                            if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
+                                                slice = "\"" + slice + "\"";
+                                            }
+                                            name = attstore[ind].slice(0, eq);
+                                            if (options.lang === "html" && cft === undefined) {
+                                                name = name.toLowerCase();
+                                            }
+                                            if (options.lang === "jsx" && (/^(\s*\{)/).test(slice) === true) {
+                                                if (ind === 0 && (ltype === "singleton" || ltype === "template")) {
+                                                    structure.push([tagName(element).replace(/\/$/, ""), recordCount]);
+                                                }
+                                                record.token = name + "={";
+                                                lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                                name         = slice.replace(/^(\s*\{)/, "").replace(/(\}\s*)$/, jsxAttribute);
+                                                structure.push(["attribute", recordCount]);
+                                                lengthMarkup = recordConcat(data, lexer.script(name));
+                                                record.token = "}";
+                                                record.begin = record.begin + 1;
+                                                lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                                structure.pop();
+                                                if (ind === len - 1 && (ltype === "singleton" || ltype === "template")) {
+                                                    structure.pop();
+                                                }
+                                            } else {
+                                                record.token = name + "=" + slice;
+                                                lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                            }
+                                        }
+                                        ind = ind + 1;
+                                    } while (ind < len);
+                                }
+                                if (store.length > 0) {
+                                    record.token = store.join(" ");
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                }
                             };
                         ext    = false;
 
@@ -1013,17 +1148,18 @@ Parse Framework
                                     earlyexit    = true;
                                     record.token = "{";
                                     record.types = "script";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     structure.push(["block", recordCount]);
                                     return;
-                                } else if (options.lang === "dustjs") {
+                                }
+                                if (options.lang === "dustjs") {
                                     if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                         a            = a + 6;
                                         earlyexit    = true;
                                         record.presv = true;
                                         record.token = "{:else}";
                                         record.types = "template_else";
-                                        lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                         return;
                                     }
                                     if (b[a + 1] === "!") {
@@ -1084,7 +1220,7 @@ Parse Framework
                                     record.presv = true;
                                     record.token = "{@}else{@}";
                                     record.types = "template_else";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     return;
                                 }
                             } else if (b[a] === "[" && b[a + 1] === "%") {
@@ -1231,7 +1367,7 @@ Parse Framework
                                                                     } else {
                                                                         quote   = "";
                                                                         igcount = 0;
-                                                                        attrpush(false);
+                                                                        attributeLexer(false);
                                                                         break;
                                                                     }
                                                                 }
@@ -1248,7 +1384,7 @@ Parse Framework
                                                                 a = a - 1;
                                                             }
                                                             if (attribute.length > 0) {
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                             }
                                                             break;
                                                         }
@@ -1313,7 +1449,7 @@ Parse Framework
                                                             } else if (jsxcount === 0 || (jsxcount === 1 && attribute[0] === "{")) {
                                                                 //if there is an unquoted space attribute is complete
                                                                 attribute.pop();
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                                 stest = true;
                                                                 break;
                                                             }
@@ -1325,7 +1461,7 @@ Parse Framework
                                                         if (parncount === 0) {
                                                             quote = "";
                                                             if (b[a + 1] === end.charAt(0)) {
-                                                                attrpush(false);
+                                                                attributeLexer(false);
                                                                 break;
                                                             }
                                                         }
@@ -1406,7 +1542,7 @@ Parse Framework
                                                                 } while (e > -1);
                                                             }
                                                             if (e < 0) {
-                                                                attrpush(true);
+                                                                attributeLexer(true);
                                                                 if (b[a + 1] === lastchar) {
                                                                     break;
                                                                 }
@@ -1512,8 +1648,8 @@ Parse Framework
                                             }
                                         }
                                     }
-                                    a = a + 1;
                                 }
+                                a = a + 1;
                             } while (a < c);
                         }
 
@@ -1541,9 +1677,8 @@ Parse Framework
                         record.token = element;
                         record.types = ltype;
                         tname        = tagName(element);
-
-                        if (structure[structure.length - 1][1] < 1) {
-                            structure[structure.length - 1] = ["global", 0];
+                        if ((/^(\/?cf)/i).test(tname) ===  true) {
+                            tname = tname.toLowerCase().replace(/\/$/, "").replace(/^\//, "");
                         }
 
                         if (preserve === false && options.lang !== "jsx") {
@@ -1557,13 +1692,13 @@ Parse Framework
                                 .replace(/(\s*\{%\s*endcomment\s*%\})$/, "");
                             record.token = "{% comment %}";
                             record.types = "template_start";
-                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
                             record.token = element;
                             record.types = "comment";
-                            lengthMarkup = recordPush(data, record, lengthMarkup);
-                            record.token = "{% comment %}";
-                            record.types = "template_start";
-                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                            record.token = "{% endcomment %}";
+                            record.types = "template_end";
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
                             return;
                         }
 
@@ -1588,102 +1723,6 @@ Parse Framework
                             sgmlflag = sgmlflag - 1;
                         }
 
-                        //attribute processing
-                        if (attstore.length > 0) {
-
-                            //fix for singleton tags, since "/" at the end of the tag is not an attribute
-                            if (attstore[attstore.length - 1] === "/") {
-                                attstore.pop();
-                                lex.splice(lex.length - 1, 0, "/");
-                            }
-
-                            //reconnects attribute names to their respective values if separated on "="
-                            f = attstore.length;
-                            e = 1;
-                            if (e < f) {
-                                do {
-                                    quote = attstore[e - 1];
-                                    if (quote.charAt(quote.length - 1) === "=" && attstore[e].indexOf("=") < 0) {
-                                        attstore[e - 1] = quote + attstore[e];
-                                        attstore.splice(e, 1);
-                                        f = f - 1;
-                                        e = e - 1;
-                                    }
-                                    e = e + 1;
-                                } while (e < f);
-                            }
-                            if (objsortop === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
-                                attstore = safeSort(attstore);
-                            }
-
-                            //creates the attributes object for the current record
-                            attr = (function parser_markup_attribute() {
-                                var ind    = 0,
-                                    len    = attstore.length,
-                                    obj    = {},
-                                    eq     = 0,
-                                    dq     = 0,
-                                    sq     = 0,
-                                    syntax = "<{\"'=/",
-                                    slice  = "",
-                                    store  = [],
-                                    name   = "",
-                                    cft    = cftags[tname];
-                                if (tname.slice(0, 3) === "cf_") {
-                                    cft = "required";
-                                }
-                                if (objsortop === true && options.lang !== "jsx" && cft === undefined) {
-                                    attstore = safeSort(attstore);
-                                }
-                                if (ind < len) {
-                                    do {
-                                        eq = attstore[ind].indexOf("=");
-                                        dq = attstore[ind].indexOf("\"");
-                                        sq = attstore[ind].indexOf("'");
-                                        if (eq > -1 && store.length > 0) {
-                                            obj[store.join(" ")] = "";
-                                            store                = [];
-                                            obj[attstore[ind]]   = "";
-                                        } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
-                                            store.push(attstore[ind]);
-                                        } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
-                                            obj[attstore[ind]] = "";
-                                        } else if (eq < 0 && cft === undefined) {
-                                            name = attstore[ind];
-                                            if (options.lang === "html" && cft === undefined) {
-                                                name = name.toLowerCase();
-                                            }
-                                            if (options.quoteConvert === "single") {
-                                                obj[name] = "'" + attstore[ind] + "'";
-                                            } else {
-                                                obj[name] = "\"" + attstore[ind] + "\"";
-                                            }
-                                        } else {
-                                            slice = attstore[ind].slice(eq + 1);
-                                            if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
-                                                if (options.quoteConvert === "single") {
-                                                    slice = "'" + slice + "'";
-                                                } else {
-                                                    slice = "\"" + slice + "\"";
-                                                }
-                                            }
-                                            name = attstore[ind].slice(0, eq);
-                                            if (options.lang === "html" && cft === undefined) {
-                                                name = name.toLowerCase();
-                                            }
-                                            obj[name] = slice;
-                                        }
-                                        ind = ind + 1;
-                                    } while (ind < len);
-                                }
-                                if (store.length > 0) {
-                                    obj[store.join(" ")] = "";
-                                }
-                                return obj;
-                            }());
-                            record.attrs = attr;
-                        }
-
                         //a correction for false-positive parse failures
                         if (parseFail === true) {
                             if (element.indexOf("<!--<![") === 0) {
@@ -1693,7 +1732,8 @@ Parse Framework
                                         element;
                                 if (element.indexOf("</") > 0) {
                                     record.types = "end";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                                    structure.pop();
                                     return;
                                 }
                             }
@@ -1740,8 +1780,8 @@ Parse Framework
                                                     return false;
                                                 }
                                             }
-                                            if (bb === 0 && typeof data.token[aa] === "string" && data.token[aa].toLowerCase().indexOf(vname) === 1) {
-                                                if (cftags[tagName(data.token[aa])] !== undefined) {
+                                            if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
+                                                if (cftags[tname] !== undefined) {
                                                     data.types[aa] = "template_start";
                                                 } else {
                                                     data.types[aa] = "start";
@@ -1762,13 +1802,11 @@ Parse Framework
 
                             //determine if the current tag is an HTML singleton and exit
                             if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) !== "/cf") {
-                                quote = (typeof data.token[lengthMarkup] === "string")
-                                    ? data.token[lengthMarkup]
-                                    : "";
+                                quote = data.token[lengthMarkup];
                                 if (data.types[lengthMarkup - 1] === "singleton" && quote.charAt(quote.length - 2) !== "/" && "/" + tagName(quote) === tname) {
                                     data.types[lengthMarkup - 1] = "start";
                                 } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[lengthMarkup]) && options.tagmerge === true(data.types[lengthMarkup - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
-                                    lengthMarkup = recordPop(data, lengthMarkup).length;
+                                    lengthMarkup = recordPop(data, true, lengthMarkup).length;
                                     if (data.types[lengthMarkup] === "start") {
                                         data.token[lengthMarkup] = data
                                             .token[lengthMarkup]
@@ -1790,7 +1828,7 @@ Parse Framework
                                         } else if (data.types[d] === "end" || data.types[d] === "template_end") {
                                             ee = ee + 1;
                                         }
-                                        if (ee === 1 && typeof data.token[d] === "string") {
+                                        if (ee === 1) {
                                             if ((data.token[d].indexOf("<#assign") === 0 && tname === "/#assign") || (data.token[d].indexOf("<#global") === 0 && tname === "/#global")) {
                                                 data.types[d] = "template_start";
                                                 return false;
@@ -1806,8 +1844,8 @@ Parse Framework
                             }
 
                             //determines if custom coldfusion tags are singletons
-                            if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) === "/cf" && cftags[tname.slice(1)] !== undefined) {
-                                cfval = cftags[tname.slice(1)];
+                            cfval = cftags[tname];
+                            if (data.types[lengthMarkup] === "end" && tname.slice(0, 3) === "/cf" && cfval !== undefined) {
                                 if (tname === "/cftransaction") {
                                     cftransaction = false;
                                 }
@@ -1825,7 +1863,7 @@ Parse Framework
                                 if (tname === "cfelse" || tname === "cfelseif") {
                                     record.token = lex.join("");
                                     record.types = "template_else";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     singleton    = true;
                                     return false;
                                 }
@@ -1845,7 +1883,7 @@ Parse Framework
                                         .join("")
                                         .replace(/\s+/, " ");
                                     record.types = "template";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     singleton    = true;
                                     return false;
                                 }
@@ -1858,8 +1896,9 @@ Parse Framework
                                         : structure[structure.length - 1][1];
                                     record.token = lex.join("");
                                     record.types = "template_start";
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     singleton    = true;
+                                    structure.push([tname, recordCount]);
                                 }
                                 return false;
                             }
@@ -1867,7 +1906,7 @@ Parse Framework
                             if (options.lang === "html") {
                                 // html gets tag names in lowercase, if you want to preserve case sensitivity
                                 // beautify as XML
-                                if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && cftags[tname.slice(1)] === undefined && tname.slice(0, 3) !== "cf_") {
+                                if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (lengthMarkup < 0 || data.types[lengthMarkup].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
                                     element = element.toLowerCase();
                                 }
 
@@ -1883,13 +1922,11 @@ Parse Framework
                                                     ee = ee + 1;
                                                 }
                                                 if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
-                                                    record.attrs                 = {};
                                                     record.lines                 = data.lines[lengthMarkup];
                                                     record.presv                 = false;
                                                     record.token                 = "</li>";
                                                     record.types                 = "end";
-                                                    lengthMarkup                 = recordPush(data, record, lengthMarkup);
-                                                    record.attrs                 = attr;
+                                                    lengthMarkup                 = recordPush(data, record, true, lengthMarkup);
                                                     record.lines                 = linesSpace;
                                                     record.presv                 = preserve;
                                                     record.token                 = element;
@@ -1913,13 +1950,11 @@ Parse Framework
                                     list = list + 1;
                                 } else if (tname === "/ul" || tname === "/ol") {
                                     if (litag === list) {
-                                        record.attrs                 = {};
                                         record.lines                 = data.lines[lengthMarkup];
                                         record.presv                 = false;
                                         record.token                 = "</li>";
                                         record.types                 = "end";
-                                        lengthMarkup                 = recordPush(data, record, lengthMarkup);
-                                        record.attrs                 = attr;
+                                        lengthMarkup                 = recordPush(data, record, true, lengthMarkup);
                                         record.lines                 = linesSpace;
                                         record.presv                 = preserve;
                                         record.token                 = element;
@@ -1954,6 +1989,7 @@ Parse Framework
 
                         //This escape flag is set in the cheat function
                         if (singleton === true) {
+                            attributeRecord();
                             return;
                         }
 
@@ -2019,7 +2055,7 @@ Parse Framework
                                                             e = e + 1;
                                                         } while (e < c);
                                                     }
-                                                } else if (b.slice(e + 1, e + 9).join("") !== "![CDATA[") {
+                                                } else if (b.slice(e + 1, e + 9).join("") === "![CDATA[") {
                                                     ext = false;
                                                 }
                                             }
@@ -2118,7 +2154,7 @@ Parse Framework
                             element = lex.join("");
                         }
 
-                        //some template tags can be evaluated as a block start/end based on syntax alone
+                        // some template tags can be evaluated as a block start/end based on syntax alone
                         if (lengthMarkup > -1 && data.types[lengthMarkup].indexOf("template") > -1) {
                             if (element.slice(0, 2) === "{%") {
                                 lex = [
@@ -2178,7 +2214,39 @@ Parse Framework
                             }
                         }
 
-                        lengthMarkup = recordPush(data, record, lengthMarkup);
+                        // identify script hidden within a CDATA escape
+                        if (ltype === "cdata" && record.stack === "script") {
+                            igcount      = recordCount;
+                            parncount    = lengthMarkup;
+                            if (data.types[parncount] === "attribute") {
+                                do {
+                                    igcount   = igcount - 1;
+                                    parncount = parncount - 1;
+                                } while (data.types[parncount] === "attribute" && parncount > -1);
+                            }
+                            record.begin = igcount;
+                            element      = element.replace(/^(\s*<\!\[cdata\[)/i, "").replace(/(\]\]>\s*)$/, "");
+                            record.token = "<![CDATA[";
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                            structure.push(["cdata", recordCount]);
+                            lengthMarkup = recordConcat(data, lexer.script(element));
+                            record.begin = structure[structure.length - 1][1];
+                            record.token = "]]>";
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                            structure.pop();
+                        } else {
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
+                        }
+
+                        // this is necessary to describe the structures that populate the begin and
+                        // stack data
+                        if (data.types[lengthMarkup] === "start" || data.types[lengthMarkup] === "template_start" || data.types[lengthMarkup] === "content_preserve") {
+                            structure.push([tname, recordCount]);
+                        } else if ((data.types[lengthMarkup] === "end" || data.types[lengthMarkup] === "template_end") && structure.length > 1) {
+                            structure.pop();
+                        }
+
+                        attributeRecord();
 
                         //sorts child elements
                         if (options.tagsort === true && data.types[lengthMarkup] === "end" && data.types[lengthMarkup - 1] !== "start") {
@@ -2235,16 +2303,16 @@ Parse Framework
                                 bb       = children.length - 1;
                                 if (bb > -1) {
                                     do {
-                                        recordPush(store, storeRecord(children[bb][0]), 0);
+                                        recordPush(store, storeRecord(children[bb][0]), false, 0);
                                         if (children[bb][0] !== children[bb][1]) {
                                             d = children[bb][0] + 1;
                                             if (d < children[bb][1]) {
                                                 do {
-                                                    recordPush(store, storeRecord(d), 0);
+                                                    recordPush(store, storeRecord(d), false, 0);
                                                     d = d + 1;
                                                 } while (d < children[bb][1]);
                                             }
-                                            recordPush(store, storeRecord(children[bb][1]), 0);
+                                            recordPush(store, storeRecord(children[bb][1]), false, 0);
                                         }
                                         bb = bb - 1;
                                     } while (bb > -1);
@@ -2262,16 +2330,8 @@ Parse Framework
                                     });
                                 }());
                                 lengthMarkup  = recordConcat(data, store);
-                                lengthMarkup  = recordPush(data, endData, lengthMarkup);
+                                lengthMarkup  = recordPush(data, endData, true, lengthMarkup);
                             }());
-                        }
-
-                        // this is necessary to describe the structures that populate the begin and
-                        // stack data
-                        if (data.types[lengthMarkup] === "start") {
-                            structure.push([tname, recordCount]);
-                        } else if (data.types[lengthMarkup] === "end") {
-                            structure.pop();
                         }
 
                         linesSpace = 0;
@@ -2284,7 +2344,9 @@ Parse Framework
                             liner     = linesSpace,
                             now       = a,
                             name      = (ext === true)
-                                ? tagName(data.token[lengthMarkup])
+                                ? (jsxbrace === true)
+                                    ? "script"
+                                    : tagName(data.token[data.begin[lengthMarkup]].toLowerCase())
                                 : "",
                             end       = "",
                             square    = (
@@ -2292,7 +2354,6 @@ Parse Framework
                             ),
                             external  = {},
                             record    = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "markup",
                                 lines: liner,
@@ -2353,7 +2414,7 @@ Parse Framework
                                             lengthMarkup = recordConcat(data, external);
                                             record.token = "}";
                                             record.types = "script";
-                                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                             structure.pop();
                                             break;
                                         }
@@ -2451,7 +2512,7 @@ Parse Framework
                                     }
                                 }
 
-                                //typically this logic is for artifacts nested with an SGML tag
+                                //typically this logic is for artifacts nested within an SGML tag
                                 if (square === true && b[a] === "]") {
                                     a = a - 1;
                                     if (options.content === true) {
@@ -2471,7 +2532,7 @@ Parse Framework
                                             .replace(/\s+/g, " ");
                                     }
                                     record.token = ltoke;
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     break;
                                 }
 
@@ -2493,11 +2554,11 @@ Parse Framework
                                                 .replace(/\s+/g, " ");
                                         }
                                         record.token = ltoke;
-                                        lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                         record.token = "{:else}";
                                         record.types = "template_else";
                                         record.presv = false;
-                                        lengthMarkup = recordPush(data, record, lengthMarkup);
+                                        lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                         break;
                                     }
 
@@ -2519,7 +2580,7 @@ Parse Framework
                                             .replace(/\s+/g, " ");
                                     }
                                     record.token = ltoke;
-                                    lengthMarkup = recordPush(data, record, lengthMarkup);
+                                    lengthMarkup = recordPush(data, record, true, lengthMarkup);
                                     break;
                                 }
                                 lex.push(b[a]);
@@ -2557,7 +2618,7 @@ Parse Framework
                                     .replace(/(\s+)$/, tailSpace);
                             }
                             record = ltoke;
-                            lengthMarkup = recordPush(data, record, lengthMarkup);
+                            lengthMarkup = recordPush(data, record, true, lengthMarkup);
                             linesSpace = 0;
                         }
                     };
@@ -2711,19 +2772,18 @@ Parse Framework
                         // * paren based: method, expression, paren
                         // * data       : array, object
                         var aa     = 0,
-                            esc    = false,
                             wordx  = "",
                             wordy  = "",
                             record = {
-                                attrs: {},
-                                begin: lengthScript,
+                                begin: structure[structure.length - 1][1],
                                 lexer: "script",
                                 lines: linesSpace,
                                 presv: false,
-                                stack: "",
+                                stack: structure[structure.length - 1][0],
                                 token: ltoke,
                                 types: ltype
-                            };
+                            },
+                            stack  = "";
                         aa    = lengthScript - 1;
                         wordx = data.token[aa];
                         wordy = (data.stack[aa] === undefined)
@@ -2738,111 +2798,104 @@ Parse Framework
                             wordx = data.token[aa];
                         }
                         if ((data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") && ((wordx === "else" && data.token[lengthScript] !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch")) {
-                            record.stack = wordx;
+                            stack = wordx;
                         } else if (data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") {
-                            if (lengthScript === 1 && options.lang === "jsx") {
-                                record.stack = "global";
-                            } else if (classy[classy.length - 1] === 0 && wordx !== "return") {
+                            if (classy[classy.length - 1] === 0 && wordx !== "return") {
                                 classy.pop();
-                                record.stack = "class";
+                                stack = "class";
                             } else if (data.token[aa - 1] === "class") {
-                                record.stack = "class";
+                                stack = "class";
                             } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
-                                record.stack = "array";
+                                stack = "array";
                             } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
-                                record.stack = "map";
+                                stack = "map";
                             } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
-                                record.stack = "initializer";
+                                stack = "initializer";
                             } else if (data.token[lengthScript] === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
                                 if (wordy === "if") {
-                                    record.stack = "if";
+                                    stack = "if";
                                 } else if (wordy === "for") {
-                                    record.stack = "for";
+                                    stack = "for";
                                 } else if (wordy === "while") {
-                                    record.stack = "while";
+                                    stack = "while";
                                 } else if (wordy === "class") {
-                                    record.stack = "class";
+                                    stack = "class";
                                 } else if (wordy === "switch" || data.token[data.begin[aa] - 1] === "switch") {
-                                    record.stack = "switch";
+                                    stack = "switch";
                                 } else if (wordy === "catch") {
-                                    record.stack = "catch";
+                                    stack = "catch";
                                 } else {
-                                    record.stack = "function";
+                                    stack = "function";
                                 }
                             } else if (data.token[lengthScript] === "{" && (wordx === ";" || wordx === "x;")) {
                                 //ES6 block
-                                record.stack = "block";
+                                stack = "block";
                             } else if (data.token[lengthScript] === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
                                 //ES6 block
-                                record.stack = "block";
+                                stack = "block";
                             } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
-                                record.stack = "object";
+                                stack = "object";
                             } else if (wordx === ")" && (pword[0] === "function" || pword[0] === "if" || pword[0] === "for" || pword[0] === "class" || pword[0] === "while" || pword[0] === "switch" || pword[0] === "catch")) {
                                 // if preceeded by a paren the prior containment is preceeded by a keyword if
                                 // (...) {
-                                record.stack = pword[0];
+                                stack = pword[0];
                             } else if (data.stack[aa] === "notation") {
                                 //if following a TSX array type declaration
-                                record.stack = "function";
+                                stack = "function";
                             } else if ((data.types[aa] === "literal" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
                                 //if preceed by a word and either string or word public class {
-                                record.stack = "function";
+                                stack = "function";
                             } else if (structure.length > 0 && data.token[aa] !== ":" && structure[structure.length - 1][0] === "object" && (
                                 data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
                             )) {
                                 // if an object wrapped in some containment which is itself preceeded by a curly
                                 // brace or comma var a={({b:{cat:"meow"}})};
-                                record.stack = "function";
+                                stack = "function";
                             } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
                                 //checking for TSX function using an angle brace name
-                                record.stack = "function";
+                                stack = "function";
                             } else if (wordx === "=>") {
                                 //checking for fat arrow assignment
-                                record.stack = "function";
+                                stack = "function";
                             } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
-                                record.stack = "function";
+                                stack = "function";
                             } else if (data.types[aa] === "word" && data.token[lengthScript] === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
                                 //ES6 block
-                                record.stack = "block";
+                                stack = "block";
                             } else {
-                                record.stack = "object";
+                                stack = "object";
                             }
                         } else if (data.token[lengthScript] === "[") {
                             if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
-                                record.stack = "notation";
+                                stack = "notation";
                             } else {
-                                record.stack = "array";
+                                stack = "array";
                             }
                         } else if (data.token[lengthScript] === "(" || data.token[lengthScript] === "x(") {
-                            if (data.types[aa] === "generic") {
-                                record.stack = "method";
+                            if (wordx === "function" || data.token[aa - 1] === "function") {
+                                stack = "arguments";
+                            } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
+                                stack = "method";
+                            } else if (data.types[aa] === "generic") {
+                                stack = "method";
                             } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
-                                record.stack = "method";
-                            } else if (wordx === "if" || wordx === "for" || wordx === "function" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
-                                record.stack = "expression";
-                            } else if ((data.types[aa] === "word" && wordx !== "return") || (wordx === "}" && (data.stack[aa] === "function" || data.stack[aa] === "class"))) {
-                                record.stack = "method";
+                                stack = "method";
+                            } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
+                                stack = "expression";
                             } else {
-                                record.stack = "paren";
+                                stack = "paren";
                             }
                         } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
                             data.stack[aa]                     = "attribute";
                             data.stack[aa - 1]                 = "attribute";
-                            record.stack                       = "attribute";
+                            stack                              = "attribute";
                             structure[structure.length - 1][0] = "attribute";
-                        } else if (structure.length === 0) {
-                            record.stack = "global";
-                            record.begin = 0;
-                            esc          = true;
-                        } else {
-                            record.stack = structure[structure.length - 1][0];
-                            record.begin = structure[structure.length - 1][1];
-                            esc          = true;
                         }
-                        if (esc === false) {
-                            structure[structure.length - 1] = [record.stack, record.begin];
+                        if (stack !== "") {
+                            structure.push([stack, recordCount]);
+                            record.stack = stack;console.log(record.token);
                         }
-                        lengthScript = recordPush(data, record, lengthScript);
+                        lengthScript = recordPush(data, record, true, lengthScript);
                         linesSpace  = 0;
                     },
                     //inserts ending curly brace (where absent)
@@ -2858,7 +2911,7 @@ Parse Framework
                         next = next.slice(0, 4);
                         if (ltoke === ";" && data.token[g - 1] === "x{") {
                             //to prevent the semicolon from inserting between the braces --> while (x) {};
-                            tempstore    = recordPop(data, lengthScript);
+                            tempstore    = recordPop(data, true, lengthScript);
                             lengthScript = tempstore.length;
                             ltoke        = "x}";
                             ltype        = "end";
@@ -2867,7 +2920,7 @@ Parse Framework
                             pstack       = structure.pop();
                             ltoke        = ";";
                             ltype        = "end";
-                            lengthScript = recordPush(data, tempstore, lengthScript);
+                            lengthScript = recordPush(data, tempstore, true, lengthScript);
                             return;
                         }
                         ltoke = "x}";
@@ -2910,7 +2963,7 @@ Parse Framework
                             nextitem = "",
                             elsefix  = function parser_script_word_elsefix() {
                                 brace.push("x{");
-                                structure.push(["else", lengthScript]);
+                                structure.push(["else", recordCount]);
                                 lengthScript = recordSplice({
                                     data   : data,
                                     index  : lengthScript - 3,
@@ -3040,7 +3093,6 @@ Parse Framework
                                 }
                                 do {
                                     build = {
-                                        attrs: data.attrs[g],
                                         begin: data.begin[g],
                                         lexer: data.lexer[g],
                                         lines: data.lines[g],
@@ -3049,7 +3101,7 @@ Parse Framework
                                         token: data.token[g],
                                         types: data.types[g]
                                     };
-                                    tempstore = recordPop(data, lengthScript);
+                                    tempstore = recordPop(data, true, lengthScript);
                                     lengthScript = tempstore.length;
                                     lengthScript = recordSplice({
                                         data   : data,
@@ -3105,7 +3157,7 @@ Parse Framework
                                 brace.push("x{");
                                 stackPush();
                                 structure.push([
-                                    "do", lengthScript
+                                    "do", recordCount
                                 ]);
                             }
                         }
@@ -3117,7 +3169,7 @@ Parse Framework
                                 brace.push("x{");
                                 stackPush();
                                 structure.push([
-                                    "else", lengthScript
+                                    "else", recordCount
                                 ]);
                             }
                             if (data.token[lengthScript - 2] === "x}") {
@@ -3172,7 +3224,6 @@ Parse Framework
                                 index  : x,
                                 howmany: 0,
                                 record : {
-                                    attrs: {},
                                     begin: data.begin[x],
                                     lexer: "script",
                                     lines: linesSpace,
@@ -3305,7 +3356,7 @@ Parse Framework
                                     y = store.length;
                                 if (x < y) {
                                     do {
-                                        lengthScript = recordPush(data, store[x], lengthScript);
+                                        lengthScript = recordPush(data, store[x], true, lengthScript);
                                         x = x + 1;
                                     } while (x < y);
                                 }
@@ -3323,6 +3374,9 @@ Parse Framework
                         tokec   = data.token[lengthScript - 2];
                         end     = function parser_script_plusplus_end() {
                             walk = data.begin[walk] - 1;
+                            if (walk === data.begin[walk] - 1) {
+                                return;
+                            }
                             if (data.types[walk] === "end") {
                                 parser_script_plusplus_end();
                             } else if (data.token[walk - 1] === ".") {
@@ -3433,7 +3487,7 @@ Parse Framework
                                 return;
                             }
                             if (pre === false) {
-                                tempstore = recordPop(data, lengthScript);
+                                tempstore = recordPop(data, true, lengthScript);
                                 lengthScript = tempstore.length;
                             }
                             walk = lengthScript;
@@ -3504,7 +3558,7 @@ Parse Framework
                                     y = store.length;
                                 if (x < y) {
                                     do {
-                                        lengthScript = recordPush(data, store[x], lengthScript);
+                                        lengthScript = recordPush(data, store[x], true, lengthScript);
                                         x = x + 1;
                                     } while (x < y);
                                 }
@@ -3565,7 +3619,6 @@ Parse Framework
                             index  : aa,
                             howmany: 0,
                             record : {
-                                attrs: {},
                                 begin: data.begin[aa],
                                 lexer: "script",
                                 lines: linesSpace,
@@ -3611,7 +3664,7 @@ Parse Framework
                         // this insanity is for JSON where all the required quote characters are
                         // escaped.
                         if (c[a - 1] === "\\" && slashes(a - 1) === true && (c[a] === "\"" || c[a] === "'")) {
-                            tempstore = recordPop(data, lengthScript);
+                            tempstore = recordPop(data, true, lengthScript);
                             lengthScript = tempstore.length;
                             if (data.token[0] === "{") {
                                 if (c[a] === "\"") {
@@ -3665,8 +3718,8 @@ Parse Framework
                                 } else {
                                     build.push(c[ee]);
                                 }
-                                if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] === "\n" || ee === jj - 1)) {
-                                    error = "Unterminated string in JavaScript on line number " + lineNumber;
+                                if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
+                                    error = "Unterminated string in script on line number " + lineNumber;
                                     break;
                                 }
                                 if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
@@ -4185,15 +4238,15 @@ Parse Framework
                                         ? "array"
                                         : "object",
                                     arraylen = 0;
-                                tempstore = recordPop(data, lengthScript);
+                                tempstore = recordPop(data, true, lengthScript);
                                 lengthScript = tempstore.length;
                                 if (ar === true && data.token[lengthScript - 1] === "(" && data.types[lengthScript] === "literal" && data.token[lengthScript].charAt(0) !== "\"" && data.token[lengthScript].charAt(0) !== "'") {
                                     arraylen = data.token[data.begin[lengthScript]] - 1;
-                                    tempstore = recordPop(data, lengthScript);
+                                    tempstore = recordPop(data, true, lengthScript);
                                     lengthScript = tempstore.length;
-                                    tempstore = recordPop(data, lengthScript);
+                                    tempstore = recordPop(data, true, lengthScript);
                                     lengthScript = tempstore.length;
-                                    tempstore = recordPop(data, lengthScript);
+                                    tempstore = recordPop(data, true, lengthScript);
                                     lengthScript = tempstore.length;
                                     data.token[lengthScript] = "[";
                                     data.types[lengthScript] = "start";
@@ -4265,7 +4318,7 @@ Parse Framework
                             }
                         }
                         if (ltoke === "," && data.stack[lengthScript] !== "initializer" && ((x === "]" && (options.endcomma === "never" || options.endcomma === "multiline" || data.token[lengthScript - 1] === "[")) || x === "}")) {
-                            tempstore = recordPop(data, lengthScript);
+                            tempstore = recordPop(data, true, lengthScript);
                             lengthScript = tempstore.length;
                         }
                         if (x === ")" || x === "x)") {
@@ -4287,7 +4340,7 @@ Parse Framework
                             }
                             if (structure.length > 0 && structure[structure.length - 1][0] !== "object") {
                                 asi(true);
-                            } else if (options.objectSort === true) {
+                            } else if (options.objectSort === true && data.stack[0] !== "attribute") {
                                 lengthScript = objectSort(data, lengthScript);
                             }
                             if (ltype === "comment" || ltype === "comment-inline") {
@@ -4321,7 +4374,7 @@ Parse Framework
                             ltype = "start";
                             stackPush();
                             brace.push("x{");
-                            pword[1] = lengthScript;
+                            pword[1] = recordCount;
                             structure.push(pword);
                         }
                     },
@@ -4506,10 +4559,10 @@ Parse Framework
                         if (options.comments !== "nocomment") {
                             ltype = "comment";
                             if (data.token[lengthScript] === "var" || data.token[lengthScript] === "let" || data.token[lengthScript] === "const") {
-                                tempstore = recordPop(data, lengthScript);
+                                tempstore = recordPop(data, true, lengthScript);
                                 lengthScript = tempstore.length;
                                 stackPush();
-                                lengthScript = recordPush(data, tempstore, lengthScript);
+                                lengthScript = recordPush(data, tempstore, true, lengthScript);
                                 if (data.lines[lengthScript - 2] === 0) {
                                     data.lines[lengthScript - 2] = data.lines[lengthScript];
                                 }
@@ -4708,7 +4761,7 @@ Parse Framework
                     stackPush();
                 }
                 if (data.token[lengthScript] === "x;" && (data.token[lengthScript - 1] === "}" || data.token[lengthScript - 1] === "]") && data.begin[lengthScript - 1] === 0) {
-                    tempstore = recordPop(data, lengthScript);
+                    tempstore = recordPop(data, true, lengthScript);
                     lengthScript = tempstore.length;
                 }
 
@@ -5040,7 +5093,6 @@ Parse Framework
                             block      = [],
                             outy       = "",
                             record     = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5104,7 +5156,7 @@ Parse Framework
                                 }
                                 if (structure[structure.length - 1][0] === "map" && block.length === 0 && (b[aa + 1] === "," || b[aa + 1] === ")")) {
                                     if (b[aa + 1] === ")" && data.token[lengthStyle] === "(") {
-                                        lengthStyle = recordPop(data, lengthStyle).length;
+                                        lengthStyle = recordPop(data, true, lengthStyle).length;
                                         structure.pop();
                                         out       = ["("];
                                         aa        = a - 1;
@@ -5180,7 +5232,7 @@ Parse Framework
                             ltype = "item";
                         }
                         record.types = ltype;
-                        lengthStyle = recordPush(data, record, lengthStyle);
+                        lengthStyle = recordPush(data, record, true, lengthStyle);
                         linesSpace  = 0;
                     },
                     // Some tokens receive a generic type named 'item' because their type is unknown
@@ -5191,7 +5243,6 @@ Parse Framework
                             bb     = 0,
                             coms   = [],
                             record = {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5316,25 +5367,25 @@ Parse Framework
                                     if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                         aa = coms.length - 1;
                                         do {
-                                            lengthStyle = recordPop(data, lengthStyle).length;
+                                            lengthStyle = recordPop(data, true, lengthStyle).length;
                                             aa = aa - 1;
                                         } while (aa > 0);
                                         record.token = ";";
                                         record.types = "semi";
-                                        lengthStyle = recordPush(data, record, lengthStyle);
+                                        lengthStyle = recordPush(data, record, true, lengthStyle);
                                         bb = coms.length - 1;
                                         do {
                                             record.token = coms[aa];
                                             record.types = (coms[aa].indexOf("//") === 0 && data.lines[lengthStyle] === 0)
                                                 ? "comment-inline"
                                                 : "comment";
-                                            lengthStyle = recordPush(data, record, lengthStyle);
+                                            lengthStyle = recordPush(data, record, true, lengthStyle);
                                             aa = aa + 1;
                                         } while (aa < bb);
                                     } else {
                                         record.token = ";";
                                         record.types = "semi";
-                                        lengthStyle = recordPush(data, record, lengthStyle);
+                                        lengthStyle = recordPush(data, record, true, lengthStyle);
                                     }
                                     linesSpace = 0;
                                 }
@@ -5410,7 +5461,7 @@ Parse Framework
                                     }
                                 }
                                 record.types = typename;
-                                lengthStyle  = recordPush(data, record, lengthStyle);
+                                lengthStyle  = recordPush(data, record, true, lengthStyle);
                                 linesSpace   = 0;
                             };
                         nosort[nosort.length - 1] = true;
@@ -5479,7 +5530,6 @@ Parse Framework
                                                 return;
                                             }
                                             record = {
-                                                attrs: {},
                                                 begin: structure[structure.length - 1][1],
                                                 lexer: "style",
                                                 lines: linesSpace,
@@ -5624,9 +5674,8 @@ Parse Framework
                         }
                         a = aa;
                         if (lengthStyle > -1 && (ltype === "selector" || ltype === "propvar") && data.types[lengthStyle] !== "comment" && data.types[lengthStyle] !== "comment-inline") {
-                            lengthStyle = recordPop(data, lengthStyle).length;
+                            lengthStyle = recordPop(data, true, lengthStyle).length;
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5634,9 +5683,8 @@ Parse Framework
                                 stack: structure[structure.length - 1][0],
                                 token: out.join(""),
                                 types: type
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: 0,
@@ -5646,16 +5694,15 @@ Parse Framework
                                 types: (ltype === "propvar")
                                     ? "propvar"
                                     : "selector"
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                         } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
                             do {
                                 store.push(recordStore(lengthStyle));
-                                lengthStyle = recordPop(data, lengthStyle).length;
+                                lengthStyle = recordPop(data, true, lengthStyle).length;
                             } while (
                                 lengthStyle > 0 && data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start"
                             );
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5663,15 +5710,14 @@ Parse Framework
                                 stack: structure[structure.length - 1][0],
                                 token: out.join(""),
                                 types: type
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                             do {
-                                lengthStyle = recordPush(data, store, lengthStyle);
-                                recordPop(store);
+                                lengthStyle = recordPush(data, store, true, lengthStyle);
+                                recordPop(store, false, 0);
                             } while (store.length > 0);
                         } else {
                             ltype = type;
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -5679,7 +5725,7 @@ Parse Framework
                                 stack: structure[structure.length - 1][0],
                                 token: out.join(""),
                                 types: type
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                         }
                         linesSpace = 0;
                     },
@@ -5888,7 +5934,7 @@ Parse Framework
                                 cc = 0;
                                 if (cc < dd) {
                                     do {
-                                        lengthStyle = recordPush(store, recordStore(set[aa][cc]), lengthStyle);
+                                        lengthStyle = recordPush(store, recordStore(set[aa][cc]), false, lengthStyle);
                                         cc = cc + 1;
                                     } while (cc < dd);
                                 }
@@ -5938,7 +5984,6 @@ Parse Framework
                         template("<!--#", "-->");
                     } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: data.begin[lengthStyle],
                             lexer: "style",
                             lines: linesSpace,
@@ -5946,7 +5991,7 @@ Parse Framework
                             stack: data.stack[lengthStyle],
                             token: "@else",
                             types: "template_else"
-                        }, lengthStyle);
+                        }, true, lengthStyle);
                         linesSpace = 0;
                         a = a + 4;
                     } else if (b[a] === "{" || (b[a] === "(" && data.token[lengthStyle] === ":" && data.types[lengthStyle - 1] === "propvar")) {
@@ -5955,14 +6000,7 @@ Parse Framework
                         }
                         item("start");
                         ltype = "start";
-                        if (b[a] === "(") {
-                            structure.push(["map", lengthStyle + 1]);
-                            mapper.push(0);
-                        } else {
-                            structure.push(["block", lengthStyle + 1]);
-                        }
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: structure[structure.length - 1][1],
                             lexer: "style",
                             lines: linesSpace,
@@ -5970,7 +6008,13 @@ Parse Framework
                             stack: structure[structure.length - 1][0],
                             token: b[a],
                             types: "start"
-                        }, lengthStyle);
+                        }, true, lengthStyle);
+                        if (b[a] === "(") {
+                            structure.push(["map", recordCount]);
+                            mapper.push(0);
+                        } else {
+                            structure.push(["block", recordCount]);
+                        }
                         linesSpace = 0;
                         nosort.push(false);
                     } else if (b[a] === "}" || (b[a] === ")" && structure[structure.length - 1][0] === "map" && mapper[mapper.length - 1] === 0)) {
@@ -5978,14 +6022,13 @@ Parse Framework
                         if (b[a] === "}" && data.types[lengthStyle] === "item" && data.token[lengthStyle - 1] === "{" && data.token[lengthStyle - 2] !== undefined && data.token[lengthStyle - 2].charAt(data.token[lengthStyle - 2].length - 1) === "@") {
                             data.token[lengthStyle - 2] = data.token[lengthStyle - 2] + "{" +
                                     data.token[lengthStyle] + "}";
-                            lengthStyle = recordPop(data, lengthStyle).length;
-                            lengthStyle = recordPop(data, lengthStyle).length;
+                            lengthStyle = recordPop(data, true, lengthStyle).length;
+                            lengthStyle = recordPop(data, true, lengthStyle).length;
                         } else {
                             if (b[a] === ")") {
                                 mapper.pop();
                             } else if (b[a] === "}" && ltype === "value" && data.token[lengthStyle] !== ";") {
                                 lengthStyle = recordPush(data, {
-                                    attrs: {},
                                     begin: data.begin[lengthStyle],
                                     lexer: "style",
                                     lines: linesSpace,
@@ -5993,7 +6036,7 @@ Parse Framework
                                     stack: "block",
                                     token: ";",
                                     types: "semi"
-                                }, lengthStyle);
+                                }, true, lengthStyle);
                                 linesSpace = 0;
                             }
                             item("end");
@@ -6004,7 +6047,6 @@ Parse Framework
                             }
                             nosort.pop();
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -6012,7 +6054,7 @@ Parse Framework
                                 stack: structure[structure.length - 1][0],
                                 token: b[a],
                                 types: "end"
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                             linesSpace = 0;
                         }
                         structure.pop();
@@ -6020,7 +6062,6 @@ Parse Framework
                         item("semi");
                         if (data.types[lengthStyle] !== "semi" && data.types[lengthStyle] !== "start" && esctest(a) === false) {
                             lengthStyle = recordPush(data, {
-                                attrs: {},
                                 begin: structure[structure.length - 1][1],
                                 lexer: "style",
                                 lines: linesSpace,
@@ -6028,14 +6069,13 @@ Parse Framework
                                 stack: structure[structure.length - 1][0],
                                 token: b[a],
                                 types: "semi"
-                            }, lengthStyle);
+                            }, true, lengthStyle);
                             ltype = "semi";
                             linesSpace = 0;
                         }
                     } else if (b[a] === ":" && data.types[lengthStyle] !== "end") {
                         item("colon");
                         lengthStyle = recordPush(data, {
-                            attrs: {},
                             begin: structure[structure.length - 1][1],
                             lexer: "style",
                             lines: linesSpace,
@@ -6043,7 +6083,7 @@ Parse Framework
                             stack: structure[structure.length - 1][0],
                             token: ":",
                             types: "colon"
-                        }, lengthStyle);
+                        }, true, lengthStyle);
                         ltype = "colon";
                         linesSpace = 0;
                     } else {
@@ -6062,6 +6102,7 @@ Parse Framework
             };
             parsetable   = lexer[options.type](options.source);
 
+            // validate that all the data arrays are the same length
             (function parse_checkLengths() {
                 var a    = 0,
                     b    = 0,
