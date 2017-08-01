@@ -38,6 +38,7 @@
             .script th{border-color: #060;color:#040}
             .script.odd{background: #eefff8}
             .script.even{background: #ded}
+            .key li{white-space:pre}
             .key .markup{background:#fee;color:#600}
             .key .script{background:#eefff8;color:#040}
             .key .style{background:#eef8ff;color:#009}
@@ -61,9 +62,9 @@
             <h2>Output</h2>
             <p>A colorful visual hint is added to help identify which lexer processed which records:</p>
             <ul class="key">
-                <li class="markup">Red for markup lexer</li>
-                <li class="script">Green for script lexer</li>
-                <li class="style">Blue for style lexer</li>
+                <li class="markup">Red for markup lexer:   (XML/HTML like syntax)</li>
+                <li class="script">Green for script lexer: (C-like syntax)</li>
+                <li class="style">Blue for style lexer:   (CSS/SCSS/LESS like syntax)</li>
             </ul>
             <div id="data"></div>
         </div>
