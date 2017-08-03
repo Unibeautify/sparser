@@ -44,7 +44,7 @@ Parse Framework
                     datanames.forEach(function parser_recordPop_datanames(value) {
                         output[value] = data[value].pop();
                     });
-                    output.length = length;
+                    output.length = length - 1;
                     if (count === true) {
                         recordCount = recordCount - 1;
                     }
@@ -816,21 +816,7 @@ Parse Framework
                                     aa   = 0,
                                     bb   = 0;
                                 if (quotes === true) {
-                                    if (quote === "\"" && options.quoteConvert === "single") {
-                                        atty = attribute
-                                            .slice(0, attribute.length - 1)
-                                            .join("")
-                                            .replace(/'/g, "\"")
-                                            .replace(/"/, "'") + "'";
-                                    } else if (quote === "'" && options.quoteConvert === "double") {
-                                        atty = attribute
-                                            .slice(0, attribute.length - 1)
-                                            .join("")
-                                            .replace(/"/g, "'")
-                                            .replace(/'/, "\"") + "\"";
-                                    } else {
-                                        atty = attribute.join("");
-                                    }
+                                    atty = attribute.join("");
                                     name = arname(atty);
                                     if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
                                         ignoreme = true;
@@ -2784,116 +2770,117 @@ Parse Framework
                                 types: ltype
                             },
                             stack  = "";
-                        aa    = lengthScript - 1;
-                        wordx = data.token[aa];
-                        wordy = (data.stack[aa] === undefined)
-                            ? ""
-                            : data.token[data.begin[aa] - 1];
-                        if (data.types[aa] === "comment" || data.types[aa] === "comment-inline") {
-                            do {
-                                aa = aa - 1;
-                            } while (
-                                aa > 0 && (data.types[aa] === "comment" || data.types[aa] === "comment-inline")
-                            );
+                        if (data.types[lengthScript] === "start") {
+                            aa    = lengthScript - 1;
                             wordx = data.token[aa];
-                        }
-                        if ((data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") && ((wordx === "else" && data.token[lengthScript] !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch")) {
-                            stack = wordx;
-                        } else if (data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") {
-                            if (classy[classy.length - 1] === 0 && wordx !== "return") {
-                                classy.pop();
-                                stack = "class";
-                            } else if (data.token[aa - 1] === "class") {
-                                stack = "class";
-                            } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
-                                stack = "array";
-                            } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
-                                stack = "map";
-                            } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
-                                stack = "initializer";
-                            } else if (data.token[lengthScript] === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
-                                if (wordy === "if") {
-                                    stack = "if";
-                                } else if (wordy === "for") {
-                                    stack = "for";
-                                } else if (wordy === "while") {
-                                    stack = "while";
-                                } else if (wordy === "class") {
+                            wordy = (data.stack[aa] === undefined)
+                                ? ""
+                                : data.token[data.begin[aa] - 1];
+                            if (data.types[aa] === "comment" || data.types[aa] === "comment-inline") {
+                                do {
+                                    aa = aa - 1;
+                                } while (
+                                    aa > 0 && (data.types[aa] === "comment" || data.types[aa] === "comment-inline")
+                                );
+                                wordx = data.token[aa];
+                            }
+                            if ((data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") && ((wordx === "else" && data.token[lengthScript] !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch")) {
+                                stack = wordx;
+                            } else if (data.token[lengthScript] === "{" || data.token[lengthScript] === "x{") {
+                                if (classy[classy.length - 1] === 0 && wordx !== "return") {
+                                    classy.pop();
                                     stack = "class";
-                                } else if (wordy === "switch" || data.token[data.begin[aa] - 1] === "switch") {
-                                    stack = "switch";
-                                } else if (wordy === "catch") {
-                                    stack = "catch";
-                                } else {
+                                } else if (data.token[aa - 1] === "class") {
+                                    stack = "class";
+                                } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
+                                    stack = "array";
+                                } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
+                                    stack = "map";
+                                } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
+                                    stack = "initializer";
+                                } else if (data.token[lengthScript] === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
+                                    if (wordy === "if") {
+                                        stack = "if";
+                                    } else if (wordy === "for") {
+                                        stack = "for";
+                                    } else if (wordy === "while") {
+                                        stack = "while";
+                                    } else if (wordy === "class") {
+                                        stack = "class";
+                                    } else if (wordy === "switch" || data.token[data.begin[aa] - 1] === "switch") {
+                                        stack = "switch";
+                                    } else if (wordy === "catch") {
+                                        stack = "catch";
+                                    } else {
+                                        stack = "function";
+                                    }
+                                } else if (data.token[lengthScript] === "{" && (wordx === ";" || wordx === "x;")) {
+                                    //ES6 block
+                                    stack = "block";
+                                } else if (data.token[lengthScript] === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
+                                    //ES6 block
+                                    stack = "block";
+                                } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
+                                    stack = "object";
+                                } else if (wordx === ")" && (pword[0] === "function" || pword[0] === "if" || pword[0] === "for" || pword[0] === "class" || pword[0] === "while" || pword[0] === "switch" || pword[0] === "catch")) {
+                                    // if preceeded by a paren the prior containment is preceeded by a keyword if
+                                    // (...) {
+                                    stack = pword[0];
+                                } else if (data.stack[aa] === "notation") {
+                                    //if following a TSX array type declaration
                                     stack = "function";
+                                } else if ((data.types[aa] === "literal" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
+                                    //if preceed by a word and either string or word public class {
+                                    stack = "function";
+                                } else if (structure.length > 0 && data.token[aa] !== ":" && structure[structure.length - 1][0] === "object" && (
+                                    data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
+                                )) {
+                                    // if an object wrapped in some containment which is itself preceeded by a curly
+                                    // brace or comma var a={({b:{cat:"meow"}})};
+                                    stack = "function";
+                                } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
+                                    //checking for TSX function using an angle brace name
+                                    stack = "function";
+                                } else if (wordx === "=>") {
+                                    //checking for fat arrow assignment
+                                    stack = "function";
+                                } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
+                                    stack = "function";
+                                } else if (data.types[aa] === "word" && data.token[lengthScript] === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
+                                    //ES6 block
+                                    stack = "block";
+                                } else {
+                                    stack = "object";
                                 }
-                            } else if (data.token[lengthScript] === "{" && (wordx === ";" || wordx === "x;")) {
-                                //ES6 block
-                                stack = "block";
-                            } else if (data.token[lengthScript] === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
-                                //ES6 block
-                                stack = "block";
-                            } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
-                                stack = "object";
-                            } else if (wordx === ")" && (pword[0] === "function" || pword[0] === "if" || pword[0] === "for" || pword[0] === "class" || pword[0] === "while" || pword[0] === "switch" || pword[0] === "catch")) {
-                                // if preceeded by a paren the prior containment is preceeded by a keyword if
-                                // (...) {
-                                stack = pword[0];
-                            } else if (data.stack[aa] === "notation") {
-                                //if following a TSX array type declaration
-                                stack = "function";
-                            } else if ((data.types[aa] === "literal" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
-                                //if preceed by a word and either string or word public class {
-                                stack = "function";
-                            } else if (structure.length > 0 && data.token[aa] !== ":" && structure[structure.length - 1][0] === "object" && (
-                                data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
-                            )) {
-                                // if an object wrapped in some containment which is itself preceeded by a curly
-                                // brace or comma var a={({b:{cat:"meow"}})};
-                                stack = "function";
-                            } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
-                                //checking for TSX function using an angle brace name
-                                stack = "function";
-                            } else if (wordx === "=>") {
-                                //checking for fat arrow assignment
-                                stack = "function";
-                            } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
-                                stack = "function";
-                            } else if (data.types[aa] === "word" && data.token[lengthScript] === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
-                                //ES6 block
-                                stack = "block";
-                            } else {
-                                stack = "object";
+                            } else if (data.token[lengthScript] === "[") {
+                                if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
+                                    stack = "notation";
+                                } else {
+                                    stack = "array";
+                                }
+                            } else if (data.token[lengthScript] === "(" || data.token[lengthScript] === "x(") {
+                                if (wordx === "function" || data.token[aa - 1] === "function") {
+                                    stack = "arguments";
+                                } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
+                                    stack = "method";
+                                } else if (data.types[aa] === "generic") {
+                                    stack = "method";
+                                } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
+                                    stack = "method";
+                                } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
+                                    stack = "expression";
+                                } else {
+                                    stack = "paren";
+                                }
+                            } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
+                                data.stack[aa]                     = "attribute";
+                                data.stack[aa - 1]                 = "attribute";
+                                stack                              = "attribute";
+                                structure[structure.length - 1][0] = "attribute";
                             }
-                        } else if (data.token[lengthScript] === "[") {
-                            if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
-                                stack = "notation";
-                            } else {
-                                stack = "array";
-                            }
-                        } else if (data.token[lengthScript] === "(" || data.token[lengthScript] === "x(") {
-                            if (wordx === "function" || data.token[aa - 1] === "function") {
-                                stack = "arguments";
-                            } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
-                                stack = "method";
-                            } else if (data.types[aa] === "generic") {
-                                stack = "method";
-                            } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
-                                stack = "method";
-                            } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
-                                stack = "expression";
-                            } else {
-                                stack = "paren";
-                            }
-                        } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
-                            data.stack[aa]                     = "attribute";
-                            data.stack[aa - 1]                 = "attribute";
-                            stack                              = "attribute";
-                            structure[structure.length - 1][0] = "attribute";
-                        }
-                        if (stack !== "") {
                             structure.push([stack, recordCount]);
-                            record.stack = stack;console.log(record.token);
+                            record.begin = recordCount;
+                            record.stack = stack;
                         }
                         lengthScript = recordPush(data, record, true, lengthScript);
                         linesSpace  = 0;
@@ -2901,7 +2888,8 @@ Parse Framework
                     //inserts ending curly brace (where absent)
                     blockinsert    = function parser_script_blockinsert() {
                         var next = nextchar(5, false),
-                            g    = lengthScript;
+                            g    = lengthScript,
+                            name = "";
                         if (json === true) {
                             return;
                         }
@@ -2909,7 +2897,21 @@ Parse Framework
                             return;
                         }
                         next = next.slice(0, 4);
+                        if (next === "else" && ltoke === "}" && data.stack[lengthScript] === "if" && data.token[data.begin[lengthScript]] !== "x{") {
+                            return;
+                        }
                         if (ltoke === ";" && data.token[g - 1] === "x{") {
+                            name = data.token[data.begin[g - 2] - 1];
+                            if (data.token[g - 2] === "do" || (data.token[g - 2] === ")" && "ifforwhilecatch".indexOf(name) > -1)) {
+                                tempstore = recordPop(data, true, lengthScript);
+                                lengthScript = tempstore.length;
+                                ltoke = "x}";
+                                ltype = "end";
+                                stackPush();
+                                pstack = structure.pop();
+                                brace.pop();
+                                return;
+                            }
                             //to prevent the semicolon from inserting between the braces --> while (x) {};
                             tempstore    = recordPop(data, true, lengthScript);
                             lengthScript = tempstore.length;
@@ -2938,6 +2940,9 @@ Parse Framework
                             stackPush();
                             brace.pop();
                             pstack = structure.pop();
+                            if (data.stack[lengthScript] === "do") {
+                                break;
+                            }
                         } while (brace[brace.length - 1] === "x{");
                     },
                     //remove "vart" object data
@@ -3163,6 +3168,37 @@ Parse Framework
                         }
                         if (output === "else") {
                             nextitem = nextchar(2, true);
+                            if (data.token[lengthScript - 1] === "x}") {
+                                if (data.token[lengthScript] === "else") {
+                                    if (data.stack[lengthScript - 1] !== "if" && data.stack[lengthScript - 1] !== "else") {
+                                        brace.pop();
+                                        lengthScript = recordSplice({
+                                            data: data,
+                                            index: lengthScript - 1,
+                                            howmany: 0,
+                                            record: {
+                                                begin: data.begin[data.begin[data.begin[lengthScript - 1] - 1] - 1],
+                                                lexer: "script",
+                                                lines: 0,
+                                                presv: false,
+                                                stack: "if",
+                                                token: "x}",
+                                                types: "end"
+                                            },
+                                            length: lengthScript
+                                        });
+                                        structure.splice(structure.length - 2, 1);
+                                        structure[structure.length - 1][1] = lengthScript;
+                                    } else if (data.token[lengthScript - 2] === "x}" && pstack[0] !== "if" && data.stack[lengthScript] === "else") {
+                                        elsefix();
+                                    } else if (data.token[lengthScript - 2] === "}" && data.stack[lengthScript - 2] === "if" && pstack[0] === "if" && data.token[pstack[1] - 1] !== "if" && data.token[data.begin[lengthScript - 1]] === "x{") {
+                                        //fixes when "else" is following a block that isn't "if"
+                                        elsefix();
+                                    }
+                                } else if (data.token[lengthScript] === "x}" && data.stack[lengthScript] === "if") {
+                                    elsefix();
+                                }
+                            }
                             if (nextitem !== "if" && nextitem.charAt(0) !== "{") {
                                 ltoke = "x{";
                                 ltype = "start";
@@ -3171,18 +3207,6 @@ Parse Framework
                                 structure.push([
                                     "else", recordCount
                                 ]);
-                            }
-                            if (data.token[lengthScript - 2] === "x}") {
-                                if (data.token[lengthScript - 1] === "else") {
-                                    if (data.token[lengthScript - 3] === "x}" && pstack[0] !== "if" && data.stack[lengthScript - 1] === "else") {
-                                        elsefix();
-                                    } else if (data.token[lengthScript - 3] === "}" && data.stack[lengthScript - 3] === "if" && pstack[0] === "if" && data.token[pstack[1] - 1] !== "if" && data.token[data.begin[lengthScript - 2]] === "x{") {
-                                        //fixes when "else" is following a block that isn't "if"
-                                        elsefix();
-                                    }
-                                } else if (data.token[lengthScript - 1] === "x}" && data.stack[lengthScript - 1] === "if") {
-                                    elsefix();
-                                }
                             }
                         }
                         if ((output === "for" || output === "if" || output === "switch" || output === "catch") && options.lang !== "twig" && data.token[lengthScript - 1] !== ".") {
@@ -3374,9 +3398,6 @@ Parse Framework
                         tokec   = data.token[lengthScript - 2];
                         end     = function parser_script_plusplus_end() {
                             walk = data.begin[walk] - 1;
-                            if (walk === data.begin[walk] - 1) {
-                                return;
-                            }
                             if (data.types[walk] === "end") {
                                 parser_script_plusplus_end();
                             } else if (data.token[walk - 1] === ".") {
@@ -4340,7 +4361,7 @@ Parse Framework
                             }
                             if (structure.length > 0 && structure[structure.length - 1][0] !== "object") {
                                 asi(true);
-                            } else if (options.objectSort === true && data.stack[0] !== "attribute") {
+                            } else if (options.objectSort === true) {
                                 lengthScript = objectSort(data, lengthScript);
                             }
                             if (ltype === "comment" || ltype === "comment-inline") {
@@ -4365,7 +4386,7 @@ Parse Framework
                         }
                         brace.pop();
                         if (brace[brace.length - 1] === "x{" && x === "}" && data.stack[lengthScript] !== "try") {
-                            if (next !== ":" && data.token[data.begin[a] - 1] !== "?") {
+                            if (next !== ":" && next !== ";" && data.token[data.begin[a] - 1] !== "?") {
                                 blockinsert();
                             }
                         }
@@ -4492,10 +4513,6 @@ Parse Framework
                     if (classy.length > 0) {
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
-                    structure.push([
-                        data.stack[lengthScript],
-                        recordCount
-                    ]);
                 };
                 do {
                     if ((/\s/).test(c[a])) {
@@ -6100,7 +6117,7 @@ Parse Framework
 
                 return data;
             };
-            parsetable   = lexer[options.type](options.source);
+            parsetable   = lexer[options.type](options.source + " ");
 
             // validate that all the data arrays are the same length
             (function parse_checkLengths() {
@@ -6126,6 +6143,7 @@ Parse Framework
             } else if (api === "browser") {
                 window.parseerror = error;
             }
+            error = "";
 
             return parsetable;
         };
