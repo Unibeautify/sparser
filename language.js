@@ -43,7 +43,7 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
             return "script";
         }
         if (input.indexOf("html") > -1) {
-            return "html";
+            return "markup";
         }
         if (langmap[input] === undefined) {
             return "script";
