@@ -309,9 +309,5 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
         }
         return output("unknown");
     };
-    if (typeof module === "object" && typeof module.parent === "object") {
-        module.exports = language;
-    } else {
-        window.language = language;
-    }
+    global.language = language;
 }());

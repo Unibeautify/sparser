@@ -82,6 +82,10 @@
             </ul>
             <div id="data"></div>
         </div>
+        <script type="application/javascript" src="global.js"></script>
+        <script type="application/javascript" src="lexers/markup.js"></script>
+        <script type="application/javascript" src="lexers/script.js"></script>
+        <script type="application/javascript" src="lexers/style.js"></script>
         <script type="application/javascript" src="parse.js"></script>
         <script type="application/javascript" src="language.js"></script>
         <script type="application/javascript">
@@ -100,7 +104,7 @@
                         var value = input.value,
                             startTime = 0,
                             startTotal = Math.round(performance.now() * 1000),
-                            lang   = window.language.auto(value, "javascript"),
+                            lang   = global.language.auto(value, "javascript"),
                             output = {},
                             builder = function web_builder(data) {
                                 var a         = 0,
@@ -176,7 +180,7 @@
                         }
                         options.source = value;
                         startTime = Math.round(performance.now() * 1000);
-                        output = window.parser(options);
+                        output = global.parser(options);
                         (function web_handler_perfParse() {
                             var endTime = Math.round(performance.now() * 1000),
                                 time = (endTime - startTime) / 1000;
@@ -188,8 +192,8 @@
                                 time = (endTime - startTotal) / 1000;
                             document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
                         }());
-                        if (window.parseerror !== undefined) {
-                            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = window.parseerror;
+                        if (global.parseerror !== undefined) {
+                            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = global.parseerror;
                         } else {
                             document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
                         }
