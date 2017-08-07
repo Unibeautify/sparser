@@ -106,7 +106,7 @@
                             startTotal = Math.round(performance.now() * 1000),
                             lang   = global.language.auto(value, "javascript"),
                             output = {},
-                            builder = function web_builder(data) {
+                            builder = function web_handler_builder(data) {
                                 var a         = 0,
                                     len       = data.token.length,
                                     table     = document.createElement("table"),
@@ -127,7 +127,7 @@
                                         cell(data.lexer[a], "td", tr, "");
                                         cell(data.lines[a], "td", tr, "numb");
                                         cell(data.presv[a], "td", tr, "");
-                                        cell(data.stack[a], "td", tr, "");
+                                        cell(data.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         cell(data.types[a], "td", tr, "");
                                         cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                                         if (a % 2 === 0) {

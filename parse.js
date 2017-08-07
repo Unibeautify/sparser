@@ -6,7 +6,12 @@ Parse Framework
 (function parse_init() {
     "use strict";
     var parse  = {
-            datanames  : [
+            lexer: global.lexer
+        },
+        parser = function parser_body(options) {
+            parse.count      = -1;
+            parse.data       = {};
+            parse.datanames  = [
                 "begin",
                 "lexer",
                 "lines",
@@ -14,39 +19,45 @@ Parse Framework
                 "stack",
                 "token",
                 "types"
-            ],
-            lf         : "\n",
-            lexer      : global.lexer,
-            linesSpace : 0,
-            lineNumber : 1,
-            options    : {},
-            parsetable : {},
-            recordCount: -1,
-            structure  : [
+            ];
+            parse.lf         = (options.crlf === true || options.crlf === "true")
+                ? "\r\n"
+                : "\n";
+            parse.linesSpace = 0;
+            parse.lineNumber = 1;
+            parse.structure  = [
                 ["global", -1]
-            ]
-        },
-        parser = function parser_body(options) {
-            parse.options = options;
-            if (options.crlf === true || options.crlf === "true") {
-                options.lf = "\r\n";
-            }
+            ];
+            parse.options    = options;
+            parse.datanames.forEach(function parse_data(value) {
+                parse.data[value] = [];
+            });
+
+            parse.structure.pop = function parse_exec_structure_pop() {
+                var len = parse.structure.length - 1,
+                    arr = parse.structure[len];
+                if (len > 0) {
+                    parse.structure.splice(len, 1);
+                }
+                return arr;
+            };
+
             if (global.lexer[options.type] === "undefined") {
                 parse.parseerror = "Lexer '" + options.type + "' isn't available.";
             } else {
-                parse.parsetable = global.lexer[options.type](options.source + " ");
+                global.lexer[options.type](options.source + " ");
             }
 
             // validate that all the data arrays are the same length
             (function parser_exec_checkLengths() {
                 var a    = 0,
                     b    = 0,
-                    keys = Object.keys(parse.parsetable),
+                    keys = Object.keys(parse.data),
                     c    = keys.length;
                 do {
                     b = a + 1;
                     do {
-                        if (parse.parsetable[keys[a]].length !== parse.parsetable[keys[b]].length) {
+                        if (parse.data[keys[a]].length !== parse.data[keys[b]].length) {
                             parse.parseerror = "'" + keys[a] + "' array is of different length than '" + keys[b] +
                                     "'";
                             break;
@@ -56,10 +67,9 @@ Parse Framework
                     a = a + 1;
                 } while (a < c - 1);
             }());
-            return parse.parsetable;
+            return parse.data;
         };
-
-    parse.spacer       = function parse_spacer(args) {
+    parse.spacer        = function parse_spacer(args) {
         parse.linesSpace = 1;
         do {
             if (args.array[args.index] === "\n") {
@@ -73,56 +83,57 @@ Parse Framework
         } while (args.index < args.end);
         return args.index;
     };
-    parse.recordPop    = function parse_recordPop(data, count, length) {
+    parse.pop           = function parse_pop(data) {
         var output = {};
-        parse.datanames.forEach(function parse_recordPop_datanames(value) {
+        parse.datanames.forEach(function parse_pop_datanames(value) {
             output[value] = data[value].pop();
         });
-        output.length = length - 1;
-        if (count === true) {
-            parse.recordCount = parse.recordCount - 1;
+        if (data === parse.data) {
+            parse.count = parse.count - 1;
         }
-        return output;
     };
-    parse.recordPush   = function parse_recordPush(data, record, count, length) {
-        parse.datanames.forEach(function parse_recordPush_datanames(value) {
+    parse.push          = function parse_push(data, record) {
+        parse.datanames.forEach(function parse_push_datanames(value) {
             data[value].push(record[value]);
         });
-        if (count === true) {
-            parse.recordCount = parse.recordCount + 1;
+        if (data === parse.data) {
+            parse.count = parse.count + 1;
         }
-        return length + 1;
     };
-    parse.recordSplice = function parse_splice(spliceData) {
+    parse.splice        = function parse_splice(spliceData) {
         // * data - The data object to alter
         // * index - The index where to start
         // * howmany - How many indexes to remove
         // * record - A new record to insert
-        // * length - The length counter
         if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
-            parse.datanames.forEach(function parse_recordSplice_datanames(value) {
+            parse.datanames.forEach(function parse_splice_datanames(value) {
                 spliceData
                     .data[value]
                     .splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
             });
-            parse.recordCount = (parse.recordCount - spliceData.howmany) + 1;
-            return (spliceData.length - spliceData.howmany) + 1;
+            if (spliceData.data === parse.data) {
+                parse.count = (parse.count = parse.count - spliceData.howmany) + 1;
+            }
+            return;
         }
-        parse.datanames.forEach(function parse_recordSplice_datanames(value) {
+        parse.datanames.forEach(function parse_splice_datanames(value) {
             spliceData
                 .data[value]
                 .splice(spliceData.index, spliceData.howmany);
         });
-        parse.recordCount = parse.recordCount - spliceData.howmany;
-        return spliceData.length - spliceData.howmany;
+        if (spliceData.data === parse.data) {
+            parse.count = parse.count - spliceData.howmany;
+        }
     };
-    parse.recordConcat = function parse_concat(data, array) {
-        parse.datanames.forEach(function parse_recordConcat_datanames(value) {
+    parse.concat        = function parse_concat(data, array) {
+        parse.datanames.forEach(function parse_concat_datanames(value) {
             data[value] = data[value].concat(array[value]);
         });
-        return data.token.length - 1;
+        if (data === parse.count) {
+            parse.count = data.token.length - 1;
+        }
     };
-    parse.safeSort     = function parse_safeSort(array, operation, recursive) {
+    parse.safeSort      = function parse_safeSort(array, operation, recursive) {
         var arTest  = function parse_safeSort_arTest(item) {
                 if (Array.isArray(item) === true) {
                     return true;
@@ -314,7 +325,7 @@ Parse Framework
         }
         return ascend(array);
     };
-    parse.objectSort   = function parse_objectSort(data, length) {
+    parse.objectSort    = function parse_objectSort(data, length) {
         var cc        = 0,
             dd        = 0,
             ee        = 0,
@@ -417,7 +428,7 @@ Parse Framework
                                     ee = keys[dd][0];
                                     if (ee < keyend) {
                                         do {
-                                            parse.recordPush(store, {
+                                            parse.push(store, {
                                                 begin: data.begin[ee],
                                                 lexer: data.lexer[ee],
                                                 lines: data.lines[ee],
@@ -425,7 +436,7 @@ Parse Framework
                                                 stack: data.stack[ee],
                                                 token: data.token[ee],
                                                 types: data.types[ee]
-                                            }, false, 0);
+                                            });
                                             ff = ff + 1;
 
                                             //remove extra commas
@@ -447,11 +458,10 @@ Parse Framework
                                             );
                                         }
                                         ee                  = ee + 1;
-                                        length              = parse.recordSplice({
+                                        parse.splice({
                                             data   : store,
                                             howmany: 0,
                                             index  : ee,
-                                            length : length,
                                             record : {
                                                 begin: store.begin[ee - 1],
                                                 lexer: store.lexer[ee - 1],
@@ -474,14 +484,14 @@ Parse Framework
                             } while (
                                 ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
                             );
-                            length = parse.recordSplice({
+                            length = parse.splice({
                                 data   : data,
                                 howmany: ff,
                                 index  : cc + 1,
                                 length : length,
                                 record : {}
                             });
-                            return parse.recordConcat(data, store);
+                            return parse.concat(data, store);
                         }
                     }
                     return length;
@@ -491,14 +501,6 @@ Parse Framework
         }
         return length;
     };
-    parse.structure.pop = function parse_exec_structure_pop() {
-        var len = parse.structure.length - 1,
-            arr = parse.structure[len];
-        if (len > 0) {
-            parse.structure.splice(len, 1);
-        }
-        return arr;
-    };
-    global.parse  = parse;
-    global.parser = parser;
+    global.parse        = parse;
+    global.parser       = parser;
 }());
