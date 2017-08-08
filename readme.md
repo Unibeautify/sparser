@@ -1,57 +1,34 @@
 # Parse Framework
 **This is still early.  For status and progress please see the Github issues and follow the latest branch.**
 
-This is slowly coming together.  The code now runs, but I am asserting this is ready.  There is still a lot I need to validate, document, and provide tests against.
+Most of the bugs seem to be worked out at this point, but I am not certifying the parser as ready just yet.
+
+## Todo
+* unit tests
+* options - define and document supported options
+* convert to TypeScript
+* add advanced analytics and reporting of parse errors
+* normalize and document *type* values
 
 ## Overview
-The parser will consist of three lexers named: markup, script, and style.  The markup parser will handle all markup related languages.  The script parser will parse all C like languages, but C and C++ are not yet support.  The style parser will parse languages similar to CSS, LESS, and SCSS.
-
-There is no lexer for languages that use white space as a primary syntax mechanism, which means more than just defining comments or inserting semicolons.  As such there is no support for languages like Jade or Sass.
+A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
 ## Files
+### Critical
+* **parse.js** - This is the only file that matters.
+* lexers - A directory of language specific rules.
 
-* **parse.js** - This is the only file that matters.  Everything else is for maintenance and support.
-* nodetest.js - An interface to quickly run the parser with Node.js with formatted output.
+### Maintenance and Support
+* nodetest.js - An interface to quickly run the parser from a command line terminal using Node.js.
 * browsertest.xhtml - An interface to quickly run the parser in a browser with formatted output.
 * language.js - A library used in nodetest.js and browsertest.xhtml to conveniently guess at the submitted language.
 * httpserver.js - In some browsers working with files from the file scheme is a pain in the ass, so let's use Node to fake it.
 
 ## Input
-The input will be a single object of certain defined properties.  I haven't revised this from the Pretty Diff code but it will change drastically.  Please follow issue #3 to keep updated on this progress.
-
-These properties will absolutely exist:
-
-Name   | Data Type | Accepted Values       | Definition
------- | --------- | --------------------- | -----------------
-lang   | string    | any                   | the name of the language, some parsing options are language specific
-source | string    | any                   | the code to parse
-type   | string    | markup, script, style | which lexer to start with
-
-### lang
-**optional** - This option allows passing in a specific language name.  There is some language specific logic in the parsers.  Currently these values exist in the parser logic:
-
-* apacheVelocity - https://velocity.apache.org/
-* dustjs - http://www.dustjs.com/
-* html - https://w3c.github.io/html/
-* jsx - https://jsx.github.io/
-* qml - http://doc.qt.io/qt-5/qmlapplications.html
-* twig - https://twig.sensiolabs.org/
-* typescript - http://www.typescriptlang.org/
-
-The default language values, when not specified, are:
-
-* XML if type value is markup
-* JavaScript if type value is script
-* LESS/SCSS if type value is style
-
-### source
-**required** - This is the string that will be parsed.  Any string may be passed in, but the data type must be a string.
-
-### type
-**required** - This option tells the parser which lexer to start with.
+The parse.js application receives various arguments in an object literal.  The most critical option is *source*, a string type, of the code to parse.  The lexers receive a single string argument.
 
 ## Output
-There will be a single format for output that will be uniform for all operations.  The output will be an object storing 8 arrays.  Each array represents a specific type of description and, provided one exception in the token array, will contain only 1 data type.
+There will be a single format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.
  
 * begin
 * lexer
@@ -124,7 +101,7 @@ The *presv* array stores a boolean indicating if the current item should be pres
 The *stack* array stores strings that describe the current structure where the item resides from the code.  In markup code the value is the tag name for the parent element at the index in the *begin* array.  In script and style code the value is a generic description of the current structure, such as: function, object, or class.
 
 #### token
-The *token* array contains a string of the current item.  Markup attributes will be a separate tokens immediately following their parent element and also explicitly indicating associate via the *begin* and *stack* data fields.
+The *token* array contains a string of the current item.  Markup attributes will be a separate token immediately following their parent element and also explicitly indicated via the *begin* and *stack* data fields.
 
 #### types
 The *types* array contains a string that describes the token value according to a generalized category name.
@@ -137,7 +114,7 @@ This section will list intentional exceptions to the basic rules and parsing beh
 ## FAQ
 
 ### Why a table instead of a tree like other parsers?
-Arrays are faster to access at execution time potentially allowing consumers to write much faster applications.  Arrays are also simple to reason about and manipulate while it is hard to reason about deeply nested objects without traversing such objects.
+Arrays are faster to access at execution time potentially allowing consumers to write much faster applications.  Arrays are also simple to reason about and manipulate both directly in the code and at execution time.
 
 ### Why is this so much slower than Esprima or Acorn?
 Esprima and Acorn support a more narror set of features and languages.  While this allows those other parsers to execute faster it pushes a great deal of work down the line to consuming applications.
@@ -146,4 +123,4 @@ Esprima and Acorn support a more narror set of features and languages.  While th
 This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.
 
 ### Why not just use Babel.js?
-Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort.  In short, this parser scales faster and wider than Babel.
+Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort.  In short, this parser scales faster and wider than Babel by doing less.
