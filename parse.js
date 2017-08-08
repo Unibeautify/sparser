@@ -8,7 +8,7 @@ Parse Framework
     var parse  = {
             lexer: global.lexer
         },
-        parser = function parser_body(options) {
+        parser = function parser_(options) {
             parse.count      = -1;
             parse.data       = {};
             parse.datanames  = [
@@ -35,7 +35,7 @@ Parse Framework
                     parse.data[value] = [];
                 });
 
-            parse.structure.pop = function parse_exec_structure_pop() {
+            parse.structure.pop = function parse_structure_pop() {
                 var len = parse.structure.length - 1,
                     arr = parse.structure[len];
                 if (len > 0) {
@@ -53,7 +53,7 @@ Parse Framework
             }
 
             // validate that all the data arrays are the same length
-            (function parser_exec_checkLengths() {
+            (function parser_checkLengths() {
                 var a    = 0,
                     b    = 0,
                     keys = Object.keys(parse.data),
@@ -71,6 +71,36 @@ Parse Framework
                     a = a + 1;
                 } while (a < c - 1);
             }());
+
+            if (parse.options.objectSort === true || parse.options.tagSort === true) {
+                (function parser_fixOrder() {
+                    var data      = parse.data,
+                        a         = 0,
+                        b         = data.begin.length,
+                        structure = [-1];
+                    do {
+                        if (data.begin[a] !== structure[structure.length - 1]) {
+                            if (parse.options.objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
+                                data.begin[a] = structure[structure.length - 1];
+                            } else if (parse.options.tagSort === true && data.lexer[a] === "markup") {
+                                data.begin[a] = structure[structure.length - 1];
+                            }
+                        }
+                        if (data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
+                            structure.push(a);
+                        } else if (structure.length > 1 && (data.types[a] === "end" || data.types[a] === "template_end")) {
+                            structure.pop();
+                        } else if (data.types[a] === "template_else") {
+                            structure[structure.length - 1] = a;
+                        } else if (data.types[a] === "attribute" && data.lexer[a] === "markup" && (data.types[a - 1] === "start" || data.types[a - 1] === "singleton")) {
+                            structure.push(a - 1);
+                        } else if (data.lexer[a] === "markup" && data.types[a] !== "attribute" && data.types[structure[structure.length - 1] + 1] === "attribute") {
+                            structure.pop();
+                        }
+                        a = a + 1;
+                    } while (a < b);
+                }());
+            }
             return parse.data;
         };
     parse.concat     = function parse_concat(data, array) {
@@ -339,12 +369,13 @@ Parse Framework
             parse.count = parse.count - spliceData.howmany;
         }
     };
-    parse.objectSort = function parse_objectSort(data) {console.log(data.token);
+    parse.objectSort = function parse_objectSort(data) {
         var cc        = 0,
             dd        = 0,
             ee        = 0,
             ff        = 0,
             behind    = parse.count,
+            length    = behind,
             keys      = [],
             keylen    = 0,
             keyend    = 0,

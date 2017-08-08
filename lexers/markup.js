@@ -457,7 +457,7 @@
                             }
 
                             // sort the attributes
-                            if (options.tagsort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.taSsort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore);
                                 record.presv = true;
                             } else {
@@ -865,7 +865,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        parse.error = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
+                                        parse.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -1580,7 +1580,7 @@
                                                         e = e + 1;
                                                     } while (e < c);
                                                 }
-                                            } else if (b.slice(e + 1, e + 9).join("") !== "![CDATA[") {
+                                            } else {
                                                 ext = false;
                                             }
                                         }
@@ -1608,11 +1608,11 @@
                         if (cheat === true) {
                             ltype = "singleton";
                         } else {
-                            preserve                 = true;
+                            preserve                = true;
                             data.presv[parse.count] = true;
-                            ltype                    = "ignore";
-                            a                        = a + 1;
-                            quote                    = "";
+                            ltype                   = "ignore";
+                            a                       = a + 1;
+                            quote                   = "";
                             if (a < c) {
                                 do {
                                     if (b[a] === "\n") {
@@ -1777,7 +1777,7 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (options.tagsort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start") {
+                    if (options.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
                         (function lexer_markup_markup_tag_sorttag() {
                             var children    = [],
                                 bb          = 0,

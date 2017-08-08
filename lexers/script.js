@@ -208,7 +208,7 @@
                     do {
                         lex.push(c[f]);
                         if (c[f] === "\\") {
-                            parse.error = "Illegal escape in JavaScript on line number " + parse.lineNumber;
+                            parse.parseerror = "Illegal escape in JavaScript on line number " + parse.lineNumber;
                         }
                         f = f + 1;
                     } while (f < a);
@@ -495,6 +495,9 @@
                         clist  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
+                    if (data.lexer[parse.count - 1] !== "script") {
+                        return;
+                    }
                     if (options.lang === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
                         return;
                     }
@@ -879,7 +882,7 @@
                                 build.push(c[ee]);
                             }
                             if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
-                                parse.error = "Unterminated string in script on line number " + parse.lineNumber;
+                                parse.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
                             if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {

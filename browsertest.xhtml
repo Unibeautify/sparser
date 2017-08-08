@@ -67,8 +67,8 @@
                 <ul>
                     <!--li><input type="checkbox" id="conditional"/> <label for="conditional">conditional</label></li>
                     <li><input type="checkbox" id="crlf"/> <label for="crlf">crlf</label></li-->
-                    <li><input type="checkbox" id="tagsort"/> <label for="tagsort">tagsort</label></li>
-                    <li><input type="checkbox" id="objectsort"/> <label for="objectsort">objectsort</label></li>
+                    <li><input type="checkbox" id="tagSort"/> <label for="tagSort">tagSort</label></li>
+                    <li><input type="checkbox" id="objectSort"/> <label for="objectSort">objectSort</label></li>
                 </ul>
             </div>
         </div>
@@ -94,13 +94,13 @@
                 "use strict";
                 var input   = document.getElementById("input"),
                     options = {
-                        correct: true,
+                        correct   : true,
                         objectSort: false,
-                        source: "",
-                        tagsort: false,
-                        type  : "script"
+                        source    : "",
+                        tagSort   : false,
+                        type      : "script"
                     },
-                    handler = function web_handler() {
+                    handler = function web_handler(e) {
                         var value = input.value,
                             startTime = 0,
                             startTotal = Math.round(performance.now() * 1000),
@@ -167,8 +167,8 @@
                                 document.getElementById("data").innerHTML = "";
                                 document.getElementById("data").appendChild(table);
                             };
-                        options.objectSort = (document.getElementById("objectsort").checked === true);
-                        options.tagsort = (document.getElementById("tagsort").checked === true);
+                        options.objectSort = (document.getElementById("objectSort").checked === true);
+                        options.tagSort = (document.getElementById("tagSort").checked === true);
                         options.lang = lang[0];
                         options.type = lang[1];
                         document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
