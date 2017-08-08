@@ -1,9 +1,10 @@
-/*global error, global, lexer, location, module, parse, window*/
+/*global global, lexer, location, module, parse, window*/
 (function style_init() {
     "use strict";
     var style = function parser_style(source) {
         var parse       = global.parse,
             data        = parse.data,
+            options     = parse.options,
 
             colors      = [],
             verticalop  = false,
@@ -219,9 +220,9 @@
                         }
                         return value;
                     };
-                if (parse.options.quoteConvert === "double") {
+                if (options.quoteConvert === "double") {
                     qchar = "\"";
-                } else if (parse.options.quoteConvert === "single") {
+                } else if (options.quoteConvert === "single") {
                     qchar = "'";
                 }
                 // this loop identifies containment so that tokens/sub-tokens are correctly
@@ -265,9 +266,9 @@
                 cc   = 0;
                 if (cc < leng) {
                     do {
-                        if (parse.options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
+                        if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
                             values[cc] = "0" + values[cc];
-                        } else if (parse.options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
+                        } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
                             values[cc] = values[cc].replace(/^(0+\.)/, ".");
                         } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
                             values[cc] = "0";
@@ -508,7 +509,7 @@
                                 .token[aa]
                                 .replace(/(\s*,\s*)/g, ",");
                         }
-                        if (parse.options.compressedcss === true) {
+                        if (options.compressedcss === true) {
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*&/, " &")
@@ -563,7 +564,7 @@
                         data.token[aa] = data
                             .token[aa]
                             .replace(/\s*!\s+important/, " !important");
-                        if (parse.options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
+                        if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
                             data.token[aa] = value(data.token[aa], true);
                         } else {
                             data.token[aa] = value(data.token[aa], false);
@@ -604,7 +605,7 @@
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*!\s+important/, " !important");
-                            if (parse.options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
+                            if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
                                 data.token[aa] = value(data.token[aa], true);
                             } else {
                                 data.token[aa] = value(data.token[aa], false);
@@ -1214,7 +1215,7 @@
                     item("end");
                     properties();
                     ltype = "end";
-                    if (parse.options.objectSort === true && nosort[nosort.length - 1] === false) {
+                    if (options.objectSort === true && nosort[nosort.length - 1] === false) {
                         parse.objectSort(data);
                     }
                     nosort.pop();

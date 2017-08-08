@@ -29,15 +29,19 @@ Parse Framework
                 ["global", -1]
             ];
             parse.options    = options;
-            parse.datanames.forEach(function parse_data(value) {
-                parse.data[value] = [];
-            });
+            parse
+                .datanames
+                .forEach(function parse_data(value) {
+                    parse.data[value] = [];
+                });
 
             parse.structure.pop = function parse_exec_structure_pop() {
                 var len = parse.structure.length - 1,
                     arr = parse.structure[len];
                 if (len > 0) {
-                    parse.structure.splice(len, 1);
+                    parse
+                        .structure
+                        .splice(len, 1);
                 }
                 return arr;
             };
@@ -58,8 +62,8 @@ Parse Framework
                     b = a + 1;
                     do {
                         if (parse.data[keys[a]].length !== parse.data[keys[b]].length) {
-                            parse.parseerror = "'" + keys[a] + "' array is of different length than '" + keys[b] +
-                                    "'";
+                            parse.parseerror = "'" + keys[a] + "' array is of different length than '" +
+                                    keys[b] + "'";
                             break;
                         }
                         b = b + 1;
@@ -69,7 +73,38 @@ Parse Framework
             }());
             return parse.data;
         };
-    parse.spacer        = function parse_spacer(args) {
+    parse.concat     = function parse_concat(data, array) {
+        parse
+            .datanames
+            .forEach(function parse_concat_datanames(value) {
+                data[value] = data[value].concat(array[value]);
+            });
+        if (data === parse.data) {
+            parse.count = data.token.length - 1;
+        }
+    };
+    parse.pop        = function parse_pop(data) {
+        var output = {};
+        parse
+            .datanames
+            .forEach(function parse_pop_datanames(value) {
+                output[value] = data[value].pop();
+            });
+        if (data === parse.data) {
+            parse.count = parse.count - 1;
+        }
+    };
+    parse.push       = function parse_push(data, record) {
+        parse
+            .datanames
+            .forEach(function parse_push_datanames(value) {
+                data[value].push(record[value]);
+            });
+        if (data === parse.data) {
+            parse.count = parse.count + 1;
+        }
+    };
+    parse.spacer     = function parse_spacer(args) {
         parse.linesSpace = 1;
         do {
             if (args.array[args.index] === "\n") {
@@ -83,57 +118,7 @@ Parse Framework
         } while (args.index < args.end);
         return args.index;
     };
-    parse.pop           = function parse_pop(data) {
-        var output = {};
-        parse.datanames.forEach(function parse_pop_datanames(value) {
-            output[value] = data[value].pop();
-        });
-        if (data === parse.data) {
-            parse.count = parse.count - 1;
-        }
-    };
-    parse.push          = function parse_push(data, record) {
-        parse.datanames.forEach(function parse_push_datanames(value) {
-            data[value].push(record[value]);
-        });
-        if (data === parse.data) {
-            parse.count = parse.count + 1;
-        }
-    };
-    parse.splice        = function parse_splice(spliceData) {
-        // * data - The data object to alter
-        // * index - The index where to start
-        // * howmany - How many indexes to remove
-        // * record - A new record to insert
-        if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
-            parse.datanames.forEach(function parse_splice_datanames(value) {
-                spliceData
-                    .data[value]
-                    .splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
-            });
-            if (spliceData.data === parse.data) {
-                parse.count = (parse.count = parse.count - spliceData.howmany) + 1;
-            }
-            return;
-        }
-        parse.datanames.forEach(function parse_splice_datanames(value) {
-            spliceData
-                .data[value]
-                .splice(spliceData.index, spliceData.howmany);
-        });
-        if (spliceData.data === parse.data) {
-            parse.count = parse.count - spliceData.howmany;
-        }
-    };
-    parse.concat        = function parse_concat(data, array) {
-        parse.datanames.forEach(function parse_concat_datanames(value) {
-            data[value] = data[value].concat(array[value]);
-        });
-        if (data === parse.count) {
-            parse.count = data.token.length - 1;
-        }
-    };
-    parse.safeSort      = function parse_safeSort(array, operation, recursive) {
+    parse.safeSort   = function parse_safeSort(array, operation, recursive) {
         var arTest  = function parse_safeSort_arTest(item) {
                 if (Array.isArray(item) === true) {
                     return true;
@@ -325,12 +310,41 @@ Parse Framework
         }
         return ascend(array);
     };
-    parse.objectSort    = function parse_objectSort(data, length) {
+    parse.splice     = function parse_splice(spliceData) {
+        // * data - The data object to alter
+        // * index - The index where to start
+        // * howmany - How many indexes to remove
+        // * record - A new record to insert
+        if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
+            parse
+                .datanames
+                .forEach(function parse_splice_datanames(value) {
+                    spliceData
+                        .data[value]
+                        .splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
+                });
+            if (spliceData.data === parse.data) {
+                parse.count = (parse.count = parse.count - spliceData.howmany) + 1;
+            }
+            return;
+        }
+        parse
+            .datanames
+            .forEach(function parse_splice_datanames(value) {
+                spliceData
+                    .data[value]
+                    .splice(spliceData.index, spliceData.howmany);
+            });
+        if (spliceData.data === parse.data) {
+            parse.count = parse.count - spliceData.howmany;
+        }
+    };
+    parse.objectSort = function parse_objectSort(data) {console.log(data.token);
         var cc        = 0,
             dd        = 0,
             ee        = 0,
             ff        = 0,
-            behind    = length,
+            behind    = parse.count,
             keys      = [],
             keylen    = 0,
             keyend    = 0,
@@ -457,7 +471,7 @@ Parse Framework
                                                 ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
                                             );
                                         }
-                                        ee                  = ee + 1;
+                                        ee = ee + 1;
                                         parse.splice({
                                             data   : store,
                                             howmany: 0,
@@ -501,6 +515,6 @@ Parse Framework
         }
         return length;
     };
-    global.parse        = parse;
-    global.parser       = parser;
+    global.parse     = parse;
+    global.parser    = parser;
 }());

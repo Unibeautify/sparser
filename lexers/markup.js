@@ -1,10 +1,11 @@
-/*global error, global, lexer, location, module, parse, window*/
+/*global global, lexer, location, module, parse, window*/
 (function markup_init() {
     "use strict";
     var lexer  = global.lexer,
         markup = function lexer_markup(source) {
             var parse         = global.parse,
                 data          = parse.data,
+                options       = parse.options,
 
                 a             = 0,
                 b             = source.split(""),
@@ -16,7 +17,6 @@
                 minspace      = "",
                 cftransaction = false,
                 ext           = false,
-                parseError    = [],
                 // Find the lowercase tag name of the provided token.
                 tagName       = function lexer_markup_markup_tagName(el) {
                     var reg   = (/^(\{((%-?)|\{-?)\s*)/),
@@ -36,7 +36,7 @@
                         : el
                             .replace(reg, " ")
                             .slice(1, space);
-                    if (parse.options.lang === "html") {
+                    if (options.lang === "html") {
                         name = name.toLowerCase();
                     }
                     name = name.replace(/(\}\})$/, "");
@@ -129,7 +129,6 @@
                         stest           = false,
                         ignoreme        = false,
                         quotetest       = false,
-                        parseFail       = false,
                         singleton       = false,
                         earlyexit       = false,
                         lex             = [],
@@ -367,7 +366,7 @@
                                 if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
                                     ignoreme = true;
                                 }
-                                if (parse.options.lang === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
+                                if (options.lang === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
                                     jsxcount = 0;
                                 }
                             }
@@ -458,7 +457,7 @@
                             }
 
                             // sort the attributes
-                            if (parse.options.tagsort === true && jscom === false && parse.options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.tagsort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore);
                                 record.presv = true;
                             } else {
@@ -499,7 +498,7 @@
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
                                         name = attstore[ind];
-                                        if (parse.options.lang === "html") {
+                                        if (options.lang === "html") {
                                             name = name.toLowerCase();
                                         }
                                         record.token = name + "=\"" + attstore[ind] + "\"";
@@ -511,10 +510,10 @@
                                             slice = "\"" + slice + "\"";
                                         }
                                         name = attstore[ind].slice(0, eq);
-                                        if (parse.options.lang === "html" && cft === undefined) {
+                                        if (options.lang === "html" && cft === undefined) {
                                             name = name.toLowerCase();
                                         }
-                                        if (parse.options.lang === "jsx" && (/^(\s*\{)/).test(slice) === true) {
+                                        if (options.lang === "jsx" && (/^(\s*\{)/).test(slice) === true) {
                                             if (ind === 0 && (ltype === "singleton" || ltype === "template")) {
                                                 parse.structure.push([
                                                     tagName(element).replace(/\/$/, ""),
@@ -522,15 +521,18 @@
                                                 ]);
                                             }
                                             record.token = name + "={";
+                                            record.types = "jsx_attribute_start";
                                             parse.push(data, record);
                                             name         = slice
                                                 .replace(/^(\s*\{)/, "")
                                                 .replace(/(\}\s*)$/, jsxAttribute);
-                                            parse.structure.push(["attribute", parse.count]);
+                                            parse.structure.push(["jsx_attribute", parse.count]);
                                             lexer.script(name);
-                                            record.token = "}";
                                             record.begin = record.begin + 1;
+                                            record.token = "}";
+                                            record.types = "jsx_attribute_end";
                                             parse.push(data, record);
+                                            record.types = "attribute";
                                             parse.structure.pop();
                                             if (ind === len - 1 && (ltype === "singleton" || ltype === "template")) {
                                                 parse.structure.pop();
@@ -576,7 +578,7 @@
                                     if (b[a + 4] === "#") {
                                         end   = "-->";
                                         ltype = "template";
-                                    } else if (b[a + 4] === "[" && b[a + 5] === "i" && b[a + 6] === "f" && parse.options.conditional === true) {
+                                    } else if (b[a + 4] === "[" && b[a + 5] === "i" && b[a + 6] === "f" && options.conditional === true) {
                                         end   = "-->";
                                         ltype = "conditional";
                                     } else if (b[a + 4] === "-" && (/<cf[a-z]/i).test(source) === true) {
@@ -586,15 +588,15 @@
                                         ltype    = "comment";
                                     } else {
                                         end = "-->";
-                                        if (parse.options.comments === "nocomment") {
+                                        if (options.comments === "nocomment") {
                                             nopush  = true;
                                             comment = true;
                                         } else {
-                                            if (parse.options.preserveComment === true) {
+                                            if (options.preserveComment === true) {
                                                 preserve = true;
                                             }
                                             comment = true;
-                                            if (parse.options.commline === true) {
+                                            if (options.commline === true) {
                                                 data.lines[parse.count] = 2;
                                             }
                                             ltype = "comment";
@@ -625,14 +627,14 @@
                                 if (b[a + 2] === "-" && b[a + 3] === "-") {
                                     end     = "--%>";
                                     comment = true;
-                                    if (parse.options.commline === true) {
+                                    if (options.commline === true) {
                                         data.lines[parse.count] = 2;
                                     }
                                     ltype = "comment";
                                 } else if (b[a + 2] === "#") {
                                     end     = "%>";
                                     comment = true;
-                                    if (parse.options.commline === true) {
+                                    if (options.commline === true) {
                                         data.lines[parse.count] = 2;
                                     }
                                     ltype = "comment";
@@ -678,7 +680,7 @@
                             }
                         } else if (b[a] === "{") {
                             preserve = true;
-                            if (parse.options.lang === "jsx") {
+                            if (options.lang === "jsx") {
                                 ext          = true;
                                 earlyexit    = true;
                                 record.token = "{";
@@ -687,7 +689,7 @@
                                 parse.structure.push(["block", parse.count]);
                                 return;
                             }
-                            if (parse.options.lang === "dustjs") {
+                            if (options.lang === "dustjs") {
                                 if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a            = a + 6;
                                     earlyexit    = true;
@@ -761,7 +763,7 @@
                         } else if (b[a] === "[" && b[a + 1] === "%") {
                             end   = "%]";
                             ltype = "template";
-                        } else if (b[a] === "#" && parse.options.lang === "apacheVelocity") {
+                        } else if (b[a] === "#" && options.lang === "apacheVelocity") {
                             if (b[a + 1] === "*") {
                                 preserve = true;
                                 comment  = true;
@@ -793,11 +795,11 @@
                                 end   = "\n";
                                 ltype = "template";
                             }
-                        } else if (b[a] === "$" && parse.options.lang === "apacheVelocity") {
+                        } else if (b[a] === "$" && options.lang === "apacheVelocity") {
                             end   = "\n";
                             ltype = "template";
                         }
-                        if (parse.options.unformatted === true) {
+                        if (options.unformatted === true) {
                             preserve = true;
                         }
                     }());
@@ -851,7 +853,7 @@
                                 }
                             } else {
                                 if (quote === "") {
-                                    if (parse.options.lang === "jsx") {
+                                    if (options.lang === "jsx") {
                                         if (b[a] === "{") {
                                             jsxcount = jsxcount + 1;
                                         } else if (b[a] === "}") {
@@ -863,10 +865,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        parseError.push(
-                                            "Parse error on line " + parse.lineNumber + " on element: "
-                                        );
-                                        parseFail = true;
+                                        parse.error = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -879,12 +878,12 @@
                                                 if (b[a] === "\n") {
                                                     parse.lineNumber = parse.lineNumber + 1;
                                                 }
-                                                if (parse.options.unformatted === true) {
+                                                if (options.unformatted === true) {
                                                     lex.push(b[a]);
                                                 }
                                                 attribute.push(b[a]);
 
-                                                if ((b[a] === "<" || b[a] === ">") && (quote === "" || quote === ">") && parse.options.lang !== "jsx") {
+                                                if ((b[a] === "<" || b[a] === ">") && (quote === "" || quote === ">") && options.lang !== "jsx") {
                                                     if (quote === "" && b[a] === "<") {
                                                         quote     = ">";
                                                         braccount = 1;
@@ -923,7 +922,7 @@
                                                         }
                                                         break;
                                                     }
-                                                    if (b[a] === "{" && b[a - 1] === "=" && parse.options.lang !== "jsx") {
+                                                    if (b[a] === "{" && b[a - 1] === "=" && options.lang !== "jsx") {
                                                         quote = "}";
                                                     } else if (b[a] === "\"" || b[a] === "'") {
                                                         quote = b[a];
@@ -933,7 +932,7 @@
                                                     } else if (b[a] === "(") {
                                                         quote     = ")";
                                                         parncount = 1;
-                                                    } else if (parse.options.lang === "jsx") {
+                                                    } else if (options.lang === "jsx") {
                                                         //jsx variable attribute
                                                         if ((b[a - 1] === "=" || (/\s/).test(b[a - 1]) === true) && b[a] === "{") {
                                                             quote  = "}";
@@ -946,7 +945,7 @@
                                                                 quote = "\n";
                                                             }
                                                         }
-                                                    } else if (lex[0] !== "{" && b[a] === "{" && (parse.options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                                    } else if (lex[0] !== "{" && b[a] === "{" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                                         //opening embedded template expression
                                                         if (b[a + 1] === "{") {
                                                             if (b[a + 2] === "{") {
@@ -954,7 +953,7 @@
                                                             } else {
                                                                 quote = "}}";
                                                             }
-                                                        } else if (parse.options.lang === "dustjs") {
+                                                        } else if (options.lang === "dustjs") {
                                                             quote = "}";
                                                         } else {
                                                             quote = b[a + 1] + "}";
@@ -1000,7 +999,7 @@
                                                             break;
                                                         }
                                                     }
-                                                } else if (parse.options.lang === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "*/" && b[a - 1] === "*" && b[a] === "/"))) {
+                                                } else if (options.lang === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "*/" && b[a - 1] === "*" && b[a] === "/"))) {
                                                     //jsx attributes
                                                     if (quote === "}") {
                                                         if (b[a] === "{") {
@@ -1011,8 +1010,8 @@
                                                                 jsxcount = 0;
                                                                 quote    = "";
                                                                 element  = attribute.join("");
-                                                                if (parse.options.unformatted === false) {
-                                                                    if (parse.options.lang === "jsx") {
+                                                                if (options.unformatted === false) {
+                                                                    if (options.lang === "jsx") {
                                                                         if ((/^(\s*)$/).test(element) === false) {
                                                                             attstore.push(element);
                                                                         }
@@ -1094,7 +1093,7 @@
                                         quote = b[a];
                                     } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[parse.count] !== "conditional") {
                                         quote = "-->";
-                                    } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (parse.options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                    } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                         //opening embedded template expression
                                         if (b[a + 1] === "{") {
                                             if (b[a + 2] === "{") {
@@ -1102,7 +1101,7 @@
                                             } else {
                                                 quote = "}}";
                                             }
-                                        } else if (parse.options.lang === "dustjs") {
+                                        } else if (options.lang === "dustjs") {
                                             quote = "}";
                                         } else {
                                             quote = b[a + 1] + "}";
@@ -1113,7 +1112,7 @@
                                     } else if (simple === true && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
                                         //identify a space in a regular start or singleton tag
                                         stest = true;
-                                    } else if (simple === true && parse.options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
+                                    } else if (simple === true && options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
                                         //jsx comment immediately following tag name
                                         stest               = true;
                                         lex[lex.length - 1] = " ";
@@ -1123,7 +1122,7 @@
                                         } else {
                                             jsxquote = "\n";
                                         }
-                                    } else if ((b[a] === lastchar || (end === "\n" && b[a + 1] === "<")) && (lex.length > end.length + 1 || lex[0] === "]") && (parse.options.lang !== "jsx" || jsxcount === 0)) {
+                                    } else if ((b[a] === lastchar || (end === "\n" && b[a + 1] === "<")) && (lex.length > end.length + 1 || lex[0] === "]") && (options.lang !== "jsx" || jsxcount === 0)) {
                                         if (end === "\n") {
                                             if ((/\s/).test(lex[lex.length - 1]) === true) {
                                                 do {
@@ -1157,7 +1156,7 @@
                                             }
                                         }
                                     }
-                                } else if (b[a] === quote.charAt(quote.length - 1) && ((parse.options.lang === "jsx" && end === "}" && (b[a - 1] !== "\\" || slashy() === false)) || parse.options.lang !== "jsx" || end !== "}")) {
+                                } else if (b[a] === quote.charAt(quote.length - 1) && ((options.lang === "jsx" && end === "}" && (b[a - 1] !== "\\" || slashy() === false)) || options.lang !== "jsx" || end !== "}")) {
                                     //find the closing quote or embedded template expression
                                     f     = 0;
                                     tname = lex[1] + lex[2];
@@ -1194,7 +1193,7 @@
                     }
 
                     //a correction to incomplete template tags that use multiple angle braces
-                    if (parse.options.correct === true) {
+                    if (options.correct === true) {
                         if (b[a + 1] === ">" && lex[0] === "<" && lex[1] !== "<") {
                             do {
                                 a = a + 1;
@@ -1219,7 +1218,7 @@
                             .replace(/^\//, "");
                     }
 
-                    if (preserve === false && parse.options.lang !== "jsx") {
+                    if (preserve === false && options.lang !== "jsx") {
                         element = element.replace(/\s+/g, " ");
                     }
 
@@ -1259,22 +1258,6 @@
                     //update a flag for subatomic parsing in SGML tags
                     if (end !== "]>" && sgmlflag > 0 && element.charAt(element.length - 1) !== "[" && (element.slice(element.length - 2) === "]>" || (/^(<!((doctype)|(notation))\s)/i).test(element) === true)) {
                         sgmlflag = sgmlflag - 1;
-                    }
-
-                    //a correction for false-positive parse failures
-                    if (parseFail === true) {
-                        if (element.indexOf("<!--<![") === 0) {
-                            parseError.pop();
-                        } else {
-                            parseError[parseError.length - 1] = parseError[parseError.length - 1] +
-                                    element;
-                            if (element.indexOf("</") > 0) {
-                                record.types = "end";
-                                parse.push(data, record);
-                                parse.structure.pop();
-                                return;
-                            }
-                        }
                     }
 
                     // cheat identifies HTML singleton elements as singletons even if formatted as
@@ -1343,7 +1326,7 @@
                             quote = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && quote.charAt(quote.length - 2) !== "/" && "/" + tagName(quote) === tname) {
                                 data.types[parse.count - 1] = "start";
-                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && parse.options.tagmerge === true(data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (parse.options.lang !== "html" || (parse.options.lang === "html" && tname !== "/li"))) {
+                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.tagmerge === true(data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
                                 parse.pop(data);
                                 if (data.types[parse.count] === "start") {
                                     data.token[parse.count] = data
@@ -1410,11 +1393,11 @@
                             } else {
                                 cfval = cftags[tname];
                             }
-                            if (tname === "cfscript") {
+                            if (tname === "cfscript" && element.indexOf("</cfscript") !== 0) {
                                 ext = true;
                             }
                             if (cfval === "optional" || cfval === "prohibited" || tname.slice(0, 3) === "cf_") {
-                                if (parse.options.correct === true && ender.test(element) === false) {
+                                if (options.correct === true && ender.test(element) === false) {
                                     lex.pop();
                                     lex.push("/");
                                     lex.push(">");
@@ -1445,10 +1428,10 @@
                             return false;
                         }
 
-                        if (parse.options.lang === "html") {
+                        if (options.lang === "html") {
                             // html gets tag names in lowercase, if you want to preserve case sensitivity
                             // beautify as XML
-                            if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && parse.options.lang !== "jsx" && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
+                            if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
                                 element = element.toLowerCase();
                             }
 
@@ -1515,7 +1498,7 @@
 
                             //inserts a trailing slash into singleton tags if they do not already have it
                             if (htmlsings[tname] === "singleton") {
-                                if (parse.options.correct === true && ender.test(element) === false) {
+                                if (options.correct === true && ender.test(element) === false) {
                                     lex.pop();
                                     lex.push(" ");
                                     lex.push("/");
@@ -1541,7 +1524,7 @@
                     }
 
                     //correction for dustjs tags to template singleton types
-                    if (parse.options.lang === "dustjs" && data.types[parse.count] === "template_start") {
+                    if (options.lang === "dustjs" && data.types[parse.count] === "template_start") {
                         quote    = element.charAt(1);
                         jsxquote = element.slice(element.length - 2);
                         if ((jsxquote === "/}" || jsxquote.charAt(0) === quote) && (quote === "#" || quote === "?" || quote === "^" || quote === "@" || quote === "<" || quote === "+")) {
@@ -1641,14 +1624,14 @@
                                             quote = "\"";
                                         } else if (b[a] === "'") {
                                             quote = "'";
-                                        } else if (lex[0] !== "{" && b[a] === "{" && (parse.options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                        } else if (lex[0] !== "{" && b[a] === "{" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                             if (b[a + 1] === "{") {
                                                 if (b[a + 2] === "{") {
                                                     quote = "}}}";
                                                 } else {
                                                     quote = "}}";
                                                 }
-                                            } else if (parse.options.lang === "dustjs") {
+                                            } else if (options.lang === "dustjs") {
                                                 quote = "}";
                                             } else {
                                                 quote = b[a + 1] + "}";
@@ -1794,7 +1777,7 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (parse.options.tagsort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start") {
+                    if (options.tagsort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start") {
                         (function lexer_markup_markup_tag_sorttag() {
                             var children    = [],
                                 bb          = 0,
@@ -1887,6 +1870,7 @@
                     var lex       = [],
                         quote     = "",
                         ltoke     = "",
+                        quotes    = 0,
                         jsxbrace  = (data.token[parse.count] === "{"),
                         liner     = parse.linesSpace,
                         now       = a,
@@ -1954,7 +1938,7 @@
                                         }
                                     } else if ((b[a] === "\"" || b[a] === "'" || b[a] === "`") && esctest() === false) {
                                         quote = b[a];
-                                    } else if (b[a] === "}" && jsxbrace === true) {
+                                    } else if (b[a] === "}" && jsxbrace === true && quotes === 0) {
                                         ext          = false;
                                         lexer.script(
                                             lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
@@ -1965,6 +1949,10 @@
                                         parse.push(data, record);
                                         parse.structure.pop();
                                         break;
+                                    } else if (b[a] === "{" && jsxbrace === true) {
+                                        quotes = quotes + 1;
+                                    } else if (b[a] === "}" && jsxbrace === true) {
+                                        quotes = quotes - 1;
                                     }
                                     end = b
                                         .slice(a, a + 10)
@@ -2057,9 +2045,9 @@
                             //typically this logic is for artifacts nested within an SGML tag
                             if (square === true && b[a] === "]") {
                                 a = a - 1;
-                                if (parse.options.content === true) {
+                                if (options.content === true) {
                                     ltoke = "text";
-                                } else if (parse.options.textpreserve === true) {
+                                } else if (options.textpreserve === true) {
                                     ltoke = minspace + lex.join("");
                                     liner = 0;
                                 } else if (parse.linesSpace > 0) {
@@ -2079,14 +2067,14 @@
                             }
 
                             //general content processing
-                            if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (parse.options.lang === "jsx" || parse.options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
+                            if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.lang === "jsx" || options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
 
                                 //dustjs template handling
-                                if (parse.options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
+                                if (options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
-                                    if (parse.options.content === true) {
+                                    if (options.content === true) {
                                         ltoke = "text";
-                                    } else if (parse.options.textpreserve === true) {
+                                    } else if (options.textpreserve === true) {
                                         ltoke = minspace + lex.join("");
                                         liner = 0;
                                     } else {
@@ -2106,9 +2094,9 @@
 
                                 //regular content
                                 a = a - 1;
-                                if (parse.options.content === true) {
+                                if (options.content === true) {
                                     ltoke = "text";
-                                } else if (parse.options.textpreserve === true) {
+                                } else if (options.textpreserve === true) {
                                     ltoke = minspace + lex.join("");
                                     liner = 0;
                                 } else if (parse.linesSpace > 0) {
@@ -2149,9 +2137,9 @@
                     } else {
 
                         //regular content at the end of the supplied source
-                        if (parse.options.content === true) {
+                        if (options.content === true) {
                             ltoke = "text";
-                        } else if (parse.options.textpreserve === true) {
+                        } else if (options.textpreserve === true) {
                             ltoke = minspace + lex.join("");
                             liner = 0;
                         } else {
@@ -2174,13 +2162,13 @@
                     tag("");
                 } else if (b[a] === "[" && b[a + 1] === "%") {
                     tag("%]");
-                } else if (b[a] === "{" && (parse.options.lang === "jsx" || parse.options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                } else if (b[a] === "{" && (options.lang === "jsx" || options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                     tag("");
                 } else if (b[a] === "]" && sgmlflag > 0) {
                     tag("]>");
-                } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && parse.options.lang === "jekyll") {
+                } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && options.lang === "jekyll") {
                     tag("---");
-                } else if (parse.options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
+                } else if (options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
                     if (b[a] === "#" && ((/\w/).test(b[a + 1]) === true || b[a + 1] === "*" || b[a + 1] === "#" || (b[a + 1] === "[" && b[a + 2] === "["))) {
                         tag("");
                     } else if (b[a] === "$" && b[a + 1] !== "$" && b[a + 1] !== "=" && b[a + 1] !== "[") {
