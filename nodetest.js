@@ -6,8 +6,6 @@
 (function nodetest() {
     "use strict";
     var output    = {},
-        parser    = require("./parse.js"),
-        language  = require("./language.js"),
         fs        = require("fs"),
         path      = require("path"),
         startTime = [],
@@ -57,10 +55,11 @@
                 },
                 heading = "index | begin | lexer  | lines | presv | stack       | types       | token",
                 bar     = "------|-------|--------|-------|-------|-------------|-------------|------";
+            console.log("");
             console.log(heading);
             console.log(bar);
             do {
-                if (a % 100 === 0) {
+                if (a % 100 === 0 && a > 0) {
                     console.log("");
                     console.log(heading);
                     console.log(bar);
@@ -88,10 +87,17 @@
             console.log("");
             console.log(duration);
             console.log("Presumed language is " + color(33) + lang[2] + clear);
-            if (global.parseerror !== undefined && global.parseerror !== "") {
+            if (global.parseerror !== "") {
                 console.log(color(31) + "Error:" + clear + " " + global.parseerror);
             }
         };
+    global.lexer = {};
+    global.parseerror = "";
+    require("./lexers/markup.js");
+    require("./lexers/script.js");
+    require("./lexers/style.js");
+    require("./parse.js");
+    require("./language.js");
     if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
         fs.stat(source, function (err, stats) {
             if (err !== null) {
