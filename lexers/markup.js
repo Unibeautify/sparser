@@ -18,7 +18,7 @@
                 cftransaction = false,
                 ext           = false,
                 // Find the lowercase tag name of the provided token.
-                tagName       = function lexer_markup_markup_tagName(el) {
+                tagName       = function lexer_markup_tagName(el) {
                     var reg   = (/^(\{((%-?)|\{-?)\s*)/),
                         space = "",
                         name  = "";
@@ -47,7 +47,7 @@
                 },
 
                 //parses tags, attributes, and template elements
-                tag           = function lexer_markup_markup_tag(end) {
+                tag           = function lexer_markup_tag(end) {
 
                     // markup is two smaller lexers that work together: tag - evaluates markup and
                     // template tags content - evaluates text content and code for external lexers
@@ -324,7 +324,7 @@
                             "cfzipparam"            : "prohibited"
                         },
                         //attribute name
-                        arname          = function lexer_markup_markup_tag_name(x) {
+                        arname          = function lexer_markup_tag_name(x) {
                             var eq = x.indexOf("=");
                             if (eq > 0 && ((eq < x.indexOf("\"") && x.indexOf("\"") > 0) || (eq < x.indexOf("'") && x.indexOf("'") > 0))) {
                                 return x.slice(0, eq);
@@ -333,7 +333,7 @@
                         },
 
                         //finds slash escape sequences
-                        slashy          = function lexer_markup_markup_tag_slashy() {
+                        slashy          = function lexer_markup_tag_slashy() {
                             var x = a;
                             do {
                                 x = x - 1;
@@ -346,7 +346,7 @@
                         },
 
                         // attribute lexer
-                        attributeLexer  = function lexer_markup_markup_tag_attributeLexer(quotes) {
+                        attributeLexer  = function lexer_markup_tag_attributeLexer(quotes) {
                             var atty = "",
                                 name = "",
                                 aa   = 0,
@@ -404,7 +404,7 @@
                         },
 
                         // attribute parser
-                        attributeRecord = function lexer_markup_markup_tag_attributeRecord() {
+                        attributeRecord = function lexer_markup_tag_attributeRecord() {
                             var ind          = 0,
                                 len          = attstore.length,
                                 eq           = 0,
@@ -419,7 +419,7 @@
                                         .toLowerCase()
                                         .replace(/\/$/, "")
                                 ],
-                                jsxAttribute = function lexer_markup_markup_tag_attributeRecord_jsxAttribute(str) {
+                                jsxAttribute = function lexer_markup_tag_attributeRecord_jsxAttribute(str) {
                                     if ((/\s/).test(str) === true) {
                                         record.lines = str
                                             .split("\n")
@@ -557,7 +557,7 @@
                     // for start tags or singleton tags just yet some types set the `preserve` flag,
                     // which means to preserve internal white space The `nopush` flag is set when
                     // parsed tags are to be ignored and forgotten
-                    (function lexer_markup_markup_types() {
+                    (function lexer_markup_types() {
                         if (end === "]>") {
                             end      = ">";
                             sgmlflag = sgmlflag - 1;
@@ -1262,7 +1262,7 @@
 
                     // cheat identifies HTML singleton elements as singletons even if formatted as
                     // start tags, such as <br> (which is really <br/>)
-                    cheat = (function lexer_markup_markup_tag_cheat() {
+                    cheat = (function lexer_markup_tag_cheat() {
                         var cfval        = "",
                             d            = 0,
                             ee           = 1,
@@ -1287,7 +1287,7 @@
                                 source     : "singleton",
                                 wbr        : "singleton"
                             },
-                            fixsingleton = function lexer_markup_markup_tag_cheat_fixsingleton() {
+                            fixsingleton = function lexer_markup_tag_cheat_fixsingleton() {
                                 var aa    = parse.count,
                                     bb    = 0,
                                     vname = tname.slice(1);
@@ -1778,28 +1778,36 @@
 
                     //sorts child elements
                     if (options.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
-                        (function lexer_markup_markup_tag_sorttag() {
+                        (function lexer_markup_tag_sorttag() {
                             var children    = [],
                                 bb          = 0,
+                                cc          = 0,
                                 d           = 0,
                                 endStore    = 0,
                                 startStore  = 0,
+                                jsxatt      = false,
                                 endData     = {},
-                                store       = (function lexer_markup_markup_tag_sorttag_store() {
+                                store       = (function lexer_markup_tag_sorttag_store() {
                                     var output = {};
-                                    parse.datanames.forEach(function lexer_markup_markup_tag_sorttag_store_datanames(value) {
+                                    parse.datanames.forEach(function lexer_markup_tag_sorttag_store_datanames(value) {
                                         output[value] = [];
                                     });
                                     return output;
                                 }()),
-                                storeRecord = function lexer_markup_markup_tag_sorttag_storeRecord(index) {
+                                storeRecord = function lexer_markup_tag_sorttag_storeRecord(index) {
                                     var output = {};
                                     parse.datanames.forEach(
-                                        function lexer_markup_markup_tag_sorttag_storeRecord_datanames(value) {
+                                        function lexer_markup_tag_sorttag_storeRecord_datanames(value) {
                                             output[value] = data[value][index];
                                         }
                                     );
                                     return output;
+                                },
+                                childsort = function lexer_markup_tag_sorttag_childsort(a, b) {
+                                    if (data.token[a[0]] > data.token[b[0]]) {
+                                        return -1;
+                                    }
+                                    return 1;
                                 };
                             bb = parse.count - 1;
                             if (bb > -1) {
@@ -1808,6 +1816,20 @@
                                         d = d - 1;
                                         if (d < 0) {
                                             startStore = bb + 1;
+                                            if (data.types[startStore] === "attribute" || data.types[startStore] === "jsx_attribute_start") {
+                                                jsxatt = false;
+                                                do {
+                                                    startStore = startStore + 1;
+                                                    if (jsxatt === false && data.types[startStore] !== "attribute") {
+                                                        break;
+                                                    }
+                                                    if (data.types[startStore] === "jsx_attribute_start") {
+                                                        jsxatt = true;
+                                                    } else if (data.types[startStore] === "jsx_attribute_end") {
+                                                        jsxatt = false;
+                                                    }
+                                                } while (startStore < c);
+                                            } 
                                             break;
                                         }
                                     } else if (data.types[bb] === "end") {
@@ -1820,7 +1842,24 @@
                                         if (data.types[bb] === "start") {
                                             children.push([bb, endStore]);
                                         } else {
-                                            children.push([bb, bb]);
+                                            if (data.types[bb] === "singleton" && (data.types[bb + 1] === "attribute" || data.types[bb + 1] === "jsx_attribute_start")) {
+                                                cc = bb + 1;
+                                                jsxatt = false;
+                                                do {
+                                                    if (data.types[cc] === "jsx_attribute_start") {
+                                                        jsxatt = true;
+                                                    } else if (data.types[cc] === "jsx_attribute_end") {
+                                                        jsxatt = false;
+                                                    }
+                                                    if (jsxatt === false && data.types[cc + 1] !== "attribute" && data.types[cc + 1] !== "jsx_attribute_start") {
+                                                        break;
+                                                    }
+                                                   cc = cc + 1;
+                                                } while (cc < parse.count);
+                                                children.push([bb, cc]);
+                                            } else if (data.types[bb] !== "attribute" && data.types[bb] !== "jsx_attribute_start") {
+                                                children.push([bb, bb]);
+                                            }
                                         }
                                     }
                                     bb = bb - 1;
@@ -1829,7 +1868,7 @@
                             if (children.length < 2) {
                                 return;
                             }
-                            children = parse.safeSort(children);
+                            children.sort(childsort);
                             bb       = children.length - 1;
                             if (bb > -1) {
                                 do {
@@ -1847,15 +1886,15 @@
                                     bb = bb - 1;
                                 } while (bb > -1);
                             }
-                            endData = (function lexer_markup_markup_tag_sorttag_endData() {
+                            endData = (function lexer_markup_tag_sorttag_endData() {
                                 var output = {};
-                                parse.datanames.forEach(function lexer_markup_markup_tag_sorttag_endData_datanames(value) {
+                                parse.datanames.forEach(function lexer_markup_tag_sorttag_endData_datanames(value) {
                                     output[value] = data[value].pop();
                                 });
                                 return output;
                             }());
-                            (function lexer_markup_markup_tag_sorttag_slice() {
-                                parse.datanames.forEach(function lexer_markup_markup_tag_sorttag_slice_datanames(value) {
+                            (function lexer_markup_tag_sorttag_slice() {
+                                parse.datanames.forEach(function lexer_markup_tag_sorttag_slice_datanames(value) {
                                     data[value] = data[value].slice(0, startStore);
                                 });
                             }());
@@ -1866,7 +1905,7 @@
 
                     parse.linesSpace = 0;
                 },
-                content       = function lexer_markup_markup_content() {
+                content       = function lexer_markup_content() {
                     var lex       = [],
                         quote     = "",
                         ltoke     = "",
@@ -1895,13 +1934,13 @@
                             token: "",
                             types: "content"
                         },
-                        tailSpace = function lexer_markup_markup_content_tailSpace(spacey) {
+                        tailSpace = function lexer_markup_content_tailSpace(spacey) {
                             if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
                                 spacey = "";
                             }
                             return "";
                         },
-                        esctest   = function lexer_markup_markup_content_esctest() {
+                        esctest   = function lexer_markup_content_esctest() {
                             var aa = a - 1,
                                 bb = 0;
                             if (b[a - 1] !== "\\") {
@@ -2120,7 +2159,7 @@
 
                     if (a > now && a < c) {
                         if ((/\s/).test(b[a]) === true) {
-                            (function lexer_markup_markup_content_space() {
+                            (function lexer_markup_content_space() {
                                 var x = a;
                                 parse.linesSpace = 1;
                                 do {
@@ -2147,9 +2186,13 @@
                                 .join("")
                                 .replace(/(\s+)$/, tailSpace);
                         }
-                        record.token       = ltoke;
-                        parse.push(data, record);
-                        parse.linesSpace   = 0;
+                        
+                        //this condition prevents adding content that was just added in the loop above
+                        if (record.token !== ltoke) {
+                            record.token       = ltoke;
+                            parse.push(data, record);
+                            parse.linesSpace   = 0;
+                        }
                     }
                 };
 
