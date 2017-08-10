@@ -1924,7 +1924,6 @@
                         square    = (
                             data.types[parse.count] === "template_start" && data.token[parse.count].indexOf("<!") === 0 && data.token[parse.count].indexOf("<![") < 0 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === "["
                         ),
-                        external  = {},
                         record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
@@ -1977,20 +1976,21 @@
                                         }
                                     } else if ((b[a] === "\"" || b[a] === "'" || b[a] === "`") && esctest() === false) {
                                         quote = b[a];
-                                    } else if (b[a] === "}" && jsxbrace === true && quotes === 0) {
-                                        ext          = false;
-                                        lexer.script(
-                                            lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
-                                            parse.structure[parse.structure.length - 1][1] + 1
-                                        );
-                                        record.token = "}";
-                                        record.types = "script";
-                                        parse.push(data, record);
-                                        parse.structure.pop();
-                                        break;
                                     } else if (b[a] === "{" && jsxbrace === true) {
                                         quotes = quotes + 1;
                                     } else if (b[a] === "}" && jsxbrace === true) {
+                                        if (quotes === 0) {
+                                            ext          = false;
+                                            lexer.script(
+                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
+                                                parse.structure[parse.structure.length - 1][1] + 1
+                                            );
+                                            record.token = "}";
+                                            record.types = "script";
+                                            parse.push(data, record);
+                                            parse.structure.pop();
+                                            break;
+                                        }
                                         quotes = quotes - 1;
                                     }
                                     end = b

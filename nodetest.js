@@ -1,3 +1,7 @@
+/*jslint node:true */
+
+/*global language, parser */
+
 /*
     A simple test script to run the parser.
     This code is not a formal part of the project at this time.
@@ -34,7 +38,6 @@
             return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
         },
         source    = process.argv[2],
-        duration  = "",
         display   = function () {
             var a   = 0,
                 b   = output.token.length,

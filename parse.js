@@ -354,7 +354,7 @@ Parse Framework
                         .splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
                 });
             if (spliceData.data === parse.data) {
-                parse.count = (parse.count = parse.count - spliceData.howmany) + 1;
+                parse.count = (parse.count - spliceData.howmany) + 1;
             }
             return;
         }

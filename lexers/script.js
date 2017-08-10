@@ -1056,13 +1056,13 @@
                                     }
                                 },
                                 recordStore = function lexer_script_operator_plusequal_recordStore() {
-                                    var output = {};
+                                    var storage = {};
                                     parse.datanames.forEach(
                                         function lexer_script_operator_plusequal_recordStore_datanames(value) {
-                                            output[value] = data[value][inc];
+                                            storage[value] = data[value][inc];
                                         }
                                     );
-                                    return output;
+                                    return storage;
                                 };
                             end    = function lexer_script_operator_plusequal_end() {
                                 walk = data.begin[walk] - 1;

@@ -1,3 +1,5 @@
+/*global console, require */
+
 // I don't have Firefox on my new work computer and cannot install software. I
 // do have Chrome, but Chrome barfs and throws errors if sees localStorage
 // referenced from the file scheme. So, I am creating a server to work on my
