@@ -9,8 +9,7 @@
 
 (function nodetest() {
     "use strict";
-    var output    = {},
-        fs        = require("fs"),
+    var fs        = require("fs"),
         path      = require("path"),
         startTime = [],
         color     = function (numb) {
@@ -19,6 +18,7 @@
         clear     = "\u001b[39m\u001b[0m",
         lang      = [],
         duration  = "",
+        raw       = (process.argv.indexOf("--raw") > 0),
         options   = {
             correct   : true,
             html      : true,
@@ -38,7 +38,7 @@
             return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
         },
         source    = process.argv[2],
-        display   = function () {
+        display   = function (output) {
             var a   = 0,
                 b   = output.token.length,
                 str = [],
@@ -93,6 +93,27 @@
             if (global.parseerror !== "") {
                 console.log(color(31) + "Error:" + clear + " " + global.parseerror);
             }
+        },
+        execute   = function (sourcetext) {
+            var output = {};
+            lang           = language.auto(sourcetext);
+            options.lang   = lang[0];
+            options.type   = lang[1]; 
+            options.source = sourcetext;
+            if (raw === true) {
+                output = parser(options);
+                if (global.parseerror === "") {
+                    console.log(JSON.stringify(output));
+                } else {
+                    console.log(global.parseerror);
+                }
+            } else {
+                startTime      = process.hrtime();
+                output         = parser(options);
+                duration       = timespan();
+                display(output);
+                //console.log(output);
+            }
         };
     global.lexer = {};
     global.parseerror = "";
@@ -119,26 +140,10 @@
                 if (errf !== null) {
                     return console.log(errf);
                 }
-                lang           = language.auto(data);
-                options.lang   = lang[0];
-                options.type   = lang[1]; 
-                options.source = data;
-                startTime      = process.hrtime();
-                output         = parser(options);
-                duration       = timespan();
-                display();
-                //console.log(output);
+                execute(data);
             });
         });
     } else {
-        lang           = language.auto(process.argv[2]);
-        options.lang   = lang[0];
-        options.type   = lang[1]; 
-        options.source = source;
-        startTime      = process.hrtime();
-        output         = parser(options);
-        duration       = timespan();
-        display();
-        //console.log(output);
+        execute(source);
     }
 }());

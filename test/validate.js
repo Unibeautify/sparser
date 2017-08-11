@@ -5,8 +5,8 @@
 module.exports = (function taskrunner() {
     "use strict";
     var order      = [
-            "lint"//, //        - run jslint on all unexcluded files in the repo
-            //"coreunits", //   - run a variety of files through the application and compare the result to a known good file
+            "lint", //       - run jslint on all unexcluded files in the repo
+            "codeunits" //   - run a variety of files through the application and compare the result to a known good file
         ],
         startTime  = process.hrtime(),
         node       = {
@@ -14,6 +14,7 @@ module.exports = (function taskrunner() {
             fs   : require("fs"),
             path : require("path")
         },
+        relative   = __dirname.replace(/((\/|\\)test)$/, ""),
         humantime  = function taskrunner_humantime(finished) {
             var minuteString = "",
                 hourString   = "",
@@ -164,6 +165,7 @@ module.exports = (function taskrunner() {
         },
         prettydiff = require("." + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
         options    = {},
+        parse      = {},
         errout     = function taskrunner_errout(errtext) {
             console.log("");
             console.error(errtext);
@@ -219,7 +221,7 @@ module.exports = (function taskrunner() {
             }
         },
         phases     = {
-            coreunits  : function taskrunner_coreunits() {
+            codeunits  : function taskrunner_coreunits() {
                 var code   = [],
                     parsed = [],
                     countr = 0,
@@ -228,39 +230,16 @@ module.exports = (function taskrunner() {
                         parsed: false,
                         code  : false
                     },
-                    sort    = function taskrunner_coreunits_sort(a, b) {
-                        if (a > b) {
-                            return 1;
-                        }
-                        return -1;
-                    },
                     compare = function taskrunner_coreunits_compare() {
                         var len       = (code.length > parsed.length)
                                 ? code.length
                                 : parsed.length,
                             a         = 0,
-                            output    = "",
+                            str       = "",
+                            output    = {},
                             filecount = 0;
-                        code.sort(sort);
-                        parsed.sort(sort);
-                        options = {
-                            correct     : true,
-                            crlf        : false,
-                            html        : true,
-                            inchar      : " ",
-                            insize      : 4,
-                            lang        : "auto",
-                            methodchain : "indent",
-                            mode        : "beautify",
-                            nocaseindent: false,
-                            objsort     : "all",
-                            preserve    : 2,
-                            quoteConvert: "double",
-                            spaceclose  : true,
-                            varword     : "none",
-                            vertical    : "all",
-                            wrap        : 80
-                        };
+                        code   = parse.safeSort(code);
+                        parsed = parse.safeSort(parsed);
                         for (a = 0; a < len; a = a + 1) {
                             if (code[a] === undefined || parsed[a] === undefined) {
                                 if (code[a] === undefined) {
@@ -285,20 +264,26 @@ module.exports = (function taskrunner() {
                                 }
                             } else if (code[a][0] === parsed[a][0]) {
                                 options.source = code[a][1];
-                                output         = prettydiff(options);
-                                if (output.charAt(output.length - 1) !== "\n") {
-                                    output = output + "\n";
-                                }
-                                if (output === parsed[a][1]) {
-                                    filecount = filecount + 1;
-                                    console.log(
-                                        humantime(false) + "\u001B[32mPass " + filecount + ":\u001B[39m " + parsed[a][0]
-                                    );
-                                    if (a === len - 1) {
-                                        return next();
+                                options.type   = global.language.auto(code[a][1], "javascript")[1];
+                                output         = global.parser(options);
+                                str            = JSON.stringify(output);
+                                if (global.parseerror === "") {
+                                    if (str === parsed[a][1]) {
+                                        filecount = filecount + 1;
+                                        console.log(
+                                            humantime(false) + "\u001B[32mPass " + filecount + ":\u001B[39m " + parsed[a][0]
+                                        );
+                                        if (a === len - 1) {
+                                            return next();
+                                        }
+                                    } else {
+                                        diffFiles(parsed[a][0], str, parsed[a][1]);
                                     }
                                 } else {
-                                    diffFiles(parsed[a][0], output, parsed[a][1]);
+                                    console.log("");
+                                    console.log("Quitting due to error:");
+                                    console.log(global.parseerror);
+                                    process.exit(1);
                                 }
                             } else {
                                 if (code[a][0] < parsed[a][0]) {
@@ -323,7 +308,7 @@ module.exports = (function taskrunner() {
                         }
                     },
                     readDir = function taskrunner_coreunits_readDir(type) {
-                        var dirpath = __dirname + "/samples_" + type;
+                        var dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
                             var pusher = function taskrunner_coreunits_readDir_callback_pusher(
                                 val,
@@ -331,11 +316,11 @@ module.exports = (function taskrunner() {
                                 arr
                             ) {
                                 node.fs.readFile(
-                                    __dirname + "/samples_" + type + "/" + val,
+                                    dirpath + node.path.sep + val,
                                     "utf8",
                                     function taskrunner_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
                                         if (erra !== null && erra !== undefined) {
-                                            errout("Error reading file: " + __dirname + "/samples_" + type + "/" + val);
+                                            errout("Error reading file: " + relative + node.path.sep + "samples_" + type + node.path.sep + val);
                                         } else if (type === "code") {
                                             code.push([val, fileData]);
                                             countr = countr + 1;
@@ -360,7 +345,7 @@ module.exports = (function taskrunner() {
                                 );
                             };
                             if (err !== null) {
-                                errout("Error reading from directory: /samples_" + type);
+                                errout("Error reading from directory: " + dirpath);
                             }
                             list.forEach(pusher);
                         });
@@ -559,10 +544,28 @@ module.exports = (function taskrunner() {
                                 }
                             );
                         };
-                    readDir(__dirname.replace(/((\/|\\)test)$/, ""));
+                    readDir(relative);
                 }());
             }
         };
+
+    require(".." + node.path.sep + "parse.js");
+    require(".." + node.path.sep + "language.js");
+    global.lexer      = {};
+    global.parseerror = "";
+    parse             = global.parse;
+
+    node.fs.readdir(relative + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
+        if (err !== null) {
+            console.log(err);
+            process.exit(1);
+        } else {
+            files.forEach(function taskrunner_lexers_each(value) {
+                require(relative + node.path.sep + "lexers" + node.path.sep + value);
+            });
+        }
+    });
+
     next = function taskrunner_next() {
         var complete = function taskrunner_complete() {
             console.log("");

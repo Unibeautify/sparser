@@ -47,7 +47,7 @@ Parse Framework
             };
 
             if (global.lexer[options.type] === "undefined") {
-                parse.parseerror = "Lexer '" + options.type + "' isn't available.";
+                global.parseerror = "Lexer '" + options.type + "' isn't available.";
             } else {
                 global.lexer[options.type](options.source + " ");
             }
@@ -123,6 +123,7 @@ Parse Framework
         if (data === parse.data) {
             parse.count = parse.count - 1;
         }
+        return output;
     };
     parse.push       = function parse_push(data, record) {
         parse

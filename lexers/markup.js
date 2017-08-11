@@ -865,7 +865,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        parse.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
+                                        global.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start

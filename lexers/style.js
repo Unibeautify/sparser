@@ -198,7 +198,7 @@
             // * url values that are not quoted are wrapped    in double quote characters
             // * color values are set to lowercase and    reduced from 6 to 3 digits if
             // appropriate
-            value       = function lexer_style_item_value(val, font) {
+            value       = function lexer_style_item_value(val) {
                 var x          = val.split(""),
                     leng       = x.length,
                     cc         = 0,
@@ -206,8 +206,6 @@
                     items      = [],
                     block      = "",
                     values     = [],
-                    qchar      = "",
-                    qreg       = {},
                     transition = (data.token[parse.count - 2] === "transition"),
                     colorPush  = function lexer_style_item_value_colorPush(value) {
                         var vl = value.toLowerCase();
@@ -220,11 +218,6 @@
                         }
                         return value;
                     };
-                if (options.quoteConvert === "double") {
-                    qchar = "\"";
-                } else if (options.quoteConvert === "single") {
-                    qchar = "'";
-                }
                 // this loop identifies containment so that tokens/sub-tokens are correctly
                 // taken
                 if (cc < leng) {
@@ -280,27 +273,10 @@
                         } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
                             block = values[cc].charAt(values[cc].indexOf("url(") + 4);
                             if (block !== "@" && block !== "{" && block !== "<") {
-                                if (qchar === "") {
-                                    values[cc] = values[cc]
-                                        .replace(/url\(\s*('|")?/, "url(\"")
-                                        .replace(/(('|")?\s*\))$/, "\")");
-                                } else {
-                                    values[cc] = values[cc]
-                                        .replace(/url\(\s*('|")?/, "url(" + qchar)
-                                        .replace(/(('|")?\s*\))$/, qchar + ")");
-                                }
+                                values[cc] = values[cc]
+                                    .replace(/url\(\s*('|")?/, "url(\"")
+                                    .replace(/(('|")?\s*\))$/, "\")");
                             }
-                        } else if (font === true) {
-                            if (qchar === "'") {
-                                values[cc] = values[cc].replace(/"/g, "'");
-                            } else {
-                                values[cc] = values[cc].replace(/'/g, "\"");
-                            }
-                        } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
-                            qreg       = new RegExp(qchar, "g");
-                            values[cc] = qchar + values[cc]
-                                .slice(1, values[cc].length - 1)
-                                .replace(qreg, "\\" + qchar) + qchar;
                         }
                         cc = cc + 1;
                     } while (cc < leng);
@@ -434,7 +410,7 @@
                 } else if (out[0] === "@" || out[0] === "$") {
                     if (data.types[parse.count] === "colon" && (data.types[parse.count - 1] === "property" || data.types[parse.count - 1] === "propvar")) {
                         ltype = "value";
-                    } else {
+                    } else if (parse.count > -1) {
                         ltype = "propvar";
                         outy  = data.token[parse.count];
                         aa    = outy.indexOf("(");
@@ -444,6 +420,8 @@
                                 .token[parse.count]
                                 .slice(0, aa + 1) + value(outy, false) + ")";
                         }
+                    } else {
+                        ltype = "propvar";
                     }
                 } else {
                     ltype = "item";
@@ -564,11 +542,7 @@
                         data.token[aa] = data
                             .token[aa]
                             .replace(/\s*!\s+important/, " !important");
-                        if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
-                            data.token[aa] = value(data.token[aa], true);
-                        } else {
-                            data.token[aa] = value(data.token[aa], false);
-                        }
+                        data.token[aa] = value(data.token[aa], false);
                         //take comments out until the 'item' is found and then put the comments back
                         if (data.token[parse.count - 1] === "{") {
                             data.types[parse.count] = "propvar";
@@ -605,27 +579,17 @@
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*!\s+important/, " !important");
-                            if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
-                                data.token[aa] = value(data.token[aa], true);
-                            } else {
-                                data.token[aa] = value(data.token[aa], false);
-                            }
+                            data.token[aa] = value(data.token[aa], false);
                         } else {
                             //properties without values are considered variables
                             if (data.types[aa] !== "value") {
                                 if (data.types[aa] === "item" && data.types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
                                     if (isNaN(data.token[parse.count]) === true) {
-                                        data.token[parse.count - 1] = tokel + data
-                                            .token
-                                            .pop();
+                                        data.token[parse.count - 1] = tokel + data.token[parse.count];
                                     } else {
-                                        data.token[parse.count - 1] = tokel + " " + data
-                                            .token
-                                            .pop();
+                                        data.token[parse.count - 1] = tokel + " " + data.token[parse.count];
                                     }
-                                    data
-                                        .types
-                                        .pop();
+                                    parse.pop(data);
                                     return;
                                 }
                                 data.types[aa] = "propvar";
@@ -671,6 +635,26 @@
                         ltype          = "propvar";
                     }
                 }
+            },
+            semiComment = function lexer_style_semiComment() {
+                var x = parse.count;
+                do {
+                    x = x - 1;
+                } while (x > 0 && (data.types[x] === "comment" || data.types[x] === "comment-inline"));
+                parse.splice({
+                    data: data,
+                    howmany: 0,
+                    index: x + 1,
+                    record: {
+                        begin: parse.structure[parse.structure.length - 1][1],
+                        lexer: "style",
+                        lines: parse.linesSpace,
+                        presv: false,
+                        stack: parse.structure[parse.structure.length - 1][0],
+                        token: ";",
+                        types: "semi"
+                    }
+                });
             },
             template    = function lexer_style_template(open, end) {
                 var store  = [],
@@ -838,7 +822,7 @@
                     out         = [b[a]],
                     type        = "comment",
                     extra       = "",
-                    store       = {},
+                    store       = [],
                     recordStore = function lexer_style_comment_recordStore(index) {
                         var output = {};
                         parse.datanames.forEach(function lexer_style_comment_recordStore_datanames(value) {
@@ -911,8 +895,7 @@
                     ltype = type;
                     recordPush();
                     do {
-                        parse.push(data, store);
-                        parse.pop(store);
+                        parse.push(data, store.pop());
                     } while (store.length > 0);
                 } else {
                     ltoke = out.join("");
@@ -1047,7 +1030,7 @@
                                             storage(0);
                                         }
                                     }
-                                    if (set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
+                                    if (aa === leng - 1 || set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0) {
                                         if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
                                             set.splice(start + 1, yy);
                                             leng = leng - yy;
@@ -1192,6 +1175,10 @@
                 if (b[a] === "(") {
                     parse.structure.push(["map", parse.count]);
                     mapper.push(0);
+                } else if (data.types[parse.count - 1] === "selector" || data.types[parse.count - 1] === "propvar") {
+                    parse.structure.push([data.token[parse.count - 1], parse.count]);
+                } else if (data.types[parse.count - 1] === "colon") {
+                    parse.structure.push([data.token[parse.count - 2], parse.count]);
                 } else {
                     parse.structure.push(["block", parse.count]);
                 }
@@ -1207,12 +1194,17 @@
                 } else {
                     if (b[a] === ")") {
                         mapper.pop();
-                    } else if (b[a] === "}" && ltype === "value" && data.token[parse.count] !== ";") {
-                        ltoke = "l";
-                        ltype = "semi";
-                        recordPush();
                     }
                     item("end");
+                    if (b[a] === "}" && data.token[parse.count] !== ";") {
+                        if (data.types[parse.count] === "value") {
+                            ltoke = ";";
+                            ltype = "semi";
+                            recordPush();
+                        } else if (data.types[parse.count] === "comment" || data.types[parse.count] === "comment-inline") {
+                            semiComment();
+                        }
+                    }
                     properties();
                     ltype = "end";
                     if (options.objectSort === true && nosort[nosort.length - 1] === false) {
