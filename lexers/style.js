@@ -546,7 +546,7 @@
                         //take comments out until the 'item' is found and then put the comments back
                         if (data.token[parse.count - 1] === "{") {
                             data.types[parse.count] = "propvar";
-                        } else if (parse.structure[parse.structure.length - 1][0] === "block") {
+                        } else if (parse.structure[parse.structure.length - 1][0] === data.token[data.begin[parse.count] - 1] && options.correct === true) {
                             if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                 aa = coms.length - 1;
                                 do {
@@ -1196,7 +1196,7 @@
                         mapper.pop();
                     }
                     item("end");
-                    if (b[a] === "}" && data.token[parse.count] !== ";") {
+                    if (b[a] === "}" && data.token[parse.count] !== ";" && options.correct === true) {
                         if (data.types[parse.count] === "value") {
                             ltoke = ";";
                             ltype = "semi";

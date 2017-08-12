@@ -1524,7 +1524,9 @@
                         }
                     }
                     if (x === ")" || x === "x)" || x === "]") {
-                        plusplus();
+                        if (options.correct === true) {
+                            plusplus();
+                        }
                         asifix();
                     }
                     if (x === ")" || x === "x)") {
@@ -1557,7 +1559,9 @@
                         pword = [];
                     } else if (x === "}") {
                         if (ltoke !== "," || options.endcomma === "always") {
-                            plusplus();
+                            if (options.correct === true) {
+                                plusplus();
+                            }
                         }
                         if (parse.structure.length > 0 && parse.structure[parse.structure.length - 1][0] !== "object") {
                             asi(true);
@@ -1964,7 +1968,9 @@
                     if (wordTest > -1) {
                         word();
                     }
-                    plusplus();
+                    if (options.correct === true) {
+                        plusplus();
+                    }
                     asifix();
                     a     = a + 1;
                     ltoke = "::";
@@ -1975,7 +1981,9 @@
                     if (wordTest > -1) {
                         word();
                     }
-                    plusplus();
+                    if (options.correct === true) {
+                        plusplus();
+                    }
                     if (ltype === "comment" || ltype === "comment-inline") {
                         commaComment();
                     } else if (vart.len > -1 && vart.count[vart.len] === 0 && options.varword === "each") {
@@ -2031,7 +2039,9 @@
                                 vart.index[vart.len] = parse.count + 1;
                             }
                         }
-                        plusplus();
+                        if (options.correct === true) {
+                            plusplus();
+                        }
                         ltoke = ";";
                         ltype = "separator";
                         if (data.token[parse.count] === "x}") {

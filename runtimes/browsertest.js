@@ -1,3 +1,6 @@
+/*jslint browser:true */
+/*global global, performance, window*/
+
 (function web() {
     "use strict";
     var input   = document.getElementById("input"),
@@ -8,7 +11,7 @@
             tagSort   : false,
             type      : "script"
         },
-        handler = function web_handler(e) {
+        handler = function web_handler() {
             var value = input.value,
                 startTime = 0,
                 startTotal = Math.round(performance.now() * 1000),
@@ -19,7 +22,6 @@
                         len       = data.token.length,
                         table     = document.createElement("table"),
                         body      = document.createElement("thead"),
-                        typevalue = "",
                         cell      = function web_handler_builder_cell(text, type, row, className) {
                             var el = document.createElement(type);
                             if (className !== "") {
@@ -120,7 +122,7 @@
     window.onerror = function (msg, source) {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
-    if (Object.keys(window).indexOf("localStorage") > -1 && window["localStorage"].parseCode !== undefined) {
+    if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {
         input.value = localStorage.parseCode;
     }
 }());
