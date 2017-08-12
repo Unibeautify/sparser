@@ -2,17 +2,17 @@
 **This is still early.  For status and progress please see the Github issues and follow the latest branch.**
 
 ## Contents
-1. [Todo](#Todo)
-1. [Overview](#Overview)
-1. [Framework](#Framework)
-   1. [Definition of Terms](#Definition-of-Terms)
-   1. [Architecture](#Architecture)
+1. [Todo](#todo)
+1. [Overview](#overview)
+1. [Framework](#framework)
+   1. [Definition of Terms](#definition-of-terms)
+   1. [Architecture](#architecture)
    1. [global](#global)
    1. [parse Data Properties](#parse-data-properties)
    1. [parse Methods](#parse-methods)
-   1. [Lexers](#Lexers)
-1. [Input](#Input)
-1. [Output](#Output)
+   1. [Lexers](#lexers)
+1. [Input](#input)
+1. [Output](#output)
    1. [begin](#begin)
    1. [lexer](#lexer)
    1. [lines](#lines)
@@ -20,8 +20,8 @@
    1. [stack](#stack)
    1. [token](#token)
    1. [types](#types)
-1. [Files](#Files)
-1. [FAQ](#FAQ)
+1. [Files](#files)
+1. [FAQ](#faq)
 
 ## Todo
 * options - define and document supported options
