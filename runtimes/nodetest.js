@@ -9,8 +9,10 @@
 
 (function nodetest() {
     "use strict";
-    var fs        = require("fs"),
-        path      = require("path"),
+    var node      = {
+            fs  : require("fs"),
+            path: require("path")
+        },
         startTime = [],
         color     = function (numb) {
             return "\u001b[1m\u001b[" + numb + "m";
@@ -18,9 +20,16 @@
         clear     = "\u001b[39m\u001b[0m",
         lang      = [],
         duration  = "",
-        raw       = (process.argv.indexOf("--raw") > 0),
+        directory = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
+        raw       = (function () {
+            var index = process.argv.indexOf("--raw");
+            if (index < 0) {
+                return false;
+            }
+            process.argv.splice(index, 1);
+            return true;
+        }()),
         options   = {
-            html      : true,
             jsx       : false,
             objectSort: true,
             source    : "",
@@ -122,33 +131,39 @@
         };
     global.lexer = {};
     global.parseerror = "";
-    require("./lexers/markup.js");
-    require("./lexers/script.js");
-    require("./lexers/style.js");
-    require("./parse.js");
-    require("./language.js");
-    if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
-        fs.stat(source, function (err, stats) {
-            if (err !== null) {
-                if (err.toString().indexOf("no such file or directory") > 0) {
-                    return console.log(
-                        "Presumed input is a file but such a " + color("31") + "file name does not exist" +
-                        clear + " as " + path.resolve(source)
-                    );
-                }
-                return console.log(err);
-            }
-            if (stats.isFile() === false) {
-                return console.log("Specified path exists, but is not a file.");
-            }
-            fs.readFile(source, "utf8", function (errf, data) {
-                if (errf !== null) {
-                    return console.log(errf);
-                }
-                execute(data);
-            });
+    node.fs.readdir(directory + "lexers", function (err, files) {
+        if (err !== null) {
+            console.log(err);
+            return process.exit(1);
+        }
+        files.forEach(function (value) {
+            require(directory + "lexers" + node.path.sep + value);
         });
-    } else {
-        execute(source);
-    }
+        require(directory + "parse.js");
+        require(directory + "language.js");
+        if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
+            node.fs.stat(source, function (err, stats) {
+                if (err !== null) {
+                    if (err.toString().indexOf("no such file or directory") > 0) {
+                        return console.log(
+                            "Presumed input is a file but such a " + color("31") + "file name does not exist" +
+                            clear + " as " + node.path.resolve(source)
+                        );
+                    }
+                    return console.log(err);
+                }
+                if (stats.isFile() === false) {
+                    return console.log("Specified path exists, but is not a file.");
+                }
+                node.fs.readFile(source, "utf8", function (errf, data) {
+                    if (errf !== null) {
+                        return console.log(errf);
+                    }
+                    execute(data);
+                });
+            });
+        } else {
+            execute(source);
+        }
+    });
 }());

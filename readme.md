@@ -4,6 +4,13 @@
 ## Contents
 1. [Todo](#todo)
 1. [Overview](#overview)
+1. [Execution](#execution)
+   1. [Supplied Runtimes](#supplied-runtimes)
+      1. [Browser Runtime](#browser-runtime)
+      1. [Terminal Runtime](#terminal-runtime)
+   1. [Embedding](#embedding)
+      1. [Browser Embedding](#browser-embedding)
+      1. [Node Embedding](#node-embedding)
 1. [Framework](#framework)
    1. [Definition of Terms](#definition-of-terms)
    1. [Architecture](#architecture)
@@ -33,6 +40,33 @@
 
 ## Overview
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
+
+## Execution
+The framework is intended for inclusion in other applications as an embedded utility.  To run the framework immediately and experiment without any configuration work some simple runtime interfaces are provided.
+
+### Supplied Runtimes
+To simply experiment with the framework some handy runtimes are provided.
+
+#### Browser Runtime
+A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  Some browsers don't play well when running pages from the local file system, so a simple Node http server runtime is included as *runtimes/httpserver.js*.
+
+The browser utility produces output in a HTML table and color codes the output based upon the lexer used.
+
+#### Terminal Runtime
+A handy terminal utility is included but requires Node.js to run.  You can run this from the terminal as `node runtimes/nodetest.js codesample`.  The code sample can be a path to a local file or string to parse.  For proper execution with Node the first command must be `node` and the second must be the file to execute: `runtimes/nodetest.js`.
+
+By default the terminal utility will log a formatted table to the terminal.  To generate raw parse data include the `--raw` option before or after the code sample.
+
+### Embedding
+The framework is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.  Getting the framework to run in different environments requires a bit of configuration that varies by environment.
+
+The minimum requirements for embedding into all environments is to include the *parse.js* file and included the desired lexer files from the *lexers* directory.
+
+#### Browser Embedding
+In browser applications the additional file *global.js* must be included.  This file should be referrenced before other code from the framework.
+
+#### Node Embedding
+When running the framework in a Node application the *global.js* must not be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of *runtimes/nodetest.js* for an example.
 
 ## Framework
 The application operates as a global object containing a few data properties and methods plus a collection of language specific rule files called *lexers*.
