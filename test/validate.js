@@ -159,8 +159,8 @@ module.exports = (function taskrunner() {
                 if ((/^([0-9]\.)/).test(secondString) === true) {
                     secondString = "0" + secondString;
                 }
-                return "\u001B[36m[" + hourString + ":" + minuteString + ":" +
-                        secondString + "]\u001B[39m ";
+                return "\u001b[36m[" + hourString + ":" + minuteString + ":" +
+                        secondString + "]\u001b[39m ";
             }
         },
         prettydiff = require("." + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
@@ -182,13 +182,31 @@ module.exports = (function taskrunner() {
                 plural = "",
                 output = [],
                 report = [],
-                total  = 0;
+                total  = 0,
+                record = function taskrunner_diffFiles_record(data) {
+                    var len = data.token.length,
+                        x   = 0,
+                        rec = [],
+                        dn  = function taskrunner_diffFiles_record_datanames(value) {
+                            rec[x][value] = data[value][x];
+                        };
+                    do {
+                        rec.push({});
+                        parse.datanames.forEach(dn);
+                        x = x + 1;
+                    } while (x < len);
+                    return JSON.stringify(rec);
+                };
             options.mode    = "diff";
-            options.source  = sampleSource;
-            options.diff    = sampleDiff;
+            options.source  = (sampleSource === "")
+                ? ""
+                : record(JSON.parse(sampleSource));
+            options.diff    = (sampleDiff === "")
+                ? ""
+                : record(JSON.parse(sampleDiff));
             options.diffcli = true;
             options.context = 2;
-            options.lang    = "text";
+            options.lang    = "json";
             output          = prettydiff(options);
             report          = output;
             pdlen           = report.length;
@@ -244,12 +262,12 @@ module.exports = (function taskrunner() {
                             if (code[a] === undefined || parsed[a] === undefined) {
                                 if (code[a] === undefined) {
                                     console.log(
-                                        "\u001B[33msamples_code directory is missing file:\u001B[39m " + parsed[a][0]
+                                        "\u001b[33msamples_code directory is missing file:\u001b[39m " + parsed[a][0]
                                     );
                                     parsed.splice(a, 1);
                                 } else {
                                     console.log(
-                                        "\u001B[33msamples_parse directory is missing file:\u001B[39m " + code[a][0]
+                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + code[a][0]
                                     );
                                     code.splice(a, 1);
                                 }
@@ -259,41 +277,52 @@ module.exports = (function taskrunner() {
                                 a   = a - 1;
                                 if (a === len - 1) {
                                     console.log("");
-                                    console.log("\u001B[32mCore Unit Testing Complete\u001B[39m");
+                                    console.log("\u001b[32mCore Unit Testing Complete\u001b[39m");
                                     return next();
                                 }
                             } else if (code[a][0] === parsed[a][0]) {
-                                options.source = code[a][1];
-                                options.type   = global.language.auto(code[a][1], "javascript")[1];
-                                output         = global.parser(options);
-                                str            = JSON.stringify(output);
-                                if (global.parseerror === "") {
-                                    if (str === parsed[a][1]) {
-                                        filecount = filecount + 1;
-                                        console.log(
-                                            humantime(false) + "\u001B[32mPass " + filecount + ":\u001B[39m " + parsed[a][0]
-                                        );
-                                        if (a === len - 1) {
-                                            return next();
+                                if (parsed[a][1] === "") {
+                                    console.log("\u001b[31mParsed file is empty:\u001b[39m " + parsed[a][0]);
+                                } else if (code[a][1] === "") {
+                                    console.log("\u001b[31mCode file is empty:\u001b[39m " + code[a][0]);
+                                } else {
+                                    if ((/_correct(\.|_)/).test(code[a][0]) === true) {
+                                        options.correct = true;
+                                    } else {
+                                        options.correct = false;
+                                    }
+                                    options.source = code[a][1];
+                                    options.type   = global.language.auto(code[a][1], "javascript")[1];
+                                    output         = global.parser(options);
+                                    str            = JSON.stringify(output);
+                                    if (global.parseerror === "") {
+                                        if (str === parsed[a][1]) {
+                                            filecount = filecount + 1;
+                                            console.log(
+                                                humantime(false) + "\u001b[32mPass " + filecount + ":\u001b[39m " + parsed[a][0]
+                                            );
+                                            if (a === len - 1) {
+                                                return next();
+                                            }
+                                        } else {
+                                            diffFiles(parsed[a][0], str, parsed[a][1]);
                                         }
                                     } else {
-                                        diffFiles(parsed[a][0], str, parsed[a][1]);
+                                        console.log("");
+                                        console.log("Quitting due to error:");
+                                        console.log(global.parseerror);
+                                        process.exit(1);
                                     }
-                                } else {
-                                    console.log("");
-                                    console.log("Quitting due to error:");
-                                    console.log(global.parseerror);
-                                    process.exit(1);
                                 }
                             } else {
                                 if (code[a][0] < parsed[a][0]) {
                                     console.log(
-                                        "\u001B[33mParsed samples directory is missing file:\u001B[39m " + code[a][0]
+                                        "\u001b[33mParsed samples directory is missing file:\u001b[39m " + code[a][0]
                                     );
                                     code.splice(a, 1);
                                 } else {
                                     console.log(
-                                        "\u001B[33mCode samples directory is missing file:\u001B[39m " + parsed[a][0]
+                                        "\u001b[33mCode samples directory is missing file:\u001b[39m " + parsed[a][0]
                                     );
                                     parsed.splice(a, 1);
                                 }
@@ -352,7 +381,7 @@ module.exports = (function taskrunner() {
                     };
                 console.log("");
                 console.log("");
-                console.log("\u001B[36mCore Unit Testing\u001B[39m");
+                console.log("\u001b[36mCore Unit Testing\u001b[39m");
                 readDir("code");
                 readDir("parsed");
             },
@@ -399,7 +428,7 @@ module.exports = (function taskrunner() {
                                     }
                                     failed = true;
                                     if (ecount === 0) {
-                                        console.log("\u001B[31mJSLint errors on\u001B[39m " + val[0]);
+                                        console.log("\u001b[31mJSLint errors on\u001b[39m " + val[0]);
                                         console.log("");
                                     }
                                     ecount = ecount + 1;
@@ -411,13 +440,13 @@ module.exports = (function taskrunner() {
                             result         = jslint(prettydiff(options), {"for": true});
                             if (result.ok === true) {
                                 console.log(
-                                    humantime(false) + "\u001B[32mLint is good for file " + (
+                                    humantime(false) + "\u001b[32mLint is good for file " + (
                                         ind + 1
-                                    ) + ":\u001B[39m " + val[0]
+                                    ) + ":\u001b[39m " + val[0]
                                 );
                                 if (ind === arr.length - 1) {
                                     console.log("");
-                                    console.log("\u001B[32mLint operation complete!\u001B[39m");
+                                    console.log("\u001b[32mLint operation complete!\u001b[39m");
                                     console.log("");
                                     return next();
                                 }
@@ -426,16 +455,16 @@ module.exports = (function taskrunner() {
                                     .warnings
                                     .forEach(report);
                                 if (failed === true) {
-                                    errout("\u001B[31mLint fail\u001B[39m :(");
+                                    errout("\u001b[31mLint fail\u001b[39m :(");
                                 } else {
                                     console.log(
-                                        humantime(false) + "\u001B[32mLint is good for file " + (
+                                        humantime(false) + "\u001b[32mLint is good for file " + (
                                             ind + 1
-                                        ) + ":\u001B[39m " + val[0]
+                                        ) + ":\u001b[39m " + val[0]
                                     );
                                     if (ind === arr.length - 1) {
                                         console.log("");
-                                        console.log("\u001B[32mLint operation complete!\u001B[39m");
+                                        console.log("\u001b[32mLint operation complete!\u001b[39m");
                                         console.log("");
                                         return next();
                                     }
@@ -461,7 +490,7 @@ module.exports = (function taskrunner() {
                     };
                 console.log("");
                 console.log("");
-                console.log("\u001B[36mBeautifying and Linting\u001B[39m");
+                console.log("\u001b[36mBeautifying and Linting\u001b[39m");
                 console.log(
                     "** Note that line numbers of error messaging reflects beautified code line."
                 );

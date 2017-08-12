@@ -20,7 +20,6 @@
         duration  = "",
         raw       = (process.argv.indexOf("--raw") > 0),
         options   = {
-            correct   : true,
             html      : true,
             jsx       : false,
             objectSort: true,
@@ -101,6 +100,11 @@
             options.type   = lang[1]; 
             options.source = sourcetext;
             if (raw === true) {
+                if (sourcetext !== source && (/_correct(\.|_)/).test(source) === true) {
+                    options.correct = true;
+                } else {
+                    options.correct = false;
+                }
                 output = parser(options);
                 if (global.parseerror === "") {
                     console.log(JSON.stringify(output));
@@ -108,9 +112,10 @@
                     console.log(global.parseerror);
                 }
             } else {
-                startTime      = process.hrtime();
-                output         = parser(options);
-                duration       = timespan();
+                options.correct = true;
+                startTime       = process.hrtime();
+                output          = parser(options);
+                duration        = timespan();
                 display(output);
                 //console.log(output);
             }

@@ -1086,12 +1086,10 @@
                                 period();
                             }
                             inc = walk;
-                            if (inc < parse.count) {
-                                do {
-                                    store.push(recordStore(inc));
-                                    inc = inc + 1;
-                                } while (inc < parse.count);
-                            }
+                            do {
+                                store.push(recordStore(inc));
+                                inc = inc + 1;
+                            } while (inc < parse.count);
                             ltoke = "=";
                             ltype = "operator";
                             stackPush();
@@ -1318,7 +1316,8 @@
                     }
                     if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "literal" || (ltype === "word" && ltoke !== "return")))) {
                         ltype = "operator";
-                        return operator();
+                        ltoke = operator();
+                        return stackPush();
                     }
                     if (options.lang !== "typesscript" && (data.token[d] === "return" || data.types[d] === "operator" || data.types[d] === "start" || data.types[d] === "separator" || (data.token[d] === "}" && parse.structure[parse.structure.length - 1][0] === "global"))) {
                         ltype        = "markup";
@@ -1380,7 +1379,8 @@
                         }());
                     } else {
                         ltype = "operator";
-                        return operator();
+                        ltoke = operator();
+                        return stackPush();
                     }
                     do {
                         output.push(c[a]);

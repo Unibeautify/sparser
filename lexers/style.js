@@ -873,7 +873,7 @@
                     }
                 }
                 a = aa;
-                if (parse.count > -1 && (ltype === "selector" || ltype === "propvar") && data.types[parse.count] !== "comment" && data.types[parse.count] !== "comment-inline") {
+                if (parse.count > -1 && store.length > 0 && (ltype === "selector" || ltype === "propvar") && data.types[parse.count] !== "comment" && data.types[parse.count] !== "comment-inline") {
                     parse.pop(data);
                     ltoke = out.join("");
                     ltype = type;
@@ -884,7 +884,7 @@
                         ? "propvar"
                         : "selector";
                     recordPush();
-                } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
+                } else if (ltype === "colon" || ltype === "property" || ltype === "value") {
                     do {
                         store.push(recordStore(parse.count));
                         parse.pop(data);

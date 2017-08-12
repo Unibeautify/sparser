@@ -113,6 +113,183 @@ Parse Framework
             parse.count = data.token.length - 1;
         }
     };
+    parse.objectSort = function parse_objectSort(data) {
+        var cc        = 0,
+            dd        = 0,
+            ee        = 0,
+            ff        = 0,
+            behind    = parse.count,
+            length    = behind,
+            keys      = [],
+            keylen    = 0,
+            keyend    = 0,
+            front     = 0,
+            sort      = function parse_objectSort_sort(x, y) {
+                var xx = x[0],
+                    yy = y[0];
+                if (data.types[xx] === "comment" || data.types[xx] === "comment-inline") {
+                    do {
+                        xx = xx + 1;
+                    } while (
+                        xx < length && (data.types[xx] === "comment" || data.types[xx] === "comment-inline")
+                    );
+                }
+                if (data.types[yy] === "comment" || data.types[yy] === "comment-inline") {
+                    do {
+                        yy = yy + 1;
+                    } while (
+                        yy < length && (data.types[yy] === "comment" || data.types[yy] === "comment-inline")
+                    );
+                }
+                if (data.token[xx].toLowerCase() > data.token[yy].toLowerCase()) {
+                    return 1;
+                }
+                return -1;
+            },
+            commaTest = true,
+            store     = {
+                begin: [],
+                lexer: [],
+                lines: [],
+                presv: [],
+                stack: [],
+                token: [],
+                types: []
+            };
+        if (data.token[behind] === "," || data.types[behind] === "comment") {
+            do {
+                behind = behind - 1;
+            } while (
+                behind > 0 && (data.token[behind] === "," || data.types[behind] === "comment")
+            );
+        }
+        cc = behind;
+        if (cc > -1) {
+            do {
+                if (data.types[cc] === "end") {
+                    dd = dd + 1;
+                }
+                if (data.types[cc] === "start") {
+                    dd = dd - 1;
+                }
+                if (dd === 0) {
+                    if (data.types[cc].indexOf("template") > -1) {
+                        return;
+                    }
+                    if (data.token[cc] === ",") {
+                        commaTest = true;
+                        front     = cc + 1;
+                    }
+                    if (commaTest === true && data.token[cc] === "," && front < behind) {
+                        if (data.token[behind] !== ",") {
+                            behind = behind + 1;
+                        }
+                        if (data.types[front] === "comment-inline") {
+                            front = front + 1;
+                        }
+                        keys.push([front, behind]);
+                        behind = front - 1;
+                    }
+                }
+                if (dd < 0 && cc < length) {
+                    if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
+                        ee = keys[keys.length - 1][0];
+                        if (data.types[ee - 1] !== "comment-inline") {
+                            ee = ee - 1;
+                        }
+                        keys.push([
+                            cc + 1,
+                            ee
+                        ]);
+                    }
+                    if (data.token[cc - 1] === "=" || data.token[cc - 1] === ":" || data.token[cc - 1] === "(" || data.token[cc - 1] === "[" || data.token[cc - 1] === "," || data.types[cc - 1] === "word" || cc === 0) {
+                        if (keys.length > 1) {
+                            keys.sort(sort);
+                            keylen    = keys.length;
+                            commaTest = false;
+                            dd        = 0;
+                            if (dd < keylen) {
+                                do {
+                                    keyend = keys[dd][1];
+                                    if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
+                                        store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
+                                    }
+                                    ee = keys[dd][0];
+                                    if (ee < keyend) {
+                                        do {
+                                            parse.push(store, {
+                                                begin: data.begin[ee],
+                                                lexer: data.lexer[ee],
+                                                lines: data.lines[ee],
+                                                presv: data.presv[ee],
+                                                stack: data.stack[ee],
+                                                token: data.token[ee],
+                                                types: data.types[ee]
+                                            });
+                                            ff = ff + 1;
+
+                                            //remove extra commas
+                                            if (data.token[ee] === ",") {
+                                                commaTest = true;
+                                            } else if (data.token[ee] !== "," && data.types[ee] !== "comment" && data.types[ee] !== "comment-inline") {
+                                                commaTest = false;
+                                            }
+                                            ee = ee + 1;
+                                        } while (ee < keyend);
+                                    }
+                                    if (commaTest === false && dd < keylen - 1) {
+                                        ee = store.types.length - 1;
+                                        if (store.types[ee] === "comment" || store.types[ee] === "comment-inline") {
+                                            do {
+                                                ee = ee - 1;
+                                            } while (
+                                                ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
+                                            );
+                                        }
+                                        ee = ee + 1;
+                                        parse.splice({
+                                            data   : store,
+                                            howmany: 0,
+                                            index  : ee,
+                                            record : {
+                                                begin: store.begin[ee - 1],
+                                                lexer: store.lexer[ee - 1],
+                                                lines: store.lines[ee - 1],
+                                                presv: false,
+                                                stack: store.stack[ee - 1],
+                                                token: ",",
+                                                types: "separator"
+                                            }
+                                        });
+                                        store.lines[ee - 1] = 0;
+                                        ff                  = ff + 1;
+                                    }
+                                    dd = dd + 1;
+                                } while (dd < keylen);
+                            }
+                            ee = store.types.length;
+                            do {
+                                ee = ee - 1;
+                            } while (
+                                ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
+                            );
+                            length = parse.splice({
+                                data   : data,
+                                howmany: ff,
+                                index  : cc + 1,
+                                length : length,
+                                record : {}
+                            });
+                            return parse.concat(data, store);
+                        }
+                    }
+                    return length;
+                }
+                cc = cc - 1;
+            } while (cc > -1);
+        }
+        return length;
+    };
     parse.pop        = function parse_pop(data) {
         var output = {};
         parse
@@ -342,10 +519,10 @@ Parse Framework
         return ascend(array);
     };
     parse.splice     = function parse_splice(spliceData) {
-        // * data - The data object to alter
-        // * index - The index where to start
+        // * data    - The data object to alter
         // * howmany - How many indexes to remove
-        // * record - A new record to insert
+        // * index   - The index where to start
+        // * record  - A new record to insert
         if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
             parse
                 .datanames
@@ -369,183 +546,6 @@ Parse Framework
         if (spliceData.data === parse.data) {
             parse.count = parse.count - spliceData.howmany;
         }
-    };
-    parse.objectSort = function parse_objectSort(data) {
-        var cc        = 0,
-            dd        = 0,
-            ee        = 0,
-            ff        = 0,
-            behind    = parse.count,
-            length    = behind,
-            keys      = [],
-            keylen    = 0,
-            keyend    = 0,
-            front     = 0,
-            sort      = function parse_objectSort_sort(x, y) {
-                var xx = x[0],
-                    yy = y[0];
-                if (data.types[xx] === "comment" || data.types[xx] === "comment-inline") {
-                    do {
-                        xx = xx + 1;
-                    } while (
-                        xx < length && (data.types[xx] === "comment" || data.types[xx] === "comment-inline")
-                    );
-                }
-                if (data.types[yy] === "comment" || data.types[yy] === "comment-inline") {
-                    do {
-                        yy = yy + 1;
-                    } while (
-                        yy < length && (data.types[yy] === "comment" || data.types[yy] === "comment-inline")
-                    );
-                }
-                if (data.token[xx].toLowerCase() > data.token[yy].toLowerCase()) {
-                    return 1;
-                }
-                return -1;
-            },
-            commaTest = true,
-            store     = {
-                begin: [],
-                lexer: [],
-                lines: [],
-                presv: [],
-                stack: [],
-                token: [],
-                types: []
-            };
-        if (data.token[behind] === "," || data.types[behind] === "comment") {
-            do {
-                behind = behind - 1;
-            } while (
-                behind > 0 && (data.token[behind] === "," || data.types[behind] === "comment")
-            );
-        }
-        cc = behind;
-        if (cc > -1) {
-            do {
-                if (data.types[cc] === "end") {
-                    dd = dd + 1;
-                }
-                if (data.types[cc] === "start") {
-                    dd = dd - 1;
-                }
-                if (dd === 0) {
-                    if (data.types[cc].indexOf("template") > -1) {
-                        return;
-                    }
-                    if (data.token[cc] === ",") {
-                        commaTest = true;
-                        front     = cc + 1;
-                    }
-                    if (commaTest === true && data.token[cc] === "," && front < behind) {
-                        if (data.token[behind] !== ",") {
-                            behind = behind + 1;
-                        }
-                        if (data.types[front] === "comment-inline") {
-                            front = front + 1;
-                        }
-                        keys.push([front, behind]);
-                        behind = front - 1;
-                    }
-                }
-                if (dd < 0 && cc < length) {
-                    if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
-                        ee = keys[keys.length - 1][0];
-                        if (data.types[ee - 1] !== "comment-inline") {
-                            ee = ee - 1;
-                        }
-                        keys.push([
-                            cc + 1,
-                            ee
-                        ]);
-                    }
-                    if (data.token[cc - 1] === "=" || data.token[cc - 1] === ":" || data.token[cc - 1] === "(" || data.token[cc - 1] === "[" || data.token[cc - 1] === "," || data.types[cc - 1] === "word" || cc === 0) {
-                        if (keys.length > 1) {
-                            keys.sort(sort);
-                            keylen    = keys.length;
-                            commaTest = false;
-                            dd        = 0;
-                            if (dd < keylen) {
-                                do {
-                                    keyend = keys[dd][1];
-                                    if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
-                                        store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
-                                    }
-                                    ee = keys[dd][0];
-                                    if (ee < keyend) {
-                                        do {
-                                            parse.push(store, {
-                                                begin: data.begin[ee],
-                                                lexer: data.lexer[ee],
-                                                lines: data.lines[ee],
-                                                presv: data.presv[ee],
-                                                stack: data.stack[ee],
-                                                token: data.token[ee],
-                                                types: data.types[ee]
-                                            });
-                                            ff = ff + 1;
-
-                                            //remove extra commas
-                                            if (data.token[ee] === ",") {
-                                                commaTest = true;
-                                            } else if (data.token[ee] !== "," && data.types[ee] !== "comment" && data.types[ee] !== "comment-inline") {
-                                                commaTest = false;
-                                            }
-                                            ee = ee + 1;
-                                        } while (ee < keyend);
-                                    }
-                                    if (commaTest === false && dd < keylen - 1) {
-                                        ee = store.types.length - 1;
-                                        if (store.types[ee] === "comment" || store.types[ee] === "comment-inline") {
-                                            do {
-                                                ee = ee - 1;
-                                            } while (
-                                                ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
-                                            );
-                                        }
-                                        ee = ee + 1;
-                                        parse.splice({
-                                            data   : store,
-                                            howmany: 0,
-                                            index  : ee,
-                                            record : {
-                                                begin: store.begin[ee - 1],
-                                                lexer: store.lexer[ee - 1],
-                                                lines: store.lines[ee - 1],
-                                                presv: false,
-                                                stack: store.stack[ee - 1],
-                                                token: ",",
-                                                types: "separator"
-                                            }
-                                        });
-                                        store.lines[ee - 1] = 0;
-                                        ff                  = ff + 1;
-                                    }
-                                    dd = dd + 1;
-                                } while (dd < keylen);
-                            }
-                            ee = store.types.length;
-                            do {
-                                ee = ee - 1;
-                            } while (
-                                ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
-                            );
-                            length = parse.splice({
-                                data   : data,
-                                howmany: ff,
-                                index  : cc + 1,
-                                length : length,
-                                record : {}
-                            });
-                            return parse.concat(data, store);
-                        }
-                    }
-                    return length;
-                }
-                cc = cc - 1;
-            } while (cc > -1);
-        }
-        return length;
     };
     global.parse     = parse;
     global.parser    = parser;
