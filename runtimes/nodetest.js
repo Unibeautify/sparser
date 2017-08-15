@@ -137,7 +137,9 @@
             return process.exit(1);
         }
         files.forEach(function (value) {
-            require(directory + "lexers" + node.path.sep + value);
+            if ((/(\.js)$/).test(value) === true) {
+                require(directory + "lexers" + node.path.sep + value);
+            }
         });
         require(directory + "parse.js");
         require(directory + "language.js");

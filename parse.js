@@ -49,6 +49,7 @@ Parse Framework
             if (global.lexer[options.type] === "undefined") {
                 global.parseerror = "Lexer '" + options.type + "' isn't available.";
             } else {
+                global.parseerror = "";
                 global.lexer[options.type](options.source + " ");
             }
 
@@ -302,17 +303,26 @@ Parse Framework
         }
         return output;
     };
-    parse.push       = function parse_push(data, record) {
+    parse.push       = function parse_push(data, record, structure) {
         parse
             .datanames
             .forEach(function parse_push_datanames(value) {
                 data[value].push(record[value]);
             });
         if (data === parse.data) {
-            parse.count = parse.count + 1;
+            parse.count      = parse.count + 1;
+            parse.linesSpace = 0;
+            if (record.types === "start") {
+                parse.structure.push([structure, parse.count]);
+            } else if (record.types === "end") {
+                parse.structure.pop();
+            }
         }
     };
     parse.spacer     = function parse_spacer(args) {
+        // * array - the characters to scan
+        // * index - the index to start scanning from
+        // * end   - the length of the array, to break the loop
         parse.linesSpace = 1;
         do {
             if (args.array[args.index] === "\n") {
@@ -532,7 +542,8 @@ Parse Framework
                         .splice(spliceData.index, spliceData.howmany, spliceData.record[value]);
                 });
             if (spliceData.data === parse.data) {
-                parse.count = (parse.count - spliceData.howmany) + 1;
+                parse.count      = (parse.count - spliceData.howmany) + 1;
+                parse.linesSpace = 0;
             }
             return;
         }
@@ -544,7 +555,8 @@ Parse Framework
                     .splice(spliceData.index, spliceData.howmany);
             });
         if (spliceData.data === parse.data) {
-            parse.count = parse.count - spliceData.howmany;
+            parse.count      = parse.count - spliceData.howmany;
+            parse.linesSpace = 0;
         }
     };
     global.parse     = parse;

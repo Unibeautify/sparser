@@ -1,4 +1,4 @@
-/*global global, lexer, location, module, parse, window*/
+/*global global*/
 (function script_init() {
     "use strict";
     var lexer = global.lexer,
@@ -89,7 +89,7 @@
                     do {
                         len = len - 1;
                     } while (
-                        len > 0 && (data.types[len] === "comment" || data.types[len] === "comment-inline")
+                        len > 0 && data.types[len] === "comment"
                     );
                     if (data.token[len] === "from") {
                         len = len - 2;
@@ -98,11 +98,10 @@
                         parse.splice(
                             {data: data, howmany: 1, index: len, record: {}}
                         );
-                        parse.linesSpace   = 0;
                     }
                 },
                 //determine the definition of containment by stack
-                stackPush      = function lexer_script_stackPush() {
+                recordPush      = function lexer_script_recordPush(structure) {
                     var record = {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "script",
@@ -112,8 +111,7 @@
                         token: ltoke,
                         types: ltype
                     };
-                    parse.push(data, record);
-                    parse.linesSpace = 0;
+                    parse.push(data, record, structure);
                 },
                 //inserts ending curly brace (where absent)
                 blockinsert    = function lexer_script_blockinsert() {
@@ -136,7 +134,7 @@
                             tempstore    = parse.pop(data);
                             ltoke        = "x}";
                             ltype        = "end";
-                            stackPush();
+                            recordPush("");
                             pstack = parse.structure.pop();
                             brace.pop();
                             return;
@@ -145,7 +143,7 @@
                         tempstore    = parse.pop(data);
                         ltoke        = "x}";
                         ltype        = "end";
-                        stackPush();
+                        recordPush("");
                         brace.pop();
                         pstack       = parse.structure.pop();
                         ltoke        = ";";
@@ -159,13 +157,13 @@
                         return;
                     }
                     if (data.stack[parse.count] === "if" && (data.token[parse.count] === ";" || data.token[parse.count] === "x;") && next === "else") {
-                        stackPush();
+                        recordPush("");
                         brace.pop();
                         pstack = parse.structure.pop();
                         return;
                     }
                     do {
-                        stackPush();
+                        recordPush("");
                         brace.pop();
                         pstack = parse.structure.pop();
                         if (data.stack[parse.count] === "do") {
@@ -196,14 +194,12 @@
                         nextitem = "",
                         elsefix  = function lexer_script_word_elsefix() {
                             brace.push("x{");
-                            parse.structure.push(["else", parse.count]);
                             parse.splice({
                                 data   : data,
                                 howmany: 1,
                                 index  : parse.count - 3,
                                 record : {}
                             });
-                            parse.linesSpace   = 0;
                         };
                     do {
                         lex.push(c[f]);
@@ -278,11 +274,11 @@
                         g = parse.count;
                         f = g;
                         if (options.varword !== "none" && (output === "var" || output === "let" || output === "const")) {
-                            if (data.types[g] === "comment" || data.types[g] === "comment-inline") {
+                            if (data.types[g] === "comment") {
                                 do {
                                     g = g - 1;
                                 } while (
-                                    g > 0 && (data.types[g] === "comment" || data.types[g] === "comment-inline")
+                                    g > 0 && (data.types[g] === "comment")
                                 );
                             }
                             if (options.varword === "list" && vart.len > -1 && vart.index[vart.len] === g && output === vart.word[vart.len]) {
@@ -309,17 +305,16 @@
                         } else if (vart.len > -1 && output !== vart.word[vart.len] && parse.count === vart.index[vart.len] && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && options.varword === "list") {
                             vartpop();
                         }
-                        if (output === "else" && (data.types[g] === "comment" || data.types[g] === "comment-inline")) {
+                        if (output === "else" && data.types[g] === "comment") {
                             do {
                                 f = f - 1;
                             } while (
-                                f > -1 && (data.types[f] === "comment" || data.types[f] === "comment-inline")
+                                f > -1 && data.types[f] === "comment"
                             );
                             if (data.token[f] === "x;" && (data.token[f - 1] === "}" || data.token[f - 1] === "x}")) {
                                 parse.splice(
                                     {data: data, howmany: 1, index: f, record: {}}
                                 );
-                                parse.linesSpace   = 0;
                                 g            = g - 1;
                                 f            = f - 1;
                             }
@@ -340,7 +335,6 @@
                                     index  : g - 3,
                                     record : build
                                 });
-                                parse.linesSpace   = 0;
                                 f            = f + 1;
                             } while (f < g);
                         }
@@ -375,7 +369,7 @@
                             asifix();
                         }
                     }
-                    stackPush();
+                    recordPush("");
                     if (output === "class") {
                         classy.push(0);
                     }
@@ -385,8 +379,7 @@
                             ltoke = "x{";
                             ltype = "start";
                             brace.push("x{");
-                            stackPush();
-                            parse.structure.push(["do", parse.count]);
+                            recordPush("do");
                         }
                     }
                     if (output === "else") {
@@ -425,8 +418,7 @@
                             ltoke = "x{";
                             ltype = "start";
                             brace.push("x{");
-                            stackPush();
-                            parse.structure.push(["else", parse.count]);
+                            recordPush("else");
                         }
                     }
                     if ((output === "for" || output === "if" || output === "switch" || output === "catch") && options.lang !== "twig" && data.token[parse.count - 1] !== ".") {
@@ -456,12 +448,12 @@
                         ltoke = ",";
                         ltype = "separator";
                         asifix();
-                        stackPush();
+                        recordPush("");
                     } else {
                         do {
                             x = x - 1;
                         } while (
-                            x > 0 && (data.types[x - 1] === "comment" || data.types[x - 1] === "comment-inline")
+                            x > 0 && data.types[x - 1] === "comment"
                         );
                         parse.splice({
                             data   : data,
@@ -477,8 +469,7 @@
                                 types: "separator"
                             }
                         });
-                        parse.linesSpace   = 0;
-                        stackPush();
+                        recordPush("");
                     }
                 },
                 //automatic semicolon insertion
@@ -519,7 +510,7 @@
                         }
                         ltoke = "x;";
                         ltype = "separator";
-                        stackPush();
+                        recordPush("");
                         if (brace[brace.length - 1] === "x{" && nextchar !== "}") {
                             blockinsert();
                         }
@@ -541,7 +532,7 @@
                             return;
                         }
                     }
-                    if (record.types === "comment" || record.types === "comment-inline" || clist === "method" || clist === "paren" || clist === "expression" || clist === "array" || clist === "object" || (clist === "switch" && record.stack !== "method" && data.token[data.begin[parse.count]] === "(")) {
+                    if (record.types === "comment" || clist === "method" || clist === "paren" || clist === "expression" || clist === "array" || clist === "object" || (clist === "switch" && record.stack !== "method" && data.token[data.begin[parse.count]] === "(")) {
                         return;
                     }
                     if (data.stack[parse.count] === "expression" && (data.token[data.begin[parse.count] - 1] !== "while" || (data.token[data.begin[parse.count] - 1] === "while" && data.stack[data.begin[parse.count] - 2] !== "do"))) {
@@ -550,12 +541,12 @@
                     if (next !== "" && "=<>+*?|^:&%~,.()]".indexOf(next) > -1 && isEnd === false) {
                         return;
                     }
-                    if (record.types === "comment" || record.types === "comment-inline") {
+                    if (record.types === "comment") {
                         aa = parse.count;
                         do {
                             aa = aa - 1;
                         } while (
-                            aa > 0 && (data.types[aa] === "comment" || data.types[aa] === "comment-inline")
+                            aa > 0 && data.types[aa] === "comment"
                         );
                         if (aa < 1) {
                             return;
@@ -573,9 +564,15 @@
                     if (options.varword === "list") {
                         vart.index[vart.len] = parse.count;
                     }
-                    ltoke = ";";
+                    if (options.correct === true) {
+                        ltoke = ";";
+                    } else {
+                        ltoke = "x;";
+                    }
                     ltype = "separator";
-                    stackPush();
+                    aa    = parse.linesSpace;
+                    recordPush("");
+                    parse.linesSpace = aa;
                     if (brace[brace.length - 1] === "x{" && nextchar !== "}") {
                         blockinsert();
                     }
@@ -660,7 +657,6 @@
                                 index  : walk,
                                 record : {}
                             });
-                            parse.linesSpace   = 0;
                         }
                     } else {
                         if (options.correct === false || (tokea !== "++" && tokea !== "--" && tokeb !== "++" && tokeb !== "--")) {
@@ -754,28 +750,27 @@
                             index  : walk - 1,
                             record : {}
                         });
-                        parse.linesSpace   = 0;
                         ltoke        = "=";
                         ltype        = "operator";
-                        stackPush();
+                        recordPush("");
                         applyStore();
                         ltoke = toke;
                         ltype = "operator";
-                        stackPush();
+                        recordPush("");
                         ltoke = "1";
-                        ltype = "literal";
-                        stackPush();
+                        ltype = "number";
+                        recordPush("");
                     } else {
                         ltoke = "=";
                         ltype = "operator";
-                        stackPush();
+                        recordPush("");
                         applyStore();
                         ltoke = toke;
                         ltype = "operator";
-                        stackPush();
+                        recordPush("");
                         ltoke = "1";
-                        ltype = "literal";
-                        stackPush();
+                        ltype = "number";
+                        recordPush("");
                     }
                     ltoke = data.token[parse.count];
                     ltype = data.types[parse.count];
@@ -790,7 +785,7 @@
                         aa = aa - 1;
                     } while (aa > -1 && data.token[aa] === "x}");
                     if (data.stack[aa] === "else") {
-                        return stackPush();
+                        return recordPush("");
                     }
                     aa           = aa + 1;
                     parse.splice({
@@ -807,8 +802,7 @@
                             types: ltype
                         }
                     });
-                    parse.linesSpace   = 0;
-                    stackPush();
+                    recordPush("");
                 },
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
@@ -1092,14 +1086,14 @@
                             } while (inc < parse.count);
                             ltoke = "=";
                             ltype = "operator";
-                            stackPush();
+                            recordPush("");
                             applyStore();
                             return toke;
                         };
                     if (wordTest > -1) {
                         word();
                     }
-                    if (c[a] === "/" && (parse.count > -1 && (ltype !== "word" || ltoke === "typeof" || ltoke === "return" || ltoke === "else") && ltype !== "literal" && ltype !== "end")) {
+                    if (c[a] === "/" && (parse.count > -1 && (ltype !== "word" || ltoke === "typeof" || ltoke === "return" || ltoke === "else") && ltype !== "number" && ltype !== "string" && ltype !== "end")) {
                         if (ltoke === "return" || ltoke === "typeof" || ltoke === "else" || ltype !== "word") {
                             ltoke = regex();
                             ltype = "regex";
@@ -1107,7 +1101,7 @@
                             ltoke = "/";
                             ltype = "operator";
                         }
-                        stackPush();
+                        recordPush("");
                         return "regex";
                     }
                     if (c[a] === "?" && ("+-*/".indexOf(c[a + 1]) > -1 || (c[a + 1] === ":" && syntax.join("").indexOf(c[a + 2]) < 0))) {
@@ -1302,11 +1296,11 @@
                         word();
                     }
                     d = parse.count;
-                    if (data.types[d] === "comment" || data.types[d] === "comment-inline") {
+                    if (data.types[d] === "comment") {
                         do {
                             d = d - 1;
                         } while (
-                            d > 0 && (data.types[d] === "comment" || data.types[d] === "comment-inline")
+                            d > 0 && data.types[d] === "comment"
                         );
                     }
                     if (c[a] === "<" && c[a + 1] === ">") {
@@ -1314,10 +1308,10 @@
                         ltype = "generic";
                         ltoke = "<>";
                     }
-                    if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "literal" || (ltype === "word" && ltoke !== "return")))) {
+                    if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "string" || ltype === "number" || (ltype === "word" && ltoke !== "return")))) {
                         ltype = "operator";
                         ltoke = operator();
-                        return stackPush();
+                        return recordPush("");
                     }
                     if (options.lang !== "typesscript" && (data.token[d] === "return" || data.types[d] === "operator" || data.types[d] === "start" || data.types[d] === "separator" || (data.token[d] === "}" && parse.structure[parse.structure.length - 1][0] === "global"))) {
                         ltype        = "markup";
@@ -1366,7 +1360,7 @@
                                             ltoke = generics
                                                 .join("")
                                                 .replace(/\s+/g, " ");
-                                            return stackPush();
+                                            return recordPush("");
                                         }
                                     }
                                     if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
@@ -1380,7 +1374,7 @@
                     } else {
                         ltype = "operator";
                         ltoke = operator();
-                        return stackPush();
+                        return recordPush("");
                     }
                     do {
                         output.push(c[a]);
@@ -1468,7 +1462,7 @@
                                     : "object",
                                 arraylen = 0;
                             tempstore    = parse.pop(data);
-                            if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "literal" && data.token[parse.count].charAt(0) !== "\"" && data.token[parse.count].charAt(0) !== "'") {
+                            if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "number") {
                                 arraylen                        = data.token[data.begin[parse.count]] - 1;
                                 tempstore                       = parse.pop(data);
                                 tempstore                       = parse.pop(data);
@@ -1482,7 +1476,7 @@
                                 ltoke                           = ",";
                                 ltype                           = "separator";
                                 do {
-                                    stackPush();
+                                    recordPush("");
                                     arraylen = arraylen - 1;
                                 } while (arraylen > 0);
                             } else {
@@ -1495,7 +1489,6 @@
                                     index  : aa - 2,
                                     record : {}
                                 });
-                                parse.linesSpace                      = 0;
                                 parse.structure[parse.structure.length - 1] = [
                                     namear, aa - 2
                                 ];
@@ -1511,7 +1504,7 @@
                             }
                             ltoke = endar;
                             ltype = "end";
-                            stackPush();
+                            recordPush("");
                         };
                     if (wordTest > -1) {
                         word();
@@ -1568,7 +1561,7 @@
                         } else if (options.objectSort === true) {
                             parse.objectSort(data);
                         }
-                        if (ltype === "comment" || ltype === "comment-inline") {
+                        if (ltype === "comment") {
                             ltoke = data.token[parse.count];
                             ltype = data.types[parse.count];
                         }
@@ -1580,11 +1573,11 @@
                         pword = [];
                     }
                     lword.pop();
-                    stackPush();
+                    pstack = parse.structure[parse.structure.length - 1];
+                    recordPush("");
                     if (x === ")" && options.correct === true && (data.token[data.begin[parse.count] - 1] === "Array" || data.token[data.begin[parse.count] - 1] === "Object") && data.token[data.begin[parse.count] - 2] === "new") {
                         newarray();
                     }
-                    pstack = parse.structure.pop();
                     if (brace[brace.length - 1] === "x{" && x === "}") {
                         blockinsert();
                     }
@@ -1597,10 +1590,9 @@
                     if (insert === true) {
                         ltoke = "x{";
                         ltype = "start";
-                        stackPush();
+                        recordPush(pword[0]);
                         brace.push("x{");
                         pword[1] = parse.count;
-                        parse.structure.push(pword);
                     }
                 },
                 //determines tag names for {% %} based template tags and returns a type
@@ -1675,7 +1667,7 @@
                     return "template";
                 };
             start = function lexer_script_start(x) {
-                var aa    = 0,
+                var aa    = parse.count,
                     wordx = "",
                     wordy = "",
                     stack = "";
@@ -1686,13 +1678,13 @@
                 if (vart.len > -1) {
                     vart.count[vart.len] = vart.count[vart.len] + 1;
                 }
-                if (data.token[parse.count - 1] === "function") {
+                if (data.token[aa - 1] === "function") {
                     lword.push([
-                        "function", parse.count + 1
+                        "function", aa + 1
                     ]);
                 } else {
                     lword.push([
-                        ltoke, parse.count + 1
+                        ltoke, aa + 1
                     ]);
                 }
                 ltoke = x;
@@ -1701,7 +1693,7 @@
                     asifix();
                 } else if (x === "{") {
                     if (paren > -1) {
-                        if (data.begin[paren - 1] === data.begin[data.begin[parse.count] - 1] || data.token[data.begin[parse.count]] === "x(") {
+                        if (data.begin[paren - 1] === data.begin[data.begin[aa] - 1] || data.token[data.begin[aa]] === "x(") {
                             paren = -1;
                             end("x)");
                             asifix();
@@ -1711,24 +1703,22 @@
                     } else if (ltoke === ")") {
                         asifix();
                     }
-                    if ((ltype === "comment" || ltype === "comment-inline") && data.token[parse.count - 1] === ")") {
-                        ltoke                    = data.token[parse.count];
-                        data.token[parse.count] = "{";
-                        ltype                    = data.types[parse.count];
-                        data.types[parse.count] = "start";
+                    if (ltype === "comment" && data.token[aa - 1] === ")") {
+                        ltoke                    = data.token[aa];
+                        data.token[aa] = "{";
+                        ltype                    = data.types[aa];
+                        data.types[aa] = "start";
                     }
                 }
                 if (options.braceline === true && x === "{") {
                     parse.linesSpace = 2;
                 }
-                stackPush();
-                aa    = parse.count - 1;
                 wordx = data.token[aa];
                 wordy = (data.stack[aa] === undefined)
                     ? ""
                     : data.token[data.begin[aa] - 1];
-                if (data.token[parse.count] === "{" || data.token[parse.count] === "x{") {
-                    if ((wordx === "else" && data.token[parse.count] !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
+                if (ltoke === "{" || ltoke === "x{") {
+                    if ((wordx === "else" && ltoke !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
                         stack = wordx;
                     } else if (classy[classy.length - 1] === 0 && wordx !== "return") {
                         classy.pop();
@@ -1741,7 +1731,7 @@
                         stack = "map";
                     } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
                         stack = "initializer";
-                    } else if (data.token[parse.count] === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
+                    } else if (ltoke === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
                         if (wordy === "if") {
                             stack = "if";
                         } else if (wordy === "for") {
@@ -1757,10 +1747,10 @@
                         } else {
                             stack = "function";
                         }
-                    } else if (data.token[parse.count] === "{" && (wordx === ";" || wordx === "x;")) {
+                    } else if (ltoke === "{" && (wordx === ";" || wordx === "x;")) {
                         //ES6 block
                         stack = "block";
-                    } else if (data.token[parse.count] === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
+                    } else if (ltoke === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
                         //ES6 block
                         stack = "block";
                     } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
@@ -1772,7 +1762,7 @@
                     } else if (data.stack[aa] === "notation") {
                         //if following a TSX array type declaration
                         stack = "function";
-                    } else if ((data.types[aa] === "literal" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
+                    } else if ((data.types[aa] === "number" || data.types[aa] === "string" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
                         //if preceed by a word and either string or word public class {
                         stack = "function";
                     } else if (parse.structure.length > 0 && data.token[aa] !== ":" && parse.structure[parse.structure.length - 1][0] === "object" && (
@@ -1789,22 +1779,22 @@
                         stack = "function";
                     } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
                         stack = "function";
-                    } else if (data.types[aa] === "word" && data.token[parse.count] === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
+                    } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
                         //ES6 block
                         stack = "block";
                     } else {
                         stack = "object";
                     }
-                } else if (data.token[parse.count] === "[") {
+                } else if (ltoke === "[") {
                     if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
                         stack = "notation";
                     } else {
                         stack = "array";
                     }
-                } else if (data.token[parse.count] === "(" || data.token[parse.count] === "x(") {
+                } else if (ltoke === "(" || ltoke === "x(") {
                     if (wordx === "function" || data.token[aa - 1] === "function") {
                         stack = "arguments";
-                    } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
+                    } else if (data.token[aa] === "." || data.token[data.begin[aa] - 1] === ".") {
                         stack = "method";
                     } else if (data.types[aa] === "generic") {
                         stack = "method";
@@ -1816,12 +1806,9 @@
                         stack = "paren";
                     }
                 } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
-                    data.stack[aa]                     = "attribute";
-                    data.stack[aa - 1]                 = "attribute";
-                    stack                              = "attribute";
-                    parse.structure[parse.structure.length - 1][0] = "attribute";
+                    stack = "attribute";
                 }
-                parse.structure.push([stack, parse.count]);
+                recordPush(stack);
                 if (classy.length > 0) {
                     classy[classy.length - 1] = classy[classy.length - 1] + 1;
                 }
@@ -1840,37 +1827,37 @@
                     //php
                     ltoke = generic("<?php", "?>");
                     ltype = "template";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "%") {
                     //asp
                     ltoke = generic("<%", "%>");
                     ltype = "template";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "%") {
                     //twig
                     ltoke = generic("{%", "%}");
                     ltype = tname(ltoke);
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "{" && c[a + 2] === "{") {
                     //mustache
                     ltoke = generic("{{{", "}}}");
                     ltype = "template";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "{") {
                     //handlebars
                     ltoke = generic("{{", "}}");
                     ltype = tname(ltoke);
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-" && c[a + 4] === "#") {
                     //ssi
                     ltoke = generic("<!--#", "-->");
                     ltype = "template";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-") {
                     //markup comment
                     ltoke = generic("<!--", "-->");
                     ltype = "comment";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "<") {
                     //markup
                     markup();
@@ -1885,23 +1872,23 @@
                         ltype = "comment";
                         if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
                             tempstore    = parse.pop(data);
-                            stackPush();
+                            recordPush("");
                             parse.push(data, tempstore);
                             if (data.lines[parse.count - 2] === 0) {
                                 data.lines[parse.count - 2] = data.lines[parse.count];
                             }
                             data.lines[parse.count] = 0;
                         } else {
-                            stackPush();
+                            recordPush("");
                         }
                     }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     //shebang
                     ltoke      = generic("#!" + c[a + 2], "\n");
                     ltoke      = ltoke.slice(0, ltoke.length - 1);
-                    ltype      = "literal";
+                    ltype      = "string";
                     parse.linesSpace = 2;
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     //comment line
                     asi(false);
@@ -1911,20 +1898,20 @@
                         sourcemap[1] = ltoke;
                     }
                     if (options.comments !== "nocomment") {
-                        stackPush();
+                        recordPush("");
                     }
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     //comment line
                     asi(false);
                     ltoke = generic("#region", "\n");
                     ltype = "comment";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "#" && c[a + 1] === "e" && c[a + 2] === "n" && c[a + 3] === "d" && c[a + 4] === "r" && c[a + 5] === "e" && c[a + 6] === "g" && c[a + 7] === "i" && c[a + 8] === "o" && c[a + 9] === "n") {
                     //comment line
                     asi(false);
                     ltoke = generic("#endregion", "\n");
                     ltype = "comment";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === "`" || (c[a] === "}" && templateString[templateString.length - 1] === true)) {
                     //template string
                     if (wordTest > -1) {
@@ -1936,21 +1923,21 @@
                         templateString[templateString.length - 1] = false;
                     }
                     ltoke = tempstring();
-                    ltype = "literal";
-                    stackPush();
+                    ltype = "string";
+                    recordPush("");
                 } else if (c[a] === "\"" || c[a] === "'") {
                     //string
                     ltoke = generic(c[a], c[a]);
-                    ltype = "literal";
-                    stackPush();
-                } else if (c[a] === "-" && (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") && (ltype === "literal" || ltype === "word") && ltoke !== "return" && (ltoke === ")" || ltoke === "]" || ltype === "word" || ltype === "literal")) {
+                    ltype = "string";
+                    recordPush("");
+                } else if (c[a] === "-" && (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") && (ltype === "number" || ltype === "word") && ltoke !== "return" && (ltoke === ")" || ltoke === "]" || ltype === "word" || ltype === "number")) {
                     //subtraction
                     if (wordTest > -1) {
                         word();
                     }
                     ltoke = "-";
                     ltype = "operator";
-                    stackPush();
+                    recordPush("");
                 } else if (wordTest === -1 && (c[a] !== "0" || (c[a] === "0" && c[a + 1] !== "b")) && ((/\d/).test(c[a]) || (a !== b - 2 && c[a] === "-" && c[a + 1] === "." && (/\d/).test(c[a + 2])) || (a !== b - 1 && (c[a] === "-" || c[a] === ".") && (/\d/).test(c[a + 1])))) {
                     //number
                     if (wordTest > -1) {
@@ -1961,9 +1948,9 @@
                         ltype = "operator";
                     } else {
                         ltoke = numb();
-                        ltype = "literal";
+                        ltype = "number";
                     }
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === ":" && c[a + 1] === ":") {
                     if (wordTest > -1) {
                         word();
@@ -1975,7 +1962,7 @@
                     a     = a + 1;
                     ltoke = "::";
                     ltype = "separator";
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === ",") {
                     //comma
                     if (wordTest > -1) {
@@ -1984,22 +1971,22 @@
                     if (options.correct === true) {
                         plusplus();
                     }
-                    if (ltype === "comment" || ltype === "comment-inline") {
+                    if (ltype === "comment") {
                         commaComment();
                     } else if (vart.len > -1 && vart.count[vart.len] === 0 && options.varword === "each") {
                         asifix();
                         ltoke = ";";
                         ltype = "separator";
-                        stackPush();
+                        recordPush("");
                         ltoke = vart.word[vart.len];
                         ltype = "word";
-                        stackPush();
+                        recordPush("");
                         vart.index[vart.len] = parse.count;
                     } else {
                         ltoke = ",";
                         ltype = "separator";
                         asifix();
-                        stackPush();
+                        recordPush("");
                     }
                 } else if (c[a] === ".") {
                     //period
@@ -2018,7 +2005,7 @@
                     if ((/\s/).test(c[a - 1]) === true) {
                         parse.linesSpace = 1;
                     }
-                    stackPush();
+                    recordPush("");
                 } else if (c[a] === ";") {
                     //semicolon
                     if (wordTest > -1) {
@@ -2027,7 +2014,7 @@
                     if (options.lang === "qml") {
                         ltoke = "x;";
                         ltype = "separator";
-                        stackPush();
+                        recordPush("");
                     } else {
                         if (classy[classy.length - 1] === 0) {
                             classy.pop();
@@ -2047,7 +2034,7 @@
                         if (data.token[parse.count] === "x}") {
                             asibrace();
                         } else {
-                            stackPush();
+                            recordPush("");
                         }
                     }
                     if (brace[brace.length - 1] === "x{" && nextchar(1, false) !== "}") {
@@ -2069,12 +2056,12 @@
                         if (ltoke !== "!" && ltoke !== "++" && ltoke !== "--") {
                             asifix();
                         }
-                        stackPush();
+                        recordPush("");
                     }
                 } else if (wordTest < 0 && c[a] !== "") {
                     wordTest = a;
                 }
-                if (vart.len > -1 && parse.count === vart.index[vart.len] + 1 && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && ltype !== "comment" && ltype !== "comment-inline" && options.varword === "list") {
+                if (vart.len > -1 && parse.count === vart.index[vart.len] + 1 && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && ltype !== "comment" && options.varword === "list") {
                     vartpop();
                 }
                 a = a + 1;
@@ -2082,13 +2069,13 @@
             if (wordTest > -1) {
                 word();
             }
-            if (options.lang !== "jsx" && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
+            if (options.correct === true && options.lang !== "jsx" && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
                 asi(false);
             }
             if (sourcemap[0] === parse.count) {
                 ltoke = "\n" + sourcemap[1];
-                ltype = "literal";
-                stackPush();
+                ltype = "string";
+                recordPush("");
             }
             if (data.token[parse.count] === "x;" && (data.token[parse.count - 1] === "}" || data.token[parse.count - 1] === "]") && data.begin[parse.count - 1] === 0) {
                 tempstore    = parse.pop(data);

@@ -590,7 +590,9 @@ module.exports = (function taskrunner() {
             process.exit(1);
         } else {
             files.forEach(function taskrunner_lexers_each(value) {
-                require(relative + node.path.sep + "lexers" + node.path.sep + value);
+                if ((/(\.js)$/).test(value) === true) {
+                    require(relative + node.path.sep + "lexers" + node.path.sep + value);
+                }
             });
         }
     });
