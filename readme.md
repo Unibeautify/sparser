@@ -210,7 +210,7 @@ The *types* array contains a string that describes the token value according to 
 
 ## Files
 ### Critical
-* **parse.js** - This is the only file that matters.
+* **parse.js** - Contains all the framework code.
 * lexers - A directory of language specific rules.
 
 ### Maintenance and Support

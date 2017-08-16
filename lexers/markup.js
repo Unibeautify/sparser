@@ -29,13 +29,10 @@
                         .replace(reg, "%")
                         .replace(/\s+/, " ")
                         .indexOf(" ");
+                    name  = el.replace(reg, " ");
                     name  = (space < 0)
-                        ? el
-                            .replace(reg, " ")
-                            .slice(1, el.length - 1)
-                        : el
-                            .replace(reg, " ")
-                            .slice(1, space);
+                        ? name.slice(1, el.length - 1)
+                        : name.slice(1, space);
                     if (options.lang === "html") {
                         name = name.toLowerCase();
                     }
@@ -487,6 +484,8 @@
                                         record.token = attstore[ind];
                                         parse.push(data, record, "");
                                         store        = [];
+                                    } else if (ltype === "sgml") {
+                                        store.push(attstore[ind]);
                                     } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
                                         // put certain attributes together for coldfusion
                                         store.push(attstore[ind]);
@@ -735,9 +734,12 @@
                                 } else if (b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e") {
                                     end   = "}}";
                                     ltype = "template_else";
+                                } else if (b[a + 2] === "." || b[a + 2] === "$") {
+                                    end = "}}";
+                                    ltype = "template";
                                 } else {
                                     end   = "}}";
-                                    ltype = "template";
+                                    ltype = "template_start";
                                 }
                             } else if (b[a + 1] === "%") {
                                 end   = "%}";
@@ -1109,7 +1111,7 @@
                                         if (quote === end) {
                                             quote = "";
                                         }
-                                    } else if (simple === true && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
+                                    } else if ((simple === true || ltype === "sgml") && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
                                         //identify a space in a regular start or singleton tag
                                         stest = true;
                                     } else if (simple === true && options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
@@ -1534,7 +1536,8 @@
                     if ((tname === "script" || tname === "style" || tname === "cfscript") && element.slice(element.length - 2) !== "/>") {
 
                         //get the attribute value for "type"
-                        e = attstore.length - 1;
+                        e     = attstore.length - 1;
+                        quote = "";
                         if (e > -1) {
                             do {
                                 attribute = arname(attstore[e]);

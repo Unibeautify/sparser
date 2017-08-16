@@ -205,7 +205,7 @@ module.exports = (function taskrunner() {
                 ? ""
                 : record(JSON.parse(sampleDiff));
             options.diffcli = true;
-            options.context = 2;
+            options.context = 4;
             options.lang    = "json";
             output          = prettydiff(options);
             report          = output;
@@ -252,6 +252,7 @@ module.exports = (function taskrunner() {
                         var len       = (code.length > parsed.length)
                                 ? code.length
                                 : parsed.length,
+                            lang      = [],
                             a         = 0,
                             str       = "",
                             output    = {},
@@ -282,9 +283,9 @@ module.exports = (function taskrunner() {
                                 }
                             } else if (code[a][0] === parsed[a][0]) {
                                 if (parsed[a][1] === "") {
-                                    console.log("\u001b[31mParsed file is empty:\u001b[39m " + parsed[a][0]);
+                                    console.log("\u001b[33mParsed file is empty:\u001b[39m " + parsed[a][0]);
                                 } else if (code[a][1] === "") {
-                                    console.log("\u001b[31mCode file is empty:\u001b[39m " + code[a][0]);
+                                    console.log("\u001b[33mCode file is empty:\u001b[39m " + code[a][0]);
                                 } else {
                                     if ((/_correct(\.|_)/).test(code[a][0]) === true) {
                                         options.correct = true;
@@ -292,7 +293,9 @@ module.exports = (function taskrunner() {
                                         options.correct = false;
                                     }
                                     options.source = code[a][1];
-                                    options.type   = global.language.auto(code[a][1], "javascript")[1];
+                                    lang           = global.language.auto(code[a][1], "javascript");
+                                    options.type   = lang[1];
+                                    options.lang   = lang[0];
                                     output         = global.parser(options);
                                     str            = JSON.stringify(output);
                                     if (global.parseerror === "") {

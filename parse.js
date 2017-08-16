@@ -1,14 +1,14 @@
 /*
 Parse Framework
 */
-/*global global, location, module, require, window*/
+/*global console, global*/
 
 (function parse_init() {
     "use strict";
-    var parse  = {
+    var parse   = {
             lexer: global.lexer
         },
-        parser = function parser_(options) {
+        parser  = function parser_(options) {
             parse.count      = -1;
             parse.data       = {};
             parse.datanames  = [
@@ -119,6 +119,7 @@ Parse Framework
             dd        = 0,
             ee        = 0,
             ff        = 0,
+            lines     = parse.linesSpace,
             behind    = parse.count,
             length    = behind,
             keys      = [],
@@ -253,11 +254,11 @@ Parse Framework
                                             howmany: 0,
                                             index  : ee,
                                             record : {
-                                                begin: store.begin[ee - 1],
+                                                begin: parse.structure[parse.structure.length - 1][1],
                                                 lexer: store.lexer[ee - 1],
-                                                lines: store.lines[ee - 1],
+                                                lines: 0,
                                                 presv: false,
-                                                stack: store.stack[ee - 1],
+                                                stack: parse.structure[parse.structure.length - 1][0],
                                                 token: ",",
                                                 types: "separator"
                                             }
@@ -281,15 +282,16 @@ Parse Framework
                                 length : length,
                                 record : {}
                             });
+                            parse.linesSpace = lines;
                             return parse.concat(data, store);
                         }
                     }
-                    return length;
+                    return;
                 }
                 cc = cc - 1;
             } while (cc > -1);
         }
-        return length;
+        return;
     };
     parse.pop        = function parse_pop(data) {
         var output = {};
@@ -312,9 +314,9 @@ Parse Framework
         if (data === parse.data) {
             parse.count      = parse.count + 1;
             parse.linesSpace = 0;
-            if (record.types === "start") {
+            if (record.types === "start" || record.types === "template_start") {
                 parse.structure.push([structure, parse.count]);
-            } else if (record.types === "end") {
+            } else if (record.types === "end" || record.types === "template_end") {
                 parse.structure.pop();
             }
         }
@@ -561,4 +563,32 @@ Parse Framework
     };
     global.parse     = parse;
     global.parser    = parser;
+    
+    if (global.DTRACE_NET_STREAM_END !== undefined && global.process.argv.length > 2 && global.process.argv[2].indexOf("parse.js") > 0) {
+        console.log("");
+        console.log("Welcome to the \u001b[32mParse Framework\u001b[39m.");
+        console.log("");
+        console.log("Here are things to try:");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Run the unit tests                 - \u001b[33mnode test/validate.js\u001b[39m");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Parse some text                    - \u001b[33mnode runtimes/nodetest.js \"<a><b></b></a>\"\u001b[39m");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Parse a file                       - \u001b[33mnode runtimes/nodetest.js myfile.jsx\u001b[39m");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Produce an unformatted parse table - \u001b[33mnode runtimes/nodetest.js myfile.jsx --raw\u001b[39m");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read the documentation             - \u001b[33mcat readme.md\u001b[39m");
+        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read about the lexers              - \u001b[33mcat lexers/readme.md\u001b[39m");
+        //console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m  - \u001b[33m\u001b[39m");
+        //console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m  - \u001b[33m\u001b[39m");
+        console.log("");
+    } else if (global.process === undefined) {
+        console.log("");
+        console.log("Welcome to the Parse Framework.");
+        console.log("");
+        console.log("Here are things to try with Node.js:");
+        console.log("* Run the unit tests                 - node test/validate.js");
+        console.log("* Parse some text                    - node runtimes/nodetest.js \"<a><b></b></a>\"");
+        console.log("* Parse a file                       - node runtimes/nodetest.js myfile.jsx");
+        console.log("* Produce an unformatted parse table - node runtimes/nodetest.js myfile.jsx --raw");
+        console.log("* Read the documentation             - cat readme.md");
+        console.log("* Read about the lexers              - cat lexers/readme.md");
+        console.log("");
+    }
 }());

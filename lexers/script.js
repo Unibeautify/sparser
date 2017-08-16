@@ -402,8 +402,10 @@
                                             types: "end"
                                         }
                                     });
-                                    parse.structure.splice(parse.structure.length - 2, 1);
-                                    parse.structure[parse.structure.length - 1][1] = parse.count;
+                                    if (parse.structure.length > 1) {
+                                        parse.structure.splice(parse.structure.length - 2, 1);
+                                        parse.structure[parse.structure.length - 1][1] = parse.count;
+                                    }
                                 } else if (data.token[parse.count - 2] === "x}" && pstack[0] !== "if" && data.stack[parse.count] === "else") {
                                     elsefix();
                                 } else if (data.token[parse.count - 2] === "}" && data.stack[parse.count - 2] === "if" && pstack[0] === "if" && data.token[pstack[1] - 1] !== "if" && data.token[data.begin[parse.count - 1]] === "x{") {
@@ -1674,6 +1676,7 @@
                 brace.push(x);
                 if (wordTest > -1) {
                     word();
+                    aa = parse.count;
                 }
                 if (vart.len > -1) {
                     vart.count[vart.len] = vart.count[vart.len] + 1;
@@ -1794,7 +1797,7 @@
                 } else if (ltoke === "(" || ltoke === "x(") {
                     if (wordx === "function" || data.token[aa - 1] === "function") {
                         stack = "arguments";
-                    } else if (data.token[aa] === "." || data.token[data.begin[aa] - 1] === ".") {
+                    } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
                         stack = "method";
                     } else if (data.types[aa] === "generic") {
                         stack = "method";

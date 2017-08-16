@@ -103,7 +103,7 @@
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
             if (global.parseerror !== "") {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = global.parseerror;
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = global.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             } else {
                 document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             }
