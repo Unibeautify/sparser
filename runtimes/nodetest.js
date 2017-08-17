@@ -106,7 +106,7 @@
             var output = {};
             lang           = language.auto(sourcetext);
             options.lang   = lang[0];
-            options.type   = lang[1]; 
+            options.lexer  = lang[1]; 
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source && (/_correct(\.|_)/).test(source) === true) {

@@ -415,6 +415,7 @@ Written by Austin Cheney on 1 Mar 2017
                     : [
                         [], [], [], []
                     ],
+                string         = (typeof options.source === "string"),
                 baseStart      = 0,
                 baseEnd        = 0,
                 newStart       = 0,
@@ -863,7 +864,11 @@ Written by Austin Cheney on 1 Mar 2017
                                     data.push("</h3>");
                                 } else {
                                     data.push("");
-                                    data.push("\u001b[36mLine: " + (opcodes[a - 1][2] + 1) + "\u001b[39m");
+                                    if (string === true) {
+                                        data.push("\u001b[36mLine: " + (opcodes[a - 1][2] + 1) + "\u001b[39m");
+                                    } else {
+                                        data.push("\u001b[36mIndex: " + (baseStart) + "\u001b[39m");
+                                    }
                                 }
                                 if (foldcount > 0) {
                                     do {
@@ -887,7 +892,11 @@ Written by Austin Cheney on 1 Mar 2017
                                     data.push("</h3>");
                                 } else {
                                     data.push("");
-                                    data.push("\u001b[36mLine: " + (baseStart + 1) + "\u001b[39m");
+                                    if (string === true) {
+                                        data.push("\u001b[36mLine: " + (baseStart + 1) + "\u001b[39m");
+                                    } else {
+                                        data.push("\u001b[36mIndex: " + (baseStart) + "\u001b[39m");
+                                    }
                                 }
                                 if (foldcount > 0) {
                                     do {
@@ -909,7 +918,11 @@ Written by Austin Cheney on 1 Mar 2017
                                 data.push("</li><li><h3>Line: 1</h3>");
                             } else {
                                 data.push("");
-                                data.push("\u001b[36mLine: 1\u001b[39m");
+                                if (string === true) {
+                                    data.push("\u001b[36mLine: 1\u001b[39m");
+                                } else {
+                                    data.push("\u001b[36mIndex: 0\u001b[39m");
+                                }
                             }
                             foldstart = foldstart + 1;
                         }

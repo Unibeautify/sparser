@@ -78,12 +78,12 @@
                     document.getElementById("data").appendChild(table);
                 };
             options.objectSort = (document.getElementById("objectSort").checked === true);
-            options.tagSort = (document.getElementById("tagSort").checked === true);
-            options.lang = lang[0];
-            options.type = lang[1];
+            options.tagSort    = (document.getElementById("tagSort").checked === true);
+            options.lang       = lang[0];
+            options.lexer      = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
-            if (options.type === "javascript") {
-                options.type = "script";
+            if (options.lexer === "javascript") {
+                options.lexer = "script";
             }
             if (Object.keys(window).indexOf("localStorage") > -1) {
                 localStorage.parseCode = value;

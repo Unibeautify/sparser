@@ -113,64 +113,6 @@
                     };
                     parse.push(data, record, structure);
                 },
-                //inserts ending curly brace (where absent)
-                blockinsert    = function lexer_script_blockinsert() {
-                    var next = nextchar(5, false),
-                        g    = parse.count,
-                        name = "";
-                    if (json === true) {
-                        return;
-                    }
-                    if (data.stack[parse.count] === "do" && next === "while" && data.token[parse.count] === "}") {
-                        return;
-                    }
-                    next = next.slice(0, 4);
-                    if (next === "else" && ltoke === "}" && data.stack[parse.count] === "if" && data.token[data.begin[parse.count]] !== "x{") {
-                        return;
-                    }
-                    if (ltoke === ";" && data.token[g - 1] === "x{") {
-                        name = data.token[data.begin[g - 2] - 1];
-                        if (data.token[g - 2] === "do" || (data.token[g - 2] === ")" && "ifforwhilecatch".indexOf(name) > -1)) {
-                            tempstore    = parse.pop(data);
-                            ltoke        = "x}";
-                            ltype        = "end";
-                            recordPush("");
-                            pstack = parse.structure.pop();
-                            brace.pop();
-                            return;
-                        }
-                        //to prevent the semicolon from inserting between the braces --> while (x) {};
-                        tempstore    = parse.pop(data);
-                        ltoke        = "x}";
-                        ltype        = "end";
-                        recordPush("");
-                        brace.pop();
-                        pstack       = parse.structure.pop();
-                        ltoke        = ";";
-                        ltype        = "end";
-                        parse.push(data, tempstore);
-                        return;
-                    }
-                    ltoke = "x}";
-                    ltype = "end";
-                    if (data.token[parse.count] === "x}") {
-                        return;
-                    }
-                    if (data.stack[parse.count] === "if" && (data.token[parse.count] === ";" || data.token[parse.count] === "x;") && next === "else") {
-                        recordPush("");
-                        brace.pop();
-                        pstack = parse.structure.pop();
-                        return;
-                    }
-                    do {
-                        recordPush("");
-                        brace.pop();
-                        pstack = parse.structure.pop();
-                        if (data.stack[parse.count] === "do") {
-                            break;
-                        }
-                    } while (brace[brace.length - 1] === "x{");
-                },
                 //remove "vart" object data
                 vartpop        = function lexer_script_vartpop() {
                     vart
@@ -441,6 +383,198 @@
                         return true;
                     }
                     return false;
+                },
+                // the generic function is a generic tokenizer start argument contains the
+                // token's starting syntax offset argument is length of start minus control
+                // chars end is how is to identify where the token ends
+                generic        = function lexer_script_genericBuilder(starting, ending) {
+                    var ee     = 0,
+                        ender  = ending.split(""),
+                        endlen = ender.length,
+                        jj     = b,
+                        build  = [starting],
+                        base   = a + starting.length,
+                        output = "",
+                        escape = false;
+                    if (wordTest > -1) {
+                        word();
+                    }
+                    // this insanity is for JSON where all the required quote characters are
+                    // escaped.
+                    if (c[a - 1] === "\\" && slashes(a - 1) === true && (c[a] === "\"" || c[a] === "'")) {
+                        parse.pop(data);
+                        if (data.token[0] === "{") {
+                            if (c[a] === "\"") {
+                                starting = "\"";
+                                ending   = "\\\"";
+                                build    = ["\""];
+                            } else {
+                                starting = "'";
+                                ending   = "\\'";
+                                build    = ["'"];
+                            }
+                            escape = true;
+                        } else {
+                            if (c[a] === "\"") {
+                                return "\\\"";
+                            }
+                            return "\\'";
+                        }
+                    }
+                    ee = base;
+                    if (ee < jj) {
+                        do {
+                            if (ee > a + 1) {
+                                if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("<?php", "?>"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("<%", "%>"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("{%", "%}"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("{{{", "}}}"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("{{", "}}"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("<!--#", "-->"));
+                                    ee = ee + build[build.length - 1].length - 1;
+                                } else {
+                                    build.push(c[ee]);
+                                }
+                            } else {
+                                build.push(c[ee]);
+                            }
+                            if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
+                                global.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
+                                break;
+                            }
+                            if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
+                                if (endlen === 1) {
+                                    break;
+                                }
+                                // `ee - base` is a cheap means of computing length of build array the `ee -
+                                // base` and `endlen` are both length based values, so adding two (1 for each)
+                                // provides an index based number
+                                if (build[ee - base] === ender[0] && build.slice(ee - base - endlen + 2).join("") === ending) {
+                                    break;
+                                }
+                            }
+                            ee = ee + 1;
+                        } while (ee < jj);
+                    }
+                    if (escape === true) {
+                        output = build[build.length - 1];
+                        build.pop();
+                        build.pop();
+                        build.push(output);
+                    }
+                    a = ee;
+                    if (starting === "//") {
+                        build.pop();
+                    }
+                    output = build.join("");
+                    if (starting === "//") {
+                        output = output.replace(/(\s+)$/, "");
+                    } else if (starting === "/*") {
+                        build = output.split(parse.lf);
+                        ee    = build.length - 1;
+                        if (ee > -1) {
+                            do {
+                                build[ee] = build[ee].replace(/(\s+)$/, "");
+                                ee        = ee - 1;
+                            } while (ee > -1);
+                        }
+                        output = build.join(parse.lf);
+                    }
+                    if (starting === "{%") {
+                        if (output.indexOf("{%-") < 0) {
+                            output = output
+                                .replace(/^(\{%\s*)/, "{% ")
+                                .replace(/(\s*%\})$/, " %}");
+                        } else {
+                            output = output
+                                .replace(/^(\{%-\s*)/, "{%- ")
+                                .replace(/(\s*-%\})$/, " -%}");
+                        }
+                    }
+                    if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
+                        output = output.replace(/(\s+)$/, "");
+                    }
+                    return output;
+                },
+                //inserts ending curly brace (where absent)
+                blockinsert    = function lexer_script_blockinsert() {
+                    var next  = nextchar(5, false),
+                        g     = parse.count,
+                        name  = "",
+                        lines = parse.linesSpace;
+                    if (json === true) {
+                        return;
+                    }
+                    if (data.stack[parse.count] === "do" && next === "while" && data.token[parse.count] === "}") {
+                        return;
+                    }
+                    next = next.slice(0, 4);
+                    if (next === "else" && ltoke === "}" && data.stack[parse.count] === "if" && data.token[data.begin[parse.count]] !== "x{") {
+                        return;
+                    }
+                    if (ltoke === ";" && data.token[g - 1] === "x{") {
+                        name = data.token[data.begin[g - 2] - 1];
+                        if (data.token[g - 2] === "do" || (data.token[g - 2] === ")" && "ifforwhilecatch".indexOf(name) > -1)) {
+                            tempstore    = parse.pop(data);
+                            ltoke        = "x}";
+                            ltype        = "end";
+                            pstack       = parse.structure[parse.structure.length - 1];
+                            recordPush("");
+                            brace.pop();
+                            parse.linesSpace = lines;
+                            return;
+                        }
+                        //to prevent the semicolon from inserting between the braces --> while (x) {};
+                        tempstore    = parse.pop(data);
+                        ltoke        = "x}";
+                        ltype        = "end";
+                        pstack       = parse.structure[parse.structure.length - 1];
+                        recordPush("");
+                        brace.pop();
+                        ltoke        = ";";
+                        ltype        = "end";
+                        parse.push(data, tempstore);
+                        parse.linesSpace = lines;
+                        return;
+                    }
+                    ltoke = "x}";
+                    ltype = "end";
+                    if (data.token[parse.count] === "x}") {
+                        return;
+                    }
+                    if (data.stack[parse.count] === "if" && (data.token[parse.count] === ";" || data.token[parse.count] === "x;") && next === "else") {
+                        pstack = parse.structure[parse.structure.length - 1];
+                        recordPush("");
+                        brace.pop();
+                        parse.linesSpace = lines;
+                        return;
+                    }
+                    do {
+                        pstack = parse.structure[parse.structure.length - 1];
+                        recordPush("");
+                        brace.pop();
+                        if (data.stack[parse.count] === "do") {
+                            break;
+                        }
+                    } while (brace[brace.length - 1] === "x{");
+                    parse.linesSpace = lines;
                 },
                 // commaComment ensures that commas immediately precede comments instead of
                 // immediately follow
@@ -805,135 +939,6 @@
                         }
                     });
                     recordPush("");
-                },
-                // the generic function is a generic tokenizer start argument contains the
-                // token's starting syntax offset argument is length of start minus control
-                // chars end is how is to identify where the token ends
-                generic        = function lexer_script_genericBuilder(starting, ending) {
-                    var ee     = 0,
-                        ender  = ending.split(""),
-                        endlen = ender.length,
-                        jj     = b,
-                        build  = [starting],
-                        base   = a + starting.length,
-                        output = "",
-                        escape = false;
-                    if (wordTest > -1) {
-                        word();
-                    }
-                    // this insanity is for JSON where all the required quote characters are
-                    // escaped.
-                    if (c[a - 1] === "\\" && slashes(a - 1) === true && (c[a] === "\"" || c[a] === "'")) {
-                        parse.pop(data);
-                        if (data.token[0] === "{") {
-                            if (c[a] === "\"") {
-                                starting = "\"";
-                                ending   = "\\\"";
-                                build    = ["\""];
-                            } else {
-                                starting = "'";
-                                ending   = "\\'";
-                                build    = ["'"];
-                            }
-                            escape = true;
-                        } else {
-                            if (c[a] === "\"") {
-                                return "\\\"";
-                            }
-                            return "\\'";
-                        }
-                    }
-                    ee = base;
-                    if (ee < jj) {
-                        do {
-                            if (ee > a + 1) {
-                                if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<?php", "?>"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<%", "%>"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{%", "%}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{{{", "}}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{{", "}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<!--#", "-->"));
-                                    ee = ee + build[build.length - 1].length - 1;
-                                } else {
-                                    build.push(c[ee]);
-                                }
-                            } else {
-                                build.push(c[ee]);
-                            }
-                            if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
-                                global.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
-                                break;
-                            }
-                            if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
-                                if (endlen === 1) {
-                                    break;
-                                }
-                                // `ee - base` is a cheap means of computing length of build array the `ee -
-                                // base` and `endlen` are both length based values, so adding two (1 for each)
-                                // provides an index based number
-                                if (build[ee - base] === ender[0] && build.slice(ee - base - endlen + 2).join("") === ending) {
-                                    break;
-                                }
-                            }
-                            ee = ee + 1;
-                        } while (ee < jj);
-                    }
-                    if (escape === true) {
-                        output = build[build.length - 1];
-                        build.pop();
-                        build.pop();
-                        build.push(output);
-                    }
-                    a = ee;
-                    if (starting === "//") {
-                        build.pop();
-                    }
-                    output = build.join("");
-                    if (starting === "//") {
-                        output = output.replace(/(\s+)$/, "");
-                    } else if (starting === "/*") {
-                        build = output.split(parse.lf);
-                        ee    = build.length - 1;
-                        if (ee > -1) {
-                            do {
-                                build[ee] = build[ee].replace(/(\s+)$/, "");
-                                ee        = ee - 1;
-                            } while (ee > -1);
-                        }
-                        output = build.join(parse.lf);
-                    }
-                    if (starting === "{%") {
-                        if (output.indexOf("{%-") < 0) {
-                            output = output
-                                .replace(/^(\{%\s*)/, "{% ")
-                                .replace(/(\s*%\})$/, " %}");
-                        } else {
-                            output = output
-                                .replace(/^(\{%-\s*)/, "{%- ")
-                                .replace(/(\s*-%\})$/, " -%}");
-                        }
-                    }
-                    if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
-                        output = output.replace(/(\s+)$/, "");
-                    }
-                    return output;
                 },
                 //a tokenizer for regular expressions
                 regex          = function lexer_script_regex() {
@@ -1576,19 +1581,22 @@
                     }
                     lword.pop();
                     pstack = parse.structure[parse.structure.length - 1];
-                    recordPush("");
                     if (x === ")" && options.correct === true && (data.token[data.begin[parse.count] - 1] === "Array" || data.token[data.begin[parse.count] - 1] === "Object") && data.token[data.begin[parse.count] - 2] === "new") {
                         newarray();
                     }
                     if (brace[brace.length - 1] === "x{" && x === "}") {
                         blockinsert();
-                    }
-                    brace.pop();
-                    if (brace[brace.length - 1] === "x{" && x === "}" && data.stack[parse.count] !== "try") {
-                        if (next !== ":" && next !== ";" && data.token[data.begin[a] - 1] !== "?") {
-                            blockinsert();
+                        brace.pop();
+                        if (data.stack[parse.count] !== "try") {
+                            if (next !== ":" && next !== ";" && data.token[data.begin[a] - 1] !== "?") {
+                                blockinsert();
+                            }
                         }
+                        ltoke = "}";
+                    } else {
+                        brace.pop();
                     }
+                    recordPush("");
                     if (insert === true) {
                         ltoke = "x{";
                         ltype = "start";
@@ -1882,7 +1890,24 @@
                             }
                             data.lines[parse.count] = 0;
                         } else {
-                            recordPush("");
+                            if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                                parse.splice({
+                                    data: data,
+                                    index: parse.count,
+                                    howmany: 0,
+                                    record: {
+                                        begin: data.begin[parse.count],
+                                        lexer: "script",
+                                        lines: parse.linesSpace,
+                                        presv: false,
+                                        stack: data.stack[parse.count],
+                                        token: ltoke,
+                                        types: "comment"
+                                    }
+                                });
+                            } else {
+                                recordPush("");
+                            }
                         }
                     }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
@@ -1896,12 +1921,31 @@
                     //comment line
                     asi(false);
                     ltoke = generic("//", "\n");
+                    ltype = "comment";
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;
                     }
                     if (options.comments !== "nocomment") {
-                        recordPush("");
+                        if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                            parse.splice({
+                                data: data,
+                                index: parse.count,
+                                howmany: 0,
+                                record: {
+                                    begin: data.begin[parse.count],
+                                    lexer: "script",
+                                    lines: parse.linesSpace,
+                                    presv: false,
+                                    stack: data.stack[parse.count],
+                                    token: ltoke,
+                                    types: "comment"
+                                }
+                            });
+                        } else {
+                            recordPush("");
+                        }
+                        a = parse.spacer({array: c, end: b, index: a});
                     }
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     //comment line

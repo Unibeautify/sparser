@@ -46,11 +46,13 @@ Parse Framework
                 return arr;
             };
 
-            if (global.lexer[options.type] === "undefined") {
-                global.parseerror = "Lexer '" + options.type + "' isn't available.";
+            if (global.lexer[options.lexer] === "undefined") {
+                global.parseerror = "Lexer '" + options.lexer + "' isn't available.";
+            } else if (typeof global.lexer[options.lexer] !== "function") {
+                global.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
             } else {
                 global.parseerror = "";
-                global.lexer[options.type](options.source + " ");
+                global.lexer[options.lexer](options.source + " ");
             }
 
             // validate that all the data arrays are the same length

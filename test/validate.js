@@ -5,8 +5,9 @@
 module.exports = (function taskrunner() {
     "use strict";
     var order      = [
-            "lint", //       - run jslint on all unexcluded files in the repo
-            "codeunits" //   - run a variety of files through the application and compare the result to a known good file
+            "lint", //       - run jslint on all unexcluded JS files in the repo
+            "framework", //  - test the framework
+            "codeunits" //   - test the lexers
         ],
         startTime  = process.hrtime(),
         node       = {
@@ -14,6 +15,7 @@ module.exports = (function taskrunner() {
             fs   : require("fs"),
             path : require("path")
         },
+        orderlen   = order.length,
         relative   = __dirname.replace(/((\/|\\)test)$/, ""),
         humantime  = function taskrunner_humantime(finished) {
             var minuteString = "",
@@ -180,9 +182,9 @@ module.exports = (function taskrunner() {
                 pdlen  = 0,
                 plus   = "",
                 plural = "",
-                output = [],
                 report = [],
                 total  = 0,
+                diffview = require("." + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
                 record = function taskrunner_diffFiles_record(data) {
                     var len = data.token.length,
                         x   = 0,
@@ -193,24 +195,24 @@ module.exports = (function taskrunner() {
                     do {
                         rec.push({});
                         parse.datanames.forEach(dn);
+                        rec[x] = JSON.stringify(rec[x]);
                         x = x + 1;
                     } while (x < len);
-                    return JSON.stringify(rec);
+                    return rec;
                 };
             options.mode    = "diff";
-            options.source  = (sampleSource === "")
+            options.source  = (typeof sampleSource === "string")
                 ? ""
                 : record(JSON.parse(sampleSource));
-            options.diff    = (sampleDiff === "")
+            options.diff    = (typeof sampleDiff === "string")
                 ? ""
                 : record(JSON.parse(sampleDiff));
             options.diffcli = true;
-            options.context = 4;
-            options.lang    = "json";
-            output          = prettydiff(options);
-            report          = output;
-            pdlen           = report.length;
-            total           = global.prettydiff.meta.difftotal;
+            options.context = 2;
+            options.lang    = "text";
+            report          = diffview(options);
+            pdlen           = report[0].length;
+            total           = report[1];
             if (total > 50) {
                 plus = "+";
             }
@@ -221,25 +223,32 @@ module.exports = (function taskrunner() {
             // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
             // of options.context (not parallel) 6 - total count of differences
             do {
-                if (report[aa].indexOf("\u001b[36m") === 0) {
-                    console.log("\u001b[36m" + sampleName + "\u001b[36m");
+                if (report[0][aa].indexOf("\u001b[36m") === 0) {
+                    console.log("\u001b[36m" + sampleName + "\u001b[39m");
                 }
-                console.log(report[aa]);
+                if (report[0][aa].indexOf("\u001b[36mLine: ") !== 0) {
+                    if (report[0][aa].indexOf("\u001b[31m") === 0) {
+                        report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[31m}\u001b[39m");
+                        report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[31m").replace(/\u001b\[22m/g, "\u001b[39m");
+                    } else if (report[0][aa].indexOf("\u001b[32m") === 0) {
+                        report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[32m}\u001b[39m");
+                        report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[32m").replace(/\u001b\[22m/g, "\u001b[39m");
+                    }
+                    console.log(report[0][aa]);
+                }
                 aa = aa + 1;
             } while (aa < pdlen);
-            if (sampleName !== "phases.simulations") {
-                console.log("");
-                console.log(
-                    total + plus + " \u001b[32mdifference" + plural + " counted.\u001b[39m"
-                );
-                errout(
-                    "Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m" + sampleName + "" +
-                    "\u001b[39m"
-                );
-            }
+            console.log("");
+            console.log(
+                total + plus + " \u001b[32mdifference" + plural + " counted.\u001b[39m"
+            );
+            errout(
+                "Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m" + sampleName + "" +
+                "\u001b[39m"
+            );
         },
         phases     = {
-            codeunits  : function taskrunner_coreunits() {
+            codeunits: function taskrunner_coreunits() {
                 var code   = [],
                     parsed = [],
                     countr = 0,
@@ -277,7 +286,6 @@ module.exports = (function taskrunner() {
                                     : parsed.length;
                                 a   = a - 1;
                                 if (a === len - 1) {
-                                    console.log("");
                                     console.log("\u001b[32mCore Unit Testing Complete\u001b[39m");
                                     return next();
                                 }
@@ -294,7 +302,7 @@ module.exports = (function taskrunner() {
                                     }
                                     options.source = code[a][1];
                                     lang           = global.language.auto(code[a][1], "javascript");
-                                    options.type   = lang[1];
+                                    options.lexer  = lang[1];
                                     options.lang   = lang[0];
                                     output         = global.parser(options);
                                     str            = JSON.stringify(output);
@@ -382,13 +390,31 @@ module.exports = (function taskrunner() {
                             list.forEach(pusher);
                         });
                     };
-                console.log("");
-                console.log("");
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
                 readDir("code");
                 readDir("parsed");
             },
-            lint       : function taskrunner_lint() {
+            framework: function taskrunner_framework() {
+                var keys    = [],
+                    keylist = "concat,count,data,datanames,lexer,lf,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure",
+                    keysort = "";
+                console.log("\u001b[36mFramework Testing\u001b[39m");
+                
+                global.parser({
+                    lang  : "html",
+                    lexer : "markup",
+                    source: ""
+                });
+                keys = Object.keys(parse);
+                keysort = parse.safeSort(keys).join();
+                if (keysort !== keylist) {
+                    return errout("\u001b[31mParse framework failure:\u001b[39m The \"parse\" object does not match the known list of required properties.");
+                }
+                
+                console.log("\u001b[32mFramework testing complete!\u001b[39m");
+                return next();
+            },
+            lint     : function taskrunner_lint() {
                 var ignoreDirectory = [
                         ".git",
                         ".vscode",
@@ -448,9 +474,7 @@ module.exports = (function taskrunner() {
                                     ) + ":\u001b[39m " + val[0]
                                 );
                                 if (ind === arr.length - 1) {
-                                    console.log("");
                                     console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                    console.log("");
                                     return next();
                                 }
                             } else {
@@ -466,9 +490,7 @@ module.exports = (function taskrunner() {
                                         ) + ":\u001b[39m " + val[0]
                                     );
                                     if (ind === arr.length - 1) {
-                                        console.log("");
                                         console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                        console.log("");
                                         return next();
                                     }
                                 }
@@ -491,8 +513,6 @@ module.exports = (function taskrunner() {
                         };
                         files.forEach(lintit);
                     };
-                console.log("");
-                console.log("");
                 console.log("\u001b[36mBeautifying and Linting\u001b[39m");
                 console.log(
                     "** Note that line numbers of error messaging reflects beautified code line."
@@ -602,17 +622,23 @@ module.exports = (function taskrunner() {
 
     next = function taskrunner_next() {
         var complete = function taskrunner_complete() {
-            console.log("");
-            console.log("All tasks complete... Exiting clean!");
-            humantime(true);
-            process.exit(0);
-        };
+                console.log("");
+                console.log("All tasks complete... Exiting clean!");
+                humantime(true);
+                process.exit(0);
+            },
+            phase = order[0];
         if (order.length < 1) {
             return complete();
         }
-        phases[order[0]]();
+        if (order.length < orderlen) {
+            console.log("________________________________________________________________________");
+            console.log("");
+        }
         order.splice(0, 1);
+        phases[phase]();
     };
+    console.log("");
     next();
     return "";
 }());

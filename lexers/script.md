@@ -1,6 +1,11 @@
 # Lexer - script
 A lexer for JavaScript and other syntax related languages.
 
+## x tokens
+When option *correct* is true missing syntax characters are inserted, which can include: curly braces, semicolons, and parenthesis.  When *correct* is set to false the characters are still inserted, but artificially so as *X* tokens.  These helps reason about code structure and normalize certain syntax ambiguities.  These tokens are recognizeable as they start with a lowercase *x* as in `x;` for an inserted semicolon.
+
+**x tokens should be removed by the consuming application or converted to regular syntax by removing the x character.**
+
 ## types values
 * **comment** - Describes both block comments (`/*`) and line comments (`//`)
 * **end** - Describes `}`, `]`, and `)`.

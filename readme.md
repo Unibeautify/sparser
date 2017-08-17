@@ -33,7 +33,6 @@
 
 ## Todo
 * options - define and document supported options
-* normalize and document *type* values
 * unit tests
 * convert `var` to `const` and `let` as appropriate and elminate unncessary IIFEs
 * convert to TypeScript
@@ -101,7 +100,7 @@ The *global* object contains five key references.
 * **lf** - The format for a line termination.  In Windows the default line terminator is the two text character sequence CRLF (carriage return and line feed) while in most other operating systems line termination is simply LF.  The `parse.lf` property contains the correct value, so it should always be referenced where line termination is required.
 * **linesSpace** - A number of white space values between one token and the next.  This number is used to pass the appropriate value between lexers for those languages that require more than one lexer and the value ultimately populates the *lines* record value. The framework resets the value of this property to *0* each time the `parse.push` and `parse.splice` methods are called on `parse.data`.
 * **options** - This is merely a placeholder for the options object that is passed into the framework so that the objects are available to the lexers.
-* **structure** - An array of arrays where each child array stores two values.  The first of those two values is a categorical name that describes the current structure and the second value is the index where this structure starts.  The first index of `parse.structure` is always `[global, -1]`, which describes global scope.  The value -1 is associated with global scope since global scope starts before the first data record.  A new value is pushed into structure once a record is pushed into `parse.data` where *types* is *start*.  The final index of structure is popped out after a record with *types* *end* is added to `parse.data`.  Please be aware that this property is populated and popped from the `parse.push` method when `parse.data` is modified and the record types are *start* or *end*, which will cause interference if manually adjusting this property. **Only use the last index of structure when populating record values for begin and stack.**
+* **structure** - An array of arrays where each child array stores two values.  The first of those two values is a categorical name that describes the current structure and the second value is the index where this structure starts.  The first index of `parse.structure` is always `[global, -1]`, which describes global scope.  The value -1 is associated with global scope since global scope starts before the first data record.  A new value is pushed into structure once a record is pushed into `parse.data` where *types* is *start*.  The final index of structure is popped out after a record with *types* *end* is added to `parse.data`.  Please be aware that this property is populated and popped from the `parse.push` method when `parse.data` is modified and the record types are *start*, *template_start*, *end* or *template_end*, which will cause interference if manually adjusting this property. **Only use the last index of structure when populating record values for begin and stack.**
 
 ### parse Methods
 Only use these method to populate or modify `parse.data`.  Any other means of changing the data breaks the framework.
