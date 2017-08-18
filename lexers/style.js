@@ -1,7 +1,7 @@
 /*global global*/
 (function style_init() {
     "use strict";
-    var style = function parser_style(source) {
+    var style = function lexer_style(source) {
         var parse       = global.parse,
             data        = parse.data,
             options     = parse.options,

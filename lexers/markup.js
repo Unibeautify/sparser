@@ -394,6 +394,8 @@
                                 // if an attribute follows an attribute ending with `=` then adjoin it to the
                                 // last attribute
                                 attstore[attstore.length - 1] = attstore[attstore.length - 1] + atty;
+                            } else if (options.lang === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1].charAt(attstore[attstore.length - 1].length - 1)) > -1)) {
+                                attstore[attstore.length - 1] = attstore[attstore.length - 1] + " " + atty;
                             } else if (atty !== "" && atty !== " ") {
                                 attstore.push(atty);
                             }
@@ -866,7 +868,7 @@
                                         data.types[parse.count] = "template_start";
                                         break;
                                     }
-                                    if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
+                                    if (b[a] === "<" && options.lang !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
                                         global.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
@@ -1416,9 +1418,6 @@
                                 if (tname === "cftransaction" && cftransaction === false) {
                                     cftransaction = true;
                                 }
-                                record.begin = (parse.structure[parse.structure.length - 1][1] === -1)
-                                    ? parse.count
-                                    : parse.structure[parse.structure.length - 1][1];
                                 record.token = lex.join("");
                                 record.types = (ltype === "end")
                                     ? "template_end"

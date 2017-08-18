@@ -280,6 +280,9 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                     return output("jsp");
                 }
+                if ((/<cfset\s/i).test(sample) === true && (/<cfif\s/i).test(sample) === true) {
+                    return output("coldfusion");
+                }
                 return output("xml");
             };
         if (sample === null) {

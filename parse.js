@@ -5,9 +5,7 @@ Parse Framework
 
 (function parse_init() {
     "use strict";
-    var parse   = {
-            lexer: global.lexer
-        },
+    var parse   = {},
         parser  = function parser_(options) {
             parse.count      = -1;
             parse.data       = {};
@@ -20,6 +18,7 @@ Parse Framework
                 "token",
                 "types"
             ];
+            parse.lexer      = global.lexer;
             parse.lf         = (options.crlf === true || options.crlf === "true")
                 ? "\r\n"
                 : "\n";

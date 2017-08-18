@@ -1,5 +1,4 @@
 /*jslint node:true*/
-/*jshint laxbreak: true*/
 // The order array determines which tests run in which order (from last to first
 // index)
 module.exports = (function taskrunner() {
@@ -249,74 +248,87 @@ module.exports = (function taskrunner() {
         },
         phases     = {
             codeunits: function taskrunner_coreunits() {
-                var code   = [],
-                    parsed = [],
-                    countr = 0,
-                    countc = 0,
-                    utflag = {
-                        parsed: false,
-                        code  : false
+                var files  = {
+                        code  : [],
+                        parsed: []
                     },
+                    count  = {
+                        code  : 0,
+                        parsed: 0
+                    },
+                    total  = {
+                        code  : 0,
+                        parsed: 0
+                    },
+                    lexers = Object.keys(parse.lexer),
                     compare = function taskrunner_coreunits_compare() {
-                        var len       = (code.length > parsed.length)
-                                ? code.length
-                                : parsed.length,
+                        var len       = (files.code.length > files.parsed.length)
+                                ? files.code.length
+                                : files.parsed.length,
                             lang      = [],
                             a         = 0,
                             str       = "",
                             output    = {},
-                            filecount = 0;
-                        code   = parse.safeSort(code);
-                        parsed = parse.safeSort(parsed);
-                        for (a = 0; a < len; a = a + 1) {
-                            if (code[a] === undefined || parsed[a] === undefined) {
-                                if (code[a] === undefined) {
+                            filecount = 0,
+                            currentlex = "",
+                            lexer     = function taskrunner_coreunits_compare_lexer() {
+                                var lex = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
+                                console.log("");
+                                console.log("Tests for lexer - \u001b[36m" + lex + "\u001b[39m");
+                                currentlex = lex;
+                            };
+                        files.code   = parse.safeSort(files.code);
+                        files.parsed = parse.safeSort(files.parsed);
+                        lexer();
+                        do {
+                            if (files.code[a][0].indexOf(currentlex) !== 0) {
+                                lexer();
+                            }
+                            if (files.code[a] === undefined || files.parsed[a] === undefined) {
+                                if (files.code[a] === undefined) {
                                     console.log(
-                                        "\u001b[33msamples_code directory is missing file:\u001b[39m " + parsed[a][0]
+                                        "\u001b[33msamples_code directory is missing file:\u001b[39m " + files.parsed[a][0]
                                     );
-                                    parsed.splice(a, 1);
+                                    files.parsed.splice(a, 1);
                                 } else {
                                     console.log(
-                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + code[a][0]
+                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + files.parsedcode[a][0]
                                     );
-                                    code.splice(a, 1);
+                                    files.code.splice(a, 1);
                                 }
-                                len = (code.length > parsed.length)
-                                    ? code.length
-                                    : parsed.length;
+                                len = (files.code.length > files.parsed.length)
+                                    ? files.code.length
+                                    : files.codeparsed.length;
                                 a   = a - 1;
-                                if (a === len - 1) {
-                                    console.log("\u001b[32mCore Unit Testing Complete\u001b[39m");
-                                    return next();
-                                }
-                            } else if (code[a][0] === parsed[a][0]) {
-                                if (parsed[a][1] === "") {
-                                    console.log("\u001b[33mParsed file is empty:\u001b[39m " + parsed[a][0]);
-                                } else if (code[a][1] === "") {
-                                    console.log("\u001b[33mCode file is empty:\u001b[39m " + code[a][0]);
+                            } else if (files.code[a][0] === files.parsed[a][0]) {
+                                if (files.parsed[a][1] === "") {
+                                    console.log("\u001b[33mParsed file is empty:\u001b[39m " + files.parsed[a][0]);
+                                } else if (files.code[a][1] === "") {
+                                    console.log("\u001b[33mCode file is empty:\u001b[39m " + files.code[a][0]);
                                 } else {
-                                    if ((/_correct(\.|_)/).test(code[a][0]) === true) {
+                                    if ((/_correct(\.|_)/).test(files.code[a][0]) === true) {
                                         options.correct = true;
                                     } else {
                                         options.correct = false;
                                     }
-                                    options.source = code[a][1];
-                                    lang           = global.language.auto(code[a][1], "javascript");
+                                    options.source = files.code[a][1];
+                                    lang           = global.language.auto(files.code[a][1], "javascript");
                                     options.lexer  = lang[1];
                                     options.lang   = lang[0];
                                     output         = global.parser(options);
                                     str            = JSON.stringify(output);
                                     if (global.parseerror === "") {
-                                        if (str === parsed[a][1]) {
+                                        if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
                                             console.log(
-                                                humantime(false) + "\u001b[32mPass " + filecount + ":\u001b[39m " + parsed[a][0]
+                                                humantime(false) + "\u001b[32mPass " + filecount + ":\u001b[39m " + files.parsed[a][0].replace(currentlex + node.path.sep, "")
                                             );
                                             if (a === len - 1) {
+                                                console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                                                 return next();
                                             }
                                         } else {
-                                            diffFiles(parsed[a][0], str, parsed[a][1]);
+                                            diffFiles(files.parsed[a][0], str, files.parsed[a][1]);
                                         }
                                     } else {
                                         console.log("");
@@ -326,64 +338,52 @@ module.exports = (function taskrunner() {
                                     }
                                 }
                             } else {
-                                if (code[a][0] < parsed[a][0]) {
+                                if (files.code[a][0] < files.parsed[a][0]) {
                                     console.log(
-                                        "\u001b[33mParsed samples directory is missing file:\u001b[39m " + code[a][0]
+                                        "\u001b[33mParsed samples directory is missing file:\u001b[39m " + files.code[a][0]
                                     );
-                                    code.splice(a, 1);
+                                    files.code.splice(a, 1);
                                 } else {
                                     console.log(
-                                        "\u001b[33mCode samples directory is missing file:\u001b[39m " + parsed[a][0]
+                                        "\u001b[33mCode samples directory is missing file:\u001b[39m " + files.parsed[a][0]
                                     );
-                                    parsed.splice(a, 1);
+                                    files.parsed.splice(a, 1);
                                 }
-                                len = (code.length > parsed.length)
-                                    ? code.length
-                                    : parsed.length;
+                                len = (files.code.length > files.parsed.length)
+                                    ? files.code.length
+                                    : files.parsed.length;
                                 a   = a - 1;
                                 if (a === len - 1) {
+                                    console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                                     return next();
                                 }
                             }
-                        }
+                            a = a + 1;
+                        } while (a < len);
+                        console.log("\u001b[32mCore unit testing complete!\u001b[39m");
+                        return next();
                     },
-                    readDir = function taskrunner_coreunits_readDir(type) {
-                        var dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type;
+                    readDir = function taskrunner_coreunits_readDir(type, lexer, final_lexer) {
+                        var dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
-                            var pusher = function taskrunner_coreunits_readDir_callback_pusher(
-                                val,
-                                ind,
-                                arr
-                            ) {
+                            var pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
-                                    dirpath + node.path.sep + val,
+                                    dirpath + val,
                                     "utf8",
                                     function taskrunner_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
+                                        count[type] = count[type] + 1;
                                         if (erra !== null && erra !== undefined) {
-                                            errout("Error reading file: " + relative + node.path.sep + "samples_" + type + node.path.sep + val);
-                                        } else if (type === "code") {
-                                            code.push([val, fileData]);
-                                            countr = countr + 1;
-                                            if (countr === arr.length) {
-                                                utflag.code = true;
-                                                if (utflag.parsed === true) {
-                                                    compare("");
-                                                }
-                                            }
-                                        } else if (type === "parsed") {
-                                            parsed.push([val, fileData]);
-                                            countc = countc + 1;
-                                            if (countc === arr.length) {
-                                                utflag.parsed = true;
-                                                if (utflag.code === true) {
-                                                    compare("");
-                                                }
-                                            }
+                                            errout("Error reading file: " + relative + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep + val);
+                                        } else {
+                                            files[type].push([lexer + node.path.sep + val, fileData]);
                                         }
-                                        return ind;
+                                        if (final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
+                                            compare("");
+                                        }
                                     }
                                 );
                             };
+                            total[type] = total[type] + list.length;
                             if (err !== null) {
                                 errout("Error reading from directory: " + dirpath);
                             }
@@ -391,8 +391,15 @@ module.exports = (function taskrunner() {
                         });
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
-                readDir("code");
-                readDir("parsed");
+                lexers.forEach(function taskrunner_coreunits_lexers(value, index, array) {
+                    if (index === array.length - 1) {
+                        readDir("code", value, true);
+                        readDir("parsed", value, true);
+                    } else {
+                        readDir("code", value, false);
+                        readDir("parsed", value, false);
+                    }
+                });
             },
             framework: function taskrunner_framework() {
                 var keys    = [],
@@ -410,6 +417,96 @@ module.exports = (function taskrunner() {
                 if (keysort !== keylist) {
                     return errout("\u001b[31mParse framework failure:\u001b[39m The \"parse\" object does not match the known list of required properties.");
                 }
+                console.log(humantime(false) + "\u001b[32mObject parse contains only the standard properties.\u001b[39m");
+                
+                if (typeof parse.concat !== "function" || parse.concat.name !== "parse_concat") {
+                    return errout("\u001b[31mParse framework failure:\u001b[39m parse.concat does not point to the function named parse_concat.");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.concat points to function parse_concat.\u001b[39m");
+                
+                if (parse.count !== -1) {
+                    return errout("\u001b[31mParse framework failure:\u001b[39m The default for parse.count isn't -1 or type number.");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.count has default value of -1 and type number.\u001b[39m");
+                
+                if (
+                    typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"lexer\":[],\"lines\":[],\"presv\":[],\"stack\":[],\"token\":[],\"types\":[]}"
+                ) {
+                    return errout("\u001b[31mParse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[39m");
+                
+                if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
+                    return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', or 'types'.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.datanames contains only the data field names.\u001b[39m");
+                
+                if (parse.lexer !== global.lexer) {
+                    return errout("\u001b[31mParse framework failure: parse.lexer is not assigned to global.lexer.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.lexer is assigned to global.lexer.\u001b[39m");
+                
+                if (parse.lf !== "\n" && parse.lf !== "\r\n") {
+                    return errout("\u001b[31mParse framework failure: parse.lf does have a value of \"\\n\" or \"\\r\\n\".\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.lf has a value of \"\\n\" or \"\\r\\n\".\u001b[39m");
+                
+                if (parse.lineNumber !== 1) {
+                    return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 and type number.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[39m");
+                
+                // The correct default for linesSpace is 0
+                // but the default is changed by the source of empty string.
+                if (parse.linesSpace !== 1) {
+                    return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 0 and type number.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[39m");
+                
+                if (typeof parse.objectSort !== "function" || parse.objectSort.name !== "parse_objectSort") {
+                    return errout("\u001b[31mParse framework failure: parse.objectSort is not assigned to named function parse_objectSort\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.objectSort is assigned to named function parse_objectSort\u001b[39m");
+                
+                if (typeof parse.pop !== "function" || parse.pop.name !== "parse_pop") {
+                    return errout("\u001b[31mParse framework failure: parse.pop is not assigned to named function parse_pop\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.pop is assigned to named function parse_pop\u001b[39m");
+                
+                if (typeof parse.push !== "function" || parse.push.name !== "parse_push") {
+                    return errout("\u001b[31mParse framework failure: parse.push is not assigned to named function parse_push\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.push is assigned to named function parse_push\u001b[39m");
+                
+                if (parse.push.toString().indexOf("parse.structure.push([structure, parse.count])") < 0 || parse.push.toString().indexOf("parse.structure.pop") < 0) {
+                    return errout("\u001b[31mParse framework failure: parse.push does not regulate parse.structure\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.push contains references to push and pop parse.structure\u001b[39m");
+
+                if (typeof parse.safeSort !== "function" || parse.safeSort.name !== "parse_safeSort") {
+                    return errout("\u001b[31mParse framework failure: parse.safeSort is not assigned to named function parse_safeSort\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.safeSort is assigned to named function parse_safeSort\u001b[39m");
+                
+                if (typeof parse.spacer !== "function" || parse.spacer.name !== "parse_spacer") {
+                    return errout("\u001b[31mParse framework failure: parse.spacer is not assigned to named function parse_spacer\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.spacer is assigned to named function parse_spacer\u001b[39m");
+                
+                if (typeof parse.splice !== "function" || parse.splice.name !== "parse_splice") {
+                    return errout("\u001b[31mParse framework failure: parse.splice is not assigned to named function parse_splice\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.splice is assigned to named function parse_splice\u001b[39m");
+
+                if (Array.isArray(parse.structure) === false || parse.structure.length !== 1 || Array.isArray(parse.structure[0]) === false || parse.structure[0][0] !== "global" || parse.structure[0][1] !== -1) {
+                    return errout("\u001b[31mParse framework failure: parse.structure is not assigned the default [[\"global\", -1]]\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.structure is assigned the default of [[\"global\", -1]]\u001b[39m");
+
+                if (parse.structure.pop.name !== "parse_structure_pop") {
+                    return errout("\u001b[31mParse framework failure: parse.structure does not have a custom 'pop' method.\u001b[39m ");
+                }
+                console.log(humantime(false) + "\u001b[32mparse.structure does have a custom 'pop' method.\u001b[39m");
                 
                 console.log("\u001b[32mFramework testing complete!\u001b[39m");
                 return next();
@@ -466,6 +563,7 @@ module.exports = (function taskrunner() {
                                     console.log("");
                                 };
                             options.source = val[1];
+                            options.wrap   = 90000;
                             result         = jslint(prettydiff(options), {"for": true});
                             if (result.ok === true) {
                                 console.log(
