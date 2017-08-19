@@ -622,7 +622,7 @@
                         clist  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
-                    if (data.lexer[parse.count - 1] !== "script") {
+                    if (data.lexer[parse.count - 1] !== "script" || options.lang === "java" || options.lang === "csharp") {
                         return;
                     }
                     if (options.lang === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
