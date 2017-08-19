@@ -201,11 +201,11 @@ module.exports = (function taskrunner() {
                 };
             options.mode    = "diff";
             options.source  = (typeof sampleSource === "string")
-                ? ""
-                : record(JSON.parse(sampleSource));
+                ? record(JSON.parse(sampleSource))
+                : record(sampleSource);
             options.diff    = (typeof sampleDiff === "string")
-                ? ""
-                : record(JSON.parse(sampleDiff));
+                ? record(JSON.parse(sampleDiff))
+                : record(sampleSource);
             options.diffcli = true;
             options.context = 2;
             options.lang    = "text";
@@ -328,7 +328,7 @@ module.exports = (function taskrunner() {
                                                 return next();
                                             }
                                         } else {
-                                            diffFiles(files.parsed[a][0], str, files.parsed[a][1]);
+                                            diffFiles(files.parsed[a][0], output, files.parsed[a][1]);
                                         }
                                     } else {
                                         console.log("");

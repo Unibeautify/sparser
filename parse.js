@@ -319,6 +319,8 @@ Parse Framework
                 parse.structure.push([structure, parse.count]);
             } else if (record.types === "end" || record.types === "template_end") {
                 parse.structure.pop();
+            } else if (record.types === "template_else") {
+                parse.structure[parse.structure.length - 1] = ["else", parse.count];
             }
         }
     };
