@@ -9,6 +9,8 @@
 * **content_preserve** - Allows parsing of an element but identifies the element as preserved so that its *presv* value is *true*.
 * **end** - An end tag of a tag pair.
 * **ignore** - These types are used to excuse a structure from deeper evaluation and treats the element as a singleton even if it is part of tag pair and contains descendant nodes.
+* **jsx_attribute_end** - The end of an curly brace delimited escape, stated as a tag attribute, that allows JavaScript inside the markup tag of a JSX markup element.
+* **jsx_attribute_end** - The start of an curly brace delimited escape, stated as a tag attribute, that allows JavaScript inside the markup tag of a JSX markup element.
 * **script** - A tag indicating it may contain contents that need to be passed to the *script* lexer.
 * **sgml** - SGML type notations, which can be deeply nested using square brace notation.
 * **singleton** - A self-closing tag.

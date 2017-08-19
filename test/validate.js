@@ -311,6 +311,11 @@ module.exports = (function taskrunner() {
                                     } else {
                                         options.correct = false;
                                     }
+                                    if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
+                                        options.objectSort = true;
+                                    } else {
+                                        options.objectSort = false;
+                                    }
                                     options.source = files.code[a][1];
                                     lang           = global.language.auto(files.code[a][1], "javascript");
                                     options.lexer  = lang[1];

@@ -2012,7 +2012,9 @@
                                         } else if (b[a + 1] === "/") {
                                             quote = "/";
                                         } else if (name === "script" && "([{!=,;.?:&<>".indexOf(b[a - 1]) > -1) {
-                                            quote = "reg";
+                                            if (options.lang !== "jsx" || b[a - 1] !== "<") {
+                                                quote = "reg";
+                                            }
                                         }
                                     } else if ((b[a] === "\"" || b[a] === "'" || b[a] === "`") && esctest() === false) {
                                         quote = b[a];

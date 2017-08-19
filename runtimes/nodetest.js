@@ -31,7 +31,7 @@
         }()),
         options   = {
             jsx       : false,
-            objectSort: true,
+            objectSort: false,
             source    : "",
             type      : "script"
         },
@@ -113,6 +113,11 @@
                     options.correct = true;
                 } else {
                     options.correct = false;
+                }
+                if (sourcetext !== source && (/_objectSort(\.|_)/).test(source) === true) {
+                    options.objectSort = true;
+                } else {
+                    options.objectSort = false;
                 }
                 output = parser(options);
                 if (global.parseerror === "") {

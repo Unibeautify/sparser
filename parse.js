@@ -81,6 +81,9 @@ Parse Framework
                         b         = data.begin.length,
                         structure = [-1];
                     do {
+                        if (data.types[a - 1] === "attribute" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
+                            structure.pop();
+                        }
                         if (data.begin[a] !== structure[structure.length - 1]) {
                             if (parse.options.objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
                                 data.begin[a] = structure[structure.length - 1];
