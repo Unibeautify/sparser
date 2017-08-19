@@ -164,7 +164,7 @@ module.exports = (function taskrunner() {
                         secondString + "]\u001b[39m ";
             }
         },
-        prettydiff = require("." + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
+        prettydiff = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
         options    = {},
         parse      = {},
         errout     = function taskrunner_errout(errtext) {
@@ -183,7 +183,7 @@ module.exports = (function taskrunner() {
                 plural = "",
                 report = [],
                 total  = 0,
-                diffview = require("." + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
+                diffview = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
                 record = function taskrunner_diffFiles_record(data) {
                     var len = data.token.length,
                         x   = 0,
@@ -542,7 +542,7 @@ module.exports = (function taskrunner() {
                         items: false
                     },
                     files           = [],
-                    jslint          = require("." + node.path.sep + "jslint" + node.path.sep + "jslint.js"),
+                    jslint          = require(__dirname + node.path.sep + "jslint" + node.path.sep + "jslint.js"),
                     lintrun         = function taskrunner_lint_lintrun() {
                         var lintit = function taskrunner_lint_lintrun_lintit(val, ind, arr) {
                             var result = {},
