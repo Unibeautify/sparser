@@ -119,6 +119,11 @@
                 } else {
                     options.objectSort = false;
                 }
+                if (sourcetext !== source && (/_tagSort(\.|_)/).test(source) === true) {
+                    options.tagSort = true;
+                } else {
+                    options.tagSort = false;
+                }
                 output = parser(options);
                 if (global.parseerror === "") {
                     console.log(JSON.stringify(output));

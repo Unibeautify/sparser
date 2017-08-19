@@ -81,7 +81,7 @@ Parse Framework
                         b         = data.begin.length,
                         structure = [-1];
                     do {
-                        if (data.types[a - 1] === "attribute" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
+                        if ((data.types[a - 1] === "attribute" || data.types[a - 1] === "jsx_attribute_end") && data.types[a] !== "attribute" && data.types[a] !== "jsx_attribute_start" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
                             structure.pop();
                         }
                         if (data.begin[a] !== structure[structure.length - 1]) {

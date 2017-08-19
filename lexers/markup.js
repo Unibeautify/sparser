@@ -475,6 +475,9 @@
 
                             if (ind < len) {
                                 do {
+                                    if (attstore[ind] === undefined) {
+                                        break;
+                                    }
                                     eq = attstore[ind].indexOf("=");
                                     dq = attstore[ind].indexOf("\"");
                                     sq = attstore[ind].indexOf("'");
