@@ -1114,7 +1114,11 @@
                                         }
                                     } else if ((simple === true || ltype === "sgml") && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
                                         //identify a space in a regular start or singleton tag
-                                        stest = true;
+                                        if (ltype === "sgml") {
+                                            lex.push(" ");
+                                        } else {
+                                            stest = true;
+                                        }
                                     } else if (simple === true && options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
                                         //jsx comment immediately following tag name
                                         stest               = true;
@@ -2025,7 +2029,6 @@
                                         quotes = quotes + 1;
                                     } else if (b[a] === "}" && jsxbrace === true) {
                                         if (quotes === 0) {
-                                            ext          = false;
                                             lexer.script(
                                                 lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
                                                 parse.structure[parse.structure.length - 1][1] + 1
@@ -2046,7 +2049,6 @@
                                     //cfscript requires use of the script lexer
                                     if (name === "cfscript" && end === "</cfscript") {
                                         a   = a - 1;
-                                        ext = false;
                                         if (lex.length < 1) {
                                             break;
                                         }
@@ -2065,7 +2067,6 @@
                                         }
                                         if (end === "</script") {
                                             a   = a - 1;
-                                            ext = false;
                                             if (lex.length < 1) {
                                                 break;
                                             }
@@ -2087,7 +2088,6 @@
                                         }
                                         if (end === "</style") {
                                             a   = a - 1;
-                                            ext = false;
                                             if (lex.length < 1) {
                                                 break;
                                             }
@@ -2218,7 +2218,7 @@
                         } else {
                             parse.linesSpace = 0;
                         }
-                    } else {
+                    } else if (a !== now || (a === now && ext === false)) {
 
                         //regular content at the end of the supplied source
                         if (options.content === true) {
@@ -2239,6 +2239,7 @@
                             parse.linesSpace   = 0;
                         }
                     }
+                    ext = false;
                 };
 
             do {

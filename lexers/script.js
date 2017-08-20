@@ -26,20 +26,20 @@
                 classy         = [],
                 tempstore      = {},
                 pstack         = [],
-                //depth and status of templateStrings
+                // depth and status of templateStrings
                 templateString = [],
-                //identify variable declarations
+                // identify variable declarations
                 vart           = {
                     count: [],
                     index: [],
                     len  : -1,
                     word : []
                 },
-                //operations for start types: (, [, {
+                // operations for start types: (, [, {
                 start          = function lexer_script_startInit() {
                     return;
                 },
-                //peek at whats up next
+                // peek at whats up next
                 nextchar       = function lexer_script_nextchar(len, current) {
                     var front = (current === true)
                             ? a
@@ -83,7 +83,7 @@
                     }
                     return "";
                 },
-                //cleans up improperly applied ASI
+                // cleans up improperly applied ASI
                 asifix         = function lexer_script_asifix() {
                     var len = parse.count;
                     do {
@@ -100,8 +100,8 @@
                         );
                     }
                 },
-                //determine the definition of containment by stack
-                recordPush      = function lexer_script_recordPush(structure) {
+                // determine the definition of containment by stack
+                recordPush     = function lexer_script_recordPush(structure) {
                     var record = {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "script",
@@ -113,7 +113,7 @@
                     };
                     parse.push(data, record, structure);
                 },
-                //remove "vart" object data
+                // remove "vart" object data
                 vartpop        = function lexer_script_vartpop() {
                     vart
                         .count
@@ -126,7 +126,7 @@
                         .pop();
                     vart.len = vart.len - 1;
                 },
-                //A lexer for keywords, reserved words, and variables
+                // A lexer for keywords, reserved words, and variables
                 word           = function lexer_script_word() {
                     var f        = wordTest,
                         g        = 1,
@@ -351,7 +351,7 @@
                                 } else if (data.token[parse.count - 2] === "x}" && pstack[0] !== "if" && data.stack[parse.count] === "else") {
                                     elsefix();
                                 } else if (data.token[parse.count - 2] === "}" && data.stack[parse.count - 2] === "if" && pstack[0] === "if" && data.token[pstack[1] - 1] !== "if" && data.token[data.begin[parse.count - 1]] === "x{") {
-                                    //fixes when "else" is following a block that isn't "if"
+                                    // fixes when "else" is following a block that isn't "if"
                                     elsefix();
                                 }
                             } else if (data.token[parse.count] === "x}" && data.stack[parse.count] === "if") {
@@ -373,7 +373,7 @@
                         }
                     }
                 },
-                //determines if a slash comprises a valid escape or if it is escaped itself
+                // determines if a slash comprises a valid escape or if it is escaped itself
                 slashes        = function lexer_script_slashes(index) {
                     var slashy = index;
                     do {
@@ -513,7 +513,7 @@
                     }
                     return output;
                 },
-                //inserts ending curly brace (where absent)
+                // inserts ending curly brace (where absent)
                 blockinsert    = function lexer_script_blockinsert() {
                     var next  = nextchar(5, false),
                         g     = parse.count,
@@ -541,7 +541,7 @@
                             parse.linesSpace = lines;
                             return;
                         }
-                        //to prevent the semicolon from inserting between the braces --> while (x) {};
+                        // to prevent the semicolon from inserting between the braces --> while (x) {};
                         tempstore    = parse.pop(data);
                         ltoke        = "x}";
                         ltype        = "end";
@@ -608,7 +608,7 @@
                         recordPush("");
                     }
                 },
-                //automatic semicolon insertion
+                // automatic semicolon insertion
                 asi            = function lexer_script_asi(isEnd) {
                     var aa     = 0,
                         next   = nextchar(1, false),
@@ -713,7 +713,7 @@
                         blockinsert();
                     }
                 },
-                //convert ++ and -- into "= x +"  and "= x -" in most cases
+                // convert ++ and -- into "= x +"  and "= x -" in most cases
                 plusplus = function lexer_script_plusplus() {
                     var store       = [],
                         pre         = true,
@@ -914,7 +914,7 @@
                         asi(false);
                     }
                 },
-                //fixes asi location if inserted after an inserted brace
+                // fixes asi location if inserted after an inserted brace
                 asibrace       = function lexer_script_asibrace() {
                     var aa = parse.count;
                     do {
@@ -940,7 +940,7 @@
                     });
                     recordPush("");
                 },
-                //a tokenizer for regular expressions
+                // a tokenizer for regular expressions
                 regex          = function lexer_script_regex() {
                     var ee     = a + 1,
                         f      = b,
@@ -1013,7 +1013,7 @@
                     output = build.join("");
                     return output;
                 },
-                //a unique tokenizer for operator characters
+                // a unique tokenizer for operator characters
                 operator       = function lexer_script_operator() {
                     var syntax = [
                             "=",
@@ -1195,7 +1195,7 @@
                     }
                     return output;
                 },
-                //ES6 template string support
+                // ES6 template string support
                 tempstring     = function lexer_script_tempstring() {
                     var output = [c[a]];
                     a = a + 1;
@@ -1215,7 +1215,7 @@
                     }
                     return output.join("");
                 },
-                //a tokenizer for numbers
+                // a tokenizer for numbers
                 numb           = function lexer_script_number() {
                     var ee    = 0,
                         f     = b,
@@ -1324,7 +1324,7 @@
                         ltype        = "markup";
                         options.lang = "jsx";
                     } else if (options.lang === "typescript" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
-                        //Java type generics
+                        // Java type generics
                         return (function lexer_script_markup_generic() {
                             var generics = [
                                     "<",
@@ -1449,7 +1449,7 @@
                     } while (a < b);
                     return applyMarkup();
                 },
-                //operations for end types: ), ], }
+                // operations for end types: ), ], }
                 end            = function lexer_script_end(x) {
                     var insert   = false,
                         next     = nextchar(1, false),
@@ -1605,7 +1605,7 @@
                         pword[1] = parse.count;
                     }
                 },
-                //determines tag names for {% %} based template tags and returns a type
+                // determines tag names for {% %} based template tags and returns a type
                 tname          = function lexer_script_tname(x) {
                     var sn       = 2,
                         en       = 0,
@@ -1759,10 +1759,10 @@
                             stack = "function";
                         }
                     } else if (ltoke === "{" && (wordx === ";" || wordx === "x;")) {
-                        //ES6 block
+                        // ES6 block
                         stack = "block";
                     } else if (ltoke === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
-                        //ES6 block
+                        // ES6 block
                         stack = "block";
                     } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
                         stack = "object";
@@ -1771,10 +1771,10 @@
                         // (...) {
                         stack = pword[0];
                     } else if (data.stack[aa] === "notation") {
-                        //if following a TSX array type declaration
+                        // if following a TSX array type declaration
                         stack = "function";
                     } else if ((data.types[aa] === "number" || data.types[aa] === "string" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
-                        //if preceed by a word and either string or word public class {
+                        // if preceed by a word and either string or word public class {
                         stack = "function";
                     } else if (parse.structure.length > 0 && data.token[aa] !== ":" && parse.structure[parse.structure.length - 1][0] === "object" && (
                         data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
@@ -1783,15 +1783,15 @@
                         // brace or comma var a={({b:{cat:"meow"}})};
                         stack = "function";
                     } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
-                        //checking for TSX function using an angle brace name
+                        // checking for TSX function using an angle brace name
                         stack = "function";
                     } else if (wordx === "=>") {
-                        //checking for fat arrow assignment
+                        // checking for fat arrow assignment
                         stack = "function";
                     } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
                         stack = "function";
                     } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
-                        //ES6 block
+                        // ES6 block
                         stack = "block";
                     } else {
                         stack = "object";
@@ -1813,6 +1813,8 @@
                         stack = "method";
                     } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
                         stack = "expression";
+                    } else if (data.types[aa] === "word") {
+                        stack = "method";
                     } else {
                         stack = "paren";
                     }
@@ -1835,45 +1837,45 @@
                         lengthb = parse.count;
                     }
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "p" && c[a + 3] === "h" && c[a + 4] === "p") {
-                    //php
+                    // php
                     ltoke = generic("<?php", "?>");
                     ltype = "template";
                     recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "%") {
-                    //asp
+                    // asp
                     ltoke = generic("<%", "%>");
                     ltype = "template";
                     recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "%") {
-                    //twig
+                    // twig
                     ltoke = generic("{%", "%}");
                     ltype = tname(ltoke);
                     recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "{" && c[a + 2] === "{") {
-                    //mustache
+                    // mustache
                     ltoke = generic("{{{", "}}}");
                     ltype = "template";
                     recordPush("");
                 } else if (c[a] === "{" && c[a + 1] === "{") {
-                    //handlebars
+                    // handlebars
                     ltoke = generic("{{", "}}");
                     ltype = tname(ltoke);
                     recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-" && c[a + 4] === "#") {
-                    //ssi
+                    // ssi
                     ltoke = generic("<!--#", "-->");
                     ltype = "template";
                     recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-") {
-                    //markup comment
+                    // markup comment
                     ltoke = generic("<!--", "-->");
                     ltype = "comment";
                     recordPush("");
                 } else if (c[a] === "<") {
-                    //markup
+                    // markup
                     markup();
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
-                    //comment block
+                    // comment block
                     ltoke = generic("/*", "*\/");
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
@@ -1911,14 +1913,14 @@
                         }
                     }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
-                    //shebang
+                    // shebang
                     ltoke      = generic("#!" + c[a + 2], "\n");
                     ltoke      = ltoke.slice(0, ltoke.length - 1);
                     ltype      = "string";
                     parse.linesSpace = 2;
                     recordPush("");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
-                    //comment line
+                    // comment line
                     asi(false);
                     ltoke = generic("//", "\n");
                     ltype = "comment";
@@ -1948,19 +1950,19 @@
                         a = parse.spacer({array: c, end: b, index: a});
                     }
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
-                    //comment line
+                    // comment line
                     asi(false);
                     ltoke = generic("#region", "\n");
                     ltype = "comment";
                     recordPush("");
                 } else if (c[a] === "#" && c[a + 1] === "e" && c[a + 2] === "n" && c[a + 3] === "d" && c[a + 4] === "r" && c[a + 5] === "e" && c[a + 6] === "g" && c[a + 7] === "i" && c[a + 8] === "o" && c[a + 9] === "n") {
-                    //comment line
+                    // comment line
                     asi(false);
                     ltoke = generic("#endregion", "\n");
                     ltype = "comment";
                     recordPush("");
                 } else if (c[a] === "`" || (c[a] === "}" && templateString[templateString.length - 1] === true)) {
-                    //template string
+                    // template string
                     if (wordTest > -1) {
                         word();
                     }
@@ -1973,12 +1975,12 @@
                     ltype = "string";
                     recordPush("");
                 } else if (c[a] === "\"" || c[a] === "'") {
-                    //string
+                    // string
                     ltoke = generic(c[a], c[a]);
                     ltype = "string";
                     recordPush("");
                 } else if (c[a] === "-" && (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") && (ltype === "number" || ltype === "word") && ltoke !== "return" && (ltoke === ")" || ltoke === "]" || ltype === "word" || ltype === "number")) {
-                    //subtraction
+                    // subtraction
                     if (wordTest > -1) {
                         word();
                     }
@@ -1986,7 +1988,7 @@
                     ltype = "operator";
                     recordPush("");
                 } else if (wordTest === -1 && (c[a] !== "0" || (c[a] === "0" && c[a + 1] !== "b")) && ((/\d/).test(c[a]) || (a !== b - 2 && c[a] === "-" && c[a + 1] === "." && (/\d/).test(c[a + 2])) || (a !== b - 1 && (c[a] === "-" || c[a] === ".") && (/\d/).test(c[a + 1])))) {
-                    //number
+                    // number
                     if (wordTest > -1) {
                         word();
                     }
@@ -2011,7 +2013,7 @@
                     ltype = "separator";
                     recordPush("");
                 } else if (c[a] === ",") {
-                    //comma
+                    // comma
                     if (wordTest > -1) {
                         word();
                     }
@@ -2036,7 +2038,7 @@
                         recordPush("");
                     }
                 } else if (c[a] === ".") {
-                    //period
+                    // period
                     if (wordTest > -1) {
                         word();
                     }
@@ -2054,7 +2056,7 @@
                     }
                     recordPush("");
                 } else if (c[a] === ";") {
-                    //semicolon
+                    // semicolon
                     if (wordTest > -1) {
                         word();
                     }
@@ -2094,7 +2096,7 @@
                 } else if (c[a] === "*" && data.stack[parse.count] === "object" && wordTest < 0 && (/\s/).test(c[a + 1]) === false && c[a + 1] !== "=" && (/\d/).test(c[a + 1]) === false) {
                     wordTest = a;
                 } else if (c[a] === "=" || c[a] === "&" || c[a] === "<" || c[a] === ">" || c[a] === "+" || c[a] === "-" || c[a] === "*" || c[a] === "/" || c[a] === "!" || c[a] === "?" || c[a] === "|" || c[a] === "^" || c[a] === ":" || c[a] === "%" || c[a] === "~") {
-                    //operator
+                    // operator
                     ltoke = operator();
                     if (ltoke === "regex") {
                         ltoke = data.token[parse.count];

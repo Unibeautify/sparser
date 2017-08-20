@@ -318,9 +318,9 @@ Parse Framework
         if (data === parse.data) {
             parse.count      = parse.count + 1;
             parse.linesSpace = 0;
-            if (record.types === "start" || record.types === "template_start") {
+            if (record.types.indexOf("start") > -1) {
                 parse.structure.push([structure, parse.count]);
-            } else if (record.types === "end" || record.types === "template_end") {
+            } else if (record.types.indexOf("end") > -1) {
                 parse.structure.pop();
             } else if (record.types === "template_else") {
                 parse.structure[parse.structure.length - 1] = ["else", parse.count];
