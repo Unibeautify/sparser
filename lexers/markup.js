@@ -1,4 +1,4 @@
-/*global global, lexer, location, module, parse, window*/
+/*global global*/
 (function markup_init() {
     "use strict";
     var lexer  = global.lexer,
@@ -29,14 +29,11 @@
                         .replace(reg, "%")
                         .replace(/\s+/, " ")
                         .indexOf(" ");
+                    name  = el.replace(reg, " ");
                     name  = (space < 0)
-                        ? el
-                            .replace(reg, " ")
-                            .slice(1, el.length - 1)
-                        : el
-                            .replace(reg, " ")
-                            .slice(1, space);
-                    if (options.lang === "html") {
+                        ? name.slice(1, el.length - 1)
+                        : name.slice(1, space);
+                    if (options.lang === "html" || options.lang === "coldfusion") {
                         name = name.toLowerCase();
                     }
                     name = name.replace(/(\}\})$/, "");
@@ -147,7 +144,7 @@
                         // * required - means must have a separate matching end tag
                         // * optional - means the tag could have a separate end tag, but is probably a
                         // singleton
-                        // * prohibited - means there is not corresponding end tag
+                        // * prohibited - means there is no corresponding end tag
                         cftags          = {
                             "cfabort"               : "prohibited",
                             "cfajaximport"          : "optional",
@@ -397,6 +394,8 @@
                                 // if an attribute follows an attribute ending with `=` then adjoin it to the
                                 // last attribute
                                 attstore[attstore.length - 1] = attstore[attstore.length - 1] + atty;
+                            } else if (options.lang === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1].charAt(attstore[attstore.length - 1].length - 1)) > -1)) {
+                                attstore[attstore.length - 1] = attstore[attstore.length - 1] + " " + atty;
                             } else if (atty !== "" && atty !== " ") {
                                 attstore.push(atty);
                             }
@@ -476,6 +475,9 @@
 
                             if (ind < len) {
                                 do {
+                                    if (attstore[ind] === undefined) {
+                                        break;
+                                    }
                                     eq = attstore[ind].indexOf("=");
                                     dq = attstore[ind].indexOf("\"");
                                     sq = attstore[ind].indexOf("'");
@@ -483,17 +485,19 @@
                                     if (eq > -1 && store.length > 0) {
                                         // put certain attributes together for coldfusion
                                         record.token = store.join(" ");
-                                        parse.push(data, record);
+                                        parse.push(data, record, "");
                                         record.token = attstore[ind];
-                                        parse.push(data, record);
+                                        parse.push(data, record, "");
                                         store        = [];
+                                    } else if (ltype === "sgml") {
+                                        store.push(attstore[ind]);
                                     } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
                                         // put certain attributes together for coldfusion
                                         store.push(attstore[ind]);
                                     } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
                                         // tags stored as attributes of other tags
                                         record.token = attstore[ind];
-                                        parse.push(data, record);
+                                        parse.push(data, record, "");
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
@@ -502,7 +506,7 @@
                                             name = name.toLowerCase();
                                         }
                                         record.token = name + "=\"" + attstore[ind] + "\"";
-                                        parse.push(data, record);
+                                        parse.push(data, record, "");
                                     } else {
                                         // separates out the attribute name from its value
                                         slice = attstore[ind].slice(eq + 1);
@@ -523,15 +527,15 @@
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
                                             parse.push(data, record);
+                                            parse.structure.push(["jsx_attribute", parse.count]);
                                             name         = slice
                                                 .replace(/^(\s*\{)/, "")
                                                 .replace(/(\}\s*)$/, jsxAttribute);
-                                            parse.structure.push(["jsx_attribute", parse.count]);
                                             lexer.script(name);
                                             record.begin = record.begin + 1;
                                             record.token = "}";
                                             record.types = "jsx_attribute_end";
-                                            parse.push(data, record);
+                                            parse.push(data, record, "");
                                             record.types = "attribute";
                                             parse.structure.pop();
                                             if (ind === len - 1 && (ltype === "singleton" || ltype === "template")) {
@@ -539,7 +543,7 @@
                                             }
                                         } else {
                                             record.token = name + "=" + slice;
-                                            parse.push(data, record);
+                                            parse.push(data, record, "");
                                         }
                                     }
                                     ind = ind + 1;
@@ -547,7 +551,7 @@
                             }
                             if (store.length > 0) {
                                 record.token = store.join(" ");
-                                parse.push(data, record);
+                                parse.push(data, record, "");
                             }
                         };
                     ext = false;
@@ -642,19 +646,18 @@
                                     end   = "%>";
                                     ltype = "template";
                                 }
-                            } else if (b[a + 4] !== undefined && b[a + 1].toLowerCase() === "p" && b[a + 2].toLowerCase() === "r" && b[a + 3].toLowerCase() === "e" && (b[a + 4] === ">" || (/\s/).test(b[a + 4]) === true)) {
+                            } else if ((b[a + 1] === "p" || b[a + 1] === "P") && (b[a + 2] === "r" || b[a + 2] === "R") && (b[a + 3] === "e" || b[a + 3] === "E") && (b[a + 4] === ">" || (/\s/).test(b[a + 4]) === true)) {
                                 end      = "</pre>";
                                 preserve = true;
                                 ltype    = "ignore";
-                            } else if (b[a + 4] !== undefined && b[a + 1].toLowerCase() === "x" && b[a + 2].toLowerCase() === "s" && b[a + 3].toLowerCase() === "l" && b[a + 4].toLowerCase() === ":" && b[a + 5].toLowerCase() === "t" && b[a + 6].toLowerCase() === "e" && b[a + 7].toLowerCase() === "x" && b[a + 8].toLowerCase() === "t" && (b[a + 9] === ">" || (/\s/).test(b[a + 9]) === true)) {
+                            } else if ((b[a + 1] === "x" || b[a + 1] === "X") && (b[a + 2] === "m" || b[a + 2] === "M") && (b[a + 3] === "l" || b[a + 3] === "L") && b[a + 4] === ":" && (b[a + 5] === "t" || b[a + 5] === "T") && (b[a + 6] === "e" || b[a + 6] === "E") && (b[a + 7] === "x" || b[a + 7] === "X") && (b[a + 8] === "t" || b[a + 8] === "T") && (b[a + 9] === ">" || (/\s/).test(b[a + 9]) === true)) {
                                 end      = "</xsl:text>";
                                 preserve = true;
                                 ltype    = "ignore";
-                            } else if (b[a + 8] !== undefined && b[a + 1].toLowerCase() === "c" && b[a + 2].toLowerCase() === "f" && b[a + 3].toLowerCase() === "q" && b[a + 4].toLowerCase() === "u" && b[a + 5].toLowerCase() === "e" && b[a + 6].toLowerCase() === "r" && b[a + 7].toLowerCase() === "y" && (b[a + 8] === ">" || (/\s/).test(b[a + 8]))) {
-                                end          = ">";
-                                linepreserve = linepreserve + 1;
-                                preserve     = true;
-                                ltype        = "content_preserve";
+                            } else if ((b[a + 1] === "c" || b[a + 1] === "C") && (b[a + 2] === "f" || b[a + 2] === "F") && (b[a + 3] === "q" || b[a + 3] === "Q") && (b[a + 4] === "u" || b[a + 4] === "U") && (b[a + 5] === "e" || b[a + 5] === "E") && (b[a + 6] === "r" || b[a + 6] === "R") && (b[a + 7] === "y" || b[a + 7] === "Y") && (b[a + 8] === ">" || (/\s/).test(b[a + 8]) === true)) {
+                                end = "</" + b.slice(a + 1, a + 8).join("") + ">";
+                                preserve = true;
+                                ltype = "content_preserve";
                             } else if (b[a + 1] === "<") {
                                 if (b[a + 2] === "<") {
                                     end = ">>>";
@@ -685,8 +688,8 @@
                                 earlyexit    = true;
                                 record.token = "{";
                                 record.types = "script";
-                                parse.push(data, record);
-                                parse.structure.push(["block", parse.count]);
+                                parse.push(data, record, "");
+                                parse.structure.push(["script", parse.count]);
                                 return;
                             }
                             if (options.lang === "dustjs") {
@@ -696,7 +699,7 @@
                                     record.presv = true;
                                     record.token = "{:else}";
                                     record.types = "template_else";
-                                    parse.push(data, record);
+                                    parse.push(data, record, "");
                                     return;
                                 }
                                 if (b[a + 1] === "!") {
@@ -757,7 +760,7 @@
                                 record.presv = true;
                                 record.token = "{@}else{@}";
                                 record.types = "template_else";
-                                parse.push(data, record);
+                                parse.push(data, record, "");
                                 return;
                             }
                         } else if (b[a] === "[" && b[a + 1] === "%") {
@@ -864,8 +867,8 @@
                                         data.types[parse.count] = "template_start";
                                         break;
                                     }
-                                    if (b[a] === "<" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        parse.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
+                                    if (b[a] === "<" && options.lang !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
+                                        global.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -1057,8 +1060,10 @@
                                                 } else if (igcount === 0 && quote !== ">" && (quote.length < 2 || (quote.charAt(0) !== "\"" && quote.charAt(0) !== "'"))) {
                                                     //terminate attribute at the conclusion of a quote pair
                                                     f     = 0;
-                                                    tname = lex[1] + lex[2];
-                                                    tname = tname.toLowerCase();
+                                                    if (lex.length > 1) {
+                                                        tname = lex[1] + lex[2];
+                                                        tname = tname.toLowerCase();
+                                                    }
                                                     // in coldfusion quotes are escaped in a string with double the characters:
                                                     // "cat"" and dog"
                                                     if (tname === "cf" && b[a] === b[a + 1] && (b[a] === "\"" || b[a] === "'")) {
@@ -1109,9 +1114,13 @@
                                         if (quote === end) {
                                             quote = "";
                                         }
-                                    } else if (simple === true && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
+                                    } else if ((simple === true || ltype === "sgml") && end !== "\n" && (/\s/).test(b[a]) === true && b[a - 1] !== "<") {
                                         //identify a space in a regular start or singleton tag
-                                        stest = true;
+                                        if (ltype === "sgml") {
+                                            lex.push(" ");
+                                        } else {
+                                            stest = true;
+                                        }
                                     } else if (simple === true && options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
                                         //jsx comment immediately following tag name
                                         stest               = true;
@@ -1229,13 +1238,13 @@
                             .replace(/(\s*\{%\s*endcomment\s*%\})$/, "");
                         record.token = "{% comment %}";
                         record.types = "template_start";
-                        parse.push(data, record);
+                        parse.push(data, record, "");
                         record.token = element;
                         record.types = "comment";
-                        parse.push(data, record);
+                        parse.push(data, record, "");
                         record.token = "{% endcomment %}";
                         record.types = "template_end";
-                        parse.push(data, record);
+                        parse.push(data, record, "");
                         return;
                     }
 
@@ -1287,6 +1296,7 @@
                                 source     : "singleton",
                                 wbr        : "singleton"
                             },
+                            struc        = [],
                             fixsingleton = function lexer_markup_tag_cheat_fixsingleton() {
                                 var aa    = parse.count,
                                     bb    = 0,
@@ -1317,9 +1327,6 @@
                                 }
                                 return false;
                             };
-                        if (tname === "/cfquery") {
-                            linepreserve = linepreserve - 1;
-                        }
 
                         //determine if the current tag is an HTML singleton and exit
                         if (data.types[parse.count] === "end" && tname.slice(0, 3) !== "/cf") {
@@ -1384,12 +1391,16 @@
                             if (tname === "cfelse" || tname === "cfelseif") {
                                 record.token = lex.join("");
                                 record.types = "template_else";
-                                parse.push(data, record);
+                                parse.push(data, record, "");
                                 singleton    = true;
                                 return false;
                             }
                             if (tname === "cftransaction" && cftransaction === true) {
-                                cfval = "prohibited";
+                                if (element.charAt(1) === "/") {
+                                    record.types = "template_end";
+                                } else {
+                                    cfval = "prohibited";
+                                }
                             } else {
                                 cfval = cftags[tname];
                             }
@@ -1406,7 +1417,47 @@
                                     .join("")
                                     .replace(/\s+/, " ");
                                 record.types = "template";
-                                parse.push(data, record);
+                                if (tname === "cfmodule" && element.charAt(1) === "/") {
+                                    d  = parse.count;
+                                    ee = 1;
+                                    do {
+                                        if (data.token[d].toLowerCase() === "<cfmodule>") {
+                                            ee = ee - 1;
+                                            if (ee < 1) {
+                                                break;
+                                            }
+                                        } else if (data.token[d].toLowerCase() === "</cfmodule>") {
+                                            ee = ee + 1;
+                                        }
+                                        d = d - 1;
+                                    } while (d > -1);
+                                    data.types[d] = "template_start";
+                                    ee = d + 1;
+                                    struc = [["cfmodule", d]];
+                                    d  = parse.count + 1;
+                                    do {
+                                        if (data.types[ee] === "end" || data.types[ee] === "template_end") {
+                                            data.begin[ee] = struc[struc.length - 1][1];
+                                            data.stack[ee] = struc[struc.length - 1][0];
+                                            if (struc.length > 1) {
+                                                struc.pop();
+                                            }
+                                        } else if (data.types[ee] === "start" || data.types[ee] === "template_start" || (data.types[ee] === "cdata" && data.token[data.begin[ee + 1]].toLowerCase().indexOf("<script") === 0)) {
+                                            data.begin[ee] = struc[struc.length - 1][1];
+                                            data.stack[ee] = struc[struc.length - 1][0];
+                                            struc.push([tagName(data.token[ee]), ee]);
+                                        } else {
+                                            data.begin[ee] = struc[struc.length - 1][1];
+                                            data.stack[ee] = struc[struc.length - 1][0];
+                                        }
+                                        ee = ee + 1;
+                                    } while (ee < d);
+                                    parse.structure.push(struc[0]);
+                                    record.begin = struc[0][1];
+                                    record.stack = "cfmodule";
+                                    record.types = "template_end";
+                                }
+                                parse.push(data, record, "");
                                 singleton    = true;
                                 return false;
                             }
@@ -1414,16 +1465,12 @@
                                 if (tname === "cftransaction" && cftransaction === false) {
                                     cftransaction = true;
                                 }
-                                record.begin = (parse.structure[parse.structure.length - 1][1] === -1)
-                                    ? parse.count
-                                    : parse.structure[parse.structure.length - 1][1];
                                 record.token = lex.join("");
                                 record.types = (ltype === "end")
                                     ? "template_end"
                                     : "template_start";
-                                parse.push(data, record);
+                                parse.push(data, record, tname);
                                 singleton    = true;
-                                parse.structure.push([tname, parse.count]);
                             }
                             return false;
                         }
@@ -1451,13 +1498,14 @@
                                                 record.presv                 = false;
                                                 record.token                 = "</li>";
                                                 record.types                 = "end";
-                                                parse.push(data, record);
+                                                parse.push(data, record, "");
+                                                record.begin                 = parse.structure[parse.structure.length - 1][1];
                                                 record.lines                 = parse.linesSpace;
                                                 record.presv                 = preserve;
+                                                record.stack                 = parse.structure[parse.structure.length - 1][0];
                                                 record.token                 = element;
                                                 record.types                 = ltype;
                                                 data.lines[parse.count - 1] = 0;
-                                                parse.structure.pop();
                                                 break;
                                             }
                                             if (ee < 0) {
@@ -1479,20 +1527,21 @@
                                     record.presv                 = false;
                                     record.token                 = "</li>";
                                     record.types                 = "end";
-                                    parse.push(data, record);
+                                    parse.push(data, record, "");
+                                    record.begin                 = parse.structure[parse.structure.length - 1][1];
                                     record.lines                 = parse.linesSpace;
                                     record.presv                 = preserve;
+                                    record.stack                 = parse.structure[parse.structure.length - 1][0];
                                     record.token                 = element;
-                                    record.types                 = ltype;
+                                    record.types                 = "end";
                                     data.lines[parse.count - 1] = 0;
-                                    parse.structure.pop();
                                     litag = litag - 1;
                                 }
                                 list = list - 1;
                             }
 
                             //generalized corrections for the handling of singleton tags
-                            if (data.types[parse.count] === "end" && htmlsings[tname.slice(1)] === "singleton" && tname !== "/cftransaction") {
+                            if (data.types[parse.count] === "end" && htmlsings[tname.slice(1)] === "singleton" && element.toLowerCase("").indexOf("/cftransaction") !== 1) {
                                 return fixsingleton();
                             }
 
@@ -1537,7 +1586,8 @@
                     if ((tname === "script" || tname === "style" || tname === "cfscript") && element.slice(element.length - 2) !== "/>") {
 
                         //get the attribute value for "type"
-                        e = attstore.length - 1;
+                        e     = attstore.length - 1;
+                        quote = "";
                         if (e > -1) {
                             do {
                                 attribute = arname(attstore[e]);
@@ -1676,12 +1726,15 @@
                                 } while (a < c);
                             }
                         }
-                        element = lex.join("");
+                        element = lex.join("").replace(">", " " + attstore.join(" ") + ">");
+                        record.token = element;
+                        record.types = "content-ignore";
+                        attstore = [];
                     }
 
                     // some template tags can be evaluated as a block start/end based on syntax
                     // alone
-                    if (parse.count > -1 && data.types[parse.count].indexOf("template") > -1) {
+                    if (record.types.indexOf("template") > -1) {
                         if (element.slice(0, 2) === "{%") {
                             lex = [
                                 "autoescape",
@@ -1704,17 +1757,17 @@
                                 "verbatim"
                             ];
                             if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif") {
-                                data.types[e] = "template_else";
+                                record.types = "template_else";
                             } else {
                                 f = lex.length - 1;
                                 if (f > -1) {
                                     do {
                                         if (tname === lex[f]) {
-                                            data.types[e] = "template_start";
+                                            record.types = "template_start";
                                             break;
                                         }
                                         if (tname === "end" + lex[f]) {
-                                            data.types[e] = "template_end";
+                                            record.types = "template_end";
                                             break;
                                         }
                                         f = f - 1;
@@ -1722,21 +1775,25 @@
                                 }
                             }
                         } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
-                            if ((/^(\{\{\s*end\s*\}\})$/).test(element) === true) {
-                                data.types[e] = "template_end";
+                            if ((/^(\{\{\s*-?\s*end\s*-?\s*\}\})$/).test(element) === true) {
+                                record.types = "template_end";
                             } else if (tname === "block" || tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
                                 if (tname !== "block" || (/\{%\s*\w/).test(source) === false) {
-                                    data.types[e] = "template_start";
+                                    record.types = "template_start";
                                 }
                             }
-                        } else if (data.types[e] === "template") {
+                        } else if (record.types === "template") {
                             if (element.indexOf("else") > 2) {
-                                data.types[e] = "template_else";
+                                record.types = "template_else";
                             } else if ((/^(<%\s*\})/).test(element) === true || (/^(\[%\s*\})/).test(element) === true || (/^(\{@\s*\})/).test(element) === true) {
-                                data.types[e] = "template_end";
+                                record.types = "template_end";
                             } else if ((/(\{\s*%>)$/).test(element) === true || (/(\{\s*%\])$/).test(element) === true || (/(\{\s*@\})$/).test(element) === true) {
-                                data.types[e] = "template_start";
+                                record.types = "template_start";
                             }
+                        }
+                        if (record.types === "template_start" && (tname === "" || tname === "@" || tname === "#" || tname === "%")) {
+                            tname = tname + element.slice(1).replace(tname, "").replace(/^(\s+)/, "");
+                            tname = tname.slice(0, tname.indexOf("(")).replace(/\s+/, "");
                         }
                     }
 
@@ -1755,23 +1812,15 @@
                             .replace(/^(\s*<\!\[cdata\[)/i, "")
                             .replace(/(\]\]>\s*)$/, "");
                         record.token = "<![CDATA[";
-                        parse.push(data, record);
+                        parse.push(data, record, "");
                         parse.structure.push(["cdata", parse.count]);
                         lexer.script(element);
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.token = "]]>";
-                        parse.push(data, record);
+                        parse.push(data, record, "");
                         parse.structure.pop();
                     } else {
-                        parse.push(data, record);
-                    }
-
-                    // this is necessary to describe the structures that populate the begin and
-                    // stack data
-                    if (data.types[parse.count] === "start" || data.types[parse.count] === "template_start" || data.types[parse.count] === "content_preserve") {
-                        parse.structure.push([tname, parse.count]);
-                    } else if ((data.types[parse.count] === "end" || data.types[parse.count] === "template_end") && parse.structure.length > 1) {
-                        parse.structure.pop();
+                        parse.push(data, record, tname);
                     }
 
                     attributeRecord();
@@ -1872,16 +1921,16 @@
                             bb       = children.length - 1;
                             if (bb > -1) {
                                 do {
-                                    parse.push(store, storeRecord(children[bb][0]));
+                                    parse.push(store, storeRecord(children[bb][0]), "");
                                     if (children[bb][0] !== children[bb][1]) {
                                         d = children[bb][0] + 1;
                                         if (d < children[bb][1]) {
                                             do {
-                                                parse.push(store, storeRecord(d));
+                                                parse.push(store, storeRecord(d), "");
                                                 d = d + 1;
                                             } while (d < children[bb][1]);
                                         }
-                                        parse.push(store, storeRecord(children[bb][1]));
+                                        parse.push(store, storeRecord(children[bb][1]), "");
                                     }
                                     bb = bb - 1;
                                 } while (bb > -1);
@@ -1899,7 +1948,7 @@
                                 });
                             }());
                             parse.concat(data, store);
-                            parse.push(data, endData);
+                            parse.push(data, endData, "");
                         }());
                     }
 
@@ -1924,7 +1973,6 @@
                         square    = (
                             data.types[parse.count] === "template_start" && data.token[parse.count].indexOf("<!") === 0 && data.token[parse.count].indexOf("<![") < 0 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === "["
                         ),
-                        external  = {},
                         record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
@@ -1973,24 +2021,26 @@
                                         } else if (b[a + 1] === "/") {
                                             quote = "/";
                                         } else if (name === "script" && "([{!=,;.?:&<>".indexOf(b[a - 1]) > -1) {
-                                            quote = "reg";
+                                            if (options.lang !== "jsx" || b[a - 1] !== "<") {
+                                                quote = "reg";
+                                            }
                                         }
                                     } else if ((b[a] === "\"" || b[a] === "'" || b[a] === "`") && esctest() === false) {
                                         quote = b[a];
-                                    } else if (b[a] === "}" && jsxbrace === true && quotes === 0) {
-                                        ext          = false;
-                                        lexer.script(
-                                            lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
-                                            parse.structure[parse.structure.length - 1][1] + 1
-                                        );
-                                        record.token = "}";
-                                        record.types = "script";
-                                        parse.push(data, record);
-                                        parse.structure.pop();
-                                        break;
                                     } else if (b[a] === "{" && jsxbrace === true) {
                                         quotes = quotes + 1;
                                     } else if (b[a] === "}" && jsxbrace === true) {
+                                        if (quotes === 0) {
+                                            lexer.script(
+                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
+                                                parse.structure[parse.structure.length - 1][1] + 1
+                                            );
+                                            record.token = "}";
+                                            record.types = "script";
+                                            parse.push(data, record, "");
+                                            parse.structure.pop();
+                                            break;
+                                        }
                                         quotes = quotes - 1;
                                     }
                                     end = b
@@ -2001,7 +2051,6 @@
                                     //cfscript requires use of the script lexer
                                     if (name === "cfscript" && end === "</cfscript") {
                                         a   = a - 1;
-                                        ext = false;
                                         if (lex.length < 1) {
                                             break;
                                         }
@@ -2020,7 +2069,6 @@
                                         }
                                         if (end === "</script") {
                                             a   = a - 1;
-                                            ext = false;
                                             if (lex.length < 1) {
                                                 break;
                                             }
@@ -2042,7 +2090,6 @@
                                         }
                                         if (end === "</style") {
                                             a   = a - 1;
-                                            ext = false;
                                             if (lex.length < 1) {
                                                 break;
                                             }
@@ -2101,7 +2148,7 @@
                                         .replace(/\s+/g, " ");
                                 }
                                 record.token = ltoke;
-                                parse.push(data, record);
+                                parse.push(data, record, "");
                                 break;
                             }
 
@@ -2123,11 +2170,11 @@
                                             .replace(/\s+/g, " ");
                                     }
                                     record.token = ltoke;
-                                    parse.push(data, record);
+                                    parse.push(data, record, "");
                                     record.token = "{:else}";
                                     record.types = "template_else";
                                     record.presv = false;
-                                    parse.push(data, record);
+                                    parse.push(data, record, "");
                                     break;
                                 }
 
@@ -2149,7 +2196,7 @@
                                         .replace(/\s+/g, " ");
                                 }
                                 record.token = ltoke;
-                                parse.push(data, record);
+                                parse.push(data, record, "");
                                 break;
                             }
                             lex.push(b[a]);
@@ -2173,7 +2220,7 @@
                         } else {
                             parse.linesSpace = 0;
                         }
-                    } else {
+                    } else if (a !== now || (a === now && ext === false)) {
 
                         //regular content at the end of the supplied source
                         if (options.content === true) {
@@ -2190,10 +2237,11 @@
                         //this condition prevents adding content that was just added in the loop above
                         if (record.token !== ltoke) {
                             record.token       = ltoke;
-                            parse.push(data, record);
+                            parse.push(data, record, "");
                             parse.linesSpace   = 0;
                         }
                     }
+                    ext = false;
                 };
 
             do {

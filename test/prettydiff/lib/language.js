@@ -1,52 +1,53 @@
 /*global ace, define, global, module*/
-
 /*
-Taken from Pretty Diff.  This file is not a formal release product. It exists to make testing code in node and browser a bit faster.
+ Please see the license.txt file associated with the Pretty Diff
+ application for license information.
 */
 (function language_init() {
     "use strict";
     var language = {};
+    global.prettydiff.language = language;
     language.setlangmode = function language_setlangmode(input) {
         var langmap = {
-            c_cpp     : "script",
+            c_cpp     : "javascript",
             coldfusion: "markup",
-            csharp    : "script",
-            css       : "style",
+            csharp    : "javascript",
+            css       : "css",
             csv       : "csv",
-            dustjs    : "markup",
-            ejs       : "markup",
-            go        : "markup",
-            handlebars: "markup",
-            html      : "markup",
-            html_ruby : "markup",
-            java      : "script",
-            javascript: "script",
-            json      : "script",
+            dustjs    : "html",
+            ejs       : "html",
+            go        : "html",
+            handlebars: "html",
+            html      : "html",
+            html_ruby : "html",
+            java      : "javascript",
+            javascript: "javascript",
+            json      : "json",
             jsp       : "markup",
-            jsx       : "script",
-            less      : "style",
+            jsx       : "javascript",
+            less      : "css",
             markup    : "markup",
-            php       : "markup",
-            qml       : "markup",
-            scss      : "style",
-            swig      : "markup",
+            php       : "html",
+            qml       : "qml",
+            scss      : "css",
+            swig      : "html",
             text      : "text",
-            titanium  : "script",
-            tss       : "script",
-            twig      : "markup",
-            typescript: "script",
-            velocity  : "markup",
+            titanium  : "tss",
+            tss       : "tss",
+            twig      : "html",
+            typescript: "typescript",
+            velocity  : "velocity",
             xhtml     : "markup",
             xml       : "markup"
         };
         if (typeof input !== "string") {
-            return "script";
+            return "javascript";
         }
         if (input.indexOf("html") > -1) {
-            return "markup";
+            return "html";
         }
         if (langmap[input] === undefined) {
-            return "script";
+            return "javascript";
         }
         return langmap[input];
     };
@@ -97,10 +98,10 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     return [defaultLang, language.setlangmode(defaultLang), "unknown"];
                 }
                 if (langname === "xhtml" || langname === "markup") {
-                    return ["xml", "markup", "XHTML"];
+                    return ["xml", "html", "XHTML"];
                 }
                 if (langname === "tss") {
-                    return ["tss", "script", "Titanium Stylesheets"];
+                    return ["tss", "tss", "Titanium Stylesheets"];
                 }
                 return [langname, language.setlangmode(langname), language.nameproper(langname)];
             },
@@ -134,9 +135,6 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                             }
                             if ((/final\s+static/).test(sample) === true) {
                                 return output("java");
-                            }
-                            if ((/(\(|\}|\?|,|(return)|(=>?))\s*</).test(sample) === true) {
-                                return output("jsx");
                             }
                             return output("javascript");
                         }
@@ -280,9 +278,6 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                     return output("jsp");
                 }
-                if ((/<cfset\s/i).test(sample) === true && (/<cfif\s/i).test(sample) === true) {
-                    return output("coldfusion");
-                }
                 return output("xml");
             };
         if (sample === null) {
@@ -312,5 +307,13 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
         }
         return output("unknown");
     };
-    global.language = language;
+    if ((typeof define === "object" || typeof define === "function") && (typeof ace !== "object" || ace.prettydiffid === undefined)) {
+        //requirejs support
+        define(function language_requirejs() {
+            return global.prettydiff.language;
+        });
+    } else if (typeof module === "object" && typeof module.parent === "object") {
+        //commonjs and nodejs support
+        module.exports = global.prettydiff.language;
+    }
 }());

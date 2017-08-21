@@ -1,7 +1,7 @@
-/*global global, lexer, location, module, parse, window*/
+/*global global*/
 (function style_init() {
     "use strict";
-    var style = function parser_style(source) {
+    var style = function lexer_style(source) {
         var parse       = global.parse,
             data        = parse.data,
             options     = parse.options,
@@ -165,7 +165,7 @@
             endtest     = false,
             mapper      = [],
             nosort      = [],
-            recordPush = function lexer_style_recordPush() {
+            recordPush = function lexer_style_recordPush(structure) {
                 var record = {
                     begin: parse.structure[parse.structure.length - 1][1],
                     lexer: "style",
@@ -175,8 +175,7 @@
                     token: ltoke,
                     types: ltype
                 };
-                parse.push(data, record);
-                parse.linesSpace = 0;
+                parse.push(data, record, structure);
             },
             esctest     = function lexer_style_esctest(xx) {
                 var yy = xx;
@@ -198,7 +197,7 @@
             // * url values that are not quoted are wrapped    in double quote characters
             // * color values are set to lowercase and    reduced from 6 to 3 digits if
             // appropriate
-            value       = function lexer_style_item_value(val, font) {
+            value       = function lexer_style_item_value(val) {
                 var x          = val.split(""),
                     leng       = x.length,
                     cc         = 0,
@@ -206,8 +205,6 @@
                     items      = [],
                     block      = "",
                     values     = [],
-                    qchar      = "",
-                    qreg       = {},
                     transition = (data.token[parse.count - 2] === "transition"),
                     colorPush  = function lexer_style_item_value_colorPush(value) {
                         var vl = value.toLowerCase();
@@ -220,11 +217,6 @@
                         }
                         return value;
                     };
-                if (options.quoteConvert === "double") {
-                    qchar = "\"";
-                } else if (options.quoteConvert === "single") {
-                    qchar = "'";
-                }
                 // this loop identifies containment so that tokens/sub-tokens are correctly
                 // taken
                 if (cc < leng) {
@@ -280,27 +272,10 @@
                         } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
                             block = values[cc].charAt(values[cc].indexOf("url(") + 4);
                             if (block !== "@" && block !== "{" && block !== "<") {
-                                if (qchar === "") {
-                                    values[cc] = values[cc]
-                                        .replace(/url\(\s*('|")?/, "url(\"")
-                                        .replace(/(('|")?\s*\))$/, "\")");
-                                } else {
-                                    values[cc] = values[cc]
-                                        .replace(/url\(\s*('|")?/, "url(" + qchar)
-                                        .replace(/(('|")?\s*\))$/, qchar + ")");
-                                }
+                                values[cc] = values[cc]
+                                    .replace(/url\(\s*('|")?/, "url(\"")
+                                    .replace(/(('|")?\s*\))$/, "\")");
                             }
-                        } else if (font === true) {
-                            if (qchar === "'") {
-                                values[cc] = values[cc].replace(/"/g, "'");
-                            } else {
-                                values[cc] = values[cc].replace(/'/g, "\"");
-                            }
-                        } else if (font === false && qchar !== "" && ((qchar === "\"" && values[cc].charAt(0) === "'" && values[cc].charAt(values[cc].length - 1) === "'") || (qchar === "'" && values[cc].charAt(0) === "\"" && values[cc].charAt(values[cc].length - 1) === "\""))) {
-                            qreg       = new RegExp(qchar, "g");
-                            values[cc] = qchar + values[cc]
-                                .slice(1, values[cc].length - 1)
-                                .replace(qreg, "\\" + qchar) + qchar;
                         }
                         cc = cc + 1;
                     } while (cc < leng);
@@ -372,7 +347,6 @@
                         )) {
                             if (b[aa + 1] === ")" && data.token[parse.count] === "(") {
                                 parse.pop(data);
-                                parse.structure.pop();
                                 out = ["("];
                                 aa  = a - 1;
                             } else {
@@ -414,7 +388,7 @@
                 if (parse.structure[parse.structure.length - 1][0] === "map" && out[0] === "(") {
                     mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
                 }
-                if (comma === true && parse.structure[parse.structure.length - 1][0] !== "map" && data.types[parse.count] !== "comment" && data.types[parse.count] !== "comment-inline") {
+                if (comma === true && parse.structure[parse.structure.length - 1][0] !== "map" && data.types[parse.count] !== "comment") {
                     data.token[parse.count] = data.token[parse.count] + out
                         .join("")
                         .replace(/\s+/g, " ")
@@ -429,13 +403,13 @@
                     .replace(/\s$/, "");
                 if (parse.count > -1 && data.token[parse.count].indexOf("extend(") === 0) {
                     ltype = "pseudo";
-                } else if (parse.count > -1 && "\"'".indexOf(data.token[parse.count].charAt(0)) > -1 && data.types[parse.count] === "propvar") {
+                } else if (parse.count > -1 && "\"'".indexOf(data.token[parse.count].charAt(0)) > -1 && data.types[parse.count] === "variable") {
                     ltype = "item";
                 } else if (out[0] === "@" || out[0] === "$") {
-                    if (data.types[parse.count] === "colon" && (data.types[parse.count - 1] === "property" || data.types[parse.count - 1] === "propvar")) {
+                    if (data.types[parse.count] === "colon" && (data.types[parse.count - 1] === "property" || data.types[parse.count - 1] === "variable")) {
                         ltype = "value";
-                    } else {
-                        ltype = "propvar";
+                    } else if (parse.count > -1) {
+                        ltype = "variable";
                         outy  = data.token[parse.count];
                         aa    = outy.indexOf("(");
                         if (outy.charAt(outy.length - 1) === ")" && aa > 0) {
@@ -444,12 +418,13 @@
                                 .token[parse.count]
                                 .slice(0, aa + 1) + value(outy, false) + ")";
                         }
+                    } else {
+                        ltype = "variable";
                     }
                 } else {
                     ltype = "item";
                 }
-                recordPush();
-                parse.linesSpace   = 0;
+                recordPush("");
             },
             // Some tokens receive a generic type named 'item' because their type is unknown
             // until we know the following syntax.  This function replaces the type 'item'
@@ -463,19 +438,19 @@
                         : "",
                     toked  = tokel.slice(tokel.length - 2);
                 //backtrack through immediately prior comments to find the correct token
-                if (ltype === "comment" || ltype === "comment-inline") {
+                if (ltype === "comment") {
                     do {
                         aa    = aa - 1;
                         ltype = data.types[aa];
                         coms.push(data.token[aa]);
-                    } while (aa > 0 && (ltype === "comment" || ltype === "comment-inline"));
+                    } while (aa > 0 && (ltype === "comment"));
                 } else {
                     aa = aa - 1;
                 }
                 //if the last non-comment type is 'item' then id it
                 if (ltype === "item" && data.lexer[aa] === "style") {
                     if (type === "start") {
-                        if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "comment-inline" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
+                        if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
                             (function lexer_style_item_selparts() {
                                 var parts = [],
                                     cc    = aa,
@@ -489,7 +464,7 @@
                                     }
                                     cc = cc - 1;
                                 } while (
-                                    cc > -1 && data.types[cc] !== "comment" && data.types[cc] !== "comment-inline" && data.types[cc] !== "end" && data.types[cc] !== "start" && data.types[cc] !== "semi" && data.types[cc] !== undefined
+                                    cc > -1 && data.types[cc] !== "comment" && data.types[cc] !== "end" && data.types[cc] !== "start" && data.types[cc] !== "semi" && data.types[cc] !== undefined
                                 );
                                 parts.reverse();
                                 cc             = cc + 1;
@@ -497,7 +472,6 @@
                                 parse.splice(
                                     {data: data, howmany: dd, index: cc, record: {}}
                                 );
-                                parse.linesSpace     = 0;
                                 aa             = aa - dd;
                                 data.token[aa] = parts
                                     .join("")
@@ -509,23 +483,14 @@
                                 .token[aa]
                                 .replace(/(\s*,\s*)/g, ",");
                         }
-                        if (options.compressedcss === true) {
-                            data.token[aa] = data
-                                .token[aa]
-                                .replace(/\s*&/, " &")
-                                .replace(/\s*>\s*/g, ">")
-                                .replace(/:\s+/g, ":")
-                                .replace(/^(\s+)/, "")
-                                .replace(/(\s+)$/, "");
-                        } else {
-                            data.token[aa] = data
-                                .token[aa]
-                                .replace(/\s*&/, " &")
-                                .replace(/\s*>\s*/g, " > ")
-                                .replace(/:\s+/g, ": ")
-                                .replace(/^(\s+)/, "")
-                                .replace(/(\s+)$/, "");
-                        }
+                        data.token[aa] = data
+                            .token[aa]
+                            .replace(/\s*&/, " &")
+                            .replace(/\s*>\s*/g, " > ")
+                            .replace(/:\s+/g, ": ")
+                            .replace(/^(\s+)/, "")
+                            .replace(/(\s+)$/, "")
+                            .replace(/\s+::\s+/, "::");
                         (function lexer_style_item_selectorsort() {
                             var y    = 0,
                                 toke = data.token[aa],
@@ -564,15 +529,11 @@
                         data.token[aa] = data
                             .token[aa]
                             .replace(/\s*!\s+important/, " !important");
-                        if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
-                            data.token[aa] = value(data.token[aa], true);
-                        } else {
-                            data.token[aa] = value(data.token[aa], false);
-                        }
+                        data.token[aa] = value(data.token[aa], false);
                         //take comments out until the 'item' is found and then put the comments back
                         if (data.token[parse.count - 1] === "{") {
-                            data.types[parse.count] = "propvar";
-                        } else if (parse.structure[parse.structure.length - 1][0] === "block") {
+                            data.types[parse.count] = "variable";
+                        } else if (parse.structure[parse.structure.length - 1][0] === data.token[data.begin[parse.count] - 1] && options.correct === true) {
                             if (coms.length > 0 && ltype !== "semi" && ltype !== "end" && ltype !== "start") {
                                 aa = coms.length - 1;
                                 do {
@@ -581,22 +542,19 @@
                                 } while (aa > 0);
                                 ltoke = ";";
                                 ltype = "semi";
-                                recordPush();
+                                recordPush("");
                                 bb           = coms.length - 1;
                                 do {
                                     ltoke = coms[aa];
-                                    ltype = (coms[aa].indexOf("//") === 0 && data.lines[parse.count] === 0)
-                                        ? "comment-inline"
-                                        : "comment";
-                                    recordPush();
+                                    ltype = "comment";
+                                    recordPush("");
                                     aa           = aa + 1;
                                 } while (aa < bb);
                             } else {
                                 ltoke = ";";
                                 ltype = "semi";
-                                recordPush();
+                                recordPush("");
                             }
-                            parse.linesSpace = 0;
                         }
                     } else if (type === "semi") {
                         if (data.types[aa - 1] === "colon") {
@@ -605,31 +563,21 @@
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*!\s+important/, " !important");
-                            if (options.quoteConvert !== "none" && (data.token[aa - 2] === "font" || data.token[aa - 2] === "font-family")) {
-                                data.token[aa] = value(data.token[aa], true);
-                            } else {
-                                data.token[aa] = value(data.token[aa], false);
-                            }
+                            data.token[aa] = value(data.token[aa], false);
                         } else {
                             //properties without values are considered variables
                             if (data.types[aa] !== "value") {
                                 if (data.types[aa] === "item" && data.types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
                                     if (isNaN(data.token[parse.count]) === true) {
-                                        data.token[parse.count - 1] = tokel + data
-                                            .token
-                                            .pop();
+                                        data.token[parse.count - 1] = tokel + data.token[parse.count];
                                     } else {
-                                        data.token[parse.count - 1] = tokel + " " + data
-                                            .token
-                                            .pop();
+                                        data.token[parse.count - 1] = tokel + " " + data.token[parse.count];
                                     }
-                                    data
-                                        .types
-                                        .pop();
+                                    parse.pop(data);
                                     return;
                                 }
-                                data.types[aa] = "propvar";
-                                ltype          = "propvar";
+                                data.types[aa] = "variable";
+                                ltype          = "variable";
                             }
                             if (data.token[aa].indexOf("\"") > 0) {
                                 bb             = data
@@ -666,11 +614,31 @@
                     } else if (type === "colon") {
                         data.types[aa] = "property";
                         ltype          = "property";
-                    } else if (data.token[aa].charAt(0) === "@" && ((data.types[aa - 2] !== "propvar" && data.types[aa - 2] !== "property") || data.types[aa - 1] === "semi")) {
-                        data.types[aa] = "propvar";
-                        ltype          = "propvar";
+                    } else if (data.token[aa].charAt(0) === "@" && ((data.types[aa - 2] !== "variable" && data.types[aa - 2] !== "property") || data.types[aa - 1] === "semi")) {
+                        data.types[aa] = "variable";
+                        ltype          = "variable";
                     }
                 }
+            },
+            semiComment = function lexer_style_semiComment() {
+                var x = parse.count;
+                do {
+                    x = x - 1;
+                } while (x > 0 && (data.types[x] === "comment"));
+                parse.splice({
+                    data: data,
+                    howmany: 0,
+                    index: x + 1,
+                    record: {
+                        begin: parse.structure[parse.structure.length - 1][1],
+                        lexer: "style",
+                        lines: parse.linesSpace,
+                        presv: false,
+                        stack: parse.structure[parse.structure.length - 1][0],
+                        token: ";",
+                        types: "semi"
+                    }
+                });
             },
             template    = function lexer_style_template(open, end) {
                 var store  = [],
@@ -688,7 +656,7 @@
                             }
                         }
                         ltype = typename;
-                        recordPush();
+                        recordPush("");
                     };
                 nosort[nosort.length - 1] = true;
                 if (a < len) {
@@ -743,7 +711,7 @@
                                             .replace(/^(\{\{\s+)/, "{{")
                                             .replace(/(\s+\}\})$/, "}}");
                                     }
-                                    if (ltype === "item" && data.types[parse.count - 1] === "colon" && (data.types[parse.count - 2] === "property" || data.types[parse.count - 2] === "propvar")) {
+                                    if (ltype === "item" && data.types[parse.count - 1] === "colon" && (data.types[parse.count - 2] === "property" || data.types[parse.count - 2] === "variable")) {
                                         ltype                   = "value";
                                         data.types[parse.count] = "value";
                                         if (isNaN(data.token[parse.count]) === true && data.token[parse.count].charAt(data.token[parse.count].length - 1) !== ")") {
@@ -838,7 +806,7 @@
                     out         = [b[a]],
                     type        = "comment",
                     extra       = "",
-                    store       = {},
+                    store       = [],
                     recordStore = function lexer_style_comment_recordStore(index) {
                         var output = {};
                         parse.datanames.forEach(function lexer_style_comment_recordStore_datanames(value) {
@@ -846,9 +814,7 @@
                         });
                         return output;
                     };
-                type = (inline === true && parse.linesSpace === 0)
-                    ? "comment-inline"
-                    : "comment";
+                type = "comment";
                 if (aa < len) {
                     do {
                         out.push(b[aa]);
@@ -889,18 +855,17 @@
                     }
                 }
                 a = aa;
-                if (parse.count > -1 && (ltype === "selector" || ltype === "propvar") && data.types[parse.count] !== "comment" && data.types[parse.count] !== "comment-inline") {
+                if (parse.count > -1 && store.length > 0 && (ltype === "selector" || ltype === "variable") && data.types[parse.count] !== "comment") {
                     parse.pop(data);
                     ltoke = out.join("");
                     ltype = type;
-                    recordPush();
-                    parse.linesSpace = 0;
+                    recordPush("");
                     ltoke = store[0].token;
-                    ltype = (ltype === "propvar")
-                        ? "propvar"
+                    ltype = (ltype === "variable")
+                        ? "variable"
                         : "selector";
-                    recordPush();
-                } else if (ltype === "colon" || ltype === "property" || ltype === "value" || ltype === "propvar") {
+                    recordPush("");
+                } else if (ltype === "colon" || ltype === "property" || ltype === "value") {
                     do {
                         store.push(recordStore(parse.count));
                         parse.pop(data);
@@ -909,17 +874,15 @@
                     );
                     ltoke = out.join("");
                     ltype = type;
-                    recordPush();
+                    recordPush("");
                     do {
-                        parse.push(data, store);
-                        parse.pop(store);
+                        parse.push(data, store.pop());
                     } while (store.length > 0);
                 } else {
                     ltoke = out.join("");
                     ltype = type;
-                    recordPush();
+                    recordPush("");
                 }
-                parse.linesSpace = 0;
             },
             //do fancy things to property types like: sorting, consolidating, and padding
             properties  = function lexer_style_properties() {
@@ -968,11 +931,11 @@
                     if (data.types[aa] === "end") {
                         bb = bb + 1;
                     }
-                    if (bb === 1 && (data.types[aa] === "property" || (data.types[aa] === "propvar" && data.types[aa + 1] === "colon"))) {
+                    if (bb === 1 && (data.types[aa] === "property" || (data.types[aa] === "variable" && data.types[aa + 1] === "colon"))) {
                         p.push(aa);
                     }
                     set[set.length - 1].push(aa);
-                    if (bb === 1 && (data.types[aa - 1] === "comment" || data.types[aa - 1] === "comment-inline" || data.types[aa - 1] === "semi" || data.types[aa - 1] === "end" || data.types[aa - 1] === "start") && data.types[aa] !== "start" && data.types[aa] !== "end") {
+                    if (bb === 1 && (data.types[aa - 1] === "comment" || data.types[aa - 1] === "semi" || data.types[aa - 1] === "end" || data.types[aa - 1] === "start") && data.types[aa] !== "start" && data.types[aa] !== "end") {
                         set.push([]);
                     }
                     aa = aa - 1;
@@ -1047,7 +1010,7 @@
                                             storage(0);
                                         }
                                     }
-                                    if (set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0 || aa === leng - 1) {
+                                    if (aa === leng - 1 || set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0) {
                                         if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
                                             set.splice(start + 1, yy);
                                             leng = leng - yy;
@@ -1147,7 +1110,6 @@
                     index  : next + 1,
                     record : {}
                 });
-                parse.linesSpace  = 0;
                 parse.concat(data, store);
             };
         //token building loop
@@ -1179,23 +1141,25 @@
             } else if (b[a] === "@" && b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (b[a + 5] === "{" || (/\s/).test(b[a + 5]) === true)) {
                 ltoke = "@else";
                 ltype = "template_else";
-                recordPush();
+                recordPush("");
                 a           = a + 4;
-            } else if (b[a] === "{" || (b[a] === "(" && data.token[parse.count] === ":" && data.types[parse.count - 1] === "propvar")) {
+            } else if (b[a] === "{" || (b[a] === "(" && data.token[parse.count] === ":" && data.types[parse.count - 1] === "variable")) {
                 if (b[a] === "{" && data.token[parse.count - 1] === ":") {
                     data.types[parse.count] = "pseudo";
                 }
                 item("start");
                 ltype = "start";
                 ltoke = b[a];
-                recordPush();
                 if (b[a] === "(") {
-                    parse.structure.push(["map", parse.count]);
+                    recordPush("map");
                     mapper.push(0);
+                } else if (data.types[parse.count] === "selector" || data.types[parse.count] === "variable") {
+                    recordPush(data.token[parse.count]);
+                } else if (data.types[parse.count] === "colon") {
+                    recordPush(data.token[parse.count - 1]);
                 } else {
-                    parse.structure.push(["block", parse.count]);
+                    recordPush("block");
                 }
-                parse.linesSpace = 0;
                 nosort.push(false);
             } else if (b[a] === "}" || (b[a] === ")" && parse.structure[parse.structure.length - 1][0] === "map" && mapper[mapper.length - 1] === 0)) {
                 endtest = true;
@@ -1207,12 +1171,17 @@
                 } else {
                     if (b[a] === ")") {
                         mapper.pop();
-                    } else if (b[a] === "}" && ltype === "value" && data.token[parse.count] !== ";") {
-                        ltoke = "l";
-                        ltype = "semi";
-                        recordPush();
                     }
                     item("end");
+                    if (b[a] === "}" && data.token[parse.count] !== ";" && options.correct === true) {
+                        if (data.types[parse.count] === "value") {
+                            ltoke = ";";
+                            ltype = "semi";
+                            recordPush("");
+                        } else if (data.types[parse.count] === "comment") {
+                            semiComment();
+                        }
+                    }
                     properties();
                     ltype = "end";
                     if (options.objectSort === true && nosort[nosort.length - 1] === false) {
@@ -1221,21 +1190,20 @@
                     nosort.pop();
                     ltoke = b[a];
                     ltype = "end";
-                    recordPush();
+                    recordPush("");
                 }
-                parse.structure.pop();
             } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                 item("semi");
                 if (data.types[parse.count] !== "semi" && data.types[parse.count] !== "start" && esctest(a) === false) {
                     ltoke = b[a];
                     ltype = "semi";
-                    recordPush();
+                    recordPush("");
                 }
             } else if (b[a] === ":" && data.types[parse.count] !== "end") {
                 item("colon");
                 ltoke = ":";
                 ltype = "colon";
-                recordPush();
+                recordPush("");
             } else {
                 if (parse.structure[parse.structure.length - 1][0] === "map" && b[a] === "(") {
                     mapper[mapper.length - 1] = mapper[mapper.length - 1] + 1;
