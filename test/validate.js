@@ -79,7 +79,7 @@ module.exports = (function taskrunner() {
                         ],
                         output  = "";
 
-                    if (typeof an_integer !== "number" || isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
+                    if (typeof an_integer !== "number" || Number.isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
                         //input not a positive integer
                         output = "0.00B";
                     } else if (triples === 0) {
@@ -585,7 +585,7 @@ module.exports = (function taskrunner() {
                                 };
                             prettydiff_options.source = val[1];
                             prettydiff_options.wrap   = 90000;
-                            result         = jslint(prettydiff(prettydiff_options), {"for": true});
+                            result         = jslint(prettydiff(prettydiff_options), {"es6": true});
                             if (result.ok === true) {
                                 console.log(
                                     humantime(false) + "\u001b[32mLint is good for file " + (

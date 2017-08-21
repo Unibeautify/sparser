@@ -5,7 +5,7 @@ Parse Framework
 
 (function parse_init() {
     "use strict";
-    var parse   = {},
+    const parse   = {},
         parser  = function parser_(options) {
             parse.count      = -1;
             parse.data       = {};
@@ -35,7 +35,7 @@ Parse Framework
                 });
 
             parse.structure.pop = function parse_structure_pop() {
-                var len = parse.structure.length - 1,
+                const len = parse.structure.length - 1,
                     arr = parse.structure[len];
                 if (len > 0) {
                     parse
@@ -56,10 +56,10 @@ Parse Framework
 
             // validate that all the data arrays are the same length
             (function parser_checkLengths() {
-                var a    = 0,
-                    b    = 0,
-                    keys = Object.keys(parse.data),
-                    c    = keys.length;
+                let a    = 0,
+                    b    = 0;
+                const keys = Object.keys(parse.data),
+                    c      = keys.length;
                 do {
                     b = a + 1;
                     do {
@@ -75,36 +75,34 @@ Parse Framework
             }());
 
             if (parse.options.objectSort === true || parse.options.tagSort === true) {
-                (function parser_fixOrder() {
-                    var data      = parse.data,
-                        a         = 0,
-                        b         = data.begin.length,
-                        structure = [-1];
-                    do {
-                        if ((data.types[a - 1] === "attribute" || data.types[a - 1] === "jsx_attribute_end") && data.types[a] !== "attribute" && data.types[a] !== "jsx_attribute_start" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
-                            structure.pop();
+                let a = 0;
+                const data    = parse.data,
+                    b         = data.begin.length,
+                    structure = [-1];
+                do {
+                    if ((data.types[a - 1] === "attribute" || data.types[a - 1] === "jsx_attribute_end") && data.types[a] !== "attribute" && data.types[a] !== "jsx_attribute_start" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
+                        structure.pop();
+                    }
+                    if (data.begin[a] !== structure[structure.length - 1]) {
+                        if (parse.options.objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
+                            data.begin[a] = structure[structure.length - 1];
+                        } else if (parse.options.tagSort === true && data.lexer[a] === "markup") {
+                            data.begin[a] = structure[structure.length - 1];
                         }
-                        if (data.begin[a] !== structure[structure.length - 1]) {
-                            if (parse.options.objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
-                                data.begin[a] = structure[structure.length - 1];
-                            } else if (parse.options.tagSort === true && data.lexer[a] === "markup") {
-                                data.begin[a] = structure[structure.length - 1];
-                            }
-                        }
-                        if (data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
-                            structure.push(a);
-                        } else if (structure.length > 1 && (data.types[a] === "end" || data.types[a] === "template_end")) {
-                            structure.pop();
-                        } else if (data.types[a] === "template_else") {
-                            structure[structure.length - 1] = a;
-                        } else if (data.types[a] === "attribute" && data.lexer[a] === "markup" && (data.types[a - 1] === "start" || data.types[a - 1] === "singleton")) {
-                            structure.push(a - 1);
-                        } else if (data.lexer[a] === "markup" && data.types[a] !== "attribute" && data.types[structure[structure.length - 1] + 1] === "attribute") {
-                            structure.pop();
-                        }
-                        a = a + 1;
-                    } while (a < b);
-                }());
+                    }
+                    if (data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
+                        structure.push(a);
+                    } else if (structure.length > 1 && (data.types[a] === "end" || data.types[a] === "template_end")) {
+                        structure.pop();
+                    } else if (data.types[a] === "template_else") {
+                        structure[structure.length - 1] = a;
+                    } else if (data.types[a] === "attribute" && data.lexer[a] === "markup" && (data.types[a - 1] === "start" || data.types[a - 1] === "singleton")) {
+                        structure.push(a - 1);
+                    } else if (data.lexer[a] === "markup" && data.types[a] !== "attribute" && data.types[structure[structure.length - 1] + 1] === "attribute") {
+                        structure.pop();
+                    }
+                    a = a + 1;
+                } while (a < b);
             }
             return parse.data;
         };
@@ -119,19 +117,20 @@ Parse Framework
         }
     };
     parse.objectSort = function parse_objectSort(data) {
-        var cc        = 0,
-            dd        = 0,
-            ee        = 0,
-            ff        = 0,
-            lines     = parse.linesSpace,
-            behind    = parse.count,
-            length    = behind,
-            keys      = [],
-            keylen    = 0,
-            keyend    = 0,
-            front     = 0,
-            sort      = function parse_objectSort_sort(x, y) {
-                var xx = x[0],
+        let cc = 0,
+            dd = 0,
+            ee = 0,
+            ff = 0,
+            behind = parse.count,
+            commaTest = true,
+            front = 0,
+            keyend = 0,
+            keylen = 0;
+        const keys = [],
+            length = parse.count,
+            lines = parse.linesSpace,
+            sort    = function parse_objectSort_sort(x, y) {
+                let xx = x[0],
                     yy = y[0];
                 if (data.types[xx] === "comment" || data.types[xx] === "comment-inline") {
                     do {
@@ -152,16 +151,13 @@ Parse Framework
                 }
                 return -1;
             },
-            commaTest = true,
-            store     = {
-                begin: [],
-                lexer: [],
-                lines: [],
-                presv: [],
-                stack: [],
-                token: [],
-                types: []
-            };
+            store     = (function parse_objectSort_store() {
+                const output = {};
+                parse.datanames.forEach(function parse_objectSort_store_datanames(value) {
+                    output[value] = [];
+                });
+                return output;
+            }());
         if (data.token[behind] === "," || data.types[behind] === "comment") {
             do {
                 behind = behind - 1;
@@ -197,7 +193,7 @@ Parse Framework
                         behind = front - 1;
                     }
                 }
-                if (dd < 0 && cc < length) {
+                if (dd < 0 && cc < parse.count) {
                     if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
                         ee = keys[keys.length - 1][0];
                         if (data.types[ee - 1] !== "comment-inline") {
@@ -279,7 +275,7 @@ Parse Framework
                             } while (
                                 ee > 0 && (store.types[ee] === "comment" || store.types[ee] === "comment-inline")
                             );
-                            length = parse.splice({
+                            parse.splice({
                                 data   : data,
                                 howmany: ff,
                                 index  : cc + 1,
@@ -298,7 +294,7 @@ Parse Framework
         return;
     };
     parse.pop        = function parse_pop(data) {
-        var output = {};
+        const output = {};
         parse
             .datanames
             .forEach(function parse_pop_datanames(value) {
@@ -345,22 +341,22 @@ Parse Framework
         return args.index;
     };
     parse.safeSort   = function parse_safeSort(array, operation, recursive) {
-        var arTest  = function parse_safeSort_arTest(item) {
+        let extref  = function parse_safeSort_extref() {
+            //worthless function for backwards compatibility with older versions of V8 node.
+            return;
+        };
+        const arTest  = function parse_safeSort_arTest(item) {
                 if (Array.isArray(item) === true) {
                     return true;
                 }
                 return false;
             },
-            extref  = function parse_safeSort_extref() {
-                //worthless function for backwards compatibility with older versions of V8 node.
-                return;
-            },
             normal  = function parse_safeSort_normal(item) {
-                var done    = [item[0]],
-                    storeb  = item,
+                let storeb = item;
+                const done    = [item[0]],
                     child   = function safeSort_normal_child() {
-                        var a   = 0,
-                            len = storeb.length;
+                        let a = 0;
+                        const len = storeb.length;
                         if (a < len) {
                             do {
                                 if (arTest(storeb[a]) === true) {
@@ -371,9 +367,9 @@ Parse Framework
                         }
                     },
                     recurse = function parse_safeSort_normal_recurse(x) {
-                        var a      = 0,
-                            storea = [],
-                            len    = storeb.length;
+                        let a = 0;
+                        const storea = [],
+                            len      = storeb.length;
                         if (a < len) {
                             do {
                                 if (storeb[a] !== x) {
@@ -397,12 +393,12 @@ Parse Framework
                 recurse(array[0]);
             },
             descend = function parse_safeSort_descend(item) {
-                var c       = 0,
+                let c       = 0;
+                const len     = item.length,
                     storeb  = item,
-                    len     = item.length,
                     child   = function parse_safeSort_descend_child() {
-                        var a    = 0,
-                            lenc = storeb.length;
+                        let a = 0;
+                        const lenc = storeb.length;
                         if (a < lenc) {
                             do {
                                 if (arTest(storeb[a]) === true) {
@@ -413,14 +409,14 @@ Parse Framework
                         }
                     },
                     recurse = function parse_safeSort_descend_recurse() {
-                        var a      = c,
+                        let a      = c,
                             b      = 0,
                             d      = 0,
                             e      = 0,
                             ind    = [],
                             key    = storeb[c],
-                            tstore = "",
-                            tkey   = typeof key;
+                            tstore = "";
+                        const tkey   = typeof key;
                         if (a < len) {
                             do {
                                 tstore = typeof storeb[a];
@@ -459,12 +455,12 @@ Parse Framework
                 return item;
             },
             ascend  = function parse_safeSort_ascend(item) {
-                var c       = 0,
+                let c       = 0;
+                const len     = item.length,
                     storeb  = item,
-                    len     = item.length,
                     child   = function parse_safeSort_ascend_child() {
-                        var a    = 0,
-                            lenc = storeb.length;
+                        let a = 0;
+                        const lenc = storeb.length;
                         if (a < lenc) {
                             do {
                                 if (arTest(storeb[a]) === true) {
@@ -475,14 +471,14 @@ Parse Framework
                         }
                     },
                     recurse = function parse_safeSort_ascend_recurse() {
-                        var a      = c,
+                        let a      = c,
                             b      = 0,
                             d      = 0,
                             e      = 0,
                             ind    = [],
                             key    = storeb[c],
-                            tstore = "",
-                            tkey   = typeof key;
+                            tstore = "";
+                        const tkey   = typeof key;
                         if (a < len) {
                             do {
                                 tstore = typeof storeb[a];
