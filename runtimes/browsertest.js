@@ -6,10 +6,10 @@
     var input   = document.getElementById("input"),
         options = {
             correct   : false,
+            lexer     : "script",
             objectSort: false,
             source    : "",
-            tagSort   : false,
-            type      : "script"
+            tagSort   : false
         },
         handler = function web_handler() {
             var value = input.value,
@@ -79,7 +79,7 @@
                 };
             options.objectSort = (document.getElementById("objectSort").checked === true);
             options.tagSort    = (document.getElementById("tagSort").checked === true);
-            options.lang       = lang[0];
+            options.lang       = "html";//lang[0];
             options.lexer      = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             if (options.lexer === "javascript") {

@@ -318,11 +318,11 @@ Parse Framework
         if (data === parse.data) {
             parse.count      = parse.count + 1;
             parse.linesSpace = 0;
-            if (record.types.indexOf("start") > -1) {
+            if (record.types === "start" || record.types.indexOf("_start") > 0) {
                 parse.structure.push([structure, parse.count]);
-            } else if (record.types.indexOf("end") > -1) {
+            } else if (record.types === "end" || record.types.indexOf("_end") > 0) {
                 parse.structure.pop();
-            } else if (record.types === "template_else") {
+            } else if (record.types === "else" || record.types.indexOf("_else") > 0) {
                 parse.structure[parse.structure.length - 1] = ["else", parse.count];
             }
         }

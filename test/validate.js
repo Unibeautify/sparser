@@ -165,8 +165,9 @@ module.exports = (function taskrunner() {
             }
         },
         prettydiff = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
-        options    = {},
+        prettydiff_options    = {},
         parse      = {},
+        parse_options = {},
         errout     = function taskrunner_errout(errtext) {
             console.log("");
             console.error(errtext);
@@ -199,17 +200,17 @@ module.exports = (function taskrunner() {
                     } while (x < len);
                     return rec;
                 };
-            options.mode    = "diff";
-            options.source  = (typeof sampleSource === "string")
+            prettydiff_options.mode    = "diff";
+            prettydiff_options.source  = (typeof sampleSource === "string")
                 ? record(JSON.parse(sampleSource))
                 : record(sampleSource);
-            options.diff    = (typeof sampleDiff === "string")
+            prettydiff_options.diff    = (typeof sampleDiff === "string")
                 ? record(JSON.parse(sampleDiff))
                 : record(sampleSource);
-            options.diffcli = true;
-            options.context = 2;
-            options.lang    = "text";
-            report          = diffview(options);
+            prettydiff_options.diffcli = true;
+            prettydiff_options.context = 2;
+            prettydiff_options.lang    = "text";
+            report          = diffview(prettydiff_options);
             pdlen           = report[0].length;
             total           = report[1];
             if (total > 50) {
@@ -220,7 +221,7 @@ module.exports = (function taskrunner() {
             }
             // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
             // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
-            // of options.context (not parallel) 6 - total count of differences
+            // of prettydiff_options.context (not parallel) 6 - total count of differences
             do {
                 if (report[0][aa].indexOf("\u001b[36m") === 0) {
                     console.log("\u001b[36m" + sampleName + "\u001b[39m");
@@ -307,25 +308,34 @@ module.exports = (function taskrunner() {
                                     console.log("\u001b[33mCode file is empty:\u001b[39m " + files.code[a][0]);
                                 } else {
                                     if ((/_correct(\.|_)/).test(files.code[a][0]) === true) {
-                                        options.correct = true;
+                                        parse_options.correct = true;
                                     } else {
-                                        options.correct = false;
+                                        parse_options.correct = false;
                                     }
                                     if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
-                                        options.objectSort = true;
+                                        parse_options.objectSort = true;
                                     } else {
-                                        options.objectSort = false;
+                                        parse_options.objectSort = false;
                                     }
                                     if ((/_tagSort(\.|_)/).test(files.code[a][0]) === true) {
-                                        options.tagSort = true;
+                                        parse_options.tagSort = true;
                                     } else {
-                                        options.tagSort = false;
+                                        parse_options.tagSort = false;
                                     }
-                                    options.source = files.code[a][1];
+                                    if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
+                                        parse_options.lang = files.code[a][0].split("_lang-")[1];
+                                        if (parse_options.lang.indexOf("_") > 0) {
+                                            parse_options.lang = parse_options.lang.split("_")[0];
+                                        } else {
+                                            parse_options.lang = parse_options.lang.split(".")[0];
+                                        }
+                                    } else {
+                                        parse_options.lang = lang[0];
+                                    }
+                                    parse_options.source = files.code[a][1];
                                     lang           = global.language.auto(files.code[a][1], "javascript");
-                                    options.lexer  = lang[1];
-                                    options.lang   = lang[0];
-                                    output         = global.parser(options);
+                                    parse_options.lexer  = lang[1];
+                                    output         = global.parser(parse_options);
                                     str            = JSON.stringify(output);
                                     if (global.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
@@ -343,6 +353,7 @@ module.exports = (function taskrunner() {
                                     } else {
                                         console.log("");
                                         console.log("Quitting due to error:");
+                                        console.log(files.code[a][0]);
                                         console.log(global.parseerror);
                                         process.exit(1);
                                     }
@@ -572,9 +583,9 @@ module.exports = (function taskrunner() {
                                     console.log(warning.message);
                                     console.log("");
                                 };
-                            options.source = val[1];
-                            options.wrap   = 90000;
-                            result         = jslint(prettydiff(options), {"for": true});
+                            prettydiff_options.source = val[1];
+                            prettydiff_options.wrap   = 90000;
+                            result         = jslint(prettydiff(prettydiff_options), {"for": true});
                             if (result.ok === true) {
                                 console.log(
                                     humantime(false) + "\u001b[32mLint is good for file " + (
@@ -604,7 +615,7 @@ module.exports = (function taskrunner() {
                                 }
                             }
                         };
-                        options = {
+                        prettydiff_options = {
                             correct     : false,
                             crlf        : false,
                             html        : true,

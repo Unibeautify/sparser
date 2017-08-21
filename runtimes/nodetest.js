@@ -31,9 +31,9 @@
         }()),
         options   = {
             jsx       : false,
+            lexer     : "script",
             objectSort: false,
-            source    : "",
-            type      : "script"
+            source    : ""
         },
         timespan  = function () {
             var dec = function (time) {
@@ -105,24 +105,37 @@
         execute   = function (sourcetext) {
             var output = {};
             lang           = language.auto(sourcetext);
-            options.lang   = lang[0];
             options.lexer  = lang[1]; 
             options.source = sourcetext;
             if (raw === true) {
-                if (sourcetext !== source && (/_correct(\.|_)/).test(source) === true) {
-                    options.correct = true;
+                if (sourcetext !== source) {
+                    if ((/_correct(\.|_)/).test(source) === true) {
+                        options.correct = true;
+                    } else {
+                        options.correct = false;
+                    }
+                    if ((/_objectSort(\.|_)/).test(source) === true) {
+                        options.objectSort = true;
+                    } else {
+                        options.objectSort = false;
+                    }
+                    if ((/_tagSort(\.|_)/).test(source) === true) {
+                        options.tagSort = true;
+                    } else {
+                        options.tagSort = false;
+                    }
+                    if ((/_lang-\w+(\.|_)/).test(source) === true) {
+                        options.lang = source.split("_lang-")[1];
+                        if (options.lang.indexOf("_") > 0) {
+                            options.lang = options.lang.split("_")[0];
+                        } else {
+                            options.lang = options.lang.split(".")[0];
+                        }
+                    } else {
+                        options.lang   = lang[0];
+                    }
                 } else {
-                    options.correct = false;
-                }
-                if (sourcetext !== source && (/_objectSort(\.|_)/).test(source) === true) {
-                    options.objectSort = true;
-                } else {
-                    options.objectSort = false;
-                }
-                if (sourcetext !== source && (/_tagSort(\.|_)/).test(source) === true) {
-                    options.tagSort = true;
-                } else {
-                    options.tagSort = false;
+                    options.lang   = lang[0];
                 }
                 output = parser(options);
                 if (global.parseerror === "") {
@@ -132,6 +145,7 @@
                 }
             } else {
                 options.correct = true;
+                options.lang    = lang[0];
                 startTime       = process.hrtime();
                 output          = parser(options);
                 duration        = timespan();

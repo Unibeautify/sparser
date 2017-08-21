@@ -1060,8 +1060,10 @@
                                                 } else if (igcount === 0 && quote !== ">" && (quote.length < 2 || (quote.charAt(0) !== "\"" && quote.charAt(0) !== "'"))) {
                                                     //terminate attribute at the conclusion of a quote pair
                                                     f     = 0;
-                                                    tname = lex[1] + lex[2];
-                                                    tname = tname.toLowerCase();
+                                                    if (lex.length > 1) {
+                                                        tname = lex[1] + lex[2];
+                                                        tname = tname.toLowerCase();
+                                                    }
                                                     // in coldfusion quotes are escaped in a string with double the characters:
                                                     // "cat"" and dog"
                                                     if (tname === "cf" && b[a] === b[a + 1] && (b[a] === "\"" || b[a] === "'")) {
@@ -1515,7 +1517,7 @@
                                 } else {
                                     litag = litag + 1;
                                 }
-                            } else if (tname === "li" && element.charAt(1) === "/" && litag === list) {
+                            } else if (tname === "/li" && litag === list) {
                                 litag = litag - 1;
                             } else if (tname === "ul" || tname === "ol") {
                                 list = list + 1;
