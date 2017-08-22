@@ -1,5 +1,5 @@
 /* creates a browser global reference similar to Node's global */
-var global = {
+const global = {
     language  : function () {
         "use strict";
         return;

@@ -9,20 +9,20 @@
 
 (function nodetest() {
     "use strict";
-    var node      = {
+    let duration  = "",
+        lang      = [],
+        startTime = [];
+    const node      = {
             fs  : require("fs"),
             path: require("path")
         },
-        startTime = [],
         color     = function (numb) {
             return "\u001b[1m\u001b[" + numb + "m";
         },
         clear     = "\u001b[39m\u001b[0m",
-        lang      = [],
-        duration  = "",
         directory = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
         raw       = (function () {
-            var index = process.argv.indexOf("--raw");
+            const index = process.argv.indexOf("--raw");
             if (index < 0) {
                 return false;
             }
@@ -36,7 +36,7 @@
             source    : ""
         },
         timespan  = function () {
-            var dec = function (time) {
+            const dec = function (time) {
                     time[0] = time[0] * 1000000000;
                     return time[0] + time[1];
                 },
@@ -47,14 +47,14 @@
         },
         source    = process.argv[2],
         display   = function (output) {
-            var a   = 0,
-                b   = output.token.length,
-                str = [],
+            let a   = 0,
+                str = [];
+            const b = output.token.length,
                 pad = function (x, y) {
-                    var cc = x
+                    const cc = x
                             .toString()
-                            .replace(/\s/g, " "),
-                        dd = y - cc.length;
+                            .replace(/\s/g, " ");
+                    let dd = y - cc.length;
                     str.push(cc);
                     if (dd > 0) {
                         do {
@@ -103,7 +103,7 @@
             }
         },
         execute   = function (sourcetext) {
-            var output = {};
+            let output = {};
             lang           = language.auto(sourcetext);
             options.lexer  = lang[1]; 
             options.source = sourcetext;

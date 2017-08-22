@@ -1,31 +1,32 @@
 /*global global*/
 (function script_init() {
     "use strict";
-    var lexer = global.lexer,
+    const lexer = global.lexer,
         script = function lexer_script(source) {
-            var parse          = global.parse,
-                data           = parse.data,
-                options        = parse.options,
-                
-                sourcemap      = [
-                    0, ""
-                ],
-                json           = (options.lang === "json"),
-                scolon         = 0,
-                a              = 0,
-                b              = source.length,
-                c              = source.split(""),
+            let a = 0,
                 ltoke          = "",
                 ltype          = "",
-                lword          = [],
-                brace          = [],
                 pword          = [],
                 lengthb        = 0,
                 wordTest       = -1,
                 paren          = -1,
-                classy         = [],
                 tempstore      = {},
                 pstack         = [],
+                // operations for start types: (, [, {
+                start          = function lexer_script_startInit() {
+                    return;
+                };
+            const parse          = global.parse,
+                data           = parse.data,
+                options        = parse.options,
+                sourcemap      = [
+                    0, ""
+                ],
+                b              = source.length,
+                c              = source.split(""),
+                lword          = [],
+                brace          = [],
+                classy         = [],
                 // depth and status of templateStrings
                 templateString = [],
                 // identify variable declarations
@@ -35,16 +36,11 @@
                     len  : -1,
                     word : []
                 },
-                // operations for start types: (, [, {
-                start          = function lexer_script_startInit() {
-                    return;
-                },
                 // peek at whats up next
                 nextchar       = function lexer_script_nextchar(len, current) {
-                    var front = (current === true)
+                    let cc = (current === true)
                             ? a
                             : a + 1,
-                        cc    = front,
                         dd    = "";
                     if (typeof len !== "number" || len < 1) {
                         len = 1;
@@ -85,7 +81,7 @@
                 },
                 // cleans up improperly applied ASI
                 asifix         = function lexer_script_asifix() {
-                    var len = parse.count;
+                    let len = parse.count;
                     do {
                         len = len - 1;
                     } while (
@@ -102,7 +98,7 @@
                 },
                 // determine the definition of containment by stack
                 recordPush     = function lexer_script_recordPush(structure) {
-                    var record = {
+                    const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "script",
                         lines: parse.linesSpace,
@@ -128,12 +124,12 @@
                 },
                 // A lexer for keywords, reserved words, and variables
                 word           = function lexer_script_word() {
-                    var f        = wordTest,
+                    let f        = wordTest,
                         g        = 1,
-                        lex      = [],
-                        build    = {},
                         output   = "",
                         nextitem = "",
+                        build    = {};
+                    const lex      = [],
                         elsefix  = function lexer_script_word_elsefix() {
                             brace.push("x{");
                             parse.splice({
@@ -142,6 +138,13 @@
                                 index  : parse.count - 3,
                                 record : {}
                             });
+                        },
+                        builder = function lexer_script_word_builder(index) {
+                            const record = {};
+                            parse.datanames.forEach(function lexer_script_word_builder_datanames(value) {
+                                record[value] = data[value][index];
+                            });
+                            return record;
                         };
                     do {
                         lex.push(c[f]);
@@ -261,15 +264,7 @@
                                 f            = f - 1;
                             }
                             do {
-                                build        = {
-                                    begin: data.begin[g],
-                                    lexer: data.lexer[g],
-                                    lines: data.lines[g],
-                                    presv: data.presv[g],
-                                    stack: data.stack[g],
-                                    token: data.token[g],
-                                    types: data.types[g]
-                                };
+                                build        = builder(g);
                                 tempstore    = parse.pop(data);
                                 parse.splice({
                                     data   : data,
@@ -284,26 +279,24 @@
                             asifix();
                         }
                         if (output === "while" && data.token[parse.count] === "x;" && data.token[parse.count - 1] === "}") {
-                            (function lexer_script_word_whilefix() {
-                                var d = 0,
-                                    e = parse.count - 2;
-                                if (e > -1) {
-                                    do {
-                                        if (data.types[e] === "end") {
-                                            d = d + 1;
-                                        } else if (data.types[e] === "start") {
-                                            d = d - 1;
+                            let d = 0,
+                                e = parse.count - 2;
+                            if (e > -1) {
+                                do {
+                                    if (data.types[e] === "end") {
+                                        d = d + 1;
+                                    } else if (data.types[e] === "start") {
+                                        d = d - 1;
+                                    }
+                                    if (d < 0) {
+                                        if (data.token[e] === "{" && data.token[e - 1] === "do") {
+                                            asifix();
                                         }
-                                        if (d < 0) {
-                                            if (data.token[e] === "{" && data.token[e - 1] === "do") {
-                                                asifix();
-                                            }
-                                            return;
-                                        }
-                                        e = e - 1;
-                                    } while (e > -1);
-                                }
-                            }());
+                                        return;
+                                    }
+                                    e = e - 1;
+                                } while (e > -1);
+                            }
                         }
                         ltoke = output;
                         ltype = "word";
@@ -375,7 +368,7 @@
                 },
                 // determines if a slash comprises a valid escape or if it is escaped itself
                 slashes        = function lexer_script_slashes(index) {
-                    var slashy = index;
+                    let slashy = index;
                     do {
                         slashy = slashy - 1;
                     } while (c[slashy] === "\\" && slashy > 0);
@@ -388,14 +381,14 @@
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
                 generic        = function lexer_script_genericBuilder(starting, ending) {
-                    var ee     = 0,
-                        ender  = ending.split(""),
+                    let ee     = 0,
+                        output = "",
+                        escape = false,
+                        build  = [starting];
+                    const ender  = ending.split(""),
                         endlen = ender.length,
                         jj     = b,
-                        build  = [starting],
-                        base   = a + starting.length,
-                        output = "",
-                        escape = false;
+                        base   = a + starting.length;
                     if (wordTest > -1) {
                         word();
                     }
@@ -455,7 +448,7 @@
                             } else {
                                 build.push(c[ee]);
                             }
-                            if ((starting === "\"" || starting === "'") && json === false && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
+                            if ((starting === "\"" || starting === "'") && options.lang !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
                                 global.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
@@ -515,11 +508,11 @@
                 },
                 // inserts ending curly brace (where absent)
                 blockinsert    = function lexer_script_blockinsert() {
-                    var next  = nextchar(5, false),
-                        g     = parse.count,
-                        name  = "",
+                    let next  = nextchar(5, false),
+                        name  = "";
+                    const g   = parse.count,
                         lines = parse.linesSpace;
-                    if (json === true) {
+                    if (options.lang === "json") {
                         return;
                     }
                     if (data.stack[parse.count] === "do" && next === "while" && data.token[parse.count] === "}") {
@@ -579,7 +572,7 @@
                 // commaComment ensures that commas immediately precede comments instead of
                 // immediately follow
                 commaComment   = function lexer_script_commacomment() {
-                    var x = parse.count;
+                    let x = parse.count;
                     if (data.stack[x] === "object" && options.objectSort === true) {
                         ltoke = ",";
                         ltype = "separator";
@@ -610,10 +603,10 @@
                 },
                 // automatic semicolon insertion
                 asi            = function lexer_script_asi(isEnd) {
-                    var aa     = 0,
-                        next   = nextchar(1, false),
+                    let aa     = 0;
+                    const next   = nextchar(1, false),
                         record = (function lexer_script_asi_record() {
-                            var output = {};
+                            const output = {};
                             parse.datanames.forEach(function lexer_script_asi_record_datanames(value) {
                                 output[value] = data[value][parse.count];
                             });
@@ -715,8 +708,7 @@
                 },
                 // convert ++ and -- into "= x +"  and "= x -" in most cases
                 plusplus = function lexer_script_plusplus() {
-                    var store       = [],
-                        pre         = true,
+                    let pre         = true,
                         toke        = "+",
                         tokea       = "",
                         tokeb       = "",
@@ -730,9 +722,11 @@
                         period      = function lexer_script_plusplus_periodInit() {
                             return;
                         },
+                        next        = "";
+                    const store       = [],
                         applyStore  = function lexer_script_plusplus_applyStore() {
-                            var x = 0,
-                                y = store.length;
+                            let x = 0;
+                            const y = store.length;
                             if (x < y) {
                                 do {
                                     parse.push(data, store[x]);
@@ -741,15 +735,14 @@
                             }
                         },
                         recordStore = function lexer_script_plusplus_recordStore(index) {
-                            var output = {};
+                            const output = {};
                             parse.datanames.forEach(
                                 function lexer_script_plusplus_recordStore_datanames(value) {
                                     output[value] = data[value][index];
                                 }
                             );
                             return output;
-                        },
-                        next        = "";
+                        };
                     tokea  = data.token[parse.count];
                     tokeb  = data.token[parse.count - 1];
                     tokec  = data.token[parse.count - 2];
@@ -916,7 +909,7 @@
                 },
                 // fixes asi location if inserted after an inserted brace
                 asibrace       = function lexer_script_asibrace() {
-                    var aa = parse.count;
+                    let aa = parse.count;
                     do {
                         aa = aa - 1;
                     } while (aa > -1 && data.token[aa] === "x}");
@@ -942,13 +935,13 @@
                 },
                 // a tokenizer for regular expressions
                 regex          = function lexer_script_regex() {
-                    var ee     = a + 1,
-                        f      = b,
+                    let ee     = a + 1,
                         h      = 0,
                         i      = 0,
-                        build  = ["/"],
                         output = "",
                         square = false;
+                    const f      = b,
+                        build  = ["/"];
                     if (ee < f) {
                         do {
                             build.push(c[ee]);
@@ -1015,7 +1008,11 @@
                 },
                 // a unique tokenizer for operator characters
                 operator       = function lexer_script_operator() {
-                    var syntax = [
+                    let g      = 0,
+                        h      = 0,
+                        jj     = b,
+                        output = "";
+                    const syntax = [
                             "=",
                             "<",
                             ">",
@@ -1029,26 +1026,21 @@
                             "%",
                             "~"
                         ],
-                        g      = 0,
-                        h      = 0,
-                        jj     = b,
-                        build  = [c[a]],
                         synlen = syntax.length,
-                        output = "",
                         plusequal = function lexer_script_operator_plusequal(op) {
-                            var toke        = op.charAt(0),
-                                walk        = parse.count,
+                            let walk        = parse.count,
                                 inc         = 0,
-                                store       = [],
                                 end         = function lexer_script_operator_plusequal_endInit() {
                                     return;
                                 },
                                 period      = function lexer_script_operator_plusequal_periodInit() {
                                     return;
-                                },
+                                };
+                            const toke        = op.charAt(0),
+                                store       = [],
                                 applyStore  = function lexer_script_plusplus_applyStore() {
-                                    var x = 0,
-                                        y = store.length;
+                                    let x = 0;
+                                    const y = store.length;
                                     if (x < y) {
                                         do {
                                             parse.push(data, store[x]);
@@ -1057,7 +1049,7 @@
                                     }
                                 },
                                 recordStore = function lexer_script_operator_plusequal_recordStore() {
-                                    var storage = {};
+                                    const storage = {};
                                     parse.datanames.forEach(
                                         function lexer_script_operator_plusequal_recordStore_datanames(value) {
                                             storage[value] = data[value][inc];
@@ -1154,6 +1146,7 @@
                         if ((c[a + 1] === "+" && c[a + 2] === "+") || (c[a + 1] === "-" && c[a + 2] === "-")) {
                             output = c[a];
                         } else {
+                            const buildout  = [c[a]];
                             g = a + 1;
                             if (g < jj) {
                                 do {
@@ -1164,7 +1157,7 @@
                                     if (h < synlen) {
                                         do {
                                             if (c[g] === syntax[h]) {
-                                                build.push(syntax[h]);
+                                                buildout.push(syntax[h]);
                                                 break;
                                             }
                                             h = h + 1;
@@ -1176,7 +1169,7 @@
                                     g = g + 1;
                                 } while (g < jj);
                             }
-                            output = build.join("");
+                            output = buildout.join("");
                         }
                     }
                     a = a + (output.length - 1);
@@ -1197,7 +1190,7 @@
                 },
                 // ES6 template string support
                 tempstring     = function lexer_script_tempstring() {
-                    var output = [c[a]];
+                    const output = [c[a]];
                     a = a + 1;
                     if (a < b) {
                         do {
@@ -1217,9 +1210,9 @@
                 },
                 // a tokenizer for numbers
                 numb           = function lexer_script_number() {
-                    var ee    = 0,
-                        f     = b,
-                        build = [c[a]],
+                    const f     = b,
+                        build = [c[a]];
+                    let ee    = 0,
                         test  = /zz/,
                         dot   = (build[0] === ".");
                     if (a < b - 2 && c[a] === "0") {
@@ -1283,15 +1276,15 @@
                 // Identifies blocks of markup embedded within JavaScript for language supersets
                 // like React JSX.
                 markup         = function lexer_script_markup() {
-                    var output      = [],
-                        curlytest   = false,
+                    let curlytest   = false,
                         endtag      = false,
                         anglecount  = 0,
                         curlycount  = 0,
                         tagcount    = 0,
                         d           = 0,
                         next        = "",
-                        syntaxnum   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
+                        output      = [];
+                    const syntaxnum   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
                         syntax      = "=<>+-*?|^:&.,;%(){}[]~",
                         applyMarkup = function lexer_script_markup_applyMarkup() {
                             if (ltoke === "(") {
@@ -1325,59 +1318,59 @@
                         options.lang = "jsx";
                     } else if (options.lang === "typescript" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
                         // Java type generics
-                        return (function lexer_script_markup_generic() {
-                            var generics = [
-                                    "<",
-                                    c[a + 1]
-                                ],
-                                comma    = false,
-                                e        = 1,
-                                f        = 0;
-                            if (c[a + 1] === "<") {
-                                e = 2;
-                            }
-                            d = a + 2;
-                            if (d < b) {
-                                do {
-                                    generics.push(c[d]);
-                                    if (c[d] === "?" && c[d + 1] === ">") {
-                                        generics.push(">");
-                                        d = d + 1;
-                                    }
-                                    if (c[d] === ",") {
-                                        comma = true;
-                                        if ((/\s/).test(c[d + 1]) === false) {
-                                            generics.push(" ");
-                                        }
-                                    } else if (c[d] === "[") {
-                                        f = f + 1;
-                                    } else if (c[d] === "]") {
-                                        f = f - 1;
-                                    } else if (c[d] === "<") {
-                                        e = e + 1;
-                                    } else if (c[d] === ">") {
-                                        e = e - 1;
-                                        if (e === 0 && f === 0) {
-                                            if ((/\s/).test(c[d - 1]) === true) {
-                                                ltype = "operator";
-                                                return operator();
-                                            }
-                                            ltype = "generic";
-                                            a     = d;
-                                            ltoke = generics
-                                                .join("")
-                                                .replace(/\s+/g, " ");
-                                            return recordPush("");
-                                        }
-                                    }
-                                    if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
-                                        ltype = "operator";
-                                        return operator();
-                                    }
+                        let comma    = false,
+                            e        = 1,
+                            f        = 0;
+                        const generics = [
+                                "<",
+                                c[a + 1]
+                            ],
+                            jj = b;
+                        if (c[a + 1] === "<") {
+                            e = 2;
+                        }
+                        d = a + 2;
+                        if (d < jj) {
+                            do {
+                                generics.push(c[d]);
+                                if (c[d] === "?" && c[d + 1] === ">") {
+                                    generics.push(">");
                                     d = d + 1;
-                                } while (d < b);
-                            }
-                        }());
+                                }
+                                if (c[d] === ",") {
+                                    comma = true;
+                                    if ((/\s/).test(c[d + 1]) === false) {
+                                        generics.push(" ");
+                                    }
+                                } else if (c[d] === "[") {
+                                    f = f + 1;
+                                } else if (c[d] === "]") {
+                                    f = f - 1;
+                                } else if (c[d] === "<") {
+                                    e = e + 1;
+                                } else if (c[d] === ">") {
+                                    e = e - 1;
+                                    if (e === 0 && f === 0) {
+                                        if ((/\s/).test(c[d - 1]) === true) {
+                                            ltype = "operator";
+                                            return operator();
+                                        }
+                                        ltype = "generic";
+                                        a     = d;
+                                        ltoke = generics
+                                            .join("")
+                                            .replace(/\s+/g, " ");
+                                        return recordPush("");
+                                    }
+                                }
+                                if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
+                                    ltype = "operator";
+                                    return operator();
+                                }
+                                d = d + 1;
+                            } while (d < jj);
+                        }
+                        return;
                     } else {
                         ltype = "operator";
                         ltoke = operator();
@@ -1451,12 +1444,13 @@
                 },
                 // operations for end types: ), ], }
                 end            = function lexer_script_end(x) {
-                    var insert   = false,
-                        next     = nextchar(1, false),
+                    let insert   = false;
+                    const next     = nextchar(1, false),
                         newarray = function lexer_script_end_newarray() {
-                            var aa       = data.begin[parse.count],
-                                bb       = 0,
+                            let bb       = 0,
                                 cc       = 0,
+                                arraylen = 0;
+                            const aa       = data.begin[parse.count],
                                 ar       = (data.token[data.begin[parse.count] - 1] === "Array"),
                                 startar  = (ar === true)
                                     ? "["
@@ -1466,8 +1460,7 @@
                                     : "}",
                                 namear   = (ar === true)
                                     ? "array"
-                                    : "object",
-                                arraylen = 0;
+                                    : "object";
                             tempstore    = parse.pop(data);
                             if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "number") {
                                 arraylen                        = data.token[data.begin[parse.count]] - 1;
@@ -1607,11 +1600,11 @@
                 },
                 // determines tag names for {% %} based template tags and returns a type
                 tname          = function lexer_script_tname(x) {
-                    var sn       = 2,
+                    let sn       = 2,
                         en       = 0,
-                        st       = x.slice(0, 2),
+                        name     = "";
+                    const st       = x.slice(0, 2),
                         len      = x.length,
-                        name     = "",
                         namelist = [
                             "autoescape",
                             "block",
@@ -1677,7 +1670,7 @@
                     return "template";
                 };
             start = function lexer_script_start(x) {
-                var aa    = parse.count,
+                let aa    = parse.count,
                     wordx = "",
                     wordy = "",
                     stack = "";
@@ -2131,25 +2124,22 @@
             }
 
             if (options.correct === true) {
-                (function lexer_script_correct() {
-                    var aa = 0,
-                        bb = parse.count + 1;
-                    do {
-                        if (data.token[aa] === "x;") {
-                            data.token[aa] = ";";
-                            scolon         = scolon + 1;
-                        } else if (data.token[aa] === "x{") {
-                            data.token[aa] = "{";
-                        } else if (data.token[aa] === "x}") {
-                            data.token[aa] = "}";
-                        } else if (data.token[aa] === "x(") {
-                            data.token[aa] = "(";
-                        } else if (data.token[aa] === "x)") {
-                            data.token[aa] = ")";
-                        }
-                        aa = aa + 1;
-                    } while (aa < bb);
-                }());
+                let aa = 0;
+                const bb = parse.count + 1;
+                do {
+                    if (data.token[aa] === "x;") {
+                        data.token[aa] = ";";
+                    } else if (data.token[aa] === "x{") {
+                        data.token[aa] = "{";
+                    } else if (data.token[aa] === "x}") {
+                        data.token[aa] = "}";
+                    } else if (data.token[aa] === "x(") {
+                        data.token[aa] = "(";
+                    } else if (data.token[aa] === "x)") {
+                        data.token[aa] = ")";
+                    }
+                    aa = aa + 1;
+                } while (aa < bb);
             }
 
             return data;

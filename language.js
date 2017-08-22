@@ -1,13 +1,13 @@
-/*global ace, define, global, module*/
+/*global global*/
 
 /*
 Taken from Pretty Diff.  This file is not a formal release product. It exists to make testing code in node and browser a bit faster.
 */
 (function language_init() {
     "use strict";
-    var language = {};
+    const language = {};
     language.setlangmode = function language_setlangmode(input) {
-        var langmap = {
+        const langmap = {
             c_cpp     : "script",
             coldfusion: "markup",
             csharp    : "script",
@@ -51,7 +51,7 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
         return langmap[input];
     };
     language.nameproper  = function language_nameproper(input) {
-        var langmap = {
+        const langmap = {
             c_cpp     : "C++ (Not yet supported)",
             coldfusion: "ColdFusion",
             csharp    : "C#",
@@ -84,9 +84,9 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
     // [0] = language value for ace mode [1] = prettydiff language category from [0]
     // [2] = pretty formatting for text output to user
     language.auto = function language_auto(sample, defaultLang) {
-        var b           = [],
-            c           = 0,
-            vartest     = (
+        let b           = [],
+            c           = 0;
+        const vartest     = (
                 /(((var)|(let)|(const)|(function)|(import))\s+(\w|\$)+[a-zA-Z0-9]*)/
             ).test(sample),
             finalstatic = (/((((final)|(public)|(private))\s+static)|(static\s+void))/).test(
@@ -114,11 +114,11 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 return output("css");
             },
             notmarkup   = function language_auto_notmarkup() {
-                var d               = 0,
+                let d               = 1,
                     join            = "",
                     flaga           = false,
-                    flagb           = false,
-                    publicprivate   = (
+                    flagb           = false;
+                const publicprivate   = (
                         /((public)|(private))\s+(static\s+)?(((v|V)oid)|(class)|(final))/
                     ).test(sample),
                     javascriptA     = function language_auto_notmarkup_javascriptA() {
@@ -174,25 +174,28 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                         }
                         return output("css");
                     };
-                for (d = 1; d < c; d = d + 1) {
-                    if (flaga === false) {
-                        if (b[d] === "*" && b[d - 1] === "/") {
-                            b[d - 1] = "";
-                            flaga    = true;
-                        } else if (flagb === false && b[d] === "f" && d < c - 6 && b[d + 1] === "i" && b[d + 2] === "l" && b[d + 3] === "t" && b[d + 4] === "e" && b[d + 5] === "r" && b[d + 6] === ":") {
-                            flagb = true;
+                if (d < c) {
+                    do {
+                        if (flaga === false) {
+                            if (b[d] === "*" && b[d - 1] === "/") {
+                                b[d - 1] = "";
+                                flaga    = true;
+                            } else if (flagb === false && b[d] === "f" && d < c - 6 && b[d + 1] === "i" && b[d + 2] === "l" && b[d + 3] === "t" && b[d + 4] === "e" && b[d + 5] === "r" && b[d + 6] === ":") {
+                                flagb = true;
+                            }
+                        } else if (flaga === true && b[d] === "*" && d !== c - 1 && b[d + 1] === "/") {
+                            flaga    = false;
+                            b[d]     = "";
+                            b[d + 1] = "";
+                        } else if (flagb === true && b[d] === ";") {
+                            flagb = false;
+                            b[d]  = "";
                         }
-                    } else if (flaga === true && b[d] === "*" && d !== c - 1 && b[d + 1] === "/") {
-                        flaga    = false;
-                        b[d]     = "";
-                        b[d + 1] = "";
-                    } else if (flagb === true && b[d] === ";") {
-                        flagb = false;
-                        b[d]  = "";
-                    }
-                    if (flaga === true || flagb === true) {
-                        b[d] = "";
-                    }
+                        if (flaga === true || flagb === true) {
+                            b[d] = "";
+                        }
+                        d = d + 1;
+                    } while (d < c);
                 }
                 join = b.join("");
                 if ((/\s\/\//).test(sample) === false && (/\/\/\s/).test(sample) === false && (/^(\s*(\{|\[)(?!%))/).test(sample) === true && (/((\]|\})\s*)$/).test(sample) && sample.indexOf(",") !== -1) {
@@ -219,7 +222,7 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 return output("unknown");
             },
             markup      = function language_auto_markup() {
-                var html = function language_auto_markup_html() {
+                const html = function language_auto_markup_html() {
                     if ((/<%\s*\}/).test(sample) === true) {
                         return output("ejs");
                     }
