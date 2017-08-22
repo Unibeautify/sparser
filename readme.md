@@ -33,8 +33,6 @@
 
 ## Todo
 * options - define and document supported options
-* unit tests
-* convert `var` to `const` and `let` as appropriate and elminate unncessary IIFEs
 * convert to TypeScript
 * add advanced analytics and reporting of parse errors
 

@@ -29,9 +29,9 @@ The following code example will help start a new lexer:
 /*global global*/
 (function lexerName_init() {
     "use strict";
-    var lexer  = global.lexer,
+    const lexer   = global.lexer,
         lexerName = function lexer_lexerName(source) {
-            var parse         = global.parse,
+            const parse       = global.parse,
                 data          = parse.data,
                 options       = parse.options;
         }

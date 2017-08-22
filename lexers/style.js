@@ -568,7 +568,7 @@
                             //properties without values are considered variables
                             if (data.types[aa] !== "value") {
                                 if (data.types[aa] === "item" && data.types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
-                                    if (isNaN(data.token[parse.count]) === true) {
+                                    if (Number.isNaN(data.token[parse.count]) === false) {
                                         data.token[parse.count - 1] = tokel + data.token[parse.count];
                                     } else {
                                         data.token[parse.count - 1] = tokel + " " + data.token[parse.count];
@@ -714,7 +714,7 @@
                                     if (ltype === "item" && data.types[parse.count - 1] === "colon" && (data.types[parse.count - 2] === "property" || data.types[parse.count - 2] === "variable")) {
                                         ltype                   = "value";
                                         data.types[parse.count] = "value";
-                                        if (isNaN(data.token[parse.count]) === true && data.token[parse.count].charAt(data.token[parse.count].length - 1) !== ")") {
+                                        if (Number.isNaN(data.token[parse.count]) === true && data.token[parse.count].charAt(data.token[parse.count].length - 1) !== ")") {
                                             data.token[parse.count] = data.token[parse.count] + quote;
                                         } else {
                                             data.token[parse.count] = data.token[parse.count] + " " + quote;

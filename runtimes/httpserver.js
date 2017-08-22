@@ -7,17 +7,14 @@
 
 (function () {
     "use strict";
-    var http   = require("http"),
+    const http   = require("http"),
         server = http.createServer(function (request, response) {
-            var fs   = require("fs"),
-                file = "";
-            if (request.url === "/") {
-                file = "browsertest.xhtml";
-            } else {
-                file = request
-                    .url
-                    .slice(1);
-            }
+            const fs   = require("fs"),
+                file = (request.url === "/")
+                    ? "browsertest.xhtml"
+                    : request
+                        .url
+                        .slice(1);
             if (request.url.indexOf("favicon.ico") < 0) {
                 fs.readFile(file, "utf8", function (err, data) {
                     if (err !== undefined && err !== null) {

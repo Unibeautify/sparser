@@ -3,7 +3,7 @@
 
 (function web() {
     "use strict";
-    var input   = document.getElementById("input"),
+    const input   = document.getElementById("input"),
         options = {
             correct   : false,
             lexer     : "script",
@@ -12,18 +12,18 @@
             tagSort   : false
         },
         handler = function web_handler() {
-            var value = input.value,
-                startTime = 0,
+            let output = {},
+                startTime = 0;
+            const value = input.value,
                 startTotal = Math.round(performance.now() * 1000),
                 lang   = global.language.auto(value, "javascript"),
-                output = {},
                 builder = function web_handler_builder(data) {
-                    var a         = 0,
-                        len       = data.token.length,
+                    let a         = 0,
+                        body      = document.createElement("thead");
+                    const len       = data.token.length,
                         table     = document.createElement("table"),
-                        body      = document.createElement("thead"),
                         cell      = function web_handler_builder_cell(text, type, row, className) {
-                            var el = document.createElement(type);
+                            const el = document.createElement(type);
                             if (className !== "") {
                                 el.setAttribute("class", className);
                             }
@@ -31,7 +31,7 @@
                             row.appendChild(el);
                         },
                         row       = function web_handler_builder_row() {
-                            var tr = document.createElement("tr");
+                            const tr = document.createElement("tr");
                             cell(a, "th", tr, "numb");
                             cell(data.begin[a], "td", tr, "numb");
                             cell(data.lexer[a], "td", tr, "");
@@ -48,7 +48,7 @@
                             body.appendChild(tr);
                         },
                         header    = function web_handler_builder_header(parent) {
-                            var tr   = document.createElement("tr");
+                            const tr   = document.createElement("tr");
                             cell("index", "th", tr, "numb");
                             cell("begin", "th", tr, "numb");
                             cell("lexer", "th", tr, "");
@@ -92,13 +92,13 @@
             startTime = Math.round(performance.now() * 1000);
             output = global.parser(options);
             (function web_handler_perfParse() {
-                var endTime = Math.round(performance.now() * 1000),
+                const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
                 document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
             builder(output);
             (function web_handler_perfTotal() {
-                var endTime = Math.round(performance.now() * 1000),
+                const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTotal) / 1000;
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
@@ -109,7 +109,7 @@
             }
         },
         backspace = function web_backspace(event) {
-            var e = event || window.event,
+            const e = event || window.event,
                 f = e.srcElement || e.target;
             if (e.keyCode === 8 && f.nodeName !== "textarea") {
                 e.preventDefault();

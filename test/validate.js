@@ -3,7 +3,13 @@
 // index)
 module.exports = (function taskrunner() {
     "use strict";
-    var order      = [
+    let next       = function taskrunner_nextInit() {
+            return;
+        },
+        parse      = {},
+        prettydiff_options    = {},
+        parse_options = {};
+    const order      = [
             "lint", //       - run jslint on all unexcluded JS files in the repo
             "framework", //  - test the framework
             "codeunits" //   - test the lexers
@@ -17,7 +23,7 @@ module.exports = (function taskrunner() {
         orderlen   = order.length,
         relative   = __dirname.replace(/((\/|\\)test)$/, ""),
         humantime  = function taskrunner_humantime(finished) {
-            var minuteString = "",
+            let minuteString = "",
                 hourString   = "",
                 secondString = "",
                 finalTime    = "",
@@ -25,9 +31,10 @@ module.exports = (function taskrunner() {
                 strSplit     = [],
                 minutes      = 0,
                 hours        = 0,
+                memory       = {},
                 elapsed      = (function taskrunner_humantime_elapsed() {
-                    var endtime = process.hrtime(),
-                        dtime = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
+                    const endtime = process.hrtime();
+                    let dtime = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
                     if (dtime[1] === 0) {
                         return dtime[0];
                     }
@@ -35,14 +42,14 @@ module.exports = (function taskrunner() {
                         dtime[1] = ((1000000000 + endtime[1]) - startTime[1]);
                     }
                     return dtime[0] + (dtime[1] / 1000000000);
-                }()),
-                memory       = {},
-                prettybytes  = function taskrunner_humantime_prettybytes(an_integer) {
+                }());
+            const prettybytes  = function taskrunner_humantime_prettybytes(an_integer) {
                     //find the string length of input and divide into triplets
-                    var length  = an_integer
+                    let output = "",
+                        length  = an_integer
                             .toString()
-                            .length,
-                        triples = (function taskrunner_humantime_prettybytes_triples() {
+                            .length;
+                    const triples = (function taskrunner_humantime_prettybytes_triples() {
                             if (length < 22) {
                                 return Math.floor((length - 1) / 3);
                             }
@@ -51,7 +58,7 @@ module.exports = (function taskrunner() {
                         }()),
                         //each triplet is worth an exponent of 1024 (2 ^ 10)
                         power   = (function taskrunner_humantime_prettybytes_power() {
-                            var a = triples - 1,
+                            let a = triples - 1,
                                 b = 1024;
                             if (triples === 0) {
                                 return 0;
@@ -76,8 +83,7 @@ module.exports = (function taskrunner() {
                             "EB",
                             "ZB",
                             "YB"
-                        ],
-                        output  = "";
+                        ];
 
                     if (typeof an_integer !== "number" || Number.isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
                         //input not a positive integer
@@ -93,13 +99,10 @@ module.exports = (function taskrunner() {
                     return output;
                 },
                 plural       = function core__proctime_plural(x, y) {
-                    var a = "";
                     if (x !== 1) {
-                        a = x + y + "s ";
-                    } else {
-                        a = x + y + " ";
+                        return x + y + "s ";
                     }
-                    return a;
+                    return x + y + " ";
                 },
                 minute       = function core__proctime_minute() {
                     minutes      = parseInt((elapsed / 60), 10);
@@ -165,29 +168,23 @@ module.exports = (function taskrunner() {
             }
         },
         prettydiff = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
-        prettydiff_options    = {},
-        parse      = {},
-        parse_options = {},
         errout     = function taskrunner_errout(errtext) {
             console.log("");
             console.error(errtext);
             humantime(true);
             process.exit(1);
         },
-        next       = function taskrunner_nextInit() {
-            return;
-        },
         diffFiles  = function taskrunner_diffFiles(sampleName, sampleSource, sampleDiff) {
-            var aa     = 0,
+            let aa     = 0,
                 pdlen  = 0,
                 plus   = "",
                 plural = "",
                 report = [],
-                total  = 0,
-                diffview = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
+                total  = 0;
+            const diffview = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
                 record = function taskrunner_diffFiles_record(data) {
-                    var len = data.token.length,
-                        x   = 0,
+                    let x = 0;
+                    const len = data.token.length,
                         rec = [],
                         dn  = function taskrunner_diffFiles_record_datanames(value) {
                             rec[x][value] = data[value][x];
@@ -249,7 +246,7 @@ module.exports = (function taskrunner() {
         },
         phases     = {
             codeunits: function taskrunner_coreunits() {
-                var files  = {
+                const files  = {
                         code  : [],
                         parsed: []
                     },
@@ -263,7 +260,7 @@ module.exports = (function taskrunner() {
                     },
                     lexers = Object.keys(parse.lexer),
                     compare = function taskrunner_coreunits_compare() {
-                        var len       = (files.code.length > files.parsed.length)
+                        let len       = (files.code.length > files.parsed.length)
                                 ? files.code.length
                                 : files.parsed.length,
                             lang      = [],
@@ -271,9 +268,9 @@ module.exports = (function taskrunner() {
                             str       = "",
                             output    = {},
                             filecount = 0,
-                            currentlex = "",
-                            lexer     = function taskrunner_coreunits_compare_lexer() {
-                                var lex = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
+                            currentlex = "";
+                        const lexer     = function taskrunner_coreunits_compare_lexer() {
+                                const lex = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
                                 console.log("");
                                 console.log("Tests for lexer - \u001b[36m" + lex + "\u001b[39m");
                                 currentlex = lex;
@@ -385,9 +382,9 @@ module.exports = (function taskrunner() {
                         return next();
                     },
                     readDir = function taskrunner_coreunits_readDir(type, lexer, final_lexer) {
-                        var dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
+                        const dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
-                            var pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
+                            const pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
                                     dirpath + val,
                                     "utf8",
@@ -423,11 +420,10 @@ module.exports = (function taskrunner() {
                 });
             },
             framework: function taskrunner_framework() {
-                var keys    = [],
-                    keylist = "concat,count,data,datanames,lexer,lf,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure",
+                let keys    = [],
                     keysort = "";
+                const keylist = "concat,count,data,datanames,lexer,lf,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
-                
                 global.parser({
                     lang  : "html",
                     lexer : "markup",
@@ -533,7 +529,7 @@ module.exports = (function taskrunner() {
                 return next();
             },
             lint     : function taskrunner_lint() {
-                var ignoreDirectory = [
+                const ignoreDirectory = [
                         ".git",
                         ".vscode",
                         "ace",
@@ -555,11 +551,11 @@ module.exports = (function taskrunner() {
                     files           = [],
                     jslint          = require(__dirname + node.path.sep + "jslint" + node.path.sep + "jslint.js"),
                     lintrun         = function taskrunner_lint_lintrun() {
-                        var lintit = function taskrunner_lint_lintrun_lintit(val, ind, arr) {
-                            var result = {},
+                        const lintit = function taskrunner_lint_lintrun_lintit(val, ind, arr) {
+                            let result = {},
                                 failed = false,
-                                ecount = 0,
-                                report = function taskrunner_lint_lintrun_lintit_lintOn_report(warning) {
+                                ecount = 0;
+                            const report = function taskrunner_lint_lintrun_lintit_lintOn_report(warning) {
                                     //start with an exclusion list.  There are some warnings that I don't care about
                                     if (warning === null) {
                                         return;
@@ -638,11 +634,11 @@ module.exports = (function taskrunner() {
                 );
                 console.log("");
                 (function taskrunner_lint_getFiles() {
-                    var fc       = 0,
+                    let fc       = 0,
                         ft       = 0,
                         total    = 0,
-                        count    = 0,
-                        idLen    = ignoreDirectory.length,
+                        count    = 0;
+                    const idLen    = ignoreDirectory.length,
                         readFile = function taskrunner_lint_getFiles_readFile(filePath) {
                             node.fs.readFile(
                                 filePath,
@@ -669,14 +665,14 @@ module.exports = (function taskrunner() {
                             node.fs.readdir(
                                 filepath,
                                 function taskrunner_lint_getFiles_readDir_callback(erra, list) {
-                                    var fileEval = function taskrunner_lint_getFiles_readDir_callback_fileEval(val) {
-                                        var filename = filepath + node.path.sep + val;
+                                    const fileEval = function taskrunner_lint_getFiles_readDir_callback_fileEval(val) {
+                                        const filename = filepath + node.path.sep + val;
                                         node.fs.stat(
                                             filename,
                                             function taskrunner_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
-                                                var a         = 0,
-                                                    ignoreDir = false,
-                                                    dirtest   = filepath.replace(/\\/g, "/") + "/" + val;
+                                                let a         = 0,
+                                                    ignoreDir = false;
+                                                const dirtest   = filepath.replace(/\\/g, "/") + "/" + val;
                                                 if (errb !== null) {
                                                     return errout(errb);
                                                 }
@@ -740,13 +736,13 @@ module.exports = (function taskrunner() {
     });
 
     next = function taskrunner_next() {
-        var complete = function taskrunner_complete() {
+        let phase = order[0];
+        const complete = function taskrunner_complete() {
                 console.log("");
                 console.log("All tasks complete... Exiting clean!");
                 humantime(true);
                 process.exit(0);
-            },
-            phase = order[0];
+            };
         if (order.length < 1) {
             return complete();
         }
