@@ -250,7 +250,7 @@ I ran this application against [jQuery Mobile 1.4.2 minified](http://code.jquery
 
 #### Conclusions
 * Performance is neutral in Firefox and Opera where it does not appear there is optimization by convention.
-* Chrome is known for providing numerous micro-optimizations and parse-framework is not making as aggressive use of those. A minor penalty is noted for creating objects as temporary storage containres for dynamic population and for performing automatic semicolon insertion logic.
+* Chrome is known for providing numerous micro-optimizations and parse-framework is not making as aggressive use of those. A minor penalty is noted for creating objects as temporary storage containers for dynamic population and for performing automatic semicolon insertion logic.
 * Safari provides brutal penalties to the Array *pop* method, which is critical to parse-framework. The standard pop method appears to be a vanity method over the Array *splice* method in the compiler. Take note of the wide performance differences between Esprima and Acorn in Safari.
 
 ### Why is the code so big?
