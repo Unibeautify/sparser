@@ -495,9 +495,6 @@
                                     if (b[a + 4] === "#") {
                                         end   = "-->";
                                         ltype = "template";
-                                    } else if (b[a + 4] === "[" && b[a + 5] === "i" && b[a + 6] === "f" && options.conditional === true) {
-                                        end   = "-->";
-                                        ltype = "conditional";
                                     } else if (b[a + 4] === "-" && (/<cf[a-z]/i).test(source) === true) {
                                         preserve = true;
                                         comment  = true;
@@ -505,19 +502,9 @@
                                         ltype    = "comment";
                                     } else {
                                         end = "-->";
-                                        if (options.comments === "nocomment") {
-                                            nopush  = true;
-                                            comment = true;
-                                        } else {
-                                            if (options.preserveComment === true) {
-                                                preserve = true;
-                                            }
-                                            comment = true;
-                                            if (options.commline === true) {
-                                                data.lines[parse.count] = 2;
-                                            }
-                                            ltype = "comment";
-                                        }
+                                        preserve = true;
+                                        comment = true;
+                                        ltype = "comment";
                                     }
                                 } else if (b[a + 2] === "[" && b[a + 3] === "C" && b[a + 4] === "D" && b[a + 5] === "A" && b[a + 6] === "T" && b[a + 7] === "A" && b[a + 8] === "[") {
                                     end      = "]]>";
@@ -544,16 +531,10 @@
                                 if (b[a + 2] === "-" && b[a + 3] === "-") {
                                     end     = "--%>";
                                     comment = true;
-                                    if (options.commline === true) {
-                                        data.lines[parse.count] = 2;
-                                    }
                                     ltype = "comment";
                                 } else if (b[a + 2] === "#") {
                                     end     = "%>";
                                     comment = true;
-                                    if (options.commline === true) {
-                                        data.lines[parse.count] = 2;
-                                    }
                                     ltype = "comment";
                                 } else {
                                     end   = "%>";
@@ -794,7 +775,7 @@
                                         aa            = aa + 1;
                                     } while (aa < bb);
                                 }
-                                atty = attribute.join(parse.lf);
+                                atty = attribute.join(parse.crlf);
                                 if (atty === "=") {
                                     attstore[attstore.length - 1] = attstore[attstore.length - 1] + "=";
                                 } else if (atty.charAt(0) === "=" && attstore.length > 0 && attstore[attstore.length - 1].indexOf("=") < 0) {
@@ -1330,7 +1311,7 @@
                             const lastToken = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && lastToken.charAt(lastToken.length - 2) !== "/" && "/" + tagName(lastToken) === tname) {
                                 data.types[parse.count - 1] = "start";
-                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.tagmerge === true(data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
+                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.tagMerge === true(data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
                                 parse.pop(data);
                                 if (data.types[parse.count] === "start") {
                                     data.token[parse.count] = data
@@ -1971,12 +1952,6 @@
                             token: "",
                             types: "content"
                         },
-                        tailSpace = function lexer_markup_content_tailSpace(spacey) {
-                            if (linepreserve > 0 && spacey.indexOf("\n") < 0 && spacey.indexOf("\r") < 0) {
-                                spacey = "";
-                            }
-                            return "";
-                        },
                         esctest   = function lexer_markup_content_esctest() {
                             let aa = a - 1,
                                 bb = 0;
@@ -2123,22 +2098,8 @@
                             //typically this logic is for artifacts nested within an SGML tag
                             if (square === true && b[a] === "]") {
                                 a = a - 1;
-                                if (options.content === true) {
-                                    ltoke = "text";
-                                } else if (options.textpreserve === true) {
-                                    ltoke = minspace + lex.join("");
-                                    liner = 0;
-                                } else if (parse.linesSpace > 0) {
-                                    ltoke = minspace + lex
-                                        .join("")
-                                        .replace(/(\s+)$/, tailSpace);
-                                    liner = 0;
-                                } else {
-                                    ltoke = lex
-                                        .join("")
-                                        .replace(/(\s+)$/, tailSpace)
-                                        .replace(/\s+/g, " ");
-                                }
+                                ltoke = minspace + lex.join("");
+                                liner = 0;
                                 record.token = ltoke;
                                 parse.push(data, record, "");
                                 break;
@@ -2150,17 +2111,8 @@
                                 //dustjs template handling
                                 if (options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
-                                    if (options.content === true) {
-                                        ltoke = "text";
-                                    } else if (options.textpreserve === true) {
-                                        ltoke = minspace + lex.join("");
-                                        liner = 0;
-                                    } else {
-                                        ltoke = lex
-                                            .join("")
-                                            .replace(/(\s+)$/, tailSpace)
-                                            .replace(/\s+/g, " ");
-                                    }
+                                    ltoke = minspace + lex.join("");
+                                    liner = 0;
                                     record.token = ltoke;
                                     parse.push(data, record, "");
                                     record.token = "{:else}";
@@ -2172,21 +2124,8 @@
 
                                 //regular content
                                 a = a - 1;
-                                if (options.content === true) {
-                                    ltoke = "text";
-                                } else if (options.textpreserve === true) {
-                                    ltoke = minspace + lex.join("");
-                                    liner = 0;
-                                } else if (parse.linesSpace > 0) {
-                                    ltoke = minspace + lex
-                                        .join("")
-                                        .replace(/(\s+)$/, tailSpace);
-                                } else {
-                                    ltoke = lex
-                                        .join("")
-                                        .replace(/(\s+)$/, tailSpace)
-                                        .replace(/\s+/g, " ");
-                                }
+                                ltoke = minspace + lex.join("");
+                                liner = 0;
                                 record.token = ltoke;
                                 parse.push(data, record, "");
                                 break;
@@ -2213,16 +2152,8 @@
                     } else if (a !== now || (a === now && ext === false)) {
 
                         //regular content at the end of the supplied source
-                        if (options.content === true) {
-                            ltoke = "text";
-                        } else if (options.textpreserve === true) {
-                            ltoke = minspace + lex.join("");
-                            liner = 0;
-                        } else {
-                            ltoke = lex
-                                .join("")
-                                .replace(/(\s+)$/, tailSpace);
-                        }
+                        ltoke = minspace + lex.join("");
+                        liner = 0;
                         
                         //this condition prevents adding content that was just added in the loop above
                         if (record.token !== ltoke) {

@@ -258,11 +258,7 @@
                 cc   = 0;
                 if (cc < leng) {
                     do {
-                        if (options.noleadzero === false && (/^(\.\d)/).test(values[cc]) === true) {
-                            values[cc] = "0" + values[cc];
-                        } else if (options.noleadzero === true && (/^(0+\.)/).test(values[cc])) {
-                            values[cc] = values[cc].replace(/^(0+\.)/, ".");
-                        } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
+                        if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
                             values[cc] = "0";
                         } else if ((/^(0+)/).test(values[cc]) === true) {
                             values[cc] = values[cc].replace(/0+/, "0");

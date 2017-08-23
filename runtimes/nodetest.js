@@ -21,7 +21,7 @@
         },
         clear     = "\u001b[39m\u001b[0m",
         directory = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
-        raw       = (function () {
+        raw       = (function nodetest_raw() {
             const index = process.argv.indexOf("--raw");
             if (index < 0) {
                 return false;
@@ -30,7 +30,6 @@
             return true;
         }()),
         options   = {
-            jsx       : false,
             lexer     : "script",
             objectSort: false,
             source    : ""
@@ -45,7 +44,9 @@
                 dur = (end - sta) / 1000000;
             return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
         },
-        source    = process.argv[2],
+        source    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
+            ? process.argv[2] + process.argv[3]
+            : process.argv[2],
         display   = function (output) {
             let a   = 0,
                 str = [];
@@ -105,7 +106,7 @@
         execute   = function (sourcetext) {
             let output = {};
             lang           = language.auto(sourcetext);
-            options.lexer  = lang[1]; 
+            options.lexer  = lang[1];
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source) {
