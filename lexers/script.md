@@ -50,3 +50,6 @@ The stack values are identified by either a known categorical term that describe
 * **notation** - A TSX data structure.  TSX is TypeScript adapted to the syntax of JSX.
 * **object** - A regular object literal.
 * **paren** - Describes parenthsis groupings when other parenthsis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
+
+## script options
+* **objectSort** - Sorts the named properties (keys) of object literals alphabetically.

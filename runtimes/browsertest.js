@@ -77,10 +77,15 @@
                     document.getElementById("data").innerHTML = "";
                     document.getElementById("data").appendChild(table);
                 };
-            options.objectSort = (document.getElementById("objectSort").checked === true);
-            options.tagSort    = (document.getElementById("tagSort").checked === true);
-            options.lang       = "html";//lang[0];
-            options.lexer      = lang[1];
+            options.lexerOptions = {};
+            Object.keys(global.lexer).forEach(function web_handler_lexers(value) {
+                options.lexerOptions[value] = {};
+            });
+            options.lexerOptions.script.objectSort = (document.getElementById("objectSort").checked === true);
+            options.lexerOptions.style.objectSort  = (document.getElementById("objectSort").checked === true);
+            options.lexerOptions.markup.tagSort    = (document.getElementById("tagSort").checked === true);
+            options.lang                           = lang[0];
+            options.lexer                          = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             if (options.lexer === "javascript") {
                 options.lexer = "script";

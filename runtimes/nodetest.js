@@ -21,7 +21,7 @@
         },
         clear     = "\u001b[39m\u001b[0m",
         directory = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
-        raw       = (function () {
+        raw       = (function nodetest_raw() {
             const index = process.argv.indexOf("--raw");
             if (index < 0) {
                 return false;
@@ -30,9 +30,7 @@
             return true;
         }()),
         options   = {
-            jsx       : false,
             lexer     : "script",
-            objectSort: false,
             source    : ""
         },
         timespan  = function () {
@@ -45,7 +43,9 @@
                 dur = (end - sta) / 1000000;
             return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
         },
-        source    = process.argv[2],
+        source    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
+            ? process.argv[2] + process.argv[3]
+            : process.argv[2],
         display   = function (output) {
             let a   = 0,
                 str = [];
@@ -105,7 +105,7 @@
         execute   = function (sourcetext) {
             let output = {};
             lang           = language.auto(sourcetext);
-            options.lexer  = lang[1]; 
+            options.lexer  = lang[1];
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source) {
@@ -115,14 +115,16 @@
                         options.correct = false;
                     }
                     if ((/_objectSort(\.|_)/).test(source) === true) {
-                        options.objectSort = true;
+                        options.lexerOptions.style.objectSort = true;
+                        options.lexerOptions.script.objectSort = true;
                     } else {
-                        options.objectSort = false;
+                        options.lexerOptions.style.objectSort = false;
+                        options.lexerOptions.script.objectSort = false;
                     }
                     if ((/_tagSort(\.|_)/).test(source) === true) {
-                        options.tagSort = true;
+                        options.lexerOptions.markup.tagSort = true;
                     } else {
-                        options.tagSort = false;
+                        options.lexerOptions.markup.tagSort = false;
                     }
                     if ((/_lang-\w+(\.|_)/).test(source) === true) {
                         options.lang = source.split("_lang-")[1];
@@ -155,6 +157,7 @@
         };
     global.lexer = {};
     global.parseerror = "";
+    options.lexerOptions = {};
     node.fs.readdir(directory + "lexers", function (err, files) {
         if (err !== null) {
             console.log(err);
@@ -163,6 +166,7 @@
         files.forEach(function (value) {
             if ((/(\.js)$/).test(value) === true) {
                 require(directory + "lexers" + node.path.sep + value);
+                options.lexerOptions[value] = {};
             }
         });
         require(directory + "parse.js");

@@ -27,6 +27,7 @@
    1. [stack](#stack)
    1. [token](#token)
    1. [types](#types)
+1. [Options](#options)
 1. [Files](#files)
 1. [Contributing](#contributing)
 1. [FAQ](#faq)
@@ -204,6 +205,29 @@ The *token* array contains a string of the current item.  Markup attributes will
 
 ### types
 The *types* array contains a string that describes the token value according to a generalized category name.  These values are lexer specific.  For details on available values and definitions please see the lexer specific documentation.
+
+## Options
+The options object is available to all lexers as **global.parse.options**, but is often aliased to `options` in the lexer code. 
+
+### Standard Options
+These options exist directly within the options object and exist universally to assist the framework.
+
+Name | Type | Default | Description
+---|---|---|---
+**correct** | boolean | false | If code corrections to syntax should be applied... similar to ESLint's *fix* option
+**crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
+**lang** | string | "javascript" | A lowercase name of a language for certain language specific features
+**lexer** | string | "script" | the lexer to start scanning the code
+**source** | string | "" (empty string) | the code to parse
+
+### Lexer Options
+The options are available from the specified lexer and are specified as **options.lexerOptions[lexerName][optionName]** where *lexerName* refers to the name of the lexer and *optionName* refers to the actual option, for example: `options.lexerOptions.markup.tagSort`.
+
+Name | Type | Default | Lexers | Description
+---|---|---|---|---
+**objectSort** | boolean | false | script, style | If object properties should be sorted.  Supported in the *script* and *style* lexers
+**tagMerge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
+**tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
 
 ## Files
 ### Critical

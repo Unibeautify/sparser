@@ -18,8 +18,7 @@ Parse Framework
                 "token",
                 "types"
             ];
-            parse.lexer      = global.lexer;
-            parse.lf         = (options.crlf === true || options.crlf === "true")
+            parse.crlf       = (options.crlf === true || options.crlf === "true")
                 ? "\r\n"
                 : "\n";
             parse.linesSpace = 0;
@@ -44,13 +43,16 @@ Parse Framework
                 }
                 return arr;
             };
-
             if (global.lexer[options.lexer] === "undefined") {
                 global.parseerror = "Lexer '" + options.lexer + "' isn't available.";
             } else if (typeof global.lexer[options.lexer] !== "function") {
                 global.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
             } else {
                 global.parseerror = "";
+                options.lexerOptions = (options.lexerOptions || {});
+                Object.keys(global.lexer).forEach(function parse_lexers(value) {
+                    options.lexerOptions[value] = (options.lexerOptions[value] || {});
+                });
                 global.lexer[options.lexer](options.source + " ");
             }
 
@@ -74,7 +76,7 @@ Parse Framework
                 } while (a < c - 1);
             }());
 
-            if (parse.options.objectSort === true || parse.options.tagSort === true) {
+            if (parse.options.lexerOptions[options.lexer].objectSort === true || parse.options.lexerOptions.markup.tagSort === true) {
                 let a = 0;
                 const data    = parse.data,
                     b         = data.begin.length,
@@ -84,9 +86,9 @@ Parse Framework
                         structure.pop();
                     }
                     if (data.begin[a] !== structure[structure.length - 1]) {
-                        if (parse.options.objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
+                        if (parse.options.lexerOptions[options.lexer].objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
                             data.begin[a] = structure[structure.length - 1];
-                        } else if (parse.options.tagSort === true && data.lexer[a] === "markup") {
+                        } else if (parse.options.lexerOptions.markup.tagSort === true && data.lexer[a] === "markup") {
                             data.begin[a] = structure[structure.length - 1];
                         }
                     }
@@ -577,8 +579,6 @@ Parse Framework
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Produce an unformatted parse table - \u001b[33mnode runtimes/nodetest.js myfile.jsx --raw\u001b[39m");
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read the documentation             - \u001b[33mcat readme.md\u001b[39m");
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read about the lexers              - \u001b[33mcat lexers/readme.md\u001b[39m");
-        //console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m  - \u001b[33m\u001b[39m");
-        //console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m  - \u001b[33m\u001b[39m");
         console.log("");
     } else if (global.process === undefined) {
         console.log("");
