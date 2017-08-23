@@ -22,6 +22,9 @@ Conformance to these restrictions ensures compliance with the framework.  This i
 * A lexer must be accompanied by documentation in markdown format.
 * Unless there is a special exception data records about to be populated into `parse.data` must always look to the last index (most recently populated) for the values of the *begin* and *stack* data fields.
 
+### Name of Lexer
+The lexer's name must be a single word all lowercase. This name must be uniform and identical in all cases in both the code and file name operate correctly within the framework.
+
 ### Boilerplate
 The following code example will help start a new lexer:
 
@@ -29,15 +32,17 @@ The following code example will help start a new lexer:
 /*global global*/
 (function lexerName_init() {
     "use strict";
-    const lexer   = global.lexer,
-        lexerName = function lexer_lexerName(source) {
-            const parse       = global.parse,
-                data          = parse.data,
-                options       = parse.options;
-        }
+    const lexerName = function lexer_lexerName(source) {
+        const parse = global.parse,
+            data    = parse.data,
+            options = parse.options;
+    }
 
-    lexer.lexerName = lexerName;
+    global.lexer.lexerName = lexerName;
 }());
 ```
 
 Simply copy/paste the above code sample and change `lexerName` to the name of the language you are attempting to parse.
+
+## Lexer Specific Options
+Lexers may allow options in addition to the standard options provided to Parse Framework.  Such options will be included using this pattern: `options.lexerOptions[lexerName].optionName`.  This is the standard options object available to the lexer as **global.parse.options**, lexerName, refers to the name of the given lexer.

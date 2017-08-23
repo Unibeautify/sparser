@@ -31,7 +31,6 @@
         }()),
         options   = {
             lexer     : "script",
-            objectSort: false,
             source    : ""
         },
         timespan  = function () {
@@ -116,14 +115,16 @@
                         options.correct = false;
                     }
                     if ((/_objectSort(\.|_)/).test(source) === true) {
-                        options.objectSort = true;
+                        options.lexerOptions.style.objectSort = true;
+                        options.lexerOptions.script.objectSort = true;
                     } else {
-                        options.objectSort = false;
+                        options.lexerOptions.style.objectSort = false;
+                        options.lexerOptions.script.objectSort = false;
                     }
                     if ((/_tagSort(\.|_)/).test(source) === true) {
-                        options.tagSort = true;
+                        options.lexerOptions.markup.tagSort = true;
                     } else {
-                        options.tagSort = false;
+                        options.lexerOptions.markup.tagSort = false;
                     }
                     if ((/_lang-\w+(\.|_)/).test(source) === true) {
                         options.lang = source.split("_lang-")[1];
@@ -156,6 +157,7 @@
         };
     global.lexer = {};
     global.parseerror = "";
+    options.lexerOptions = {};
     node.fs.readdir(directory + "lexers", function (err, files) {
         if (err !== null) {
             console.log(err);
@@ -164,6 +166,7 @@
         files.forEach(function (value) {
             if ((/(\.js)$/).test(value) === true) {
                 require(directory + "lexers" + node.path.sep + value);
+                options.lexerOptions[value] = {};
             }
         });
         require(directory + "parse.js");

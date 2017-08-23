@@ -9,7 +9,6 @@
         const parse       = global.parse,
             data        = parse.data,
             options     = parse.options,
-
             colors      = [],
             verticalop  = false,
             colorNames  = {
@@ -1206,5 +1205,5 @@
         return data;
     };
 
-    global.lexer.style = style;
+    global.lexer.style  = style;
 }());

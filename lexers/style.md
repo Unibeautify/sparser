@@ -19,3 +19,6 @@ A lexer for scanning CSS and related code formats.
 
 ## stack values
 The style lexer takes the identifier, typically a selector, preceeding the start types value of the current stack as the value.
+
+## style options
+* **objectSort** - Sorts the named properties (keys) of object literals alphabetically.

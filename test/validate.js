@@ -258,7 +258,7 @@ module.exports = (function taskrunner() {
                         code  : 0,
                         parsed: 0
                     },
-                    lexers = Object.keys(parse.lexer),
+                    lexers = Object.keys(global.lexer),
                     compare = function taskrunner_coreunits_compare() {
                         let len       = (files.code.length > files.parsed.length)
                                 ? files.code.length
@@ -310,14 +310,16 @@ module.exports = (function taskrunner() {
                                         parse_options.correct = false;
                                     }
                                     if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
-                                        parse_options.objectSort = true;
+                                        parse_options.lexerOptions.script.objectSort = true;
+                                        parse_options.lexerOptions.style.objectSort = true;
                                     } else {
-                                        parse_options.objectSort = false;
+                                        parse_options.lexerOptions.script.objectSort = false;
+                                        parse_options.lexerOptions.style.objectSort = false;
                                     }
                                     if ((/_tagSort(\.|_)/).test(files.code[a][0]) === true) {
-                                        parse_options.tagSort = true;
+                                        parse_options.lexerOptions.markup.tagSort = true;
                                     } else {
-                                        parse_options.tagSort = false;
+                                        parse_options.lexerOptions.markup.tagSort = false;
                                     }
                                     if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
                                         parse_options.lang = files.code[a][0].split("_lang-")[1];
@@ -422,7 +424,7 @@ module.exports = (function taskrunner() {
             framework: function taskrunner_framework() {
                 let keys    = [],
                     keysort = "";
-                const keylist = "concat,count,data,datanames,lexer,lf,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
+                const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
                 global.parser({
                     lang  : "html",
@@ -458,12 +460,7 @@ module.exports = (function taskrunner() {
                 }
                 console.log(humantime(false) + "\u001b[32mparse.datanames contains only the data field names.\u001b[39m");
                 
-                if (parse.lexer !== global.lexer) {
-                    return errout("\u001b[31mParse framework failure: parse.lexer is not assigned to global.lexer.\u001b[39m ");
-                }
-                console.log(humantime(false) + "\u001b[32mparse.lexer is assigned to global.lexer.\u001b[39m");
-                
-                if (parse.lf !== "\n" && parse.lf !== "\r\n") {
+                if (parse.crlf !== "\n" && parse.crlf !== "\r\n") {
                     return errout("\u001b[31mParse framework failure: parse.lf does have a value of \"\\n\" or \"\\r\\n\".\u001b[39m ");
                 }
                 console.log(humantime(false) + "\u001b[32mparse.lf has a value of \"\\n\" or \"\\r\\n\".\u001b[39m");
@@ -721,6 +718,7 @@ module.exports = (function taskrunner() {
     global.lexer      = {};
     global.parseerror = "";
     parse             = global.parse;
+    parse_options.lexerOptions = {};
 
     node.fs.readdir(relative + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
         if (err !== null) {
@@ -730,6 +728,7 @@ module.exports = (function taskrunner() {
             files.forEach(function taskrunner_lexers_each(value) {
                 if ((/(\.js)$/).test(value) === true) {
                     require(relative + node.path.sep + "lexers" + node.path.sep + value);
+                    parse_options.lexerOptions[value.slice(0, value.indexOf("."))] = {};
                 }
             });
         }
