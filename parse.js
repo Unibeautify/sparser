@@ -5,6 +5,7 @@ Parse Framework
 
 (function parse_init() {
     "use strict";
+    let framework = {};
     const parse   = {},
         parser  = function parser_(options) {
             parse.count      = -1;
@@ -43,17 +44,17 @@ Parse Framework
                 }
                 return arr;
             };
-            if (global.lexer[options.lexer] === "undefined") {
-                global.parseerror = "Lexer '" + options.lexer + "' isn't available.";
-            } else if (typeof global.lexer[options.lexer] !== "function") {
-                global.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
+            if (framework.lexer[options.lexer] === "undefined") {
+                framework.parseerror = "Lexer '" + options.lexer + "' isn't available.";
+            } else if (typeof framework.lexer[options.lexer] !== "function") {
+                framework.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
             } else {
-                global.parseerror = "";
+                framework.parseerror = "";
                 options.lexerOptions = (options.lexerOptions || {});
-                Object.keys(global.lexer).forEach(function parse_lexers(value) {
+                Object.keys(framework.lexer).forEach(function parse_lexers(value) {
                     options.lexerOptions[value] = (options.lexerOptions[value] || {});
                 });
-                global.lexer[options.lexer](options.source + " ");
+                framework.lexer[options.lexer](options.source + " ");
             }
 
             // validate that all the data arrays are the same length
@@ -565,8 +566,10 @@ Parse Framework
             parse.linesSpace = 0;
         }
     };
-    global.parse     = parse;
-    global.parser    = parser;
+    global.parseFramework = (global.parseFramework || {});
+    framework = global.parseFramework;
+    framework.parse     = parse;
+    framework.parser    = parser;
     
     if (global.DTRACE_NET_STREAM_END !== undefined && global.process.argv.length > 2 && global.process.argv[2].indexOf("parse.js") > 0) {
         console.log("");

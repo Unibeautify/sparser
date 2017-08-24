@@ -315,5 +315,5 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
         }
         return output("unknown");
     };
-    global.language = language;
+    global.parseFramework.language = language;
 }());

@@ -8,7 +8,8 @@ module.exports = (function taskrunner() {
         },
         parse      = {},
         prettydiff_options    = {},
-        parse_options = {};
+        parse_options = {},
+        framework = {};
     const order      = [
             "lint", //       - run jslint on all unexcluded JS files in the repo
             "framework", //  - test the framework
@@ -258,7 +259,7 @@ module.exports = (function taskrunner() {
                         code  : 0,
                         parsed: 0
                     },
-                    lexers = Object.keys(global.lexer),
+                    lexers = Object.keys(framework.lexer),
                     compare = function taskrunner_coreunits_compare() {
                         let len       = (files.code.length > files.parsed.length)
                                 ? files.code.length
@@ -332,11 +333,11 @@ module.exports = (function taskrunner() {
                                         parse_options.lang = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
-                                    lang           = global.language.auto(files.code[a][1], "javascript");
+                                    lang           = framework.language.auto(files.code[a][1], "javascript");
                                     parse_options.lexer  = lang[1];
-                                    output         = global.parser(parse_options);
+                                    output         = framework.parser(parse_options);
                                     str            = JSON.stringify(output);
-                                    if (global.parseerror === "") {
+                                    if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
                                             console.log(
@@ -353,7 +354,7 @@ module.exports = (function taskrunner() {
                                         console.log("");
                                         console.log("Quitting due to error:");
                                         console.log(files.code[a][0]);
-                                        console.log(global.parseerror);
+                                        console.log(framework.parseerror);
                                         process.exit(1);
                                     }
                                 }
@@ -426,7 +427,7 @@ module.exports = (function taskrunner() {
                     keysort = "";
                 const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
-                global.parser({
+                framework.parser({
                     lang  : "html",
                     lexer : "markup",
                     source: ""
@@ -715,9 +716,10 @@ module.exports = (function taskrunner() {
 
     require(".." + node.path.sep + "parse.js");
     require(".." + node.path.sep + "language.js");
-    global.lexer      = {};
-    global.parseerror = "";
-    parse             = global.parse;
+    framework = global.parseFramework;
+    framework.lexer      = {};
+    framework.parseerror = "";
+    parse             = framework.parse;
     parse_options.lexerOptions = {};
 
     node.fs.readdir(relative + node.path.sep + "lexers", function taskrunner_lexers(err, files) {

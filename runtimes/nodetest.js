@@ -1,6 +1,6 @@
 /*jslint node:true */
 
-/*global language, parser */
+/*global global */
 
 /*
     A simple test script to run the parser.
@@ -11,7 +11,8 @@
     "use strict";
     let duration  = "",
         lang      = [],
-        startTime = [];
+        startTime = [],
+        framework = {};
     const node      = {
             fs  : require("fs"),
             path: require("path")
@@ -98,13 +99,13 @@
             console.log("");
             console.log(duration);
             console.log("Presumed language is " + color(33) + lang[2] + clear);
-            if (global.parseerror !== "") {
-                console.log(color(31) + "Error:" + clear + " " + global.parseerror);
+            if (framework.parseerror !== "") {
+                console.log(color(31) + "Error:" + clear + " " + framework.parseerror);
             }
         },
         execute   = function (sourcetext) {
             let output = {};
-            lang           = language.auto(sourcetext);
+            lang           = framework.language.auto(sourcetext);
             options.lexer  = lang[1];
             options.source = sourcetext;
             if (raw === true) {
@@ -139,24 +140,27 @@
                 } else {
                     options.lang   = lang[0];
                 }
-                output = parser(options);
-                if (global.parseerror === "") {
+                output = framework.parser(options);
+                if (framework.parseerror === "") {
                     console.log(JSON.stringify(output));
                 } else {
-                    console.log(global.parseerror);
+                    console.log(framework.parseerror);
                 }
             } else {
                 options.correct = true;
                 options.lang    = lang[0];
                 startTime       = process.hrtime();
-                output          = parser(options);
+                output          = framework.parser(options);
                 duration        = timespan();
                 display(output);
                 //console.log(output);
             }
         };
-    global.lexer = {};
-    global.parseerror = "";
+    require(directory + "parse.js");
+    require(directory + "language.js");
+    framework = global.parseFramework;
+    framework.lexer = {};
+    framework.parseerror = "";
     options.lexerOptions = {};
     node.fs.readdir(directory + "lexers", function (err, files) {
         if (err !== null) {
@@ -169,8 +173,6 @@
                 options.lexerOptions[value] = {};
             }
         });
-        require(directory + "parse.js");
-        require(directory + "language.js");
         if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
             node.fs.stat(source, function (err, stats) {
                 if (err !== null) {

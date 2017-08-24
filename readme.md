@@ -1,5 +1,10 @@
 # Parse Framework
-**This is still early.  For status and progress please see the Github issues and follow the latest branch.**
+
+## Project Status
+**0.9.0 - Pre-release Beta**
+
+### Todo
+* add advanced analytics and reporting of parse errors
 
 ## Contents
 1. [Todo](#todo)
@@ -31,11 +36,6 @@
 1. [Files](#files)
 1. [Contributing](#contributing)
 1. [FAQ](#faq)
-
-## Todo
-* options - define and document supported options
-* convert to TypeScript
-* add advanced analytics and reporting of parse errors
 
 ## Overview
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.

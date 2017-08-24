@@ -3,7 +3,8 @@
 
 (function web() {
     "use strict";
-    const input   = document.getElementById("input"),
+    const framework = global.parseFramework,
+        input   = document.getElementById("input"),
         options = {
             correct   : false,
             lexer     : "script",
@@ -16,7 +17,7 @@
                 startTime = 0;
             const value = input.value,
                 startTotal = Math.round(performance.now() * 1000),
-                lang   = global.language.auto(value, "javascript"),
+                lang   = framework.language.auto(value, "javascript"),
                 builder = function web_handler_builder(data) {
                     let a         = 0,
                         body      = document.createElement("thead");
@@ -78,7 +79,7 @@
                     document.getElementById("data").appendChild(table);
                 };
             options.lexerOptions = {};
-            Object.keys(global.lexer).forEach(function web_handler_lexers(value) {
+            Object.keys(framework.lexer).forEach(function web_handler_lexers(value) {
                 options.lexerOptions[value] = {};
             });
             options.lexerOptions.script.objectSort = (document.getElementById("objectSort").checked === true);
@@ -95,7 +96,7 @@
             }
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
-            output = global.parser(options);
+            output = framework.parser(options);
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
@@ -107,8 +108,8 @@
                     time = (endTime - startTotal) / 1000;
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            if (global.parseerror !== "") {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = global.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (framework.parseerror !== "") {
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             } else {
                 document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             }
