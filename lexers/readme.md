@@ -28,17 +28,18 @@ The lexer's name must be a single word all lowercase. This name must be uniform 
 ### Boilerplate
 The following code example will help start a new lexer:
 
-```javascript
+```typescript
 /*global global*/
 (function lexerName_init() {
     "use strict";
-    const lexerName = function lexer_lexerName(source) {
-        const parse = global.parse,
+    const framework = global.parseFramework,
+        lexerName   = function lexer_lexerName(source) {
+        const parse = framework.parse,
             data    = parse.data,
             options = parse.options;
     }
 
-    global.lexer.lexerName = lexerName;
+    framework.lexer.lexerName = lexerName;
 }());
 ```
 
