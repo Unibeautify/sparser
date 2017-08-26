@@ -1,15 +1,14 @@
 {
     "compilerOptions": {
-        "target": "ES6"
+        "target": "ES6",
+        "outDir": "js"
     },
-    "files": [
-        "index.d.ts"
-    ],
     "include": [
         "*.ts",
         "**/*.ts"
     ],
     "exclude": [
+        "js",
         "node_modules"
     ]
 }

@@ -8,9 +8,7 @@ interface data {
     types: string[];
 }
 interface language {
-    auto(sample : string, defaultLang : string): [
-        string, string, string
-    ];
+    auto(sample : string, defaultLang : string): [string, string, string];
     nameproper(input : string)                 : string;
     setlangmode(input : string)                : string;
 }
@@ -41,7 +39,7 @@ interface parse {
     safeSort(array : any[], operation : string, recursive : boolean): any[],
     spacer(args : spacer)                                           : number,
     splice(spliceData : splice)                                     : void,
-    structure                                                       : Array<[string, number]>
+    structure                                                       : Array <[string, number]>
 }
 interface parseFramework {
     language?            : language;
@@ -62,13 +60,13 @@ interface record {
 interface spacer {
     array: string[];
     index: number;
-    end: number;
+    end  : number;
 }
 interface splice {
-    data: data;
+    data   : data;
     howmany: number;
-    index: number;
-    record: record;
+    index  : number;
+    record : record;
 }
 declare module NodeJS {
     interface Global {
