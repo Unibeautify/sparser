@@ -16,6 +16,7 @@
    1. [Embedding](#embedding)
       1. [Browser Embedding](#browser-embedding)
       1. [Node Embedding](#node-embedding)
+   1. [Validation Build](#validation-build)
    1. [Including New or Custom Lexers](#including-new-or-custom-lexers)
 1. [Framework](#framework)
    1. [Definition of Terms](#definition-of-terms)
@@ -81,6 +82,11 @@ In browser applications the additional file *js/runtimes/global.js* must be incl
 
 #### Node Embedding
 When running the framework in a Node application the *js/runtimes/global.js* must not be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of *js/runtimes/nodetest.js* for an example.
+
+### Validation Build
+To run the validation build first install ESLint globally: `npm install -g eslint`.  If the application has not compiled from TypeScript, as in the application is recently downloaded, simply run: `tsc`.
+
+Once the prerequisits are complete simply run this command to execute the validation script: `node js/test/validation.js`.
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.
