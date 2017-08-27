@@ -2039,13 +2039,22 @@
                                             end = end.slice(0, end.length - 2);
                                         }
                                         if (end === "</script") {
+                                            let outside = lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "");
                                             a   = a - 1;
                                             if (lex.length < 1) {
                                                 break;
                                             }
-                                            framework.lexer.script(
-                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
-                                            );
+                                            if ((/^(<!--+)/).test(outside) === true && (/(--+>)$/).test(outside) === true) {
+                                                record.token = "<!--";
+                                                record.types = "comment";
+                                                parse.push(data, record, "");
+                                                outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
+                                                framework.lexer.script(outside);
+                                                record.token = "-->";
+                                                parse.push(data, record, "");
+                                            } else {
+                                                framework.lexer.script(outside);
+                                            }
                                             break;
                                         }
                                     }
@@ -2060,13 +2069,22 @@
                                             end = end.slice(0, end.length - 3);
                                         }
                                         if (end === "</style") {
+                                            let outside = lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "");
                                             a   = a - 1;
                                             if (lex.length < 1) {
                                                 break;
                                             }
-                                            framework.lexer.style(
-                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
-                                            );
+                                            if ((/^(<!--+)/).test(outside) === true && (/(--+>)$/).test(outside) === true) {
+                                                record.token = "<!--";
+                                                record.types = "comment";
+                                                parse.push(data, record, "");
+                                                outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
+                                                framework.lexer.style(outside);
+                                                record.token = "-->";
+                                                parse.push(data, record, "");
+                                            } else {
+                                                framework.lexer.style(outside);
+                                            }
                                             break;
                                         }
                                     }

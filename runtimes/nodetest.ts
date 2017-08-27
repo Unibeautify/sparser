@@ -166,7 +166,6 @@
     framework = global.parseFramework;
     framework.lexer = {};
     framework.parseerror = "";
-    options.lexerOptions = {};
     node.fs.readdir(directory + "lexers", function nodetest_readdir(err, files) {
         if (err !== null) {
             console.log(err);
@@ -175,7 +174,7 @@
         files.forEach(function nodetest_readdir_each(value) {
             if ((/(\.js)$/).test(value) === true) {
                 require(directory + "lexers" + node.path.sep + value);
-                options.lexerOptions[value] = {};
+                options.lexerOptions[value.replace(".js", "")] = {};
             }
         });
         if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {

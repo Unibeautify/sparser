@@ -171,8 +171,8 @@
                         lines: data.lines[index],
                         presv: data.presv[index],
                         stack: data.stack[index],
-                        token: data.types[index],
-                        types: data.token[index]
+                        token: data.token[index],
+                        types: data.types[index]
                     };
                 },
                 recordPush = function lexer_style_recordPush(structure:string):void {

@@ -19,6 +19,7 @@ module.exports = (function taskrunner() {
         },
         framework:parseFramework;
     const order      = [
+            "typescript", // - run the TypeScript build (tsc) to see if there are type erros
             "lint", //       - run jslint on all unexcluded JS files in the repo
             "framework", //  - test the framework
             "codeunits" //   - test the lexers
@@ -577,10 +578,6 @@ module.exports = (function taskrunner() {
                         files.forEach(lintit);
                     };
                 console.log("\u001b[36mBeautifying and Linting\u001b[39m");
-                console.log(
-                    "** Note that line numbers of error messaging reflects beautified code line."
-                );
-                console.log("");
                 (function taskrunner_lint_getFiles():void {
                     let total:number    = 1,
                         count:number    = 0;
@@ -636,6 +633,26 @@ module.exports = (function taskrunner() {
                         };
                     readDir(relative);
                 }());
+            },
+            typescript: function taskrunner_typescript():void {
+                console.log("\u001b[36mTypeScript Compilation\u001b[39m");
+                node.child("tsc", function taskrunner_typescript_callback(err, stdout, stderr):void {
+                    if (err !== null) {
+                        errout(err);
+                        return;
+                    }
+                    if (stderr !== null && stderr !== "") {
+                        errout(stderr);
+                        return;
+                    }
+                    if (stdout !== "") {
+                        console.log("\u001b[31mTypeScript reported warnings.\u001b[39m");
+                        errout(stdout);
+                        return;
+                    }
+                    console.log("\u001b[32mTypeScript build completed without warnings.\u001b[39m");
+                    return next();
+                });
             }
         };
 
