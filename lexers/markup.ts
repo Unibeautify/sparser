@@ -1,26 +1,26 @@
 /*global global*/
 (function markup_init() {
     "use strict";
-    const framework = global.parseFramework,
-        markup = function lexer_markup(source) {
-            let a             = 0,
-                linepreserve  = 0,
-                list          = 0,
-                litag         = 0,
-                sgmlflag      = 0,
-                minspace      = "",
-                cftransaction = false,
-                ext           = false;
-            const parse       = framework.parse,
-                data          = parse.data,
-                options       = parse.options,
-                b             = source.split(""),
-                c             = b.length,
+    const framework:parseFramework = global.parseFramework,
+        markup = function lexer_markup(source:string):data {
+            let a:number             = 0,
+                linepreserve:number  = 0,
+                list:number          = 0,
+                litag:number         = 0,
+                sgmlflag:number      = 0,
+                minspace:string      = "",
+                cftransaction:boolean = false,
+                ext:boolean           = false;
+            const parse:parse       = framework.parse,
+                data:data          = parse.data,
+                options:options       = parse.options,
+                b:string[]             = source.split(""),
+                c:number             = b.length,
                 // Find the lowercase tag name of the provided token.
-                tagName       = function lexer_markup_tagName(el) {
-                    let space = "",
-                        name  = "";
-                    const reg   = (/^(\{((%-?)|\{-?)\s*)/);
+                tagName       = function lexer_markup_tagName(el:string):string {
+                    let space:number = 0,
+                        name:string  = "";
+                    const reg:RegExp   = (/^(\{((%-?)|\{-?)\s*)/);
                     if (typeof el !== "string") {
                         return "";
                     }
@@ -43,7 +43,7 @@
                 },
 
                 //parses tags, attributes, and template elements
-                tag           = function lexer_markup_tag(end) {
+                tag           = function lexer_markup_tag(end:string):void {
 
                     // markup is two smaller lexers that work together: tag - evaluates markup and
                     // template tags content - evaluates text content and code for external lexers
@@ -101,23 +101,23 @@
                     // * {+         }       template_start
                     // * <?xml      ?>      xml
 
-                    let igcount         = 0,
-                        element         = "",
-                        lastchar        = "",
-                        ltype           = "",
-                        tname           = "",
-                        comment         = false,
-                        cheat           = false,
-                        earlyexit       = false,
-                        ignoreme        = false,
-                        jscom           = false,
-                        nopush          = false,
-                        nosort          = false,
-                        preserve        = false,
-                        simple          = false,
-                        singleton       = false,
-                        attstore        = [];
-                    const record          = {
+                    let igcount:number         = 0,
+                        element:string         = "",
+                        lastchar:string        = "",
+                        ltype:string           = "",
+                        tname:string           = "",
+                        comment:boolean         = false,
+                        cheat:boolean           = false,
+                        earlyexit:boolean       = false,
+                        ignoreme:boolean        = false,
+                        jscom:boolean           = false,
+                        nopush:boolean          = false,
+                        nosort:boolean          = false,
+                        preserve:boolean        = false,
+                        simple:boolean          = false,
+                        singleton:boolean       = false,
+                        attstore:string[]        = [];
+                    const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
                             lines: parse.linesSpace,
@@ -307,31 +307,31 @@
                             "cfzipparam"            : "prohibited"
                         },
                         //attribute name
-                        arname          = function lexer_markup_tag_name(x) {
-                            const eq = x.indexOf("=");
+                        arname          = function lexer_markup_tag_name(x:string):[string, string] {
+                            const eq:number = x.indexOf("=");
                             if (eq > 0 && ((eq < x.indexOf("\"") && x.indexOf("\"") > 0) || (eq < x.indexOf("'") && x.indexOf("'") > 0))) {
-                                return x.slice(0, eq);
+                                return [x.slice(0, eq), x.slice(eq + 1)];
                             }
-                            return x;
+                            return [x, ""];
                         },
 
                         // attribute parser
-                        attributeRecord = function lexer_markup_tag_attributeRecord() {
-                            let ind          = 0,
-                                eq           = 0,
-                                dq           = 0,
-                                sq           = 0,
-                                slice        = "",
-                                name         = "",
-                                cft          = cftags[
+                        attributeRecord = function lexer_markup_tag_attributeRecord():void {
+                            let ind:number          = 0,
+                                eq:number           = 0,
+                                dq:number           = 0,
+                                sq:number           = 0,
+                                slice:string        = "",
+                                name:string         = "",
+                                cft:string          = cftags[
                                     tname
                                         .toLowerCase()
                                         .replace(/\/$/, "")
                                 ],
-                                store        = [];
-                            const len          = attstore.length,
-                                syntax       = "<{\"'=/",
-                                jsxAttribute = function lexer_markup_tag_attributeRecord_jsxAttribute(str) {
+                                store:string[]        = [];
+                            const len:number          = attstore.length,
+                                syntax:string       = "<{\"'=/",
+                                jsxAttribute = function lexer_markup_tag_attributeRecord_jsxAttribute(str:string):string {
                                     if ((/\s/).test(str) === true) {
                                         record.lines = str
                                             .split("\n")
@@ -369,8 +369,8 @@
                             }
 
                             // sort the attributes
-                            if (options.tagSort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
-                                attstore     = parse.safeSort(attstore);
+                            if (options.lexerOptions.markup.tagSort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                                attstore     = parse.safeSort(attstore, "", false);
                                 record.presv = true;
                             } else {
                                 record.presv = false;
@@ -439,7 +439,7 @@
                                             }
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
-                                            parse.push(data, record);
+                                            parse.push(data, record, "");
                                             parse.structure.push(["jsx_attribute", parse.count]);
                                             name         = slice
                                                 .replace(/^(\s*\{)/, "")
@@ -708,22 +708,22 @@
                     // edge cases
                     lastchar = end.charAt(end.length - 1);
                     if (a < c) {
-                        let bcount    = 0,
-                            braccount = 0,
-                            jsxcount  = 0,
-                            e         = 0,
-                            f         = 0,
-                            parncount = 0,
-                            quote     = "",
-                            jsxquote  = "",
-                            stest     = false,
-                            quotetest = false,
-                            attribute = [];
-                        const lex = [],
+                        let bcount:number    = 0,
+                            braccount:number = 0,
+                            jsxcount:number  = 0,
+                            e:number         = 0,
+                            f:number         = 0,
+                            parncount:number = 0,
+                            quote:string     = "",
+                            jsxquote:string  = "",
+                            stest:boolean     = false,
+                            quotetest:boolean = false,
+                            attribute:string[] = [];
+                        const lex:string[] = [],
 
                             //finds slash escape sequences
-                            slashy          = function lexer_markup_tag_slashy() {
-                                let x = a;
+                            slashy          = function lexer_markup_tag_slashy():boolean {
+                                let x:number = a;
                                 do {
                                     x = x - 1;
                                 } while (b[x] === "\\");
@@ -735,15 +735,15 @@
                             },
 
                             // attribute lexer
-                            attributeLexer  = function lexer_markup_tag_attributeLexer(quotes) {
-                                let atty = "",
-                                    name = "",
-                                    aa   = 0,
-                                    bb   = 0;
+                            attributeLexer  = function lexer_markup_tag_attributeLexer(quotes:boolean):void {
+                                let atty:string = "",
+                                    name:[string, string],
+                                    aa:number   = 0,
+                                    bb:number   = 0;
                                 if (quotes === true) {
                                     atty = attribute.join("");
                                     name = arname(atty);
-                                    if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
+                                    if (name[0] === "data-parse-ignore" || name[0] === "data-prettydiff-ignore") {
                                         ignoreme = true;
                                     }
                                     quote = "";
@@ -752,7 +752,7 @@
                                         .join("")
                                         .replace(/\s+/g, " ");
                                     name = arname(atty);
-                                    if (name === "data-parse-ignore" || name === "data-prettydiff-ignore") {
+                                    if (name[0] === "data-parse-ignore" || name[0] === "data-prettydiff-ignore") {
                                         ignoreme = true;
                                     }
                                     if (options.lang === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
@@ -1175,7 +1175,7 @@
                             a = a + 1;
                         } while (a < c);
                         //nopush flags mean an early exit
-                        if (nopush === true) {
+                        if (nopush) {
                             return;
                         }
 
@@ -1251,11 +1251,11 @@
 
                     // cheat identifies HTML singleton elements as singletons even if formatted as
                     // start tags, such as <br> (which is really <br/>)
-                    cheat = (function lexer_markup_tag_cheat() {
-                        let cfval = "",
-                            struc = [];
-                        const ender      = (/(\/>)$/),
-                            htmlsings    = {
+                    cheat = (function lexer_markup_tag_cheat():boolean {
+                        let cfval:string = "",
+                            struc:Array <[string, number]> = [];
+                        const ender:RegExp      = (/(\/>)$/),
+                            htmlsings:{}    = {
                                 area       : "singleton",
                                 base       : "singleton",
                                 basefont   : "singleton",
@@ -1275,10 +1275,10 @@
                                 source     : "singleton",
                                 wbr        : "singleton"
                             },
-                            fixsingleton = function lexer_markup_tag_cheat_fixsingleton() {
-                                let aa = parse.count,
-                                    bb = 0;
-                                const vname = tname.slice(1);
+                            fixsingleton = function lexer_markup_tag_cheat_fixsingleton():boolean {
+                                let aa:number = parse.count,
+                                    bb:number = 0;
+                                const vname:string = tname.slice(1);
                                 if (aa > -1) {
                                     do {
                                         if (data.types[aa] === "end") {
@@ -1308,10 +1308,10 @@
 
                         //determine if the current tag is an HTML singleton and exit
                         if (data.types[parse.count] === "end" && tname.slice(0, 3) !== "/cf") {
-                            const lastToken = data.token[parse.count];
+                            const lastToken:string = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && lastToken.charAt(lastToken.length - 2) !== "/" && "/" + tagName(lastToken) === tname) {
                                 data.types[parse.count - 1] = "start";
-                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.tagMerge === true(data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
+                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.lexerOptions.markup.tagMerge === true && (data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
                                 parse.pop(data);
                                 if (data.types[parse.count] === "start") {
                                     data.token[parse.count] = data
@@ -1326,8 +1326,8 @@
 
                         //renames the types value for the following two template tags
                         if (tname === "/#assign" || tname === "/#global") {
-                            let dd    = parse.count - 1,
-                                count = 1;
+                            let dd:number    = parse.count - 1,
+                                count:number = 1;
                             if (dd > -1) {
                                 do {
                                     if (data.types[dd] === "start" || data.types[dd] === "template_start") {
@@ -1453,15 +1453,15 @@
                         if (options.lang === "html") {
                             // html gets tag names in lowercase, if you want to preserve case sensitivity
                             // beautify as XML
-                            if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && options.lang !== "jsx" && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
+                            if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
                                 element = element.toLowerCase();
                             }
 
                             //looks for HTML "li" tags that have no ending tag, which is valid in HTML
                             if (tname === "li") {
                                 if (litag === list && (list !== 0 || (list === 0 && parse.count > -1 && data.types[parse.count].indexOf("template") < 0))) {
-                                    let d  = parse.count,
-                                        ee = 1;
+                                    let d:number  = parse.count,
+                                        ee:number = 1;
                                     if (d > -1) {
                                         do {
                                             if (data.types[d] === "start" || data.types[d] === "template_start") {
@@ -1517,7 +1517,7 @@
                             }
 
                             //generalized corrections for the handling of singleton tags
-                            if (data.types[parse.count] === "end" && htmlsings[tname.slice(1)] === "singleton" && element.toLowerCase("").indexOf("/cftransaction") !== 1) {
+                            if (data.types[parse.count] === "end" && htmlsings[tname.slice(1)] === "singleton" && element.toLowerCase().indexOf("/cftransaction") !== 1) {
                                 return fixsingleton();
                             }
 
@@ -1546,8 +1546,8 @@
 
                     //correction for dustjs tags to template singleton types
                     if (options.lang === "dustjs" && data.types[parse.count] === "template_start") {
-                        const first = element.charAt(1),
-                            ending  = element.slice(element.length - 2);
+                        const first:string = element.charAt(1),
+                            ending:string  = element.slice(element.length - 2);
                         if ((ending === "/}" || ending.charAt(0) === first) && (first === "#" || first === "?" || first === "^" || first === "@" || first === "<" || first === "+")) {
                             data.types[parse.count] = "template";
                         }
@@ -1558,9 +1558,9 @@
                     if ((tname === "script" || tname === "style" || tname === "cfscript") && element.slice(element.length - 2) !== "/>") {
 
                         //get the attribute value for "type"
-                        let len      = attstore.length - 1,
-                            attValue = "",
-                            attr     = [];
+                        let len:number      = attstore.length - 1,
+                            attValue:string = "",
+                            attr:string[]     = [];
                         if (len > -1) {
                             do {
                                 attr = arname(attstore[len]);
@@ -1627,8 +1627,8 @@
 
                     // additional logic is required to find the end of a tag with the attribute
                     // data-parse-ignore
-                    if (simple === true && preserve === false && ignoreme === true && end === ">" && element.slice(element.length - 2) !== "/>") {
-                        let tags = [];
+                    if (simple === true && preserve === false && ignoreme && end === ">" && element.slice(element.length - 2) !== "/>") {
+                        let tags:string[] = [];
                         if (cheat === true) {
                             ltype = "singleton";
                         } else {
@@ -1637,10 +1637,10 @@
                             ltype                   = "ignore";
                             a                       = a + 1;
                             if (a < c) {
-                                let delim  = "",
-                                    ee     = 0,
-                                    ff     = 0,
-                                    endtag = false;
+                                let delim:string  = "",
+                                    ee:number     = 0,
+                                    ff:number     = 0,
+                                    endtag:boolean = false;
                                 do {
                                     if (b[a] === "\n") {
                                         parse.lineNumber = parse.lineNumber + 1;
@@ -1710,7 +1710,7 @@
                     // alone
                     if (record.types.indexOf("template") > -1) {
                         if (element.slice(0, 2) === "{%") {
-                            let names = [
+                            let names:string[] = [
                                 "autoescape",
                                 "block",
                                 "capture",
@@ -1733,7 +1733,7 @@
                             if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif") {
                                 record.types = "template_else";
                             } else {
-                                let namelen = names.length - 1;
+                                let namelen:number = names.length - 1;
                                 if (namelen > -1) {
                                     do {
                                         if (tname === names[namelen]) {
@@ -1773,8 +1773,8 @@
 
                     // identify script hidden within a CDATA escape
                     if (ltype === "cdata" && record.stack === "script") {
-                        let counta = parse.count,
-                            countb = parse.count;
+                        let counta:number = parse.count,
+                            countb:number = parse.count;
                         if (data.types[countb] === "attribute") {
                             do {
                                 counta = counta - 1;
@@ -1800,150 +1800,154 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (options.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
-                        (function lexer_markup_tag_sorttag() {
-                            let bb          = 0,
-                                d           = 0,
-                                startStore  = 0,
-                                jsxatt      = false,
-                                endData     = {};
-                            const children  = [],
-                                store       = (function lexer_markup_tag_sorttag_store() {
-                                    const output = {};
-                                    parse.datanames.forEach(function lexer_markup_tag_sorttag_store_datanames(value) {
-                                        output[value] = [];
-                                    });
-                                    return output;
-                                }()),
-                                storeRecord = function lexer_markup_tag_sorttag_storeRecord(index) {
-                                    const output = {};
-                                    parse.datanames.forEach(
-                                        function lexer_markup_tag_sorttag_storeRecord_datanames(value) {
-                                            output[value] = data[value][index];
-                                        }
-                                    );
-                                    return output;
-                                },
-                                childsort = function lexer_markup_tag_sorttag_childsort(a, b) {
-                                    if (data.token[a[0]] > data.token[b[0]]) {
-                                        return -1;
-                                    }
-                                    return 1;
+                    if (options.lexerOptions.markup.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
+                        let bb:number          = 0,
+                            d:number           = 0,
+                            startStore:number  = 0,
+                            jsxatt:boolean      = false,
+                            endData:record;
+                        const children:Array<[number, number]> = [],
+                            store       = {
+                                begin: [],
+                                lexer: [],
+                                lines: [],
+                                presv: [],
+                                stack: [],
+                                token: [],
+                                types: []
+                            },
+                            storeRecord = function lexer_markup_tag_sorttag_storeRecord(index: number):record {
+                                const output:record = {
+                                    begin: data.begin[index],
+                                    lexer: data.lexer[index],
+                                    lines: data.lines[index],
+                                    presv: data.presv[index],
+                                    stack: data.stack[index],
+                                    token: data.token[index],
+                                    types: data.types[index]
                                 };
-                            bb = parse.count - 1;
-                            if (bb > -1) {
-                                let endStore = 0;
-                                do {
-                                    if (data.types[bb] === "start") {
-                                        d = d - 1;
-                                        if (d < 0) {
-                                            startStore = bb + 1;
-                                            if (data.types[startStore] === "attribute" || data.types[startStore] === "jsx_attribute_start") {
-                                                jsxatt = false;
-                                                do {
-                                                    startStore = startStore + 1;
-                                                    if (jsxatt === false && data.types[startStore] !== "attribute") {
-                                                        break;
-                                                    }
-                                                    if (data.types[startStore] === "jsx_attribute_start") {
-                                                        jsxatt = true;
-                                                    } else if (data.types[startStore] === "jsx_attribute_end") {
-                                                        jsxatt = false;
-                                                    }
-                                                } while (startStore < c);
-                                            } 
-                                            break;
-                                        }
-                                    } else if (data.types[bb] === "end") {
-                                        d = d + 1;
-                                        if (d === 1) {
-                                            endStore = bb;
-                                        }
-                                    }
-                                    if (d === 0) {
-                                        if (data.types[bb] === "start") {
-                                            children.push([bb, endStore]);
-                                        } else {
-                                            if (data.types[bb] === "singleton" && (data.types[bb + 1] === "attribute" || data.types[bb + 1] === "jsx_attribute_start")) {
-                                                let cc = bb + 1;
-                                                jsxatt = false;
-                                                do {
-                                                    if (data.types[cc] === "jsx_attribute_start") {
-                                                        jsxatt = true;
-                                                    } else if (data.types[cc] === "jsx_attribute_end") {
-                                                        jsxatt = false;
-                                                    }
-                                                    if (jsxatt === false && data.types[cc + 1] !== "attribute" && data.types[cc + 1] !== "jsx_attribute_start") {
-                                                        break;
-                                                    }
-                                                    cc = cc + 1;
-                                                } while (cc < parse.count);
-                                                children.push([bb, cc]);
-                                            } else if (data.types[bb] !== "attribute" && data.types[bb] !== "jsx_attribute_start") {
-                                                children.push([bb, bb]);
-                                            }
-                                        }
-                                    }
-                                    bb = bb - 1;
-                                } while (bb > -1);
-                            }
-                            if (children.length < 2) {
-                                return;
-                            }
-                            children.sort(childsort);
-                            bb       = children.length - 1;
-                            if (bb > -1) {
-                                do {
-                                    parse.push(store, storeRecord(children[bb][0]), "");
-                                    if (children[bb][0] !== children[bb][1]) {
-                                        d = children[bb][0] + 1;
-                                        if (d < children[bb][1]) {
-                                            do {
-                                                parse.push(store, storeRecord(d), "");
-                                                d = d + 1;
-                                            } while (d < children[bb][1]);
-                                        }
-                                        parse.push(store, storeRecord(children[bb][1]), "");
-                                    }
-                                    bb = bb - 1;
-                                } while (bb > -1);
-                            }
-                            endData = (function lexer_markup_tag_sorttag_endData() {
-                                const output = {};
-                                parse.datanames.forEach(function lexer_markup_tag_sorttag_endData_datanames(value) {
-                                    output[value] = data[value].pop();
-                                });
                                 return output;
-                            }());
-                            (function lexer_markup_tag_sorttag_slice() {
-                                parse.datanames.forEach(function lexer_markup_tag_sorttag_slice_datanames(value) {
-                                    data[value] = data[value].slice(0, startStore);
-                                });
-                            }());
-                            parse.concat(data, store);
-                            parse.push(data, endData, "");
+                            },
+                            childsort = function lexer_markup_tag_sorttag_childsort(a:[number, number], b:[number, number]):number {
+                                if (data.token[a[0]] > data.token[b[0]]) {
+                                    return -1;
+                                }
+                                return 1;
+                            };
+                        bb = parse.count - 1;
+                        if (bb > -1) {
+                            let endStore:number = 0;
+                            do {
+                                if (data.types[bb] === "start") {
+                                    d = d - 1;
+                                    if (d < 0) {
+                                        startStore = bb + 1;
+                                        if (data.types[startStore] === "attribute" || data.types[startStore] === "jsx_attribute_start") {
+                                            jsxatt = false;
+                                            do {
+                                                startStore = startStore + 1;
+                                                if (jsxatt === false && data.types[startStore] !== "attribute") {
+                                                    break;
+                                                }
+                                                if (data.types[startStore] === "jsx_attribute_start") {
+                                                    jsxatt = true;
+                                                } else if (data.types[startStore] === "jsx_attribute_end") {
+                                                    jsxatt = false;
+                                                }
+                                            } while (startStore < c);
+                                        } 
+                                        break;
+                                    }
+                                } else if (data.types[bb] === "end") {
+                                    d = d + 1;
+                                    if (d === 1) {
+                                        endStore = bb;
+                                    }
+                                }
+                                if (d === 0) {
+                                    if (data.types[bb] === "start") {
+                                        children.push([bb, endStore]);
+                                    } else {
+                                        if (data.types[bb] === "singleton" && (data.types[bb + 1] === "attribute" || data.types[bb + 1] === "jsx_attribute_start")) {
+                                            let cc:number = bb + 1;
+                                            jsxatt = false;
+                                            do {
+                                                if (data.types[cc] === "jsx_attribute_start") {
+                                                    jsxatt = true;
+                                                } else if (data.types[cc] === "jsx_attribute_end") {
+                                                    jsxatt = false;
+                                                }
+                                                if (jsxatt === false && data.types[cc + 1] !== "attribute" && data.types[cc + 1] !== "jsx_attribute_start") {
+                                                    break;
+                                                }
+                                                cc = cc + 1;
+                                            } while (cc < parse.count);
+                                            children.push([bb, cc]);
+                                        } else if (data.types[bb] !== "attribute" && data.types[bb] !== "jsx_attribute_start") {
+                                            children.push([bb, bb]);
+                                        }
+                                    }
+                                }
+                                bb = bb - 1;
+                            } while (bb > -1);
+                        }
+                        if (children.length < 2) {
+                            return;
+                        }
+                        children.sort(childsort);
+                        bb       = children.length - 1;
+                        if (bb > -1) {
+                            do {
+                                parse.push(store, storeRecord(children[bb][0]), "");
+                                if (children[bb][0] !== children[bb][1]) {
+                                    d = children[bb][0] + 1;
+                                    if (d < children[bb][1]) {
+                                        do {
+                                            parse.push(store, storeRecord(d), "");
+                                            d = d + 1;
+                                        } while (d < children[bb][1]);
+                                    }
+                                    parse.push(store, storeRecord(children[bb][1]), "");
+                                }
+                                bb = bb - 1;
+                            } while (bb > -1);
+                        }
+                        endData = {
+                            begin: data.begin.pop(),
+                            lexer: data.lexer.pop(),
+                            lines: data.lines.pop(),
+                            presv: data.presv.pop(),
+                            stack: data.stack.pop(),
+                            token: data.token.pop(),
+                            types: data.types.pop()
+                        };
+                        (function lexer_markup_tag_sorttag_slice() {
+                            parse.datanames.forEach(function lexer_markup_tag_sorttag_slice_datanames(value) {
+                                data[value] = data[value].slice(0, startStore);
+                            });
                         }());
+                        parse.concat(data, store);
+                        parse.push(data, endData, "");
                     }
-
                     parse.linesSpace = 0;
                 },
-                content       = function lexer_markup_content() {
-                    let lex       = [],
-                        ltoke     = "",
-                        jsxbrace  = (data.token[parse.count] === "{"),
-                        liner     = parse.linesSpace,
-                        now       = a;
-                    const name      = (ext === true)
+                content       = function lexer_markup_content():void {
+                    let lex:string[]       = [],
+                        ltoke:string     = "",
+                        jsxbrace:boolean  = (data.token[parse.count] === "{"),
+                        liner:number     = parse.linesSpace,
+                        now:number       = a;
+                    const name:string      = (ext === true)
                             ? (jsxbrace === true)
                                 ? "script"
                                 : (parse.structure[parse.structure.length - 1][1] > -1)
                                     ? tagName(data.token[parse.structure[parse.structure.length - 1][1]].toLowerCase())
                                     : tagName(data.token[data.begin[parse.count]].toLowerCase())
                             : "",
-                        square    = (
+                        square:boolean    = (
                             data.types[parse.count] === "template_start" && data.token[parse.count].indexOf("<!") === 0 && data.token[parse.count].indexOf("<![") < 0 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === "["
                         ),
-                        record    = {
+                        record:record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
                             lines: liner,
@@ -1952,7 +1956,7 @@
                             token: "",
                             types: "content"
                         },
-                        esctest   = function lexer_markup_content_esctest() {
+                        esctest   = function lexer_markup_content_esctest():boolean {
                             let aa = a - 1,
                                 bb = 0;
                             if (b[a - 1] !== "\\") {
@@ -1973,9 +1977,9 @@
                             return false;
                         };
                     if (a < c) {
-                        let end    = "",
-                            quote  = "",
-                            quotes = 0;
+                        let end:string    = "",
+                            quote:string  = "",
+                            quotes:number = 0;
                         do {
 
                             // external code requires additional parsing to look for the appropriate end
@@ -1999,9 +2003,9 @@
                                     } else if (b[a] === "}" && jsxbrace === true) {
                                         if (quotes === 0) {
                                             framework.lexer.script(
-                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
-                                                parse.structure[parse.structure.length - 1][1] + 1
+                                                lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                             );
+                                            parse.structure[parse.structure.length - 1][1] + 1
                                             record.token = "}";
                                             record.types = "script";
                                             parse.push(data, record, "");
@@ -2137,7 +2141,7 @@
 
                     if (a > now && a < c) {
                         if ((/\s/).test(b[a]) === true) {
-                            let x = a;
+                            let x:number = a;
                             parse.linesSpace = 1;
                             do {
                                 if (b[x] === "\n") {
@@ -2168,7 +2172,7 @@
             do {
                 if ((/\s/).test(b[a]) === true) {
                     a = parse.spacer({array: b, end: c, index: a});
-                } else if (ext === true) {
+                } else if (ext) {
                     content();
                 } else if (b[a] === "<") {
                     tag("");

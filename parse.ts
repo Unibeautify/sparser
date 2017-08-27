@@ -540,7 +540,7 @@ Parse Framework
                 }
                 return arr;
             };
-            if (framework.lexer[options.lexer] === "undefined") {
+            if (framework.lexer[options.lexer] === undefined) {
                 framework.parseerror = "Lexer '" + options.lexer + "' isn't available.";
             } else if (typeof framework.lexer[options.lexer] !== "function") {
                 framework.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";

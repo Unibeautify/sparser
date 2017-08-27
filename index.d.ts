@@ -12,6 +12,9 @@ interface language {
     nameproper(input : string)                 : string;
     setlangmode(input : string)                : string;
 }
+interface lexer {
+    [key:string]: (source: string) => data;
+}
 interface options {
     correct     : boolean;
     crlf        : boolean;
@@ -43,7 +46,7 @@ interface parse {
 }
 interface parseFramework {
     language?            : language;
-    lexer                : {};
+    lexer                : lexer;
     parse                : parse;
     parseerror           : string;
     parser(obj : options): data;
