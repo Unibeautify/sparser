@@ -1,28 +1,35 @@
 /*jslint browser:true */
+/*eslint-env browser*/
 /*global global, performance, window*/
 
 (function web() {
     "use strict";
-    const input   = document.getElementById("input"),
-        options = {
-            correct   : false,
-            lexer     : "script",
-            objectSort: false,
-            source    : "",
-            tagSort   : false
+    const framework:parseFramework = global.parseFramework,
+        input   = document.getElementsByTagName("textarea")[0],
+        options:options = {
+            correct     : false,
+            crlf        : false,
+            lang        : "",
+            lexer       : "script",
+            lexerOptions: {},
+            source      : ""
         },
-        handler = function web_handler() {
-            let output = {},
-                startTime = 0;
-            const value = input.value,
-                startTotal = Math.round(performance.now() * 1000),
-                lang   = global.language.auto(value, "javascript"),
-                builder = function web_handler_builder(data) {
-                    let a         = 0,
+        handler = function web_handler():void {
+            let output:data,
+                startTime:number = 0;
+            const value:string = input.value,
+                checkboxes:[HTMLInputElement, HTMLInputElement] = [
+                    document.getElementsByTagName("input")[0],
+                    document.getElementsByTagName("input")[1]
+                ],
+                startTotal:number = Math.round(performance.now() * 1000),
+                lang:[string, string, string]   = framework.language.auto(value, "javascript"),
+                builder = function web_handler_builder(data:data):void {
+                    let a:number         = 0,
                         body      = document.createElement("thead");
-                    const len       = data.token.length,
+                    const len:number       = data.token.length,
                         table     = document.createElement("table"),
-                        cell      = function web_handler_builder_cell(text, type, row, className) {
+                        cell      = function web_handler_builder_cell(text:string, type:string, row, className:string):void {
                             const el = document.createElement(type);
                             if (className !== "") {
                                 el.setAttribute("class", className);
@@ -30,13 +37,13 @@
                             el.innerHTML = text;
                             row.appendChild(el);
                         },
-                        row       = function web_handler_builder_row() {
+                        row       = function web_handler_builder_row():void {
                             const tr = document.createElement("tr");
-                            cell(a, "th", tr, "numb");
-                            cell(data.begin[a], "td", tr, "numb");
+                            cell(a.toString(), "th", tr, "numb");
+                            cell(data.begin[a].toString(), "td", tr, "numb");
                             cell(data.lexer[a], "td", tr, "");
-                            cell(data.lines[a], "td", tr, "numb");
-                            cell(data.presv[a], "td", tr, "");
+                            cell(data.lines[a].toString(), "td", tr, "numb");
+                            cell(data.presv[a].toString(), "td", tr, "");
                             cell(data.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
                             cell(data.types[a], "td", tr, "");
                             cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
@@ -47,7 +54,7 @@
                             }
                             body.appendChild(tr);
                         },
-                        header    = function web_handler_builder_header(parent) {
+                        header    = function web_handler_builder_header(parent):void {
                             const tr   = document.createElement("tr");
                             cell("index", "th", tr, "numb");
                             cell("begin", "th", tr, "numb");
@@ -78,12 +85,12 @@
                     document.getElementById("data").appendChild(table);
                 };
             options.lexerOptions = {};
-            Object.keys(global.lexer).forEach(function web_handler_lexers(value) {
+            Object.keys(framework.lexer).forEach(function web_handler_lexers(value):void {
                 options.lexerOptions[value] = {};
             });
-            options.lexerOptions.script.objectSort = (document.getElementById("objectSort").checked === true);
-            options.lexerOptions.style.objectSort  = (document.getElementById("objectSort").checked === true);
-            options.lexerOptions.markup.tagSort    = (document.getElementById("tagSort").checked === true);
+            options.lexerOptions.script.objectSort = (checkboxes[0].checked === true);
+            options.lexerOptions.style.objectSort  = (checkboxes[0].checked === true);
+            options.lexerOptions.markup.tagSort    = (checkboxes[1].checked === true);
             options.lang                           = lang[0];
             options.lexer                          = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
@@ -95,20 +102,20 @@
             }
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
-            output = global.parser(options);
+            output = framework.parser(options);
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
                 document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
             builder(output);
-            (function web_handler_perfTotal() {
-                const endTime = Math.round(performance.now() * 1000),
-                    time = (endTime - startTotal) / 1000;
+            (function web_handler_perfTotal():void {
+                const endTime:number = Math.round(performance.now() * 1000),
+                    time:number = (endTime - startTotal) / 1000;
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            if (global.parseerror !== "") {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = global.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (framework.parseerror !== "") {
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             } else {
                 document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             }
@@ -124,7 +131,7 @@
     input.onkeyup = handler;
     document.onkeypress = backspace;
     document.onkeydown = backspace;
-    window.onerror = function (msg, source) {
+    window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {

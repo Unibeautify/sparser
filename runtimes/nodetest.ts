@@ -1,6 +1,7 @@
 /*jslint node:true */
-
-/*global language, parser */
+/*eslint-env node*/
+/*eslint no-console: 0*/
+/*global global */
 
 /*
     A simple test script to run the parser.
@@ -9,52 +10,57 @@
 
 (function nodetest() {
     "use strict";
-    let duration  = "",
-        lang      = [],
-        startTime = [];
+    let duration:string,
+        lang: [string, string, string],
+        startTime: [number, number],
+        framework: parseFramework;
     const node      = {
             fs  : require("fs"),
             path: require("path")
         },
-        color     = function (numb) {
+        color     = function nodetest_color(numb: string): string {
             return "\u001b[1m\u001b[" + numb + "m";
         },
-        clear     = "\u001b[39m\u001b[0m",
-        directory = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
-        raw       = (function nodetest_raw() {
-            const index = process.argv.indexOf("--raw");
+        clear:string     = "\u001b[39m\u001b[0m",
+        directory:string = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
+        raw:boolean       = (function nodetest_raw():boolean {
+            const index:number = process.argv.indexOf("--raw");
             if (index < 0) {
                 return false;
             }
             process.argv.splice(index, 1);
             return true;
         }()),
-        options   = {
+        options:options   = {
+            correct: false,
+            crlf: false,
+            lang: "",
             lexer     : "script",
+            lexerOptions: {},
             source    : ""
         },
-        timespan  = function () {
-            const dec = function (time) {
+        timespan  = function nodetest_timespan():string {
+            const dec = function nodetest_timespan_dec(time: [number, number]): number {
                     time[0] = time[0] * 1000000000;
                     return time[0] + time[1];
                 },
-                end = dec(process.hrtime()),
-                sta = dec(startTime),
-                dur = (end - sta) / 1000000;
-            return "Parser executed in " + color(32) + dur + clear + " milliseconds.";
+                end:number = dec(process.hrtime()),
+                sta:number = dec(startTime),
+                dur:number = (end - sta) / 1000000;
+            return "Parser executed in " + color("32") + dur + clear + " milliseconds.";
         },
-        source    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
+        source:string    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
             ? process.argv[2] + process.argv[3]
             : process.argv[2],
-        display   = function (output) {
-            let a   = 0,
-                str = [];
-            const b = output.token.length,
-                pad = function (x, y) {
-                    const cc = x
+        display   = function nodetest_display(output):void {
+            let a:number   = 0,
+                str:string[] = [];
+            const b:number = output.token.length,
+                pad = function nodetest_display_pad(x:string, y:number):void {
+                    const cc:string = x
                             .toString()
                             .replace(/\s/g, " ");
-                    let dd = y - cc.length;
+                    let dd:number = y - cc.length;
                     str.push(cc);
                     if (dd > 0) {
                         do {
@@ -64,8 +70,8 @@
                     }
                     str.push(" | ");
                 },
-                heading = "index | begin | lexer  | lines | presv | stack       | types       | token",
-                bar     = "------|-------|--------|-------|-------|-------------|-------------|------";
+                heading:string = "index | begin | lexer  | lines | presv | stack       | types       | token",
+                bar:string     = "------|-------|--------|-------|-------|-------------|-------------|------";
             console.log("");
             console.log(heading);
             console.log(bar);
@@ -83,13 +89,13 @@
                 } else if (output.lexer[a] === "style") {
                     str.push("\u001b[33m");
                 }
-                pad(a, 5);
-                pad(output.begin[a], 5);
-                pad(output.lexer[a], 5);
-                pad(output.lines[a], 5);
-                pad(output.presv[a], 5);
-                pad(output.stack[a], 11);
-                pad(output.types[a], 11);
+                pad(a.toString(), 5);
+                pad(output.begin[a].toString(), 5);
+                pad(output.lexer[a].toString(), 5);
+                pad(output.lines[a].toString(), 5);
+                pad(output.presv[a].toString(), 5);
+                pad(output.stack[a].toString(), 11);
+                pad(output.types[a].toString(), 11);
                 str.push(output.token[a].replace(/\s/g, " "));
                 str.push("\u001b[39m");
                 console.log(str.join(""));
@@ -97,14 +103,14 @@
             } while (a < b);
             console.log("");
             console.log(duration);
-            console.log("Presumed language is " + color(33) + lang[2] + clear);
-            if (global.parseerror !== "") {
-                console.log(color(31) + "Error:" + clear + " " + global.parseerror);
+            console.log("Presumed language is " + color("33") + lang[2] + clear);
+            if (framework.parseerror !== "") {
+                console.log(color("31") + "Error:" + clear + " " + framework.parseerror);
             }
         },
-        execute   = function (sourcetext) {
+        execute   = function nodetest_execute(sourcetext) {
             let output = {};
-            lang           = language.auto(sourcetext);
+            lang           = framework.language.auto(sourcetext, "javascript");
             options.lexer  = lang[1];
             options.source = sourcetext;
             if (raw === true) {
@@ -139,40 +145,40 @@
                 } else {
                     options.lang   = lang[0];
                 }
-                output = parser(options);
-                if (global.parseerror === "") {
+                output = framework.parser(options);
+                if (framework.parseerror === "") {
                     console.log(JSON.stringify(output));
                 } else {
-                    console.log(global.parseerror);
+                    console.log(framework.parseerror);
                 }
             } else {
                 options.correct = true;
                 options.lang    = lang[0];
                 startTime       = process.hrtime();
-                output          = parser(options);
+                output          = framework.parser(options);
                 duration        = timespan();
                 display(output);
                 //console.log(output);
             }
         };
-    global.lexer = {};
-    global.parseerror = "";
-    options.lexerOptions = {};
-    node.fs.readdir(directory + "lexers", function (err, files) {
+    require(directory + "parse.js");
+    require(directory + "language.js");
+    framework = global.parseFramework;
+    framework.lexer = {};
+    framework.parseerror = "";
+    node.fs.readdir(directory + "lexers", function nodetest_readdir(err, files) {
         if (err !== null) {
             console.log(err);
             return process.exit(1);
         }
-        files.forEach(function (value) {
+        files.forEach(function nodetest_readdir_each(value) {
             if ((/(\.js)$/).test(value) === true) {
                 require(directory + "lexers" + node.path.sep + value);
-                options.lexerOptions[value] = {};
+                options.lexerOptions[value.replace(".js", "")] = {};
             }
         });
-        require(directory + "parse.js");
-        require(directory + "language.js");
         if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
-            node.fs.stat(source, function (err, stats) {
+            node.fs.stat(source, function nodetest_readdir_stat(err, stats) {
                 if (err !== null) {
                     if (err.toString().indexOf("no such file or directory") > 0) {
                         return console.log(
@@ -185,7 +191,7 @@
                 if (stats.isFile() === false) {
                     return console.log("Specified path exists, but is not a file.");
                 }
-                node.fs.readFile(source, "utf8", function (errf, data) {
+                node.fs.readFile(source, "utf8", function nodetest_readdir_stat_readFile(errf, data) {
                     if (errf !== null) {
                         return console.log(errf);
                     }

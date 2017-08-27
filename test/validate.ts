@@ -1,4 +1,6 @@
 /*jslint node:true*/
+/*eslint-env node*/
+/*eslint no-console: 0*/
 // The order array determines which tests run in which order (from last to first
 // index)
 module.exports = (function taskrunner() {
@@ -6,35 +8,43 @@ module.exports = (function taskrunner() {
     let next       = function taskrunner_nextInit() {
             return;
         },
-        parse      = {},
-        prettydiff_options    = {},
-        parse_options = {};
+        parse:parse,
+        parse_options:options = {
+            correct: false,
+            crlf: false,
+            lang: "javascript",
+            lexer: "script",
+            lexerOptions: {},
+            source: ""
+        },
+        framework:parseFramework;
     const order      = [
+            "typescript", // - run the TypeScript build (tsc) to see if there are type erros
             "lint", //       - run jslint on all unexcluded JS files in the repo
             "framework", //  - test the framework
             "codeunits" //   - test the lexers
         ],
-        startTime  = process.hrtime(),
+        startTime:[number, number]  = process.hrtime(),
         node       = {
             child: require("child_process").exec,
             fs   : require("fs"),
             path : require("path")
         },
-        orderlen   = order.length,
-        relative   = __dirname.replace(/((\/|\\)test)$/, ""),
-        humantime  = function taskrunner_humantime(finished) {
-            let minuteString = "",
-                hourString   = "",
-                secondString = "",
-                finalTime    = "",
-                finalMem     = "",
-                strSplit     = [],
-                minutes      = 0,
-                hours        = 0,
-                memory       = {},
-                elapsed      = (function taskrunner_humantime_elapsed() {
-                    const endtime = process.hrtime();
-                    let dtime = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
+        orderlen:number   = order.length,
+        relative:string   = __dirname.replace(/((\/|\\)js(\/|\\)test)$/, ""),
+        humantime  = function taskrunner_humantime(finished:boolean):string {
+            let minuteString:string = "",
+                hourString:string   = "",
+                secondString:string = "",
+                finalTime:string    = "",
+                finalMem:string     = "",
+                strSplit:string[]     = [],
+                minutes:number      = 0,
+                hours:number        = 0,
+                memory,
+                elapsed:number      = (function taskrunner_humantime_elapsed():number {
+                    const endtime:[number, number] = process.hrtime();
+                    let dtime:[number, number] = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
                     if (dtime[1] === 0) {
                         return dtime[0];
                     }
@@ -43,13 +53,13 @@ module.exports = (function taskrunner() {
                     }
                     return dtime[0] + (dtime[1] / 1000000000);
                 }());
-            const prettybytes  = function taskrunner_humantime_prettybytes(an_integer) {
+            const prettybytes  = function taskrunner_humantime_prettybytes(an_integer:number):string {
                     //find the string length of input and divide into triplets
-                    let output = "",
-                        length  = an_integer
+                    let output:string = "",
+                        length:number  = an_integer
                             .toString()
                             .length;
-                    const triples = (function taskrunner_humantime_prettybytes_triples() {
+                    const triples:number = (function taskrunner_humantime_prettybytes_triples():number {
                             if (length < 22) {
                                 return Math.floor((length - 1) / 3);
                             }
@@ -57,7 +67,7 @@ module.exports = (function taskrunner() {
                             return 8;
                         }()),
                         //each triplet is worth an exponent of 1024 (2 ^ 10)
-                        power   = (function taskrunner_humantime_prettybytes_power() {
+                        power:number   = (function taskrunner_humantime_prettybytes_power():number {
                             let a = triples - 1,
                                 b = 1024;
                             if (triples === 0) {
@@ -98,14 +108,14 @@ module.exports = (function taskrunner() {
                     }
                     return output;
                 },
-                plural       = function core__proctime_plural(x, y) {
+                plural       = function core__proctime_plural(x:number, y:string):string {
                     if (x !== 1) {
                         return x + y + "s ";
                     }
                     return x + y + " ";
                 },
-                minute       = function core__proctime_minute() {
-                    minutes      = parseInt((elapsed / 60), 10);
+                minute       = function core__proctime_minute():void {
+                    minutes      = parseInt((elapsed / 60).toString(), 10);
                     minuteString = (finished === true)
                         ? plural(minutes, " minute")
                         : (minutes < 10)
@@ -135,7 +145,7 @@ module.exports = (function taskrunner() {
             if (elapsed >= 60 && elapsed < 3600) {
                 minute();
             } else if (elapsed >= 3600) {
-                hours      = parseInt((elapsed / 3600), 10);
+                hours      = parseInt((elapsed / 3600).toString(), 10);
                 elapsed    = elapsed - (hours * 3600);
                 hourString = (finished === true)
                     ? plural(hours, " hour")
@@ -145,7 +155,7 @@ module.exports = (function taskrunner() {
                 minute();
             } else {
                 secondString = (finished === true)
-                    ? plural(secondString, " second")
+                    ? plural(elapsed, " second")
                     : secondString;
             }
             if (finished === true) {
@@ -167,85 +177,14 @@ module.exports = (function taskrunner() {
                         secondString + "]\u001b[39m ";
             }
         },
-        prettydiff = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "prettydiff.js"),
-        errout     = function taskrunner_errout(errtext) {
+        errout     = function taskrunner_errout(errtext):void {
             console.log("");
             console.error(errtext);
             humantime(true);
             process.exit(1);
         },
-        diffFiles  = function taskrunner_diffFiles(sampleName, sampleSource, sampleDiff) {
-            let aa     = 0,
-                pdlen  = 0,
-                plus   = "",
-                plural = "",
-                report = [],
-                total  = 0;
-            const diffview = require(__dirname + node.path.sep + "prettydiff" + node.path.sep + "lib" + node.path.sep + "diffview.js"),
-                record = function taskrunner_diffFiles_record(data) {
-                    let x = 0;
-                    const len = data.token.length,
-                        rec = [],
-                        dn  = function taskrunner_diffFiles_record_datanames(value) {
-                            rec[x][value] = data[value][x];
-                        };
-                    do {
-                        rec.push({});
-                        parse.datanames.forEach(dn);
-                        rec[x] = JSON.stringify(rec[x]);
-                        x = x + 1;
-                    } while (x < len);
-                    return rec;
-                };
-            prettydiff_options.mode    = "diff";
-            prettydiff_options.source  = (typeof sampleSource === "string")
-                ? record(JSON.parse(sampleSource))
-                : record(sampleSource);
-            prettydiff_options.diff    = (typeof sampleDiff === "string")
-                ? record(JSON.parse(sampleDiff))
-                : record(sampleSource);
-            prettydiff_options.diffcli = true;
-            prettydiff_options.context = 2;
-            prettydiff_options.lang    = "text";
-            report          = diffview(prettydiff_options);
-            pdlen           = report[0].length;
-            total           = report[1];
-            if (total > 50) {
-                plus = "+";
-            }
-            if (total !== 1) {
-                plural = "s";
-            }
-            // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
-            // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
-            // of prettydiff_options.context (not parallel) 6 - total count of differences
-            do {
-                if (report[0][aa].indexOf("\u001b[36m") === 0) {
-                    console.log("\u001b[36m" + sampleName + "\u001b[39m");
-                }
-                if (report[0][aa].indexOf("\u001b[36mLine: ") !== 0) {
-                    if (report[0][aa].indexOf("\u001b[31m") === 0) {
-                        report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[31m}\u001b[39m");
-                        report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[31m").replace(/\u001b\[22m/g, "\u001b[39m");
-                    } else if (report[0][aa].indexOf("\u001b[32m") === 0) {
-                        report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[32m}\u001b[39m");
-                        report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[32m").replace(/\u001b\[22m/g, "\u001b[39m");
-                    }
-                    console.log(report[0][aa]);
-                }
-                aa = aa + 1;
-            } while (aa < pdlen);
-            console.log("");
-            console.log(
-                total + plus + " \u001b[32mdifference" + plural + " counted.\u001b[39m"
-            );
-            errout(
-                "Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m" + sampleName + "" +
-                "\u001b[39m"
-            );
-        },
         phases     = {
-            codeunits: function taskrunner_coreunits() {
+            codeunits: function taskrunner_coreunits():void {
                 const files  = {
                         code  : [],
                         parsed: []
@@ -258,25 +197,93 @@ module.exports = (function taskrunner() {
                         code  : 0,
                         parsed: 0
                     },
-                    lexers = Object.keys(global.lexer),
-                    compare = function taskrunner_coreunits_compare() {
-                        let len       = (files.code.length > files.parsed.length)
+                    lexers:string[] = Object.keys(framework.lexer),
+                    compare = function taskrunner_coreunits_compare():void {
+                        let len:number       = (files.code.length > files.parsed.length)
                                 ? files.code.length
                                 : files.parsed.length,
                             lang      = [],
-                            a         = 0,
-                            str       = "",
-                            output    = {},
-                            filecount = 0,
-                            currentlex = "";
-                        const lexer     = function taskrunner_coreunits_compare_lexer() {
-                                const lex = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
+                            a:number         = 0,
+                            str:string       = "",
+                            output:data,
+                            filecount:number = 0,
+                            currentlex:string = "";
+                        const lexer     = function taskrunner_coreunits_compare_lexer():void {
+                                const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
                                 console.log("");
                                 console.log("Tests for lexer - \u001b[36m" + lex + "\u001b[39m");
                                 currentlex = lex;
+                            },
+                            diffFiles  = function taskrunner_coreunits_compare_diffFiles(sampleName:string, sampleSource:data, sampleDiff:data):void {
+                                let aa:number     = 0,
+                                    pdlen:number  = 0,
+                                    plus:string   = "",
+                                    plural:string = "",
+                                    report:any[] = [],
+                                    total:number  = 0;
+                                const diffview = require(relative + node.path.sep + "test" + node.path.sep + "diffview.js"),
+                                    record = function taskrunner_coreunits_compare_diffFiles_record(data:data):record[] {
+                                        let x:number = 0;
+                                        const len:number = data.token.length,
+                                            rec = [],
+                                            dn  = function taskrunner_coreunits_compare_diffFiles_record_datanames(value) {
+                                                rec[x][value] = data[value][x];
+                                            };
+                                        do {
+                                            rec.push({});
+                                            parse.datanames.forEach(dn);
+                                            rec[x] = JSON.stringify(rec[x]);
+                                            x = x + 1;
+                                        } while (x < len);
+                                        return rec;
+                                    },
+                                    diff_options = {
+                                        context: 2,
+                                        diff: record(sampleDiff),
+                                        diffcli: true,
+                                        lang: "text",
+                                        mode: "diff",
+                                        source: record(sampleSource)
+                                    };
+                                report          = diffview(diff_options);
+                                pdlen           = report[0].length;
+                                total           = report[1];
+                                if (total > 50) {
+                                    plus = "+";
+                                }
+                                if (total !== 1) {
+                                    plural = "s";
+                                }
+                                // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
+                                // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
+                                // of diff_options.context (not parallel) 6 - total count of differences
+                                do {
+                                    if (report[0][aa].indexOf("\u001b[36m") === 0) {
+                                        console.log("\u001b[36m" + sampleName + "\u001b[39m");
+                                    }
+                                    if (report[0][aa].indexOf("\u001b[36mLine: ") !== 0) {
+                                        if (report[0][aa].indexOf("\u001b[31m") === 0) {
+                                            report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[31m}\u001b[39m");
+                                            report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[31m").replace(/\u001b\[22m/g, "\u001b[39m");
+                                        } else if (report[0][aa].indexOf("\u001b[32m") === 0) {
+                                            report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[32m}\u001b[39m");
+                                            report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[32m").replace(/\u001b\[22m/g, "\u001b[39m");
+                                        }
+                                        console.log(report[0][aa]);
+                                    }
+                                    aa = aa + 1;
+                                } while (aa < pdlen);
+                                console.log("");
+                                console.log(
+                                    total + plus + " \u001b[32mdifference" + plural + " counted.\u001b[39m"
+                                );
+                                errout(
+                                    "Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m" + sampleName + "" +
+                                    "\u001b[39m"
+                                );
                             };
-                        files.code   = parse.safeSort(files.code);
-                        files.parsed = parse.safeSort(files.parsed);
+                        files.code   = parse.safeSort(files.code, "ascend", false);
+                        files.parsed = parse.safeSort(files.parsed, "ascend", false);
                         lexer();
                         do {
                             if (files.code[a][0].indexOf(currentlex) !== 0) {
@@ -290,13 +297,13 @@ module.exports = (function taskrunner() {
                                     files.parsed.splice(a, 1);
                                 } else {
                                     console.log(
-                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + files.parsedcode[a][0]
+                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + files.code[a][0]
                                     );
                                     files.code.splice(a, 1);
                                 }
                                 len = (files.code.length > files.parsed.length)
                                     ? files.code.length
-                                    : files.codeparsed.length;
+                                    : files.parsed.length;
                                 a   = a - 1;
                             } else if (files.code[a][0] === files.parsed[a][0]) {
                                 if (files.parsed[a][1] === "") {
@@ -332,11 +339,11 @@ module.exports = (function taskrunner() {
                                         parse_options.lang = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
-                                    lang           = global.language.auto(files.code[a][1], "javascript");
+                                    lang           = framework.language.auto(files.code[a][1], "javascript");
                                     parse_options.lexer  = lang[1];
-                                    output         = global.parser(parse_options);
+                                    output         = framework.parser(parse_options);
                                     str            = JSON.stringify(output);
-                                    if (global.parseerror === "") {
+                                    if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
                                             console.log(
@@ -347,13 +354,13 @@ module.exports = (function taskrunner() {
                                                 return next();
                                             }
                                         } else {
-                                            diffFiles(files.parsed[a][0], output, files.parsed[a][1]);
+                                            diffFiles(files.parsed[a][0], output, JSON.parse(files.parsed[a][1]));
                                         }
                                     } else {
                                         console.log("");
                                         console.log("Quitting due to error:");
                                         console.log(files.code[a][0]);
-                                        console.log(global.parseerror);
+                                        console.log(framework.parseerror);
                                         process.exit(1);
                                     }
                                 }
@@ -383,8 +390,8 @@ module.exports = (function taskrunner() {
                         console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                         return next();
                     },
-                    readDir = function taskrunner_coreunits_readDir(type, lexer, final_lexer) {
-                        const dirpath = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
+                    readDir = function taskrunner_coreunits_readDir(type:string, lexer:string, final_lexer:boolean):void {
+                        const dirpath:string = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
                             const pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
@@ -398,7 +405,7 @@ module.exports = (function taskrunner() {
                                             files[type].push([lexer + node.path.sep + val, fileData]);
                                         }
                                         if (final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
-                                            compare("");
+                                            compare();
                                         }
                                     }
                                 );
@@ -411,7 +418,7 @@ module.exports = (function taskrunner() {
                         });
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
-                lexers.forEach(function taskrunner_coreunits_lexers(value, index, array) {
+                lexers.forEach(function taskrunner_coreunits_lexers(value:string, index:number, array:string[]) {
                     if (index === array.length - 1) {
                         readDir("code", value, true);
                         readDir("parsed", value, true);
@@ -426,13 +433,16 @@ module.exports = (function taskrunner() {
                     keysort = "";
                 const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
-                global.parser({
+                framework.parser({
+                    correct: false,
+                    crlf: false,
                     lang  : "html",
                     lexer : "markup",
+                    lexerOptions: {},
                     source: ""
                 });
                 keys = Object.keys(parse);
-                keysort = parse.safeSort(keys).join();
+                keysort = parse.safeSort(keys, "ascend", false).join();
                 if (keysort !== keylist) {
                     return errout("\u001b[31mParse framework failure:\u001b[39m The \"parse\" object does not match the known list of required properties.");
                 }
@@ -529,157 +539,67 @@ module.exports = (function taskrunner() {
                 const ignoreDirectory = [
                         ".git",
                         ".vscode",
-                        "ace",
-                        "biddle",
                         "bin",
                         "coverage",
                         "guide",
                         "ignore",
                         "node_modules",
-                        "test/jslint",
-                        "test/prettydiff",
-                        "test/samples_parsed",
-                        "test/samples_code"
+                        "test"
                     ],
-                    flag            = {
-                        files: false,
-                        items: false
-                    },
-                    files           = [],
-                    jslint          = require(__dirname + node.path.sep + "jslint" + node.path.sep + "jslint.js"),
+                    files:string[]           = [],
                     lintrun         = function taskrunner_lint_lintrun() {
-                        const lintit = function taskrunner_lint_lintrun_lintit(val, ind, arr) {
-                            let result = {},
-                                failed = false,
-                                ecount = 0;
-                            const report = function taskrunner_lint_lintrun_lintit_lintOn_report(warning) {
-                                    //start with an exclusion list.  There are some warnings that I don't care about
-                                    if (warning === null) {
+                        let filesCount:number = 0;
+                        const filesTotal = files.length,
+                            lintit = function taskrunner_lint_lintrun_lintit(val:string):void {
+                                node.child("eslint " + val, function taskrunner_lint_lintrun_lintit_eslint(err, stdout, stderr) {
+                                    if (stdout === "") {
+                                        if (err !== null) {
+                                            errout(err);
+                                            return;
+                                        }
+                                        if (stderr !== null && stderr !== "") {
+                                            errout(stderr);
+                                            return;
+                                        }
+                                        filesCount = filesCount + 1;
+                                        console.log("\u001b[32mLint passed:\u001b[39m " + val);
+                                        if (filesCount === filesTotal) {
+                                            console.log("\u001b[32mLint complete!\u001b[39m");
+                                            next();
+                                            return;
+                                        }
+                                    } else {
+                                        console.log(stdout);
+                                        errout("Lint failure.");
                                         return;
                                     }
-                                    if (warning.message.indexOf("Unexpected dangling '_'") === 0) {
-                                        return;
-                                    }
-                                    if ((/Bad\u0020property\u0020name\u0020'\w+_'\./).test(warning.message) === true) {
-                                        return;
-                                    }
-                                    if (warning.message.indexOf("/*global*/ requires") === 0) {
-                                        return;
-                                    }
-                                    failed = true;
-                                    if (ecount === 0) {
-                                        console.log("\u001b[31mJSLint errors on\u001b[39m " + val[0]);
-                                        console.log("");
-                                    }
-                                    ecount = ecount + 1;
-                                    console.log("On line " + warning.line + " at column: " + warning.column);
-                                    console.log(warning.message);
-                                    console.log("");
-                                };
-                            prettydiff_options.source = val[1];
-                            prettydiff_options.wrap   = 90000;
-                            result         = jslint(prettydiff(prettydiff_options), {"es6": true});
-                            if (result.ok === true) {
-                                console.log(
-                                    humantime(false) + "\u001b[32mLint is good for file " + (
-                                        ind + 1
-                                    ) + ":\u001b[39m " + val[0]
-                                );
-                                if (ind === arr.length - 1) {
-                                    console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                    return next();
-                                }
-                            } else {
-                                result
-                                    .warnings
-                                    .forEach(report);
-                                if (failed === true) {
-                                    errout("\u001b[31mLint fail\u001b[39m :(");
-                                } else {
-                                    console.log(
-                                        humantime(false) + "\u001b[32mLint is good for file " + (
-                                            ind + 1
-                                        ) + ":\u001b[39m " + val[0]
-                                    );
-                                    if (ind === arr.length - 1) {
-                                        console.log("\u001b[32mLint operation complete!\u001b[39m");
-                                        return next();
-                                    }
-                                }
-                            }
-                        };
-                        prettydiff_options = {
-                            correct     : false,
-                            crlf        : false,
-                            html        : true,
-                            inchar      : " ",
-                            insize      : 4,
-                            lang        : "javascript",
-                            methodchain : "indent",
-                            mode        : "beautify",
-                            nocaseindent: false,
-                            objsort     : "all",
-                            preserve    : 2,
-                            styleguide  : "jslint",
-                            wrap        : 80
-                        };
+                                })
+                            };
                         files.forEach(lintit);
                     };
                 console.log("\u001b[36mBeautifying and Linting\u001b[39m");
-                console.log(
-                    "** Note that line numbers of error messaging reflects beautified code line."
-                );
-                console.log("");
-                (function taskrunner_lint_getFiles() {
-                    let fc       = 0,
-                        ft       = 0,
-                        total    = 0,
-                        count    = 0;
-                    const idLen    = ignoreDirectory.length,
-                        readFile = function taskrunner_lint_getFiles_readFile(filePath) {
-                            node.fs.readFile(
-                                filePath,
-                                "utf8",
-                                function taskrunner_lint_getFiles_readFile_callback(err, data) {
-                                    if (err !== null && err !== undefined) {
-                                        errout(err);
-                                    }
-                                    fc = fc + 1;
-                                    if (ft === fc) {
-                                        flag.files = true;
-                                    }
-                                    files.push([
-                                        filePath.slice(filePath.indexOf(node.path.sep + "parse-framework" + node.path.sep) + 17),
-                                        data
-                                    ]);
-                                    if (flag.files === true && flag.items === true) {
-                                        lintrun();
-                                    }
-                                }
-                            );
-                        },
-                        readDir  = function taskrunner_lint_getFiles_readDir(filepath) {
+                (function taskrunner_lint_getFiles():void {
+                    let total:number    = 1,
+                        count:number    = 0;
+                    const idLen:number    = ignoreDirectory.length,
+                        readDir  = function taskrunner_lint_getFiles_readDir(filepath:string):void {
                             node.fs.readdir(
                                 filepath,
                                 function taskrunner_lint_getFiles_readDir_callback(erra, list) {
-                                    const fileEval = function taskrunner_lint_getFiles_readDir_callback_fileEval(val) {
-                                        const filename = filepath + node.path.sep + val;
+                                    const fileEval = function taskrunner_lint_getFiles_readDir_callback_fileEval(val:string):void {
+                                        const filename:string = filepath + node.path.sep + val;
                                         node.fs.stat(
                                             filename,
                                             function taskrunner_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
-                                                let a         = 0,
-                                                    ignoreDir = false;
-                                                const dirtest   = filepath.replace(/\\/g, "/") + "/" + val;
+                                                let a:number         = 0,
+                                                    ignoreDir:boolean = false;
+                                                const dirtest:string   = filepath.replace(/\\/g, "/") + "/" + val;
                                                 if (errb !== null) {
                                                     return errout(errb);
                                                 }
                                                 count = count + 1;
-                                                if (count === total) {
-                                                    flag.items = true;
-                                                }
                                                 if (stat.isFile() === true && (/(\.js)$/).test(val) === true) {
-                                                    ft = ft + 1;
-                                                    readFile(filename);
+                                                    files.push(filename);
                                                 }
                                                 if (stat.isDirectory() === true) {
                                                     do {
@@ -690,12 +610,15 @@ module.exports = (function taskrunner() {
                                                         a = a + 1;
                                                     } while (a < idLen);
                                                     if (ignoreDir === true) {
-                                                        if (flag.files === true && flag.items === true) {
+                                                        if (count === total) {
                                                             lintrun();
                                                         }
                                                     } else {
+                                                        total = total + 1;
                                                         taskrunner_lint_getFiles_readDir(filename);
                                                     }
+                                                } else if (count === total) {
+                                                    lintrun();
                                                 }
                                             }
                                         );
@@ -703,31 +626,51 @@ module.exports = (function taskrunner() {
                                     if (erra !== null) {
                                         return errout("Error reading path: " + filepath + "\n" + erra);
                                     }
-                                    total = total + list.length;
+                                    total = total + list.length - 1;
                                     list.forEach(fileEval);
                                 }
                             );
                         };
                     readDir(relative);
                 }());
+            },
+            typescript: function taskrunner_typescript():void {
+                console.log("\u001b[36mTypeScript Compilation\u001b[39m");
+                node.child("tsc", function taskrunner_typescript_callback(err, stdout, stderr):void {
+                    if (err !== null) {
+                        errout(err);
+                        return;
+                    }
+                    if (stderr !== null && stderr !== "") {
+                        errout(stderr);
+                        return;
+                    }
+                    if (stdout !== "") {
+                        console.log("\u001b[31mTypeScript reported warnings.\u001b[39m");
+                        errout(stdout);
+                        return;
+                    }
+                    console.log("\u001b[32mTypeScript build completed without warnings.\u001b[39m");
+                    return next();
+                });
             }
         };
 
     require(".." + node.path.sep + "parse.js");
     require(".." + node.path.sep + "language.js");
-    global.lexer      = {};
-    global.parseerror = "";
-    parse             = global.parse;
-    parse_options.lexerOptions = {};
+    framework = global.parseFramework;
+    framework.lexer      = {};
+    framework.parseerror = "";
+    parse             = framework.parse;
 
-    node.fs.readdir(relative + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
+    node.fs.readdir(relative + node.path.sep + "js" + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
         if (err !== null) {
             console.log(err);
             process.exit(1);
         } else {
             files.forEach(function taskrunner_lexers_each(value) {
                 if ((/(\.js)$/).test(value) === true) {
-                    require(relative + node.path.sep + "lexers" + node.path.sep + value);
+                    require(relative + node.path.sep + "js" + node.path.sep + "lexers" + node.path.sep + value);
                     parse_options.lexerOptions[value.slice(0, value.indexOf("."))] = {};
                 }
             });
