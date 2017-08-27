@@ -472,7 +472,7 @@ Parse Framework
                 // * howmany - How many indexes to remove
                 // * index   - The index where to start
                 // * record  - A new record to insert
-                if (spliceData.record !== undefined && typeof spliceData.record.token === "string") {
+                if (spliceData.record.token !== "") {
                     parse
                         .datanames
                         .forEach(function parse_splice_datanames(value) {

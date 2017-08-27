@@ -1,34 +1,30 @@
 /*global global*/
 (function script_init() {
     "use strict";
-    const framework = global.parseFramework,
-        script = function lexer_script(source) {
-            let a = 0,
-                ltoke          = "",
-                ltype          = "",
-                pword          = [],
-                lengthb        = 0,
-                wordTest       = -1,
-                paren          = -1,
-                tempstore      = {},
-                pstack         = [],
-                // operations for start types: (, [, {
-                start          = function lexer_script_startInit() {
-                    return;
-                };
-            const parse          = framework.parse,
-                data           = parse.data,
-                options        = parse.options,
-                sourcemap      = [
+    const framework:parseFramework = global.parseFramework,
+        script = function lexer_script(source:string):data {
+            let a:number = 0,
+                ltoke:string          = "",
+                ltype:string          = "",
+                lword:Array<[string, number]>,
+                pword:[string, number],
+                lengthb:number        = 0,
+                wordTest:number       = -1,
+                paren:number          = -1,
+                tempstore:record,
+                pstack:[string, number];
+            const parse:parse          = framework.parse,
+                data:data           = parse.data,
+                options:options        = parse.options,
+                sourcemap:[number, string]      = [
                     0, ""
                 ],
-                b              = source.length,
-                c              = source.split(""),
-                lword          = [],
-                brace          = [],
-                classy         = [],
+                b:number              = source.length,
+                c:string[]              = source.split(""),
+                brace:string[]          = [],
+                classy:number[]         = [],
                 // depth and status of templateStrings
-                templateString = [],
+                templateString:boolean[] = [],
                 // identify variable declarations
                 vart           = {
                     count: [],
@@ -37,11 +33,11 @@
                     word : []
                 },
                 // peek at whats up next
-                nextchar       = function lexer_script_nextchar(len, current) {
-                    let cc = (current === true)
+                nextchar       = function lexer_script_nextchar(len:number, current:boolean):string {
+                    let cc:number = (current === true)
                             ? a
                             : a + 1,
-                        dd    = "";
+                        dd:string    = "";
                     if (typeof len !== "number" || len < 1) {
                         len = 1;
                     }
@@ -80,8 +76,8 @@
                     return "";
                 },
                 // cleans up improperly applied ASI
-                asifix         = function lexer_script_asifix() {
-                    let len = parse.count;
+                asifix         = function lexer_script_asifix():void {
+                    let len:number = parse.count;
                     do {
                         len = len - 1;
                     } while (
@@ -92,12 +88,20 @@
                     }
                     if (data.token[len] === "x;") {
                         parse.splice(
-                            {data: data, howmany: 1, index: len, record: {}}
+                            {data: data, howmany: 1, index: len, record: {
+                                begin: 0,
+                                lexer: "",
+                                lines: 0,
+                                presv: false,
+                                stack: "",
+                                token: "",
+                                types: ""
+                            }}
                         );
                     }
                 },
                 // determine the definition of containment by stack
-                recordPush     = function lexer_script_recordPush(structure) {
+                recordPush     = function lexer_script_recordPush(structure: string):void {
                     const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "script",
@@ -110,7 +114,7 @@
                     parse.push(data, record, structure);
                 },
                 // remove "vart" object data
-                vartpop        = function lexer_script_vartpop() {
+                vartpop        = function lexer_script_vartpop():void {
                     vart
                         .count
                         .pop();
@@ -124,27 +128,38 @@
                 },
                 // A lexer for keywords, reserved words, and variables
                 word           = function lexer_script_word() {
-                    let f        = wordTest,
-                        g        = 1,
-                        output   = "",
-                        nextitem = "",
-                        build    = {};
+                    let f:number        = wordTest,
+                        g:number        = 1,
+                        output:string   = "",
+                        nextitem:string = "";
                     const lex      = [],
-                        elsefix  = function lexer_script_word_elsefix() {
+                        elsefix  = function lexer_script_word_elsefix():void {
                             brace.push("x{");
                             parse.splice({
                                 data   : data,
                                 howmany: 1,
                                 index  : parse.count - 3,
-                                record : {}
+                                record : {
+                                    begin: 0,
+                                    lexer: "",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: "",
+                                    token: "",
+                                    types: ""
+                                }
                             });
                         },
-                        builder = function lexer_script_word_builder(index) {
-                            const record = {};
-                            parse.datanames.forEach(function lexer_script_word_builder_datanames(value) {
-                                record[value] = data[value][index];
-                            });
-                            return record;
+                        builder = function lexer_script_word_builder(index:number):record {
+                            return {
+                                begin: data.begin[index],
+                                lexer: data.lexer[index],
+                                lines: data.lines[index],
+                                presv: data.presv[index],
+                                stack: data.stack[index],
+                                token: data.token[index],
+                                types: data.types[index]
+                            };
                         };
                     do {
                         lex.push(c[f]);
@@ -258,19 +273,26 @@
                             );
                             if (data.token[f] === "x;" && (data.token[f - 1] === "}" || data.token[f - 1] === "x}")) {
                                 parse.splice(
-                                    {data: data, howmany: 1, index: f, record: {}}
+                                    {data: data, howmany: 1, index: f, record: {
+                                        begin: 0,
+                                        lexer: "",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: "",
+                                        token: "",
+                                        types: ""
+                                    }}
                                 );
                                 g            = g - 1;
                                 f            = f - 1;
                             }
                             do {
-                                build        = builder(g);
                                 tempstore    = parse.pop(data);
                                 parse.splice({
                                     data   : data,
                                     howmany: 0,
                                     index  : g - 3,
-                                    record : build
+                                    record : builder(g)
                                 });
                                 f            = f + 1;
                             } while (f < g);
@@ -279,8 +301,8 @@
                             asifix();
                         }
                         if (output === "while" && data.token[parse.count] === "x;" && data.token[parse.count - 1] === "}") {
-                            let d = 0,
-                                e = parse.count - 2;
+                            let d:number = 0,
+                                e:number = parse.count - 2;
                             if (e > -1) {
                                 do {
                                     if (data.types[e] === "end") {
@@ -367,8 +389,8 @@
                     }
                 },
                 // determines if a slash comprises a valid escape or if it is escaped itself
-                slashes        = function lexer_script_slashes(index) {
-                    let slashy = index;
+                slashes        = function lexer_script_slashes(index:number):boolean {
+                    let slashy:number = index;
                     do {
                         slashy = slashy - 1;
                     } while (c[slashy] === "\\" && slashy > 0);
@@ -380,15 +402,15 @@
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
-                generic        = function lexer_script_genericBuilder(starting, ending) {
-                    let ee     = 0,
-                        output = "",
-                        escape = false,
-                        build  = [starting];
-                    const ender  = ending.split(""),
-                        endlen = ender.length,
-                        jj     = b,
-                        base   = a + starting.length;
+                generic        = function lexer_script_genericBuilder(starting:string, ending:string):string {
+                    let ee:number     = 0,
+                        output:string = "",
+                        escape:boolean = false,
+                        build:string[]  = [starting];
+                    const ender:string[]  = ending.split(""),
+                        endlen:number = ender.length,
+                        jj:number     = b,
+                        base:number   = a + starting.length;
                     if (wordTest > -1) {
                         word();
                     }
@@ -507,11 +529,11 @@
                     return output;
                 },
                 // inserts ending curly brace (where absent)
-                blockinsert    = function lexer_script_blockinsert() {
-                    let next  = nextchar(5, false),
-                        name  = "";
-                    const g   = parse.count,
-                        lines = parse.linesSpace;
+                blockinsert    = function lexer_script_blockinsert():void {
+                    let next:string  = nextchar(5, false),
+                        name:string  = "";
+                    const g:number   = parse.count,
+                        lines:number = parse.linesSpace;
                     if (options.lang === "json") {
                         return;
                     }
@@ -543,7 +565,7 @@
                         brace.pop();
                         ltoke        = ";";
                         ltype        = "end";
-                        parse.push(data, tempstore);
+                        parse.push(data, tempstore, "");
                         parse.linesSpace = lines;
                         return;
                     }
@@ -571,9 +593,9 @@
                 },
                 // commaComment ensures that commas immediately precede comments instead of
                 // immediately follow
-                commaComment   = function lexer_script_commacomment() {
-                    let x = parse.count;
-                    if (data.stack[x] === "object" && options.objectSort === true) {
+                commaComment   = function lexer_script_commacomment():void {
+                    let x:number = parse.count;
+                    if (data.stack[x] === "object" && options.lexerOptions.script.objectSort === true) {
                         ltoke = ",";
                         ltype = "separator";
                         asifix();
@@ -602,17 +624,19 @@
                     }
                 },
                 // automatic semicolon insertion
-                asi            = function lexer_script_asi(isEnd) {
-                    let aa     = 0;
-                    const next   = nextchar(1, false),
-                        record = (function lexer_script_asi_record() {
-                            const output = {};
-                            parse.datanames.forEach(function lexer_script_asi_record_datanames(value) {
-                                output[value] = data[value][parse.count];
-                            });
-                            return output;
-                        }()),
-                        clist  = (parse.structure.length === 0)
+                asi            = function lexer_script_asi(isEnd:boolean):void {
+                    let aa:number     = 0;
+                    const next:string   = nextchar(1, false),
+                        record:record = {
+                            begin: data.begin[parse.count],
+                            lexer: data.lexer[parse.count],
+                            lines: data.lines[parse.count],
+                            presv: data.presv[parse.count],
+                            stack: data.stack[parse.count],
+                            token: data.token[parse.count],
+                            types: data.types[parse.count]
+                        },
+                        clist:string  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
                     if (data.lexer[parse.count - 1] !== "script" || options.lang === "java" || options.lang === "csharp") {
@@ -640,7 +664,7 @@
                         ltoke = "x;";
                         ltype = "separator";
                         recordPush("");
-                        if (brace[brace.length - 1] === "x{" && nextchar !== "}") {
+                        if (brace[brace.length - 1] === "x{" && next !== "}") {
                             blockinsert();
                         }
                         return;
@@ -702,66 +726,62 @@
                     aa    = parse.linesSpace;
                     recordPush("");
                     parse.linesSpace = aa;
-                    if (brace[brace.length - 1] === "x{" && nextchar !== "}") {
+                    if (brace[brace.length - 1] === "x{" && next !== "}") {
                         blockinsert();
                     }
                 },
                 // convert ++ and -- into "= x +"  and "= x -" in most cases
-                plusplus = function lexer_script_plusplus() {
-                    let pre         = true,
-                        toke        = "+",
-                        tokea       = "",
-                        tokeb       = "",
-                        tokec       = "",
-                        inc         = 0,
-                        ind         = 0,
-                        walk        = 0,
-                        end         = function lexer_script_plusplus_endInit() {
-                            return;
-                        },
-                        period      = function lexer_script_plusplus_periodInit() {
-                            return;
-                        },
-                        next        = "";
+                plusplus = function lexer_script_plusplus():void {
+                    let pre:boolean         = true,
+                        toke:string        = "+",
+                        tokea:string       = "",
+                        tokeb:string       = "",
+                        tokec:string       = "",
+                        inc:number         = 0,
+                        ind:number         = 0,
+                        walk:number        = 0,
+                        next:string        = "";
                     const store       = [],
-                        applyStore  = function lexer_script_plusplus_applyStore() {
-                            let x = 0;
-                            const y = store.length;
+                        end         = function lexer_script_plusplus_end():void {
+                            walk = data.begin[walk] - 1;
+                            if (data.types[walk] === "end") {
+                                lexer_script_plusplus_end();
+                            } else if (data.token[walk - 1] === ".") {
+                                period();
+                            }
+                        },
+                        period      = function lexer_script_plusplus_period():void {
+                            walk = walk - 2;
+                            if (data.types[walk] === "end") {
+                                end();
+                            } else if (data.token[walk - 1] === ".") {
+                                lexer_script_plusplus_period();
+                            }
+                        },
+                        applyStore  = function lexer_script_plusplus_applyStore():void {
+                            let x:number = 0;
+                            const y:number = store.length;
                             if (x < y) {
                                 do {
-                                    parse.push(data, store[x]);
+                                    parse.push(data, store[x], "");
                                     x            = x + 1;
                                 } while (x < y);
                             }
                         },
-                        recordStore = function lexer_script_plusplus_recordStore(index) {
-                            const output = {};
-                            parse.datanames.forEach(
-                                function lexer_script_plusplus_recordStore_datanames(value) {
-                                    output[value] = data[value][index];
-                                }
-                            );
-                            return output;
+                        recordStore = function lexer_script_plusplus_recordStore(index:number):record {
+                            return {
+                                begin: data.begin[index],
+                                lexer: data.lexer[index],
+                                lines: data.lines[index],
+                                presv: data.presv[index],
+                                stack: data.stack[index],
+                                token: data.token[index],
+                                types: data.types[index]
+                            };
                         };
                     tokea  = data.token[parse.count];
                     tokeb  = data.token[parse.count - 1];
                     tokec  = data.token[parse.count - 2];
-                    end    = function lexer_script_plusplus_end() {
-                        walk = data.begin[walk] - 1;
-                        if (data.types[walk] === "end") {
-                            lexer_script_plusplus_end();
-                        } else if (data.token[walk - 1] === ".") {
-                            period();
-                        }
-                    };
-                    period = function lexer_script_plusplus_period() {
-                        walk = walk - 2;
-                        if (data.types[walk] === "end") {
-                            end();
-                        } else if (data.token[walk - 1] === ".") {
-                            lexer_script_plusplus_period();
-                        }
-                    };
                     if (tokea !== "++" && tokea !== "--" && tokeb !== "++" && tokeb !== "--") {
                         walk = parse.count;
                         if (data.types[walk] === "end") {
@@ -784,7 +804,15 @@
                                 data   : data,
                                 howmany: parse.count - walk,
                                 index  : walk,
-                                record : {}
+                                record : {
+                                    begin: 0,
+                                    lexer: "",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: "",
+                                    token: "",
+                                    types: ""
+                                }
                             });
                         }
                     } else {
@@ -877,7 +905,15 @@
                             data   : data,
                             howmany: 1,
                             index  : walk - 1,
-                            record : {}
+                            record : {
+                                begin: 0,
+                                lexer: "",
+                                lines: 0,
+                                presv: false,
+                                stack: "",
+                                token: "",
+                                types: ""
+                            }
                         });
                         ltoke        = "=";
                         ltype        = "operator";
@@ -908,8 +944,8 @@
                     }
                 },
                 // fixes asi location if inserted after an inserted brace
-                asibrace       = function lexer_script_asibrace() {
-                    let aa = parse.count;
+                asibrace       = function lexer_script_asibrace():void {
+                    let aa:number = parse.count;
                     do {
                         aa = aa - 1;
                     } while (aa > -1 && data.token[aa] === "x}");
@@ -934,14 +970,14 @@
                     recordPush("");
                 },
                 // a tokenizer for regular expressions
-                regex          = function lexer_script_regex() {
-                    let ee     = a + 1,
-                        h      = 0,
-                        i      = 0,
-                        output = "",
-                        square = false;
-                    const f      = b,
-                        build  = ["/"];
+                regex          = function lexer_script_regex():string {
+                    let ee:number     = a + 1,
+                        h:number      = 0,
+                        i:number      = 0,
+                        output:string = "",
+                        square:boolean = false;
+                    const f:number      = b,
+                        build:string[]  = ["/"];
                     if (ee < f) {
                         do {
                             build.push(c[ee]);
@@ -1007,12 +1043,12 @@
                     return output;
                 },
                 // a unique tokenizer for operator characters
-                operator       = function lexer_script_operator() {
-                    let g      = 0,
-                        h      = 0,
-                        jj     = b,
-                        output = "";
-                    const syntax = [
+                operator       = function lexer_script_operator():string {
+                    let g:number      = 0,
+                        h:number      = 0,
+                        jj:number     = b,
+                        output:string = "";
+                    const syntax:string[] = [
                             "=",
                             "<",
                             ">",
@@ -1029,50 +1065,35 @@
                         synlen = syntax.length,
                         plusequal = function lexer_script_operator_plusequal(op) {
                             let walk        = parse.count,
-                                inc         = 0,
-                                end         = function lexer_script_operator_plusequal_endInit() {
-                                    return;
-                                },
-                                period      = function lexer_script_operator_plusequal_periodInit() {
-                                    return;
-                                };
+                                inc         = 0;
                             const toke        = op.charAt(0),
                                 store       = [],
-                                applyStore  = function lexer_script_plusplus_applyStore() {
-                                    let x = 0;
-                                    const y = store.length;
+                                applyStore  = function lexer_script_plusplus_applyStore():void {
+                                    let x:number = 0;
+                                    const y:number = store.length;
                                     if (x < y) {
                                         do {
-                                            parse.push(data, store[x]);
+                                            parse.push(data, store[x], "");
                                             x            = x + 1;
                                         } while (x < y);
                                     }
                                 },
-                                recordStore = function lexer_script_operator_plusequal_recordStore() {
-                                    const storage = {};
-                                    parse.datanames.forEach(
-                                        function lexer_script_operator_plusequal_recordStore_datanames(value) {
-                                            storage[value] = data[value][inc];
-                                        }
-                                    );
-                                    return storage;
+                                end         = function lexer_script_operator_plusequal_end():void {
+                                    walk = data.begin[walk] - 1;
+                                    if (data.types[walk] === "end") {
+                                        lexer_script_operator_plusequal_end();
+                                    } else if (data.token[walk - 1] === ".") {
+                                        period();
+                                    }
+                                },
+                                period      = function lexer_script_operator_plusequal_period():void {
+                                    walk = walk - 2;
+                                    if (data.types[walk] === "end") {
+                                        end();
+                                    } else if (data.token[walk - 1] === ".") {
+                                        lexer_script_operator_plusequal_period();
+                                    }
                                 };
-                            end    = function lexer_script_operator_plusequal_end() {
-                                walk = data.begin[walk] - 1;
-                                if (data.types[walk] === "end") {
-                                    lexer_script_operator_plusequal_end();
-                                } else if (data.token[walk - 1] === ".") {
-                                    period();
-                                }
-                            };
-                            period = function lexer_script_operator_plusequal_period() {
-                                walk = walk - 2;
-                                if (data.types[walk] === "end") {
-                                    end();
-                                } else if (data.token[walk - 1] === ".") {
-                                    lexer_script_operator_plusequal_period();
-                                }
-                            };
                             if (data.types[walk] === "end") {
                                 end();
                             } else if (data.token[walk - 1] === ".") {
@@ -1080,7 +1101,15 @@
                             }
                             inc = walk;
                             do {
-                                store.push(recordStore(inc));
+                                store.push({
+                                    begin: data.begin[inc],
+                                    lexer: data.lexer[inc],
+                                    lines: data.lines[inc],
+                                    presv: data.presv[inc],
+                                    stack: data.stack[inc],
+                                    token: data.token[inc],
+                                    types: data.types[inc]
+                                });
                                 inc = inc + 1;
                             } while (inc < parse.count);
                             ltoke = "=";
@@ -1189,8 +1218,8 @@
                     return output;
                 },
                 // ES6 template string support
-                tempstring     = function lexer_script_tempstring() {
-                    const output = [c[a]];
+                tempstring     = function lexer_script_tempstring():string {
+                    const output:string[] = [c[a]];
                     a = a + 1;
                     if (a < b) {
                         do {
@@ -1209,12 +1238,12 @@
                     return output.join("");
                 },
                 // a tokenizer for numbers
-                numb           = function lexer_script_number() {
-                    const f     = b,
-                        build = [c[a]];
-                    let ee    = 0,
-                        test  = /zz/,
-                        dot   = (build[0] === ".");
+                numb           = function lexer_script_number():string {
+                    const f:number     = b,
+                        build:string[] = [c[a]];
+                    let ee:number    = 0,
+                        test:RegExp  = /zz/,
+                        dot:boolean   = (build[0] === ".");
                     if (a < b - 2 && c[a] === "0") {
                         if (c[a + 1] === "x") {
                             test = /[0-9a-fA-F]/;
@@ -1275,18 +1304,18 @@
                 },
                 // Identifies blocks of markup embedded within JavaScript for language supersets
                 // like React JSX.
-                markup         = function lexer_script_markup() {
-                    let curlytest   = false,
-                        endtag      = false,
-                        anglecount  = 0,
-                        curlycount  = 0,
-                        tagcount    = 0,
-                        d           = 0,
-                        next        = "",
-                        output      = [];
-                    const syntaxnum   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
-                        syntax      = "=<>+-*?|^:&.,;%(){}[]~",
-                        applyMarkup = function lexer_script_markup_applyMarkup() {
+                markup         = function lexer_script_markup():void {
+                    let curlytest:boolean   = false,
+                        endtag:boolean      = false,
+                        anglecount:number  = 0,
+                        curlycount:number  = 0,
+                        tagcount:number    = 0,
+                        d:number           = 0,
+                        next:string        = "",
+                        output:string[]      = [];
+                    const syntaxnum:string   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
+                        syntax:string      = "=<>+-*?|^:&.,;%(){}[]~",
+                        applyMarkup = function lexer_script_markup_applyMarkup():void {
                             if (ltoke === "(") {
                                 parse.structure[parse.structure.length - 1] = ["paren", parse.count];
                             }
@@ -1318,14 +1347,14 @@
                         options.lang = "jsx";
                     } else if (options.lang === "typescript" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
                         // Java type generics
-                        let comma    = false,
-                            e        = 1,
-                            f        = 0;
-                        const generics = [
+                        let comma:boolean    = false,
+                            e:number        = 1,
+                            f:number        = 0;
+                        const generics:string[] = [
                                 "<",
                                 c[a + 1]
                             ],
-                            jj = b;
+                            jj:number = b;
                         if (c[a + 1] === "<") {
                             e = 2;
                         }
@@ -1353,7 +1382,8 @@
                                     if (e === 0 && f === 0) {
                                         if ((/\s/).test(c[d - 1]) === true) {
                                             ltype = "operator";
-                                            return operator();
+                                            operator();
+                                            return;
                                         }
                                         ltype = "generic";
                                         a     = d;
@@ -1365,7 +1395,8 @@
                                 }
                                 if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
                                     ltype = "operator";
-                                    return operator();
+                                    operator();
+                                    return;
                                 }
                                 d = d + 1;
                             } while (d < jj);
@@ -1443,27 +1474,27 @@
                     return applyMarkup();
                 },
                 // operations for end types: ), ], }
-                end            = function lexer_script_end(x) {
-                    let insert   = false;
-                    const next     = nextchar(1, false),
-                        newarray = function lexer_script_end_newarray() {
-                            let bb       = 0,
-                                cc       = 0,
-                                arraylen = 0;
-                            const aa       = data.begin[parse.count],
-                                ar       = (data.token[data.begin[parse.count] - 1] === "Array"),
-                                startar  = (ar === true)
+                end            = function lexer_script_end(x:string):void {
+                    let insert:boolean   = false;
+                    const next:string     = nextchar(1, false),
+                        newarray = function lexer_script_end_newarray():void {
+                            let bb:number       = 0,
+                                cc:number       = 0,
+                                arraylen:number = 0;
+                            const aa:number       = data.begin[parse.count],
+                                ar:boolean       = (data.token[data.begin[parse.count] - 1] === "Array"),
+                                startar:string  = (ar === true)
                                     ? "["
                                     : "{",
-                                endar    = (ar === true)
+                                endar:string    = (ar === true)
                                     ? "]"
                                     : "}",
-                                namear   = (ar === true)
+                                namear:string   = (ar === true)
                                     ? "array"
                                     : "object";
                             tempstore    = parse.pop(data);
                             if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "number") {
-                                arraylen                        = data.token[data.begin[parse.count]] - 1;
+                                arraylen                        = data.begin[parse.count] - 1;
                                 tempstore                       = parse.pop(data);
                                 tempstore                       = parse.pop(data);
                                 tempstore                       = parse.pop(data);
@@ -1487,7 +1518,15 @@
                                     data   : data,
                                     howmany: 2,
                                     index  : aa - 2,
-                                    record : {}
+                                    record : {
+                                        begin: 0,
+                                        lexer: "",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: "",
+                                        token: "",
+                                        types: ""
+                                    }
                                 });
                                 parse.structure[parse.structure.length - 1] = [
                                     namear, aa - 2
@@ -1549,14 +1588,13 @@
                     } else if (x === "]") {
                         ltoke = "]";
                         ltype = "end";
-                        pword = [];
                     } else if (x === "}") {
                         if (ltoke !== "," && options.correct === true) {
                             plusplus();
                         }
                         if (parse.structure.length > 0 && parse.structure[parse.structure.length - 1][0] !== "object") {
                             asi(true);
-                        } else if (options.objectSort === true) {
+                        } else if (options.lexerOptions.script.objectSort === true) {
                             parse.objectSort(data);
                         }
                         if (ltype === "comment") {
@@ -1565,7 +1603,6 @@
                         }
                         ltoke = "}";
                         ltype = "end";
-                        pword = [];
                     }
                     lword.pop();
                     pstack = parse.structure[parse.structure.length - 1];
@@ -1594,13 +1631,13 @@
                     }
                 },
                 // determines tag names for {% %} based template tags and returns a type
-                tname          = function lexer_script_tname(x) {
-                    let sn       = 2,
-                        en       = 0,
-                        name     = "";
-                    const st       = x.slice(0, 2),
-                        len      = x.length,
-                        namelist = [
+                tname          = function lexer_script_tname(x:string):string {
+                    let sn:number       = 2,
+                        en:number       = 0,
+                        name:string     = "";
+                    const st:string       = x.slice(0, 2),
+                        len:number      = x.length,
+                        namelist:string[] = [
                             "autoescape",
                             "block",
                             "capture",
@@ -1663,154 +1700,154 @@
                         } while (en > -1);
                     }
                     return "template";
-                };
-            start = function lexer_script_start(x) {
-                let aa    = parse.count,
-                    wordx = "",
-                    wordy = "",
-                    stack = "";
-                brace.push(x);
-                if (wordTest > -1) {
-                    word();
-                    aa = parse.count;
-                }
-                if (vart.len > -1) {
-                    vart.count[vart.len] = vart.count[vart.len] + 1;
-                }
-                if (data.token[aa - 1] === "function") {
-                    lword.push([
-                        "function", aa + 1
-                    ]);
-                } else {
-                    lword.push([
-                        ltoke, aa + 1
-                    ]);
-                }
-                ltoke = x;
-                ltype = "start";
-                if (x === "(" || x === "x(") {
-                    asifix();
-                } else if (x === "{") {
-                    if (paren > -1) {
-                        if (data.begin[paren - 1] === data.begin[data.begin[aa] - 1] || data.token[data.begin[aa]] === "x(") {
-                            paren = -1;
-                            end("x)");
-                            asifix();
-                            ltoke = "{";
-                            ltype = "start";
-                        }
-                    } else if (ltoke === ")") {
+                },
+                start          = function lexer_script_start(x:string):void {
+                    let aa:number    = parse.count,
+                        wordx:string = "",
+                        wordy:string = "",
+                        stack:string = "";
+                    brace.push(x);
+                    if (wordTest > -1) {
+                        word();
+                        aa = parse.count;
+                    }
+                    if (vart.len > -1) {
+                        vart.count[vart.len] = vart.count[vart.len] + 1;
+                    }
+                    if (data.token[aa - 1] === "function") {
+                        lword.push([
+                            "function", aa + 1
+                        ]);
+                    } else {
+                        lword.push([
+                            ltoke, aa + 1
+                        ]);
+                    }
+                    ltoke = x;
+                    ltype = "start";
+                    if (x === "(" || x === "x(") {
                         asifix();
-                    }
-                    if (ltype === "comment" && data.token[aa - 1] === ")") {
-                        ltoke                    = data.token[aa];
-                        data.token[aa] = "{";
-                        ltype                    = data.types[aa];
-                        data.types[aa] = "start";
-                    }
-                }
-                wordx = data.token[aa];
-                wordy = (data.stack[aa] === undefined)
-                    ? ""
-                    : data.token[data.begin[aa] - 1];
-                if (ltoke === "{" || ltoke === "x{") {
-                    if ((wordx === "else" && ltoke !== "if") || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
-                        stack = wordx;
-                    } else if (classy[classy.length - 1] === 0 && wordx !== "return") {
-                        classy.pop();
-                        stack = "class";
-                    } else if (data.token[aa - 1] === "class") {
-                        stack = "class";
-                    } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
-                        stack = "array";
-                    } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
-                        stack = "map";
-                    } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
-                        stack = "initializer";
-                    } else if (ltoke === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
-                        if (wordy === "if") {
-                            stack = "if";
-                        } else if (wordy === "for") {
-                            stack = "for";
-                        } else if (wordy === "while") {
-                            stack = "while";
-                        } else if (wordy === "class") {
-                            stack = "class";
-                        } else if (wordy === "switch" || data.token[data.begin[aa] - 1] === "switch") {
-                            stack = "switch";
-                        } else if (wordy === "catch") {
-                            stack = "catch";
-                        } else {
-                            stack = "function";
+                    } else if (x === "{") {
+                        if (paren > -1) {
+                            if (data.begin[paren - 1] === data.begin[data.begin[aa] - 1] || data.token[data.begin[aa]] === "x(") {
+                                paren = -1;
+                                end("x)");
+                                asifix();
+                                ltoke = "{";
+                                ltype = "start";
+                            }
+                        } else if (ltoke === ")") {
+                            asifix();
                         }
-                    } else if (ltoke === "{" && (wordx === ";" || wordx === "x;")) {
-                        // ES6 block
-                        stack = "block";
-                    } else if (ltoke === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
-                        // ES6 block
-                        stack = "block";
-                    } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
-                        stack = "object";
-                    } else if (wordx === ")" && (pword[0] === "function" || pword[0] === "if" || pword[0] === "for" || pword[0] === "class" || pword[0] === "while" || pword[0] === "switch" || pword[0] === "catch")) {
-                        // if preceeded by a paren the prior containment is preceeded by a keyword if
-                        // (...) {
-                        stack = pword[0];
-                    } else if (data.stack[aa] === "notation") {
-                        // if following a TSX array type declaration
-                        stack = "function";
-                    } else if ((data.types[aa] === "number" || data.types[aa] === "string" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
-                        // if preceed by a word and either string or word public class {
-                        stack = "function";
-                    } else if (parse.structure.length > 0 && data.token[aa] !== ":" && parse.structure[parse.structure.length - 1][0] === "object" && (
-                        data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
-                    )) {
-                        // if an object wrapped in some containment which is itself preceeded by a curly
-                        // brace or comma var a={({b:{cat:"meow"}})};
-                        stack = "function";
-                    } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
-                        // checking for TSX function using an angle brace name
-                        stack = "function";
-                    } else if (wordx === "=>") {
-                        // checking for fat arrow assignment
-                        stack = "function";
-                    } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
-                        stack = "function";
-                    } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
-                        // ES6 block
-                        stack = "block";
-                    } else {
-                        stack = "object";
+                        if (ltype === "comment" && data.token[aa - 1] === ")") {
+                            ltoke                    = data.token[aa];
+                            data.token[aa] = "{";
+                            ltype                    = data.types[aa];
+                            data.types[aa] = "start";
+                        }
                     }
-                } else if (ltoke === "[") {
-                    if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
-                        stack = "notation";
-                    } else {
-                        stack = "array";
+                    wordx = data.token[aa];
+                    wordy = (data.stack[aa] === undefined)
+                        ? ""
+                        : data.token[data.begin[aa] - 1];
+                    if (ltoke === "{" || ltoke === "x{") {
+                        if (wordx === "else" || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
+                            stack = wordx;
+                        } else if (classy[classy.length - 1] === 0 && wordx !== "return") {
+                            classy.pop();
+                            stack = "class";
+                        } else if (data.token[aa - 1] === "class") {
+                            stack = "class";
+                        } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
+                            stack = "array";
+                        } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
+                            stack = "map";
+                        } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
+                            stack = "initializer";
+                        } else if (ltoke === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
+                            if (wordy === "if") {
+                                stack = "if";
+                            } else if (wordy === "for") {
+                                stack = "for";
+                            } else if (wordy === "while") {
+                                stack = "while";
+                            } else if (wordy === "class") {
+                                stack = "class";
+                            } else if (wordy === "switch" || data.token[data.begin[aa] - 1] === "switch") {
+                                stack = "switch";
+                            } else if (wordy === "catch") {
+                                stack = "catch";
+                            } else {
+                                stack = "function";
+                            }
+                        } else if (ltoke === "{" && (wordx === ";" || wordx === "x;")) {
+                            // ES6 block
+                            stack = "block";
+                        } else if (ltoke === "{" && data.token[aa] === ":" && data.stack[aa] === "switch") {
+                            // ES6 block
+                            stack = "block";
+                        } else if (data.token[aa - 1] === "import" || data.token[aa - 2] === "import" || data.token[aa - 1] === "export" || data.token[aa - 2] === "export") {
+                            stack = "object";
+                        } else if (wordx === ")" && (pword[0] === "function" || pword[0] === "if" || pword[0] === "for" || pword[0] === "class" || pword[0] === "while" || pword[0] === "switch" || pword[0] === "catch")) {
+                            // if preceeded by a paren the prior containment is preceeded by a keyword if
+                            // (...) {
+                            stack = pword[0];
+                        } else if (data.stack[aa] === "notation") {
+                            // if following a TSX array type declaration
+                            stack = "function";
+                        } else if ((data.types[aa] === "number" || data.types[aa] === "string" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
+                            // if preceed by a word and either string or word public class {
+                            stack = "function";
+                        } else if (parse.structure.length > 0 && data.token[aa] !== ":" && parse.structure[parse.structure.length - 1][0] === "object" && (
+                            data.token[data.begin[aa] - 2] === "{" || data.token[data.begin[aa] - 2] === ","
+                        )) {
+                            // if an object wrapped in some containment which is itself preceeded by a curly
+                            // brace or comma var a={({b:{cat:"meow"}})};
+                            stack = "function";
+                        } else if (data.types[pword[1] - 1] === "markup" && data.token[pword[1] - 3] === "function") {
+                            // checking for TSX function using an angle brace name
+                            stack = "function";
+                        } else if (wordx === "=>") {
+                            // checking for fat arrow assignment
+                            stack = "function";
+                        } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
+                            stack = "function";
+                        } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
+                            // ES6 block
+                            stack = "block";
+                        } else {
+                            stack = "object";
+                        }
+                    } else if (ltoke === "[") {
+                        if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
+                            stack = "notation";
+                        } else {
+                            stack = "array";
+                        }
+                    } else if (ltoke === "(" || ltoke === "x(") {
+                        if (wordx === "function" || data.token[aa - 1] === "function") {
+                            stack = "arguments";
+                        } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
+                            stack = "method";
+                        } else if (data.types[aa] === "generic") {
+                            stack = "method";
+                        } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
+                            stack = "method";
+                        } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
+                            stack = "expression";
+                        } else if (data.types[aa] === "word") {
+                            stack = "method";
+                        } else {
+                            stack = "paren";
+                        }
+                    } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
+                        stack = "attribute";
                     }
-                } else if (ltoke === "(" || ltoke === "x(") {
-                    if (wordx === "function" || data.token[aa - 1] === "function") {
-                        stack = "arguments";
-                    } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
-                        stack = "method";
-                    } else if (data.types[aa] === "generic") {
-                        stack = "method";
-                    } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
-                        stack = "method";
-                    } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
-                        stack = "expression";
-                    } else if (data.types[aa] === "word") {
-                        stack = "method";
-                    } else {
-                        stack = "paren";
+                    recordPush(stack);
+                    if (classy.length > 0) {
+                        classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
-                } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
-                    stack = "attribute";
-                }
-                recordPush(stack);
-                if (classy.length > 0) {
-                    classy[classy.length - 1] = classy[classy.length - 1] + 1;
-                }
-            };
+                };
             do {
                 if ((/\s/).test(c[a])) {
                     if (wordTest > -1) {
@@ -1870,7 +1907,7 @@
                     if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
                         tempstore    = parse.pop(data);
                         recordPush("");
-                        parse.push(data, tempstore);
+                        parse.push(data, tempstore, "");
                         if (data.lines[parse.count - 2] === 0) {
                             data.lines[parse.count - 2] = data.lines[parse.count];
                         }
@@ -2112,8 +2149,8 @@
             }
 
             if (options.correct === true) {
-                let aa = 0;
-                const bb = parse.count + 1;
+                let aa:number = 0;
+                const bb:number = parse.count + 1;
                 do {
                     if (data.token[aa] === "x;") {
                         data.token[aa] = ";";
@@ -2129,7 +2166,6 @@
                     aa = aa + 1;
                 } while (aa < bb);
             }
-
             return data;
         };
     
