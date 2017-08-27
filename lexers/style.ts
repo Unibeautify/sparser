@@ -1,17 +1,16 @@
 /*global global*/
 (function style_init() {
     "use strict";
-    const framework = global.parseFramework,
-        style = function lexer_style(source) {
-            let a = 0,
-                ltype       = "",
-                ltoke       = "",
-                endtest     = false;
-            const parse     = framework.parse,
-                data        = parse.data,
-                options     = parse.options,
-                colors      = [],
-                verticalop  = false,
+    const framework:parseFramework = global.parseFramework,
+        style = function lexer_style(source:string):data {
+            let a:number = 0,
+                ltype:string       = "",
+                ltoke:string       = "",
+                endtest:boolean     = false;
+            const parse:parse     = framework.parse,
+                data:data        = parse.data,
+                options:options     = parse.options,
+                colors:string[]      = [],
                 colorNames  = {
                     aliceblue           : 0.9288006825347457,
                     antiquewhite        : 0.8464695170775405,
@@ -161,11 +160,22 @@
                     yellow              : 0.9278,
                     yellowgreen         : 0.5076295720870697
                 },
-                b           = source.split(""),
-                len         = source.length,
-                mapper      = [],
-                nosort      = [],
-                recordPush = function lexer_style_recordPush(structure) {
+                b:string[]           = source.split(""),
+                len:number         = source.length,
+                mapper:number[]      = [],
+                nosort:boolean[]      = [],
+                recordStore = function lexer_style_recordStore(index:number):record {
+                    return {
+                        begin: data.begin[index],
+                        lexer: data.lexer[index],
+                        lines: data.lines[index],
+                        presv: data.presv[index],
+                        stack: data.stack[index],
+                        types: data.token[index],
+                        token: data.types[index]
+                    };
+                },
+                recordPush = function lexer_style_recordPush(structure:string):void {
                     const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "style",
@@ -177,7 +187,7 @@
                     };
                     parse.push(data, record, structure);
                 },
-                esctest     = function lexer_style_esctest(xx) {
+                esctest     = function lexer_style_esctest(xx:number):boolean {
                     let yy = xx;
                     do {
                         xx = xx - 1;
@@ -197,11 +207,11 @@
                 // * url values that are not quoted are wrapped    in double quote characters
                 // * color values are set to lowercase and    reduced from 6 to 3 digits if
                 // appropriate
-                value       = function lexer_style_item_value(val) {
-                    const x          = val.split(""),
-                        values     = [],
-                        transition = (data.token[parse.count - 2] === "transition"),
-                        colorPush  = function lexer_style_item_value_colorPush(value) {
+                value       = function lexer_style_item_value(val:string):string {
+                    const x:string[]          = val.split(""),
+                        values:string[]     = [],
+                        transition:boolean = (data.token[parse.count - 2] === "transition"),
+                        colorPush  = function lexer_style_item_value_colorPush(value:string):string {
                             const vl = value.toLowerCase();
                             if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
                                 colors.push(value);
@@ -212,11 +222,11 @@
                             }
                             return value;
                         };
-                    let cc         = 0,
-                        dd         = 0,
-                        block      = "",
-                        leng       = x.length,
-                        items      = [];
+                    let cc:number         = 0,
+                        dd:number         = 0,
+                        block:string      = "",
+                        leng:number       = x.length,
+                        items:string[]      = [];
                     // this loop identifies containment so that tokens/sub-tokens are correctly
                     // taken
                     if (cc < leng) {
@@ -279,17 +289,17 @@
                     return values.join(" ");
                 },
                 //the generic token builder
-                buildtoken  = function lexer_style_build() {
-                    let aa         = a,
-                        bb         = 0,
-                        out        = [],
-                        outy       = "",
-                        mappy      = 0;
-                    const block      = [],
-                        comma      = (
+                buildtoken  = function lexer_style_build():void {
+                    let aa:number         = a,
+                        bb:number         = 0,
+                        out:string[]        = [],
+                        outy:string       = "",
+                        mappy:number      = 0;
+                    const block:string[]      = [],
+                        comma:boolean      = (
                             parse.count > -1 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === ","
                         ),
-                        spacestart = function () {
+                        spacestart = function lexer_style_build_spacestart():void {
                             if ((/\s/).test(b[aa + 1]) === true) {
                                 do {
                                     aa = aa + 1;
@@ -412,7 +422,7 @@
                                 outy                    = outy.slice(aa + 1, outy.length - 1);
                                 data.token[parse.count] = data
                                     .token[parse.count]
-                                    .slice(0, aa + 1) + value(outy, false) + ")";
+                                    .slice(0, aa + 1) + value(outy) + ")";
                             }
                         } else {
                             ltype = "variable";
@@ -425,14 +435,14 @@
                 // Some tokens receive a generic type named 'item' because their type is unknown
                 // until we know the following syntax.  This function replaces the type 'item'
                 // with something more specific.
-                item        = function lexer_style_item(type) {
-                    let aa     = parse.count + 1,
-                        bb     = 0;
-                    const coms   = [],
-                        tokel  = (parse.count > 0)
+                item        = function lexer_style_item(type:string):void {
+                    let aa:number     = parse.count + 1,
+                        bb:number     = 0;
+                    const coms:string[]   = [],
+                        tokel:string  = (parse.count > 0)
                             ? data.token[parse.count - 1]
                             : "",
-                        toked  = tokel.slice(tokel.length - 2);
+                        toked:string  = tokel.slice(tokel.length - 2);
                     //backtrack through immediately prior comments to find the correct token
                     if (ltype === "comment") {
                         do {
@@ -447,9 +457,9 @@
                     if (ltype === "item" && data.lexer[aa] === "style") {
                         if (type === "start") {
                             if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
-                                let cc    = aa,
-                                    dd    = 0;
-                                const parts = [];
+                                let cc:number    = aa,
+                                    dd:number    = 0;
+                                const parts:string[] = [];
                                 do {
                                     parts.push(data.token[cc]);
                                     if (data.lines[cc] > 0 && data.token[cc] === ":" && data.token[cc - 1] !== ":") {
@@ -465,7 +475,15 @@
                                 cc             = cc + 1;
                                 dd             = aa - cc;
                                 parse.splice(
-                                    {data: data, howmany: dd, index: cc, record: {}}
+                                    {data: data, howmany: dd, index: cc, record: {
+                                        begin: 0,
+                                        lexer: "",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: "",
+                                        token: "",
+                                        types: ""
+                                    }}
                                 );
                                 aa             = aa - dd;
                                 data.token[aa] = parts
@@ -485,12 +503,12 @@
                                 .replace(/^(\s+)/, "")
                                 .replace(/(\s+)$/, "")
                                 .replace(/\s+::\s+/, "::");
-                            let y    = 0,
-                                z    = "",
-                                mark = 0;
-                            const toke = data.token[aa],
-                                slen = toke.length,
-                                list = [];
+                            let y:number    = 0,
+                                z:string    = "",
+                                mark:number = 0;
+                            const toke:string = data.token[aa],
+                                slen:number = toke.length,
+                                list:string[] = [];
                             if (y < slen) {
                                 do {
                                     if (z === "" && toke.charAt(y) === ",") {
@@ -521,7 +539,7 @@
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*!\s+important/, " !important");
-                            data.token[aa] = value(data.token[aa], false);
+                            data.token[aa] = value(data.token[aa]);
                             //take comments out until the 'item' is found and then put the comments back
                             if (data.token[parse.count - 1] === "{") {
                                 data.types[parse.count] = "variable";
@@ -555,12 +573,12 @@
                                 data.token[aa] = data
                                     .token[aa]
                                     .replace(/\s*!\s+important/, " !important");
-                                data.token[aa] = value(data.token[aa], false);
+                                data.token[aa] = value(data.token[aa]);
                             } else {
                                 //properties without values are considered variables
                                 if (data.types[aa] !== "value") {
                                     if (data.types[aa] === "item" && data.types[aa - 1] === "value" && (toked === "}}" || toked === "?>" || toked === "->" || toked === "%}" || toked === "%>")) {
-                                        if (Number.isNaN(data.token[parse.count]) === false) {
+                                        if (Number.isNaN(Number(data.token[parse.count])) === false) {
                                             data.token[parse.count - 1] = tokel + data.token[parse.count];
                                         } else {
                                             data.token[parse.count - 1] = tokel + " " + data.token[parse.count];
@@ -612,8 +630,8 @@
                         }
                     }
                 },
-                semiComment = function lexer_style_semiComment() {
-                    let x = parse.count;
+                semiComment = function lexer_style_semiComment():void {
+                    let x:number = parse.count;
                     do {
                         x = x - 1;
                     } while (x > 0 && (data.types[x] === "comment"));
@@ -632,14 +650,14 @@
                         }
                     });
                 },
-                template    = function lexer_style_template(open, end) {
-                    let quote  = "",
-                        name   = "",
-                        start  = open.length,
-                        endlen = 0;
-                    const store  = [],
-                        exit   = function lexer_style_template_exit(typename) {
-                            const endtype = data.types[parse.count - 1];
+                template    = function lexer_style_template(open:string, end:string):void {
+                    let quote:string  = "",
+                        name:string   = "",
+                        start:number  = open.length,
+                        endlen:number = 0;
+                    const store:string[]  = [],
+                        exit   = function lexer_style_template_exit(typename:string):void {
+                            const endtype:string = data.types[parse.count - 1];
                             if (ltype === "item") {
                                 if (endtype === "colon") {
                                     data.types[parse.count] = "value";
@@ -706,7 +724,7 @@
                                         if (ltype === "item" && data.types[parse.count - 1] === "colon" && (data.types[parse.count - 2] === "property" || data.types[parse.count - 2] === "variable")) {
                                             ltype                   = "value";
                                             data.types[parse.count] = "value";
-                                            if (Number.isNaN(data.token[parse.count]) === true && data.token[parse.count].charAt(data.token[parse.count].length - 1) !== ")") {
+                                            if (Number.isNaN(Number(data.token[parse.count])) === true && data.token[parse.count].charAt(data.token[parse.count].length - 1) !== ")") {
                                                 data.token[parse.count] = data.token[parse.count] + quote;
                                             } else {
                                                 data.token[parse.count] = data.token[parse.count] + " " + quote;
@@ -715,7 +733,7 @@
                                         }
                                         ltoke = quote;
                                         if (open === "{%") {
-                                            const templateNames = [
+                                            const templateNames:string[] = [
                                                 "autoescape",
                                                 "block",
                                                 "capture",
@@ -735,30 +753,33 @@
                                                 "unless",
                                                 "verbatim"
                                             ];
-                                            let namesLen = templateNames.length - 1;
+                                            let namesLen:number = templateNames.length - 1;
                                             name = name.slice(0, name.indexOf(" "));
                                             if (name.indexOf("(") > 0) {
                                                 name = name.slice(0, name.indexOf("("));
                                             }
                                             if (name === "else" || name === "elseif" || name === "when" || name === "elif") {
-                                                return exit("template_else");
+                                                exit("template_else");
+                                                return;
                                             }
                                             namesLen = templateNames.length - 1;
                                             if (namesLen > -1) {
                                                 do {
                                                     if (name === templateNames[namesLen]) {
-                                                        return exit("template_start");
+                                                        exit("template_start");
+                                                        return;
                                                     }
                                                     if (name === "end" + templateNames[namesLen]) {
-                                                        return exit("template_end");
+                                                        exit("template_end");
+                                                        return;
                                                     }
                                                     namesLen = namesLen - 1;
                                                 } while (namesLen > -1);
                                             }
                                         } else if (open === "{{") {
-                                            let group = quote.slice(2),
-                                                ending = group.length,
-                                                begin = 0;
+                                            let group:string = quote.slice(2),
+                                                ending:number = group.length,
+                                                begin:number = 0;
                                             do {
                                                 begin = begin + 1;
                                             } while (
@@ -769,13 +790,16 @@
                                                 group = group.slice(0, group.length - 2);
                                             }
                                             if (group === "end") {
-                                                return exit("template_end");
+                                                exit("template_end");
+                                                return;
                                             }
                                             if (group === "block" || group === "define" || group === "form" || group === "if" || group === "range" || group === "with") {
-                                                return exit("template_start");
+                                                exit("template_start");
+                                                return;
                                             }
                                         }
-                                        return exit("template");
+                                        exit("template");
+                                        return;
                                     }
                                     endlen = 0;
                                 }
@@ -793,19 +817,12 @@
                     }
                 },
                 //finds comments include those JS looking '//' comments
-                comment     = function lexer_style_comment(inline) {
-                    let aa          = a + 1,
-                        bb          = 0,
-                        extra       = "";
-                    const out         = [b[a]],
-                        store       = [],
-                        recordStore = function lexer_style_comment_recordStore(index) {
-                            const output = {};
-                            parse.datanames.forEach(function lexer_style_comment_recordStore_datanames(value) {
-                                output[value] = data[value][index];
-                            });
-                            return output;
-                        };
+                comment     = function lexer_style_comment(inline:boolean):void {
+                    let aa:number          = a + 1,
+                        bb:number          = 0,
+                        extra:string       = "";
+                    const out:string[]         = [b[a]],
+                        store:record[]       = [];
                     if (aa < len) {
                         do {
                             out.push(b[aa]);
@@ -842,7 +859,7 @@
                         } else if (b[bb] === ":") {
                             item("colon");
                         } else {
-                            item();
+                            item("");
                         }
                     }
                     a = aa;
@@ -865,38 +882,31 @@
                         );
                         recordPush("");
                         do {
-                            parse.push(data, store.pop());
+                            parse.push(data, store.pop(), "");
                         } while (store.length > 0);
                     } else {
                         recordPush("");
                     }
                 },
                 //do fancy things to property types like: sorting, consolidating, and padding
-                properties  = function lexer_style_properties() {
-                    let aa          = parse.count,
-                        bb          = 1,
-                        cc          = 0,
-                        dd          = 0,
-                        next        = 0;
-                    const p           = [],
-                        set         = [
+                properties  = function lexer_style_properties():void {
+                    let aa:number          = parse.count,
+                        bb:number          = 1,
+                        cc:number          = 0,
+                        dd:number         = 0,
+                        next:number        = 0;
+                    const p:number[]           = [],
+                        set:Array<number[]>         = [
                             []
                         ],
-                        store       = (function lexer_style_properties_store() {
-                            const output = {};
-                            parse.datanames.forEach(function lexer_style_properties_store_datanames(value) {
-                                output[value] = [];
-                            });
-                            return output;
-                        }()),
-                        recordStore = function lexer_style_properties_recordStore(index) {
-                            const output = {};
-                            parse.datanames.forEach(
-                                function lexer_style_properties_recordStore_datanames(value) {
-                                    output[value] = data[value][index];
-                                }
-                            );
-                            return output;
+                        store:data       = {
+                            begin: [],
+                            lexer: [],
+                            lines: [],
+                            presv: [],
+                            stack: [],
+                            token: [],
+                            types: []
                         };
                     //identify properties and build out prop/val sets
                     do {
@@ -932,148 +942,135 @@
                     p.reverse();
 
                     //consolidate margin and padding
-                    (function lexer_style_properties_propcheck() {
-                        let leng      = set.length;
-                        const fourcount = function lexer_style_properties_propcheck_fourcount(name) {
-                                let test     = [
-                                        false, false, false, false
-                                    ],
-                                    val      = [
-                                        "0", "0", "0", "0"
-                                    ],
-                                    valsplit = [],
-                                    start    = aa,
-                                    yy       = -1,
-                                    zz       = 0;
-                                const zero     = (/^(0+([a-z]+|%))/),
-                                    storage  = function lexer_style_properties_propcheck_fourcount_storage(side) {
-                                        yy         = yy + 1;
-                                        val[side]  = data.token[set[aa][2]];
-                                        test[side] = true;
-                                        if (start < 0) {
-                                            start = aa;
-                                        }
-                                    };
-                                if (aa < leng) {
-                                    do {
-                                        if (data.token[set[aa][2]] !== undefined && data.token[set[aa][0]].indexOf(name) === 0) {
-                                            if (data.token[set[aa][0]] === name || data.token[set[aa][0]].indexOf(
-                                                name + " "
-                                            ) === 0) {
-                                                yy       = yy + 1;
-                                                valsplit = data
-                                                    .token[set[aa][2]]
-                                                    .split(" ");
-                                                if (valsplit.length === 1) {
-                                                    val = [
-                                                        data.token[set[aa][2]],
-                                                        data.token[set[aa][2]],
-                                                        data.token[set[aa][2]],
-                                                        data.token[set[aa][2]]
-                                                    ];
-                                                } else if (valsplit.length === 2) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[0], valsplit[1]
-                                                    ];
-                                                } else if (valsplit.length === 3) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[1]
-                                                    ];
-                                                } else if (valsplit.length === 4) {
-                                                    val = [
-                                                        valsplit[0], valsplit[1], valsplit[2], valsplit[3]
-                                                    ];
-                                                } else {
-                                                    return;
-                                                }
-                                                test = [true, true, true, true];
-                                            } else if (data.token[set[aa][0]].indexOf(name + "-bottom") === 0) {
-                                                storage(2);
-                                            } else if (data.token[set[aa][0]].indexOf(name + "-left") === 0) {
-                                                storage(3);
-                                            } else if (data.token[set[aa][0]].indexOf(name + "-right") === 0) {
-                                                storage(1);
-                                            } else if (data.token[set[aa][0]].indexOf(name + "-top") === 0) {
-                                                storage(0);
-                                            }
-                                        }
-                                        if (aa === leng - 1 || set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0) {
-                                            if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
-                                                set.splice(start + 1, yy);
-                                                leng = leng - yy;
-                                                aa   = aa - yy;
-                                                zz   = 0;
-                                                bb   = p.length;
-                                                do {
-                                                    if (p[zz] === set[start][0]) {
-                                                        break;
-                                                    }
-                                                    zz = zz + 1;
-                                                } while (zz < bb);
-                                                if (zz < bb) {
-                                                    p.splice(zz + 1, yy);
-                                                }
-                                                data.token[set[start][0]] = name;
-                                                if (zero.test(val[0]) === true) {
-                                                    val[0] = "0";
-                                                }
-                                                if (zero.test(val[1]) === true) {
-                                                    val[1] = "0";
-                                                }
-                                                if (zero.test(val[2]) === true) {
-                                                    val[2] = "0";
-                                                }
-                                                if (zero.test(val[3]) === true) {
-                                                    val[3] = "0";
-                                                }
-                                                if (val[1] === val[3]) {
-                                                    val.pop();
-                                                    if (val[0] === val[2]) {
-                                                        val.pop();
-                                                        if (val[0] === val[1]) {
-                                                            val.pop();
-                                                        }
-                                                    }
-                                                }
-                                                data.token[set[start][2]] = val.join(" ");
-                                                if (data.token[set[start][2]].indexOf("!important") > 0) {
-                                                    data.token[set[start][2]] = data
-                                                        .token[set[start][2]]
-                                                        .replace(/\s!important/g, "") + " !important";
-                                                }
-                                                if (verticalop === true) {
-                                                    if (data.token[set[start][0]].charAt(data.token[set[start][0]].length - 1) === " ") {
-                                                        yy = data
-                                                            .token[set[start][0]]
-                                                            .length - name.length;
-                                                        do {
-                                                            name = name + " ";
-                                                            yy   = yy - 1;
-                                                        } while (yy > 0);
-                                                    }
-                                                }
-                                            }
-                                            break;
-                                        }
-                                        aa = aa + 1;
-                                    } while (aa < leng);
+                    let leng:number      = set.length;
+                    const fourcount = function lexer_style_properties_propcheck_fourcount(name:string):void {
+                        let test:[boolean, boolean, boolean, boolean]     = [
+                                false, false, false, false
+                            ],
+                            val:[string, string, string, string]      = [
+                                "0", "0", "0", "0"
+                            ],
+                            valsplit:string[] = [],
+                            start:number    = aa,
+                            yy:number       = -1,
+                            zz:number       = 0;
+                        const zero:RegExp     = (/^(0+([a-z]+|%))/),
+                            storage  = function lexer_style_properties_propcheck_fourcount_storage(side:number):void {
+                                yy         = yy + 1;
+                                val[side]  = data.token[set[aa][2]];
+                                test[side] = true;
+                                if (start < 0) {
+                                    start = aa;
                                 }
                             };
-                        aa = 0;
                         if (aa < leng) {
                             do {
-                                if (data.types[set[aa][0]] === "property") {
-                                    if (data.token[set[aa][0]].indexOf("margin") === 0) {
-                                        fourcount("margin");
+                                if (data.token[set[aa][2]] !== undefined && data.token[set[aa][0]].indexOf(name) === 0) {
+                                    if (data.token[set[aa][0]] === name || data.token[set[aa][0]].indexOf(
+                                        name + " "
+                                    ) === 0) {
+                                        yy       = yy + 1;
+                                        valsplit = data
+                                            .token[set[aa][2]]
+                                            .split(" ");
+                                        if (valsplit.length === 1) {
+                                            val = [
+                                                data.token[set[aa][2]],
+                                                data.token[set[aa][2]],
+                                                data.token[set[aa][2]],
+                                                data.token[set[aa][2]]
+                                            ];
+                                        } else if (valsplit.length === 2) {
+                                            val = [
+                                                valsplit[0], valsplit[1], valsplit[0], valsplit[1]
+                                            ];
+                                        } else if (valsplit.length === 3) {
+                                            val = [
+                                                valsplit[0], valsplit[1], valsplit[2], valsplit[1]
+                                            ];
+                                        } else if (valsplit.length === 4) {
+                                            val = [
+                                                valsplit[0], valsplit[1], valsplit[2], valsplit[3]
+                                            ];
+                                        } else {
+                                            return;
+                                        }
+                                        test = [true, true, true, true];
+                                    } else if (data.token[set[aa][0]].indexOf(name + "-bottom") === 0) {
+                                        storage(2);
+                                    } else if (data.token[set[aa][0]].indexOf(name + "-left") === 0) {
+                                        storage(3);
+                                    } else if (data.token[set[aa][0]].indexOf(name + "-right") === 0) {
+                                        storage(1);
+                                    } else if (data.token[set[aa][0]].indexOf(name + "-top") === 0) {
+                                        storage(0);
                                     }
-                                    if (data.token[set[aa][0]].indexOf("padding") === 0) {
-                                        fourcount("padding");
+                                }
+                                if (aa === leng - 1 || set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0) {
+                                    if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
+                                        set.splice(start + 1, yy);
+                                        leng = leng - yy;
+                                        aa   = aa - yy;
+                                        zz   = 0;
+                                        bb   = p.length;
+                                        do {
+                                            if (p[zz] === set[start][0]) {
+                                                break;
+                                            }
+                                            zz = zz + 1;
+                                        } while (zz < bb);
+                                        if (zz < bb) {
+                                            p.splice(zz + 1, yy);
+                                        }
+                                        data.token[set[start][0]] = name;
+                                        if (zero.test(val[0]) === true) {
+                                            val[0] = "0";
+                                        }
+                                        if (zero.test(val[1]) === true) {
+                                            val[1] = "0";
+                                        }
+                                        if (zero.test(val[2]) === true) {
+                                            val[2] = "0";
+                                        }
+                                        if (zero.test(val[3]) === true) {
+                                            val[3] = "0";
+                                        }
+                                        if (val[1] === val[3]) {
+                                            val.pop();
+                                            if (val[0] === val[2]) {
+                                                val.pop();
+                                                if (val[0] === val[1]) {
+                                                    val.pop();
+                                                }
+                                            }
+                                        }
+                                        data.token[set[start][2]] = val.join(" ");
+                                        if (data.token[set[start][2]].indexOf("!important") > 0) {
+                                            data.token[set[start][2]] = data
+                                                .token[set[start][2]]
+                                                .replace(/\s!important/g, "") + " !important";
+                                        }
                                     }
+                                    break;
                                 }
                                 aa = aa + 1;
                             } while (aa < leng);
                         }
-                    }());
+                    };
+                    aa = 0;
+                    if (aa < leng) {
+                        do {
+                            if (data.types[set[aa][0]] === "property") {
+                                if (data.token[set[aa][0]].indexOf("margin") === 0) {
+                                    fourcount("margin");
+                                }
+                                if (data.token[set[aa][0]].indexOf("padding") === 0) {
+                                    fourcount("padding");
+                                }
+                            }
+                            aa = aa + 1;
+                        } while (aa < leng);
+                    }
 
                     bb = set.length;
                     aa = 0;
@@ -1083,7 +1080,7 @@
                             cc = 0;
                             if (cc < dd) {
                                 do {
-                                    parse.push(store, recordStore(set[aa][cc]));
+                                    parse.push(store, recordStore(set[aa][cc]), "");
                                     cc          = cc + 1;
                                 } while (cc < dd);
                             }
@@ -1095,7 +1092,15 @@
                         data   : data,
                         howmany: parse.count - next,
                         index  : next + 1,
-                        record : {}
+                        record : {
+                            begin: 0,
+                            lexer: "",
+                            lines: 0,
+                            presv: false,
+                            stack: "",
+                            token: "",
+                            types: ""
+                        }
                     });
                     parse.concat(data, store);
                 };
@@ -1171,7 +1176,7 @@
                         }
                         properties();
                         ltype = "end";
-                        if (options.objectSort === true && nosort[nosort.length - 1] === false) {
+                        if (options.lexerOptions.style.objectSort === true && nosort[nosort.length - 1] === false) {
                             parse.objectSort(data);
                         }
                         nosort.pop();
@@ -1199,7 +1204,7 @@
                 }
                 a = a + 1;
             } while (a < len);
-            if (endtest === false && verticalop === true) {
+            if (endtest === false) {
                 properties();
             }
 
