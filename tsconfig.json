@@ -3,12 +3,16 @@
         "target": "ES6",
         "outDir": "js"
     },
+    "files": [
+        "test/validate.ts"
+    ],
     "include": [
         "*.ts",
         "**/*.ts"
     ],
     "exclude": [
         "js",
-        "node_modules"
+        "node_modules",
+        "test"
     ]
 }

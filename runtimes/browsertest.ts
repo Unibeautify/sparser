@@ -1,4 +1,5 @@
 /*jslint browser:true */
+/*eslint-env browser*/
 /*global global, performance, window*/
 
 (function web() {
@@ -130,7 +131,7 @@
     input.onkeyup = handler;
     document.onkeypress = backspace;
     document.onkeydown = backspace;
-    window.onerror = function (msg:string, source:string):void {
+    window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {

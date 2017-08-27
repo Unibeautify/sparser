@@ -132,6 +132,7 @@
                         // singleton
                         // * prohibited - means there is no corresponding end tag
                         cftags          = {
+                            "cfNTauthenticate"      : "optional",
                             "cfabort"               : "prohibited",
                             "cfajaximport"          : "optional",
                             "cfajaxproxy"           : "optional",
@@ -233,7 +234,6 @@
                             "cfmenuitem"            : "optional",
                             "cfmessagebox"          : "optional",
                             "cfmodule"              : "optional",
-                            "cfNTauthenticate"      : "optional",
                             "cfoauth"               : "optional",
                             "cfobject"              : "prohibited",
                             "cfobjectcache"         : "prohibited",

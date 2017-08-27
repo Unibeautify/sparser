@@ -1916,8 +1916,8 @@
                         if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
                             parse.splice({
                                 data: data,
-                                index: parse.count,
                                 howmany: 0,
+                                index: parse.count,
                                 record: {
                                     begin: data.begin[parse.count],
                                     lexer: "script",
@@ -1951,8 +1951,8 @@
                     if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
                         parse.splice({
                             data: data,
-                            index: parse.count,
                             howmany: 0,
+                            index: parse.count,
                             record: {
                                 begin: data.begin[parse.count],
                                 lexer: "script",

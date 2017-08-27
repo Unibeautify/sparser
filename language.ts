@@ -6,83 +6,6 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
 (function language_init() {
     "use strict";
     const language:language = {
-        setlangmode: function language_setlangmode(input:string):string {
-            const langmap = {
-                c_cpp     : "script",
-                coldfusion: "markup",
-                csharp    : "script",
-                css       : "style",
-                csv       : "csv",
-                dustjs    : "markup",
-                ejs       : "markup",
-                go        : "markup",
-                handlebars: "markup",
-                html      : "markup",
-                html_ruby : "markup",
-                java      : "script",
-                javascript: "script",
-                json      : "script",
-                jsp       : "markup",
-                jsx       : "script",
-                less      : "style",
-                markup    : "markup",
-                php       : "markup",
-                qml       : "markup",
-                scss      : "style",
-                swig      : "markup",
-                text      : "text",
-                titanium  : "script",
-                tss       : "script",
-                twig      : "markup",
-                typescript: "script",
-                velocity  : "markup",
-                xhtml     : "markup",
-                xml       : "markup"
-            };
-            if (typeof input !== "string") {
-                return "script";
-            }
-            if (input.indexOf("html") > -1) {
-                return "markup";
-            }
-            if (langmap[input] === undefined) {
-                return "script";
-            }
-            return langmap[input];
-        },
-        nameproper: function language_nameproper(input:string):string {
-            const langmap = {
-                c_cpp     : "C++ (Not yet supported)",
-                coldfusion: "ColdFusion",
-                csharp    : "C#",
-                dustjs    : "Dust.js",
-                ejs       : "EJS Template",
-                elm       : "Elm Template",
-                go        : "Go Lang Template",
-                handlebars: "Handlebars Template",
-                html_ruby : "ERB (Ruby) Template",
-                java      : "Java",
-                javascript: "JavaScript",
-                jsp       : "JSTL (JSP)",
-                jsx       : "React JSX",
-                liquid    : "Liquid Template",
-                markup    : "markup",
-                scss      : "SCSS",
-                text      : "Plain Text",
-                titanium  : "Titanium Stylesheets",
-                tss       : "Titanium Stylesheets",
-                twig      : "HTML TWIG Template",
-                typescript: "TypeScript",
-                velocity  : "Apache Velocity",
-                volt      : "Volt Template"
-            };
-            if (typeof input !== "string" || langmap[input] === undefined) {
-                return input.toUpperCase();
-            }
-            return langmap[input];
-        },
-        // [0] = language value for ace mode [1] = prettydiff language category from [0]
-        // [2] = pretty formatting for text output to user
         auto: function language_auto(sample:string, defaultLang:string):[string, string, string] {
             let b:string[]  = [],
                 c:number     = 0;
@@ -314,6 +237,83 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 return markup();
             }
             return output("unknown");
+        },
+        nameproper: function language_nameproper(input:string):string {
+            const langmap = {
+                c_cpp     : "C++ (Not yet supported)",
+                coldfusion: "ColdFusion",
+                csharp    : "C#",
+                dustjs    : "Dust.js",
+                ejs       : "EJS Template",
+                elm       : "Elm Template",
+                go        : "Go Lang Template",
+                handlebars: "Handlebars Template",
+                html_ruby : "ERB (Ruby) Template",
+                java      : "Java",
+                javascript: "JavaScript",
+                jsp       : "JSTL (JSP)",
+                jsx       : "React JSX",
+                liquid    : "Liquid Template",
+                markup    : "markup",
+                scss      : "SCSS",
+                text      : "Plain Text",
+                titanium  : "Titanium Stylesheets",
+                tss       : "Titanium Stylesheets",
+                twig      : "HTML TWIG Template",
+                typescript: "TypeScript",
+                velocity  : "Apache Velocity",
+                volt      : "Volt Template"
+            };
+            if (typeof input !== "string" || langmap[input] === undefined) {
+                return input.toUpperCase();
+            }
+            return langmap[input];
+        },
+        // [0] = language value for ace mode [1] = prettydiff language category from [0]
+        // [2] = pretty formatting for text output to user
+        setlangmode: function language_setlangmode(input:string):string {
+            const langmap = {
+                c_cpp     : "script",
+                coldfusion: "markup",
+                csharp    : "script",
+                css       : "style",
+                csv       : "csv",
+                dustjs    : "markup",
+                ejs       : "markup",
+                go        : "markup",
+                handlebars: "markup",
+                html      : "markup",
+                html_ruby : "markup",
+                java      : "script",
+                javascript: "script",
+                json      : "script",
+                jsp       : "markup",
+                jsx       : "script",
+                less      : "style",
+                markup    : "markup",
+                php       : "markup",
+                qml       : "markup",
+                scss      : "style",
+                swig      : "markup",
+                text      : "text",
+                titanium  : "script",
+                tss       : "script",
+                twig      : "markup",
+                typescript: "script",
+                velocity  : "markup",
+                xhtml     : "markup",
+                xml       : "markup"
+            };
+            if (typeof input !== "string") {
+                return "script";
+            }
+            if (input.indexOf("html") > -1) {
+                return "markup";
+            }
+            if (langmap[input] === undefined) {
+                return "script";
+            }
+            return langmap[input];
         }
     };
     global.parseFramework.language = language;
