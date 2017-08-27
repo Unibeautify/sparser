@@ -100,7 +100,7 @@
                 localStorage.parseCode = value;
             }
             options.source = value;
-            startTime = Math.round(performance.now() * 1000);console.log(framework);
+            startTime = Math.round(performance.now() * 1000);
             output = framework.parser(options);
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),

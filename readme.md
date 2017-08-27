@@ -7,8 +7,8 @@
 * add advanced analytics and reporting of parse errors
 
 ## Contents
-1. [Todo](#todo)
 1. [Overview](#overview)
+1. [Build](#build)
 1. [Execution](#execution)
    1. [Supplied Runtimes](#supplied-runtimes)
       1. [Browser Runtime](#browser-runtime)
@@ -33,7 +33,6 @@
    1. [stack](#stack)
    1. [token](#token)
    1. [types](#types)
-1. [Options](#options)
 1. [Files](#files)
 1. [Contributing](#contributing)
 1. [FAQ](#faq)
@@ -41,37 +40,52 @@
 ## Overview
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
+## Build
+This application is written in TypeScript, which requires NodeJS and a global installation of TypeScript.
+
+```sh
+git clone git@github.com:Unibeautify/parse-framework.git
+cd parse-framework
+tsc
+```
+
 ## Execution
+Execute the application by simply running this instruction, where the options is an object described in [Input](#input):
+
+```javascript
+global.parseFramework.parser(options);
+```
+
 The framework is intended for inclusion in other applications as an embedded utility.  To run the framework immediately and experiment without any configuration work some simple runtime interfaces are provided.
 
 ### Supplied Runtimes
 To simply experiment with the framework some handy runtimes are provided.
 
 #### Browser Runtime
-A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  Some browsers don't play well when running pages from the local file system, so a simple Node http server runtime is included as *runtimes/httpserver.ts*.
+A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  Some browsers don't play well when running pages from the local file system, so a simple Node http server runtime is included as *js/runtimes/httpserver.js*.
 
 The browser utility produces output in a HTML table and color codes the output based upon the lexer used.
 
 #### Terminal Runtime
-A handy terminal utility is included but requires Node.js to run.  You can run this from the terminal as `node runtimes/nodetest.ts codesample`.  The code sample can be a path to a local file or string to parse.  For proper execution with Node the first command must be `node` and the second must be the file to execute: `runtimes/nodetest.ts`.
+A handy terminal utility is included but requires Node.js to run.  You can run this from the terminal as `node js/runtimes/nodetest.js codesample`.  The code sample can be a path to a local file or string to parse.  For proper execution with Node the first command must be `node` and the second must be the file to execute: `js/runtimes/nodetest.js`.
 
 By default the terminal utility will log a formatted table to the terminal.  To generate raw parse data include the `--raw` option before or after the code sample.
 
 ### Embedding
 The framework is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.  Getting the framework to run in different environments requires a bit of configuration that varies by environment.
 
-The minimum requirements for embedding into all environments is to include the *parse.ts* file and included the desired lexer files from the *lexers* directory.
+The minimum requirements for embedding into all environments is to include the *js/parse.js* file and included the desired lexer files from the *lexers* directory.
 
 #### Browser Embedding
-In browser applications the additional file *global.ts* must be included.  This file should be referrenced before other code from the framework.
+In browser applications the additional file *js/runtimes/global.js* must be included.  This file should be referrenced before other code from the framework.
 
 #### Node Embedding
-When running the framework in a Node application the *global.ts* must not be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of *runtimes/nodetest.ts* for an example.
+When running the framework in a Node application the *js/runtimes/global.js* must not be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of *js/runtimes/nodetest.js* for an example.
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.
 
-The two mentioned steps are all that is required to integrate new parsing rules or new language support into the framework.  It is important to note this only works if the consuming application loads the lexer file into its application.  **I recommend always reading all lexer files in the lexers directory.** For an example please see the *fs.readdir* instruction in the runtimes/nodetest.ts file.
+The two mentioned steps are all that is required to integrate new parsing rules or new language support into the framework.  It is important to note this only works if the consuming application loads the lexer file into its application.  **I recommend always reading all lexer files in the lexers directory.** For an example please see the *fs.readdir* instruction in the js/runtimes/nodetest.js file.
 
 ## Framework
 The application operates as a global object containing a few data properties and methods plus a collection of language specific rule files called *lexers*.
@@ -84,16 +98,16 @@ The application operates as a global object containing a few data properties and
 ### Architecture
 This application is written entirely in vanilla JavaScript and is completely environment agnostic.  Traditionally JavaScript did not have a native module system or IO interface, which means JavaScript code must be managed by an external means.  This further means every environment has a different way to manage input and output.  Recently JavaScript has standardized a module system, which is vaguely supported inside the browser environment and not anywhere else.
 
-To uniformly solve the problem of IO this project writes all things to a global object simply named *global*.  A global object of that name exists natively in the Node.js runtime.  To appease other environments I conveniently include a file named *global.ts* to provide that namespace without preference.  In non-Node environments the global.ts file must be referenced before any other file.
+To uniformly solve the problem of IO this project writes all things to a global object simply named *global*.  A global object of that name exists natively in the Node.js runtime.  To appease other environments I conveniently include a file named *js/runtimes/global.js* to provide that namespace without preference.  In non-Node environments the global.js file must be referenced before any other file.
 
 ### global
 The *global* object contains five key references.
 
-* **langauge** - A convenience library, from the file language.ts, for guessing a code's language by analyzing the code.  This library is executed using its *auto* method and passing in a string to analyze: `global.language.auto(myCode)`.  An array of three value is returned: 
+* **langauge** - A convenience library, from the file *js/language.js*, for guessing a code's language by analyzing the code.  This library is executed using its *auto* method and passing in a string to analyze: `global.language.auto(myCode)`.  An array of three value is returned: 
    - a generalized name of the language
    - the lexer name
    - a formal language name for human reading
-* **lexer** - An object storing the various available lexers.  This object must be manually populated in your run time.  Look into the browsertest.xhtml and nodetest.ts files as examples.  Auto-population of this object from the files in the lexer directory does not occur because IO operations would break the environment agnostic nature of this application.
+* **lexer** - An object storing the various available lexers.  This object must be manually populated in your run time.  Look into the *runtimes/browsertest.xhtml* and *nodetest.js* files as examples.  Auto-population of this object from the files in the lexer directory does not occur because IO operations would break the environment agnostic nature of this application.
 * **parse** - An object containing various data properties and methods to reason about and populate the centralized parse data.
 * **parseerror** - A string storing an empty value by default.  When a lexer produces a parse error it will write an error message to this property.
 * **parser** - A small function to initiate execution of the framework.  This function is not intended to be referenced from within a lexer file.
@@ -130,9 +144,28 @@ Executing a different lexer from the starting lexer is simply a matter of callin
 Simply executing the other lexer does everything you need and the framework appropriately manages all concerns of populating data and accounting for structure and nesting conditions.  This simplicity is necessary to ensure consistency in the *standard format* without corruption to the data in the parse object even when bouncing between the lexers recursively.  The framework easily addresses all these concerns by keeping all management centralized and far removed from the logic in the lexer files.
 
 ## Input
-**Not documented and under development**
 
-The parse.ts application receives various arguments in an object literal.  The most critical option is *source*, a string type, of the code to parse.  The lexers receive a single string argument.
+The *js/parse.js* file receives input from an options object.  The api is as follows:
+
+### Standard Options
+These options exist directly within the options object and exist universally to assist the framework.
+
+Name | Type | Default | Description
+---|---|---|---
+**correct** | boolean | false | If code corrections to syntax should be applied... similar to ESLint's *fix* option
+**crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
+**lang** | string | "javascript" | A lowercase name of a language for certain language specific features
+**lexer** | string | "script" | the lexer to start scanning the code
+**source** | string | "" (empty string) | the code to parse
+
+### Lexer Options
+The options are available from the specified lexer and are specified as **options.lexerOptions[lexerName][optionName]** where *lexerName* refers to the name of the lexer and *optionName* refers to the actual option, for example: `options.lexerOptions.markup.tagSort`.
+
+Name | Type | Default | Lexers | Description
+---|---|---|---|---
+**objectSort** | boolean | false | script, style | If object properties should be sorted.  Supported in the *script* and *style* lexers
+**tagMerge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
+**tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
 
 ## Output
 There will be a single standard format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.
@@ -211,29 +244,6 @@ The *token* array contains a string of the current item.  Markup attributes will
 
 ### types
 The *types* array contains a string that describes the token value according to a generalized category name.  These values are lexer specific.  For details on available values and definitions please see the lexer specific documentation.
-
-## Options
-The options object is available to all lexers as **global.parse.options**, but is often aliased to `options` in the lexer code. 
-
-### Standard Options
-These options exist directly within the options object and exist universally to assist the framework.
-
-Name | Type | Default | Description
----|---|---|---
-**correct** | boolean | false | If code corrections to syntax should be applied... similar to ESLint's *fix* option
-**crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
-**lang** | string | "javascript" | A lowercase name of a language for certain language specific features
-**lexer** | string | "script" | the lexer to start scanning the code
-**source** | string | "" (empty string) | the code to parse
-
-### Lexer Options
-The options are available from the specified lexer and are specified as **options.lexerOptions[lexerName][optionName]** where *lexerName* refers to the name of the lexer and *optionName* refers to the actual option, for example: `options.lexerOptions.markup.tagSort`.
-
-Name | Type | Default | Lexers | Description
----|---|---|---|---
-**objectSort** | boolean | false | script, style | If object properties should be sorted.  Supported in the *script* and *style* lexers
-**tagMerge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
-**tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
 
 ## Files
 ### Critical
