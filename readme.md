@@ -1,7 +1,6 @@
 # Parse Framework
 
-## Project Status
-**0.9.0 - Pre-release Beta**
+## Version 1.0.0
 
 ### Todo
 * add advanced analytics and reporting of parse errors
@@ -42,12 +41,43 @@
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
 ## Build
-This application is written in TypeScript, which requires NodeJS and a global installation of TypeScript.
+This application is written in TypeScript, which requires NodeJS and a global installation of TypeScript.  The optional validation build also requires ESLint.  First, let's install these:
 
-```sh
+```bash
+npm install -g typescript
+npm install -g eslint
+```
+
+Second, we need to get the code.  We can get this directly from Github:
+
+```bash
 git clone git@github.com:Unibeautify/parse-framework.git
 cd parse-framework
+```
+
+Or, we can get the code from NPM:
+
+```bash
+npm install parse-framework
+cd node_modules/parse-framework
+```
+
+Finally, we need to run the TypeScript build to convert the code from TypeScript to JavaScript:
+
+```bash
 tsc
+```
+
+If you wish to run the optional validation build it can be run this way:
+
+```bash
+node js/test/validate.js
+```
+
+Or simply:
+
+```bash
+npm test
 ```
 
 ## Execution
@@ -86,7 +116,7 @@ When running the framework in a Node application the *js/runtimes/global.js* mus
 ### Validation Build
 To run the validation build first install ESLint globally: `npm install -g eslint`.  If the application has not compiled from TypeScript, as in the application is recently downloaded, simply run: `tsc`.
 
-Once the prerequisits are complete simply run this command to execute the validation script: `node js/test/validation.js`.
+Once the prerequisits are complete simply run this command to execute the validation script: `node js/test/validate.js`.
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.
