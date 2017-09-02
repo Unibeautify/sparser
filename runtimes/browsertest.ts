@@ -67,6 +67,11 @@
                             tr.setAttribute("class", "header");
                             parent.appendChild(tr);
                         };
+                    
+                    if (framework.lexer[options.lexer] === undefined) {
+                        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        return;
+                    }
                     header(body);
                     table.appendChild(body);
                     body = document.createElement("tbody");

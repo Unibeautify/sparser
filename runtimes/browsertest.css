@@ -17,6 +17,10 @@ td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;paddin
 li span{color:#070;font-weight:bold}
 #errors span{color: #c00}
 .header th{background:#ddd;text-align:left}
+.markdown td,
+.markdown th{border-color: #000;color:#333}
+.markdown.odd{background: #e8e8e8}
+.markdown.even{background: #f8f8f8}
 .markup td,
 .markup th{border-color: #933;color:#600}
 .markup.odd{background: #fee}
@@ -30,6 +34,7 @@ li span{color:#070;font-weight:bold}
 .script.odd{background: #eefff8}
 .script.even{background: #ded}
 .key li{white-space:pre}
+.key .markdown{background:#e8e8e8;color:#000}
 .key .markup{background:#fee;color:#600}
 .key .script{background:#eefff8;color:#040}
 .key .style{background:#eef8ff;color:#009}
