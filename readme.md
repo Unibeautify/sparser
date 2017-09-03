@@ -232,12 +232,12 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
         false, false, false, false, false
     ],
     stack: [
-        'global', 'a', 'b', 'b', 'a'
+        "global", "a", "b", "b", "a"
     ],
     token: [
-        '<a>', '<b>', 'class="cat"', '</b>', '</a>'
+        "<a>", "<b>", "class=\"cat\"", "</b>", "</a>"
     ],
-    types: ['start', 'start', 'attribute', 'end', 'end'];
+    types: ["start", "start", "attribute", "end", "end"];
 }
 ```
 
@@ -245,11 +245,11 @@ If that parsed output were arranged as a table it would look something like:
 
 index | begin | lexer    |  lines | presv | stack    | token         | types
 ----- | ----- | -------- | ------ | ----- | -------- | ------------- | -----
-0     | 0     | "markup" | 0      | false | 'global' | '&lt;a&gt;'   | 'start'
-1     | 0     | "markup" | 0      | false | 'a'      | '&lt;b &gt;'  | 'start'
-2     | 1     | "markup" | 0      | false | 'b'      | 'class="cat"' | 'attribute'
-3     | 1     | "markup" | 0      | false | 'b'      | '&lt;/b&gt;'  | 'end'
-4     | 0     | "markup" | 0      | false | 'a'      | '&lt;/a&gt;'  | 'end'
+0     | 0     | "markup" | 0      | false | "global" | "&lt;a&gt;"   | "start"
+1     | 0     | "markup" | 0      | false | "a"      | "&lt;b &gt;"  | "start"
+2     | 1     | "markup" | 0      | false | "b"      | "class="cat"" | "attribute"
+3     | 1     | "markup" | 0      | false | "b"      | "&lt;/b&gt;"  | "end"
+4     | 0     | "markup" | 0      | false | "a"      | "&lt;/a&gt;"  | "end"
 
 ### begin
 The *begin* array stores a number representing the index where the parent structure starts.  In markup language this value would represent the index for the parent element.  In style based langauges it would store the index where the parent block opens.  In script based langauges it would store the index where the current structure opens whether that structure is a block, parenthesis, array, or something else.
