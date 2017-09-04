@@ -1,5 +1,5 @@
 /*global global*/
-(function markdown_init() {console.log("asdfasdfsdaf");
+(function markdown_init() {
     "use strict";
     const framework: parseFramework = global.parseFramework,
         markdown = function lexer_markdown(source : string): data {
@@ -174,7 +174,7 @@
                         types: "end"
                     }, "");
                 },
-                text     = function lexer_markdown_text(item:string, tag:string):void {
+                text     = function lexer_markdown_text(item:string, tag:string, listrecurse:boolean):void {
                     let tagend:string = tag.replace("<", "</"),
                         struct:string = tag.replace("<", "").replace(/(\/?>)$/, "");
                     
@@ -324,6 +324,9 @@
                                 types: "content"
                             }, "");
                         }
+                        if (listrecurse === true) {
+                            list();
+                        }
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markdown",
@@ -347,15 +350,19 @@
                         token: tag,
                         types: "start"
                     }, struct);
-                    parse.push(data, {
-                        begin: parse.structure[parse.structure.length - 1][1],
-                        lexer: "markdown",
-                        lines: 0,
-                        presv: false,
-                        stack: parse.structure[parse.structure.length - 1][0],
-                        token: item.replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
-                        types: "content"
-                    }, "");
+                    if (listrecurse === true) {
+                        list();
+                    } else {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: item.replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
+                            types: "content"
+                        }, "");
+                    }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -366,7 +373,86 @@
                         types: "end"
                     }, "");
                 },
-                list     = function lexer_markdown_list():void {},
+                list     = function lexer_markdown_list():void {
+                    let ind:number = ((/^(\s+)/).test(lines[a]) === true)
+                            ? (/^(\s+)/).exec(lines[a])[0].length
+                            : 0,
+                        sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
+                        space = function lexer_markdown_list_space():number {
+                            let xind:number = ((/^(\s+)/).test(lines[a]) === true)
+                                    ? (/^(\s+)/).exec(lines[a]).length
+                                    : 0,
+                                xsym:string = lines[a].replace(/^(\s+)/, "").charAt(0);
+                            if (xind - ind > 1) {
+                                return 1;
+                            }
+                            if (xind - ind < -1) {
+                                return -1;
+                            }
+                            if (xsym !== sym) {
+                                return 10;
+                            }
+                            return 0;
+                        },
+                        y:number = 0,
+                        order:boolean = false;
+                    if ((/^(\s*\d+\.\s)/).test(list[a]) === true) {
+                        order = true;
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "<ol>",
+                            types: "start"
+                        }, "ol");
+                    } else {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "<ul>",
+                            types: "start"
+                        }, "ul");
+                    }
+                    do {
+                        y = space();
+                        if (y < 0 || y > 9) {
+                            a = a - 1;
+                            break;
+                        }
+                        if (y > 0) {
+                            text(lines[a], "<li>", true);
+                        } else {
+                            text(lines[a].replace(/^(\s*(\*|-|(\d+\.))\s*)/, ""), "<li>", false);
+                        }
+                        a = a + 1;
+                    } while (a < b);
+                    if (order === true) {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "</ol>",
+                            types: "end"
+                        }, "");
+                    } else {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "</ul>",
+                            types: "end"
+                        }, "");
+                    }
+                },
                 table     = function lexer_markdown_table():void {
                     let c:number    = 0,
                         d:number    = 0,
@@ -404,7 +490,7 @@
                         .split("|");
                     d = line.length;
                     do {
-                        text(line[c], "<th>");
+                        text(line[c], "<th>", false);
                         c = c + 1;
                     } while (c < d);
                     parse.push(data, {
@@ -455,7 +541,7 @@
                         c = 0;
                         d = line.length;
                         do {
-                            text(line[c], "<td>");
+                            text(line[c], "<td>", false);
                             c = c + 1;
                         } while (c < d);
                         parse.push(data, {
@@ -487,83 +573,6 @@
                         token: "</table>",
                         types: "end"
                     }, "");
-                    /*if (line.indexOf("|") > -1) {
-                        do {
-                            rows.push(line.split("|").slice(0, lens));
-                            d = 0;
-                            do {
-                                rows[rows.length - 1][d] = text(
-                                    rows[rows.length - 1][d].replace(/\s+/g, " ").replace(
-                                        /^\s/,
-                                        ""
-                                    ).replace(/\s$/, ""),
-                                    false,
-                                    true
-                                );
-                                lend                     = rows[rows.length - 1][d]
-                                    .replace(/\u001b\[\d+m/g, "")
-                                    .length;
-                                if (lend > cols[d]) {
-                                    cols[d] = lend;
-                                }
-                                if (rows[rows.length - 1][d] === "\u2713") {
-                                    rows[rows.length - 1][d] = text.bold + text.green + "\u2713" + text.none;
-                                } else if (rows[rows.length - 1][d] === "X") {
-                                    rows[rows.length - 1][d] = text.bold + text.red + "X" + text.none;
-                                } else if (rows[rows.length - 1][d] === "?") {
-                                    rows[rows.length - 1][d] = text.bold + text.yellow + "?" + text.none;
-                                }
-                                d = d + 1;
-                            } while (d < lens);
-                            c = c + 1;
-                            if (c === len) {
-                                break;
-                            }
-                            line = lines[c]
-                                .replace(/^\|/, "")
-                                .replace(/\|$/, "");
-                        } while (line.indexOf("|") > -1);
-                    }
-                    c    = 0;
-                    lend = rows.length;
-                    do {
-                        d = 0;
-                        do {
-                            e = rows[c][d]
-                                .replace(/\u001b\[\d+m/g, "")
-                                .length;
-                            if (d === lens - 1 && rows[c][d].length < cols[d]) {
-                                do {
-                                    e          = e + 1;
-                                    rows[c][d] = rows[c][d] + " ";
-                                } while (e < cols[d]);
-                            } else {
-                                do {
-                                    e          = e + 1;
-                                    rows[c][d] = rows[c][d] + " ";
-                                } while (e < cols[d] + 1);
-                            }
-                            if (c === 0) {
-                                if (d > 0) {
-                                    rows[c][d] = text.underline + " " + rows[c][d] + text.normal;
-                                } else {
-                                    rows[c][d] = ind + text.underline + rows[c][d] + text.normal;
-                                }
-                            } else {
-                                if (d > 0) {
-                                    rows[c][d] = " " + rows[c][d];
-                                } else {
-                                    rows[c][d] = ind + rows[c][d];
-                                }
-                            }
-                            d = d + 1;
-                        } while (d < lens);
-                        output.push(rows[c].join(""));
-                        c = c + 1;
-                        b = b + 1;
-                    } while (c < lend);
-                    b    = b + 1;
-                    para = false;*/
                 };
             b = lines.length;
             parse.push(data, {
@@ -588,28 +597,28 @@
                 } else if ((/^(\s*((`{3,})|(~{3,}))+)/).test(lines[a]) === true) {
                     codeblock();
                 } else if ((/^(\s*#{6,6}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h6>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h6>", false);
                 } else if ((/^(\s*#{5,5}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h5>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h5>", false);
                 } else if ((/^(\s*#{4,4}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h4>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h4>", false);
                 } else if ((/^(\s*#{3,3}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h3>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h3>", false);
                 } else if ((/^(\s*#{2,2}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h2>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h2>", false);
                 } else if ((/^(\s*#\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h1>");
+                    text(lines[a].replace(/^(\s*#+)\s+/, ""), "<h1>", false);
                 } else if ((/^(\s*((=+)|(-+))\s*)$/).test(lines[a + 1]) === true && (/^(\s{0,3}>)/).test(lines[a]) === false && (/^(\s*)$/).test(lines[a]) === false) {
                     if ((/^(\s*=+\s*)$/).test(lines[a + 1]) === true) {
-                        text(lines[a], "<h1>");
+                        text(lines[a], "<h1>", false);
                     } else {
-                        text(lines[a], "<h2>");
+                        text(lines[a], "<h2>", false);
                     }
                     a = a + 1;
-                } else if ((/^(\s*(\*|-)\s)/).test(lines[a]) === true) {
+                } else if ((/^(\s*(\*|-|(\d+\.))\s)/).test(lines[a]) === true) {
                     list();
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
-                    text(lines[a], "<p>");
+                    text(lines[a], "<p>", false);
                 }
                 a = a + 1;
             } while (a < b);
