@@ -58,7 +58,7 @@
                         lines: 0,
                         presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
-                        token: codetext,
+                        token: codetext.replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""),
                         types: "content"
                     }, "");
                     parse.push(data, {
@@ -151,7 +151,7 @@
                         }
                         item = item + parse.crlf + lines[x].replace(block, "");
                         x = x + 1;
-                    } while (x < b && lines[x] !== "" && (/^(\s+)$/).test(lines[x]) === false);
+                    } while (x < b && lines[x] !== "" && (/^(\s*(-\s*{3,})*\s*)$/).test(lines[x]) === false);
                     a = x;
                     if (item !== "") {
                         parse.push(data, {
@@ -179,7 +179,7 @@
                         struct:string = tag.replace("<", "").replace(/(\/?>)$/, "");
                     
                     // line containing strong, em, or inline code
-                    if (item.indexOf("*") > -1 || item.indexOf("`") > -1) {
+                    if (item.indexOf("*") > -1 || item.indexOf("`") > -1 || (item.indexOf("[") > -1 && item.indexOf("](") > -1)) {
                         const esctest = function lexer_markdown_text_esctest():boolean {
                             let bb = aa;
                             if (str[bb] === "\\") {
@@ -198,8 +198,10 @@
                             content:string = "",
                             stack:string[] = [],
                             itemx:string[] = [],
+                            square:number = 0,
                             aa:number = 0,
-                            bb:number = str.length;
+                            bb:number = str.length,
+                            cc:number = 0;
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markdown",
@@ -210,7 +212,146 @@
                             types: "start"
                         }, struct);
                         do {
-                            if ((str[aa] === "*" || str[aa] === "~") && esctest() === false && stack[stack.length - 1] !== "`") {
+                            if (str[aa] === "[" && esctest() === false) {
+                                cc = aa;
+                                square = 0;
+                                do {
+                                    if (str[cc] === "[") {
+                                        square = square + 1;
+                                    } else if (str[cc] === "]") {
+                                        square = square - 1;
+                                        if (square < 1 && str[cc + 1] === "(") {
+                                            content = itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
+                                            if (content !== "") {
+                                                parse.push(data, {
+                                                    begin: parse.structure[parse.structure.length - 1][1],
+                                                    lexer: "markdown",
+                                                    lines: 0,
+                                                    presv: false,
+                                                    stack: parse.structure[parse.structure.length - 1][0],
+                                                    token: content,
+                                                    types: "content"
+                                                }, "");
+                                            }
+                                            itemx = [];
+                                            stack.push("[");
+                                            if (str[aa - 1] === "!") {
+                                                content = "img";
+                                            } else {
+                                                content = "a";
+                                            }
+                                            if (content === "img") {
+                                                if (data.token[parse.count] === "!") {
+                                                    parse.pop(data);
+                                                } else if (data.types[parse.count] === "content") {
+                                                    data.token[parse.count] = data.token[parse.count].slice(0, data.token[parse.count].length - 1).replace(/(\s)$/, "");
+                                                }
+                                                parse.push(data, {
+                                                    begin: parse.structure[parse.structure.length - 1][1],
+                                                    lexer: "markdown",
+                                                    lines: 1,
+                                                    presv: false,
+                                                    stack: parse.structure[parse.structure.length - 1][0],
+                                                    token: "<img/>",
+                                                    types: "singleton"
+                                                }, "");
+                                                content = str.slice(aa + 1, cc).join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "")
+                                                if (content !== "") {
+                                                    parse.push(data, {
+                                                        begin: parse.structure[parse.structure.length - 1][1],
+                                                        lexer: "markdown",
+                                                        lines: 0,
+                                                        presv: false,
+                                                        stack: parse.structure[parse.structure.length - 1][0],
+                                                        token: "alt=\"" + content + "\"",
+                                                        types: "attribute"
+                                                    }, "");
+                                                }
+                                                parse.push(data, {
+                                                    begin: parse.structure[parse.structure.length - 1][1],
+                                                    lexer: "markdown",
+                                                    lines: 1,
+                                                    presv: false,
+                                                    stack: parse.structure[parse.structure.length - 1][0],
+                                                    token: "src=\"",
+                                                    types: "attribute"
+                                                }, "");
+                                                aa = cc - 1;
+                                            } else {
+                                                parse.push(data, {
+                                                    begin: parse.structure[parse.structure.length - 1][1],
+                                                    lexer: "markdown",
+                                                    lines: 1,
+                                                    presv: false,
+                                                    stack: parse.structure[parse.structure.length - 1][0],
+                                                    token: "<a>",
+                                                    types: "start"
+                                                }, "a");
+                                                parse.push(data, {
+                                                    begin: parse.structure[parse.structure.length - 1][1],
+                                                    lexer: "markdown",
+                                                    lines: 0,
+                                                    presv: false,
+                                                    stack: parse.structure[parse.structure.length - 1][0],
+                                                    token: "href=\"",
+                                                    types: "attribute"
+                                                }, "");
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    cc = cc + 1;
+                                } while (cc < bb);
+                            } else if (str[aa] === "]" && str[aa + 1] === "(" && esctest() === false && stack[stack.length - 1] === "[") {
+                                content = itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
+                                if (content !== "" && content.length > 1 && parse.structure[parse.structure.length - 1][0] !== "img") {
+                                    parse.push(data, {
+                                        begin: parse.structure[parse.structure.length - 1][1],
+                                        lexer: "markdown",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: parse.structure[parse.structure.length - 1][0],
+                                        token: content.slice(1),
+                                        types: "content"
+                                    }, "");
+                                }
+                                cc = aa + 1;
+                                square = 0;
+                                do {
+                                    if (str[cc] === "(") {
+                                        square = square + 1;
+                                    } else if (str[cc] === ")") {
+                                        square = square - 1;
+                                        if (square === 0) {
+                                            content = str.slice(aa + 2, cc).join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
+                                            aa = cc + 1;
+                                            itemx = [];
+                                            cc = (parse.structure[parse.structure.length - 1][0] === "a")
+                                                ? parse.structure[parse.structure.length - 1][1] + 1
+                                                : parse.count;
+                                            if (content === "") {
+                                                data.token[cc] = data.token[cc] + "\"";
+                                            } else {
+                                                data.token[cc] = data.token[cc] + content + "\"";
+                                            }
+                                            break;
+                                        }
+                                    }
+                                    cc = cc + 1;
+                                } while (cc < bb);
+                                stack.pop();
+                                if (parse.structure[parse.structure.length - 1][0] === "a") {
+                                    parse.push(data, {
+                                        begin: parse.structure[parse.structure.length - 1][1],
+                                        lexer: "markdown",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: parse.structure[parse.structure.length - 1][0],
+                                        token: "</a>",
+                                        types: "end"
+                                    }, "");
+                                }
+                            } else if ((str[aa] === "*" || str[aa] === "~") && esctest() === false && stack[stack.length - 1] !== "`") {
                                 if (str[aa] === "~") {
                                     quote = "~";
                                     do {
@@ -218,10 +359,9 @@
                                     } while (str[aa + 1] === "~");
                                 } else if (str[aa + 1] === "*") {
                                     quote = "**";
-                                    aa = aa + 2;
+                                    aa = aa + 1;
                                 } else {
                                     quote = "*";
-                                    aa = aa + 1;
                                 }
                                 content = itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
                                 if (content !== "") {
@@ -237,11 +377,11 @@
                                 }
                                 itemx = [];
                                 if (quote === stack[stack.length - 1]) {
-                                    let midtag = "</strong>";
+                                    let midtag = "</em>";
                                     if (quote === "~") {
                                         midtag = "</strike>";
-                                    } else if (quote === "*") {
-                                        midtag = "</em>";
+                                    } else if (quote === "**") {
+                                        midtag = "</strong>";
                                     }
                                     stack.pop();
                                     parse.push(data, {
@@ -309,7 +449,9 @@
                                     }, "code");
                                 }
                             }
-                            itemx.push(str[aa]);
+                            if (str[aa] !== stack[stack.length - 1] && str[aa - 1] + str[aa] !== stack[stack.length - 1]) {
+                                itemx.push(str[aa]);
+                            }
                             aa = aa + 1;
                         } while (aa < bb);
                         content = itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
@@ -380,9 +522,9 @@
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
                         space = function lexer_markdown_list_space():number {
                             let xind:number = ((/^(\s+)/).test(lines[a]) === true)
-                                    ? (/^(\s+)/).exec(lines[a]).length
+                                    ? (/^(\s+)/).exec(lines[a])[0].length
                                     : 0,
-                                xsym:string = lines[a].replace(/^(\s+)/, "").charAt(0);
+                                xsym:string = lines[a].replace(/^(\s+)/, "").charAt(0);console.log(xind+" "+ind+" "+lines[a]);
                             if (xind - ind > 1) {
                                 return 1;
                             }
@@ -396,7 +538,7 @@
                         },
                         y:number = 0,
                         order:boolean = false;
-                    if ((/^(\s*\d+\.\s)/).test(list[a]) === true) {
+                    if ((/^(\s*(\d+|[a-zA-Z]+)\.\s)/).test(list[a]) === true) {
                         order = true;
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -427,7 +569,7 @@
                         if (y > 0) {
                             text(lines[a], "<li>", true);
                         } else {
-                            text(lines[a].replace(/^(\s*(\*|-|(\d+\.))\s*)/, ""), "<li>", false);
+                            text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "<li>", false);
                         }
                         a = a + 1;
                     } while (a < b);
@@ -585,9 +727,9 @@
                 types: "start"
             }, "body");
             do {
-                if (lines[a - 1] === "" && (/\u0020{4}\S/).test(lines[a]) === true) {
+                if (lines[a - 1] === "" && ((/\u0020{4}\s*\S/).test(lines[a]) === true || (/\s*\t\s*/).test(lines[a]) === true)) {
                     code(lines[a], "");
-                } else if ((/^((\*|-|_){3})$/).test(lines[a].replace(/\s+/g, "")) === true && (/^(\s{0,3})/).test(lines[a]) === true && (lines[a].indexOf("-") < 0 || lines[a - 1].length < 1)) {
+                } else if ((/^(\s*((-\s*{3,})|(_\s*{3,})|(\*\s*{3,}))\s*)$/).test(lines[a]) === true) {
                     hr();
                 } else if ((/^(\s*>)/).test(lines[a]) === true) {
                     bc = 0;
@@ -615,7 +757,7 @@
                         text(lines[a], "<h2>", false);
                     }
                     a = a + 1;
-                } else if ((/^(\s*(\*|-|(\d+\.))\s)/).test(lines[a]) === true) {
+                } else if ((/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[a]) === true) {
                     list();
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     text(lines[a], "<p>", false);
