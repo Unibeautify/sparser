@@ -151,7 +151,7 @@
                         }
                         item = item + parse.crlf + lines[x].replace(block, "");
                         x = x + 1;
-                    } while (x < b && lines[x] !== "" && (/^(\s*(-\s*{3,})*\s*)$/).test(lines[x]) === false);
+                    } while (x < b && lines[x] !== "" && (/^(\s*((-\s*){3,}|(_\s*){3,}|(\*\s*){3,})\s*)$/).test(lines[x]) === false);
                     a = x;
                     if (item !== "") {
                         parse.push(data, {
@@ -524,7 +524,7 @@
                             let xind:number = ((/^(\s+)/).test(lines[a]) === true)
                                     ? (/^(\s+)/).exec(lines[a])[0].length
                                     : 0,
-                                xsym:string = lines[a].replace(/^(\s+)/, "").charAt(0);console.log(xind+" "+ind+" "+lines[a]);
+                                xsym:string = lines[a].replace(/^(\s+)/, "").charAt(0);
                             if (xind - ind > 1) {
                                 return 1;
                             }
@@ -729,7 +729,7 @@
             do {
                 if (lines[a - 1] === "" && ((/\u0020{4}\s*\S/).test(lines[a]) === true || (/\s*\t\s*/).test(lines[a]) === true)) {
                     code(lines[a], "");
-                } else if ((/^(\s*((-\s*{3,})|(_\s*{3,})|(\*\s*{3,}))\s*)$/).test(lines[a]) === true) {
+                } else if ((/^(\s*((-\s*){3,}|(_\s*){3,}|(\*\s*){3,})\s*)$/).test(lines[a]) === true) {
                     hr();
                 } else if ((/^(\s*>)/).test(lines[a]) === true) {
                     bc = 0;

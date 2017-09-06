@@ -40,6 +40,8 @@
 ## Overview
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything.  **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
+Before diving into this application it might help to have a quick background in [what parsers are and their related terminology](parsers.md).
+
 ## Build
 This application is written in TypeScript, which requires NodeJS and a global installation of TypeScript.  The optional validation build also requires ESLint.  First, let's install these:
 
