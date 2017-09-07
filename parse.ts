@@ -29,7 +29,7 @@ Parse Framework
                 token: [],
                 types: []
             },
-            datanames: ["begin", "lexer", "lines", "presv", "stack", "token", "token"],
+            datanames: ["begin", "lexer", "lines", "presv", "stack", "token", "types"],
             lineNumber: 1,
             linesSpace: 0,
             objectSort: function parse_objectSort(data: data):void {

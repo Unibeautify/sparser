@@ -182,6 +182,9 @@
                     if (item.indexOf("*") > -1 || item.indexOf("`") > -1 || (item.indexOf("[") > -1 && item.indexOf("](") > -1)) {
                         const esctest = function lexer_markdown_text_esctest():boolean {
                             let bb = aa;
+                            if (str[bb] !== "[" && (/\s/).test(str[bb + 1]) === true) {
+                                return true;
+                            }
                             if (str[bb] === "\\") {
                                 do {
                                     bb = bb - 1;
@@ -311,7 +314,7 @@
                                         lines: 0,
                                         presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
-                                        token: content.slice(1),
+                                        token: content,
                                         types: "content"
                                     }, "");
                                 }
@@ -467,7 +470,7 @@
                             }, "");
                         }
                         if (listrecurse === true) {
-                            list();
+                            list(true);
                         }
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -493,7 +496,7 @@
                         types: "start"
                     }, struct);
                     if (listrecurse === true) {
-                        list();
+                        list(true);
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -515,7 +518,7 @@
                         types: "end"
                     }, "");
                 },
-                list     = function lexer_markdown_list():void {
+                list     = function lexer_markdown_list(recursed:boolean):void {
                     let ind:number = ((/^(\s+)/).test(lines[a]) === true)
                             ? (/^(\s+)/).exec(lines[a])[0].length
                             : 0,
@@ -560,6 +563,7 @@
                             types: "start"
                         }, "ul");
                     }
+
                     do {
                         y = space();
                         if (y < 0 || y > 9) {
@@ -567,7 +571,9 @@
                             break;
                         }
                         if (y > 0) {
-                            text(lines[a], "<li>", true);
+                            text((recursed === true)
+                                ? lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, "")
+                                : lines[a], "<li>", true);
                         } else {
                             text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "<li>", false);
                         }
@@ -758,7 +764,7 @@
                     }
                     a = a + 1;
                 } else if ((/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[a]) === true) {
-                    list();
+                    list(false);
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     text(lines[a], "<p>", false);
                 }
