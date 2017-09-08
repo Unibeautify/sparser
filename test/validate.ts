@@ -10,12 +10,13 @@ module.exports = (function taskrunner() {
         },
         parse:parse,
         parse_options:options = {
-            correct: false,
-            crlf: false,
-            lang: "javascript",
-            lexer: "script",
-            lexerOptions: {},
-            source: ""
+            correct        : false,
+            crlf           : false,
+            lang           : "javascript",
+            lexer          : "script",
+            lexerOptions   : {},
+            outputFormat   : "arrays",
+            source         : ""
         },
         framework:parseFramework;
     const order      = [
@@ -205,7 +206,7 @@ module.exports = (function taskrunner() {
                             lang      = [],
                             a:number         = 0,
                             str:string       = "",
-                            output:data,
+                            outputArrays: data,
                             filecount:number = 0,
                             currentlex:string = "";
                         const lexer     = function taskrunner_coreunits_compare_lexer():void {
@@ -339,10 +340,10 @@ module.exports = (function taskrunner() {
                                         parse_options.lang = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
-                                    lang           = framework.language.auto(files.code[a][1], "javascript");
+                                    lang                 = framework.language.auto(files.code[a][1], "javascript");
                                     parse_options.lexer  = lang[1];
-                                    output         = framework.parser(parse_options);
-                                    str            = JSON.stringify(output);
+                                    outputArrays         = framework.parserArrays(parse_options);
+                                    str                  = JSON.stringify(outputArrays);
                                     if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
@@ -354,7 +355,7 @@ module.exports = (function taskrunner() {
                                                 return next();
                                             }
                                         } else {
-                                            diffFiles(files.parsed[a][0], output, JSON.parse(files.parsed[a][1]));
+                                            diffFiles(files.parsed[a][0], outputArrays, JSON.parse(files.parsed[a][1]));
                                         }
                                     } else {
                                         console.log("");
@@ -433,13 +434,14 @@ module.exports = (function taskrunner() {
                     keysort = "";
                 const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
-                framework.parser({
-                    correct: false,
-                    crlf: false,
-                    lang  : "html",
-                    lexer : "markup",
-                    lexerOptions: {},
-                    source: ""
+                framework.parserArrays({
+                    correct        : false,
+                    crlf           : false,
+                    lang           : "html",
+                    lexer          : "markup",
+                    lexerOptions   : {},
+                    outputFormat   : "arrays",
+                    source         : ""
                 });
                 keys = Object.keys(parse);
                 keysort = parse.safeSort(keys, "ascend", false).join();

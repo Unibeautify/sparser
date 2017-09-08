@@ -1,6 +1,6 @@
 {
   "name": "parse-framework",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A parsing framework for parsing everything",
   "main": "js/parse.js",
   "directories": {

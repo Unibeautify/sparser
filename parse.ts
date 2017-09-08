@@ -226,6 +226,7 @@ Parse Framework
                 lexerOptions: {
                     script: {}
                 },
+                outputFormat: "arrays",
                 source: ""
             },
             pop: function parse_pop(data: data): record {
@@ -501,7 +502,7 @@ Parse Framework
             },
             structure: [["global", -1]]
         },
-        parser  = function parser_(options: options): data {
+        parser  = function parser_(options: options): void {
             parse.count      = -1;
             parse.data       = {
                 begin: [],
@@ -543,7 +544,6 @@ Parse Framework
             };
             if (framework.lexer[options.lexer] === undefined) {
                 framework.parseerror = "Lexer '" + options.lexer + "' isn't available.";
-                return parse.data;
             }
             if (typeof framework.lexer[options.lexer] !== "function") {
                 framework.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
@@ -606,17 +606,40 @@ Parse Framework
                     a = a + 1;
                 } while (a < b);
             }
+        },
+        parserArrays = function parserArrays(options: options):data {
+            parser(options);
             return parse.data;
+        },
+        parserObjects = function parserObjects(options: options): record[] {
+            let a:number = 0;
+            const data:record[] = [];
+            parser(options);
+            do {
+                data.push({
+                    begin: parse.data.begin[a],
+                    lexer: parse.data.lexer[a],
+                    lines: parse.data.lines[a],
+                    presv: parse.data.presv[a],
+                    stack: parse.data.stack[a],
+                    token: parse.data.token[a],
+                    types: parse.data.types[a]
+                });
+                a = a + 1;
+            } while (a < parse.count);
+            return data;
         };
     global.parseFramework = (global.parseFramework || {
         lexer: {},
         parse: parse,
         parseerror: "",
-        parser: parser
+        parserArrays: parserArrays,
+        parserObjects: parserObjects
     });
     framework = global.parseFramework;
-    framework.parse     = parse;
-    framework.parser    = parser;
+    framework.parse        = parse;
+    framework.parserArrays = parserArrays;
+    framework.parserObjects = parserObjects;
     
     if (global.v8debug !== undefined && global.process.argv.length > 2 && global.process.argv[2].indexOf("parse.js") > 0) {
         console.log("");

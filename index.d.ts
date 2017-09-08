@@ -16,15 +16,16 @@ interface lexer {
     [key:string]: (source: string) => data;
 }
 interface options {
-    correct     : boolean;
-    crlf        : boolean;
-    lang        : string;
-    lexer       : string;
-    lexerOptions: {
+    correct        : boolean;
+    crlf           : boolean;
+    lang           : string;
+    lexer          : string;
+    lexerOptions   : {
         [key: string]: {
             [key: string]: any;
         };
     };
+    outputFormat: "objects" | "arrays";
     source      : string;
 }
 interface parse {
@@ -45,11 +46,12 @@ interface parse {
     structure                                                       : Array <[string, number]>
 }
 interface parseFramework {
-    language?            : language;
-    lexer                : lexer;
-    parse                : parse;
-    parseerror           : string;
-    parser(obj : options): data;
+    language?                   : language;
+    lexer                       : lexer;
+    parse                       : parse;
+    parseerror                  : string;
+    parserArrays(obj : options) : data;
+    parserObjects(obj : options): record[];
 }
 interface record {
     begin: number;
