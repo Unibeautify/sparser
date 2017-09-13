@@ -181,6 +181,7 @@ module.exports = (function taskrunner() {
         errout     = function taskrunner_errout(errtext):void {
             console.log("");
             console.error(errtext);
+            console.log("");
             humantime(true);
             process.exit(1);
         },
@@ -341,7 +342,7 @@ module.exports = (function taskrunner() {
                                     }
                                     parse_options.source = files.code[a][1];
                                     lang                 = framework.language.auto(files.code[a][1], "javascript");
-                                    parse_options.lexer  = lang[1];
+                                    parse_options.lexer  = currentlex;
                                     outputArrays         = framework.parserArrays(parse_options);
                                     str                  = JSON.stringify(outputArrays);
                                     if (framework.parseerror === "") {
@@ -394,6 +395,19 @@ module.exports = (function taskrunner() {
                     readDir = function taskrunner_coreunits_readDir(type:string, lexer:string, final_lexer:boolean):void {
                         const dirpath:string = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
+                            if (err !== null) {
+                                if (err.toString().indexOf("no such file or directory") > 0) {
+                                    return errout("The directory " + dirpath + " \u001b[31mdoesn't exist\u001b[39m. Provide the necessary test samples for \u001b[36m" + lexer + "\u001b[39m.");
+                                }
+                                console.log("Error reading from directory " + dirpath);
+                                return errout(err);
+                            }
+                            if (list === undefined) {
+                                if (total[type] === 0) {
+                                    return errout("No files of type " + type + " for lexer " + lexer + ".");
+                                }
+                                return errout("undefined returned when reading files from " + dirpath);
+                            }
                             const pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
                                     dirpath + val,
@@ -415,7 +429,11 @@ module.exports = (function taskrunner() {
                             if (err !== null) {
                                 errout("Error reading from directory: " + dirpath);
                             }
-                            list.forEach(pusher);
+                            if (list.length === 0 && final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
+                                compare();
+                            } else {
+                                list.forEach(pusher);
+                            }
                         });
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
@@ -434,6 +452,7 @@ module.exports = (function taskrunner() {
                     keysort = "";
                 const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
+                console.log("");
                 framework.parserArrays({
                     correct        : false,
                     crlf           : false,
@@ -468,7 +487,7 @@ module.exports = (function taskrunner() {
                 console.log(humantime(false) + "\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[39m");
                 
                 if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
-                    return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', or 'types'.\u001b[39m ");
+                    return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[39m ");
                 }
                 console.log(humantime(false) + "\u001b[32mparse.datanames contains only the data field names.\u001b[39m");
                 
@@ -564,7 +583,7 @@ module.exports = (function taskrunner() {
                                             return;
                                         }
                                         filesCount = filesCount + 1;
-                                        console.log("\u001b[32mLint passed:\u001b[39m " + val);
+                                        console.log(humantime(false) + "\u001b[32mLint passed:\u001b[39m " + val);
                                         if (filesCount === filesTotal) {
                                             console.log("\u001b[32mLint complete!\u001b[39m");
                                             next();
@@ -580,6 +599,7 @@ module.exports = (function taskrunner() {
                         files.forEach(lintit);
                     };
                 console.log("\u001b[36mBeautifying and Linting\u001b[39m");
+                console.log("");
                 (function taskrunner_lint_getFiles():void {
                     let total:number    = 1,
                         count:number    = 0;
@@ -638,6 +658,7 @@ module.exports = (function taskrunner() {
             },
             typescript: function taskrunner_typescript():void {
                 console.log("\u001b[36mTypeScript Compilation\u001b[39m");
+                console.log("");
                 node.child("tsc", function taskrunner_typescript_callback(err, stdout, stderr):void {
                     if (err !== null) {
                         errout(err);
@@ -652,7 +673,7 @@ module.exports = (function taskrunner() {
                         errout(stdout);
                         return;
                     }
-                    console.log("\u001b[32mTypeScript build completed without warnings.\u001b[39m");
+                    console.log(humantime(false) + "\u001b[32mTypeScript build completed without warnings.\u001b[39m");
                     return next();
                 });
             }

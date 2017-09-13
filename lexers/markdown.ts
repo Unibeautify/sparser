@@ -5,11 +5,9 @@
         markdown = function lexer_markdown(source : string): data {
             let a   : number  = 0,
                 b   : number  = 0,
-                bc  : number  = 0,
-                para: boolean = false;
+                bc  : number  = 0;
             const parse: parse    = framework.parse,
                 data   : data     = parse.data,
-                options: options  = parse.options,
                 lines  : string[] = source.split(parse.crlf),
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {
@@ -22,7 +20,7 @@
                         types: "singleton"
                     }, "");
                 },
-                code     = function lexer_markdown_code(codetext:string, language:string):void {
+                code     = function lexer_markdown_code(codetext:string, language:string, block:boolean):void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -58,7 +56,9 @@
                         lines: 0,
                         presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
-                        token: codetext.replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""),
+                        token: (block === true)
+                            ? codetext
+                            : codetext.replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""),
                         types: "content"
                     }, "");
                     parse.push(data, {
@@ -101,13 +101,11 @@
                         codes.push(lines[a]);
                         a = a + 1;
                     } while (a < b);
-                    code(codes.join(parse.crlf), language);
+                    code(codes.join(parse.crlf), language, true);
                 },
                 blockquote = function lexer_markdown_blockquote():void {
                     let x:number = a,
                         item:string = "",
-                        temp:number  = 0,
-                        depth:number = 0,
                         block:RegExp,
                         block1:RegExp;
                     bc = bc + 1;
@@ -357,7 +355,6 @@
                                     }, "");
                                 }
                             } else if ((str[aa] === "*" || str[aa] === "~") && esctest() === false && ((quote === "" && (((/\s/).test(str[aa - 1]) === true) || aa === 0)) || (quote !== "" && (((/\s/).test(str[aa + 1]) === true) || aa === bb - 1))) && stack[stack.length - 1] !== "`") {
-                                let xx = aa;
                                 str[aa] = "";
                                 if (str[aa] === "~") {
                                     quote = "~";
@@ -824,8 +821,8 @@
                 types: "start"
             }, "body");
             do {
-                if (lines[a - 1] === "" && ((/\u0020{4}\s*\S/).test(lines[a]) === true || (/\s*\t\s*/).test(lines[a]) === true)) {
-                    code(lines[a], "");
+                if ((/^(\u0020{4,}\s*\S)/).test(lines[a]) === true || (/^(\s*\t\s*\S)/).test(lines[a]) === true) {
+                    code(lines[a], "", false);
                 } else if ((/^(\s*((-\s*){3,}|(_\s*){3,}|(\*\s*){3,})\s*)$/).test(lines[a]) === true) {
                     hr();
                 } else if ((/^(\s*>)/).test(lines[a]) === true) {

@@ -139,6 +139,12 @@
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source) {
+                    if (source.indexOf("test" + node.path.sep + "samples_code" + node.path.sep) > -1 && source.indexOf("_lang-") < 0) {
+                        options.lexer = (function nodetest_execute_lexer() {
+                            const str = source.split("samples_code" + node.path.sep)[1];
+                            return str.slice(0, str.indexOf(node.path.sep));
+                        }());
+                    }
                     if ((/_correct(\.|_)/).test(source) === true) {
                         options.correct = true;
                     } else {
