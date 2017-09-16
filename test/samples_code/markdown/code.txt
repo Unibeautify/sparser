@@ -1,4 +1,4 @@
-      tab line plus two spaces
+      tab line plus **two** spaces
       4 spaces line plus two spaces
 
 ```javascript

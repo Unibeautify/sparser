@@ -193,10 +193,12 @@ module.exports = (function taskrunner() {
                     },
                     count  = {
                         code  : 0,
+                        lexer : 0,
                         parsed: 0
                     },
                     total  = {
                         code  : 0,
+                        lexer : 0,
                         parsed: 0
                     },
                     lexers:string[] = Object.keys(framework.lexer),
@@ -392,7 +394,7 @@ module.exports = (function taskrunner() {
                         console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                         return next();
                     },
-                    readDir = function taskrunner_coreunits_readDir(type:string, lexer:string, final_lexer:boolean):void {
+                    readDir = function taskrunner_coreunits_readDir(type:string, lexer:string):void {
                         const dirpath:string = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
                             if (err !== null) {
@@ -419,7 +421,7 @@ module.exports = (function taskrunner() {
                                         } else {
                                             files[type].push([lexer + node.path.sep + val, fileData]);
                                         }
-                                        if (final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
+                                        if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
                                             compare();
                                         }
                                     }
@@ -429,7 +431,7 @@ module.exports = (function taskrunner() {
                             if (err !== null) {
                                 errout("Error reading from directory: " + dirpath);
                             }
-                            if (list.length === 0 && final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
+                            if (list.length === 0 && count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
                                 compare();
                             } else {
                                 list.forEach(pusher);
@@ -437,14 +439,11 @@ module.exports = (function taskrunner() {
                         });
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
+                total.lexer = lexers.length;
                 lexers.forEach(function taskrunner_coreunits_lexers(value:string, index:number, array:string[]) {
-                    if (index === array.length - 1) {
-                        readDir("code", value, true);
-                        readDir("parsed", value, true);
-                    } else {
-                        readDir("code", value, false);
-                        readDir("parsed", value, false);
-                    }
+                    count.lexer = count.lexer + 1;
+                    readDir("code", value);
+                    readDir("parsed", value);
                 });
             },
             framework: function taskrunner_framework() {
@@ -708,12 +707,12 @@ module.exports = (function taskrunner() {
                 humantime(true);
                 process.exit(0);
             };
-        if (order.length < 1) {
-            return complete();
-        }
         if (order.length < orderlen) {
             console.log("________________________________________________________________________");
             console.log("");
+        }
+        if (order.length < 1) {
+            return complete();
         }
         order.splice(0, 1);
         phases[phase]();
