@@ -5,7 +5,9 @@
         markdown = function lexer_markdown(source : string): data {
             let a   : number  = 0,
                 b   : number  = 0,
-                bc  : number  = 0;
+                bc  : number  = 0,
+                quote:string = "",
+                stack:string[] = [];
             const parse: parse    = framework.parse,
                 data   : data     = parse.data,
                 lines  : string[] = source.replace(/\u0000/g, "\ufffd").split(parse.crlf),
@@ -42,10 +44,8 @@
                             gencontent = function lexer_markdown_text_gencontent():string {
                                 return itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "").replace(/\\(?!(\\))/g, "").replace(/\\{2}/g, "\\");
                             };
-                        let quote = "",
-                            str:string[] = item.split(""),
+                        let str:string[] = item.split(""),
                             content:string = "",
-                            stack:string[] = [],
                             itemx:string[] = [],
                             square:number = 0,
                             aa:number = 0,
@@ -246,7 +246,8 @@
                                         token: midtag,
                                         types: "end"
                                     }, "");
-                                    quote   = "";
+                                    quote = "";
+                                    stack = [];
                                 } else {
                                     let midtag = "em";
                                     content = gencontent();
@@ -303,6 +304,8 @@
                                         token: "</code>",
                                         types: "end"
                                     }, "");
+                                    quote = "";
+                                    stack = [];
                                 } else {
                                     stack.push("`");
                                     parse.push(data, {
@@ -346,6 +349,8 @@
                                 token: tagend,
                                 types: "end"
                             }, "");
+                            quote = "";
+                            stack = [];
                         }
                         return;
                     }
@@ -386,6 +391,8 @@
                             token: tagend,
                             types: "end"
                         }, "");
+                        quote = "";
+                        stack = [];
                     }
                 },
                 hrtest = function lexer_markdown_hrtest(index:number):boolean {
@@ -482,10 +489,19 @@
                                 codes.push(lines[a]);
                             } else {
                                 codes.push(lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""));
-                                if (codetest(a + 1) === false) {
+                                if (lines[a + 1] !== "" && codetest(a + 1) === false) {
+                                    break;
+                                }
+                                if (lines[a + 1] === "" && codetest(a + 2) === false) {
+                                    a = a + 1;
                                     break;
                                 }
                             }
+                        } else {
+                            if (codetest(a + 1) === false) {
+                                break;
+                            }
+                            codes.push("");
                         }
                         a = a + 1;
                     } while (a < b);
@@ -564,28 +580,34 @@
                     let x:number = a,
                         tag: string = "<p>",
                         test = function lexer_markdown_text_test(index:number): boolean {
-                        if ((/^\s{0,3}={3,}\s*/).test(lines[index]) === true) {
-                            tag = "<h1>";
-                            return false;
-                        }
-                        if ((/^\s{0,3}-{3,}\s*/).test(lines[index]) === true) {
-                            tag = "<h2>";
-                            return false;
-                        }
-                        if (hrtest(index) === true) {
-                            return false;
-                        }
-                        if ((/^(\s*>)/).test(lines[index]) === true) {
-                            return false;
-                        }
-                        if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
-                            return false;
-                        }
-                        if ((/^(\s{0,3}(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]) === true) {
-                            return false;
-                        }
-                        return true;
-                    };
+                            if (lines[index] === undefined) {
+                                return false;
+                            }
+                            if ((/^(\s{0,3}((=+)|(-+))\s*)$/).test(lines[index]) === true) {
+                                if (lines[index].indexOf("=") > -1) {
+                                    tag = "<h1>";
+                                } else {
+                                    tag = "<h2>";
+                                }
+                                return false;
+                            }
+                            if (hrtest(index) === true) {
+                                return false;
+                            }
+                            if (lines[index] === "") {
+                                return false;
+                            }
+                            if ((/^(\s*>)/).test(lines[index]) === true) {
+                                return false;
+                            }
+                            if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
+                                return false;
+                            }
+                            if ((/^(\s{0,3}(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]) === true) {
+                                return false;
+                            }
+                            return true;
+                        };
                     if (test(a + 1) === true) {
                         do {
                             x = x + 1;
@@ -623,7 +645,40 @@
                             types: "end"
                         }, "");
                     } else {
-                        text(lines[a], "<p>", false);
+                        text(lines[a], tag, false);
+                        if (tag !== "<p>") {
+                            a = a + 1;
+                        }
+                    }
+                    quote = "";
+                },
+                heading = function lexer_markdown_heading():void {
+                    let hash:string = (/^(\s*#+\s+)/).exec(lines[a])[0].replace(/\s+/g, ""),
+                        hashes = function lexer_markdown_heading_hasheds(escapes:string):string {
+                            return escapes.replace(/\\/g, "").replace(/\s+/g, "");
+                        },
+                        content = lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s+#+\s*)$/, "").replace(/((\\?#)+\s*)$/, hashes);
+                    if (content === "" || (/^(#+)$/).test(content) === true) {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "<h" + hash.length + ">",
+                            types: "start"
+                        }, "h" + hash.length);
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "</h" + hash.length + ">",
+                            types: "end"
+                        }, "");
+                    } else {
+                        text(content, "<h" + hash.length + ">", false);
                     }
                 },
                 list     = function lexer_markdown_list(recursed:boolean):void {
@@ -940,18 +995,8 @@
                     table();
                 } else if ((/^(\s*((`{3,})|(~{3,}))+)/).test(lines[a]) === true) {
                     codeblock(true);
-                } else if ((/^(\s*#{6,6}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h6>", false);
-                } else if ((/^(\s*#{5,5}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h5>", false);
-                } else if ((/^(\s*#{4,4}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h4>", false);
-                } else if ((/^(\s*#{3,3}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h3>", false);
-                } else if ((/^(\s*#{2,2}\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#+\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h2>", false);
-                } else if ((/^(\s*#\s)/).test(lines[a]) === true) {
-                    text(lines[a].replace(/^(\s*#\s+)/, "").replace(/(\s*#+\s*)$/, ""), "<h1>", false);
+                } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
+                    heading();
                 } else if (listtest(a) === true) {
                     list(false);
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
