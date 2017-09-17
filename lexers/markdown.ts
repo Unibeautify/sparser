@@ -434,15 +434,17 @@
                             types: "attribute"
                         }, "");
                     }
-                    parse.push(data, {
-                        begin: parse.structure[parse.structure.length - 1][1],
-                        lexer: "markdown",
-                        lines: 0,
-                        presv: false,
-                        stack: parse.structure[parse.structure.length - 1][0],
-                        token: codetext,
-                        types: "content"
-                    }, "");
+                    if (codetext !== "") {
+                        parse.push(data, {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "markdown",
+                            lines: 0,
+                            presv: false,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: codetext,
+                            types: "content"
+                        }, "");
+                    }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -463,30 +465,34 @@
                     }, "");
                 },
                 codeblock = function lexer_markdown_codeblock(ticks:boolean):void {
-                    const language:string = (ticks === true)
+                    const indentstr:number = (ticks === true)
+                            ? (/^(\s*)/).exec(lines[a])[0].length
+                            : 0,
+                        indent:RegExp = new RegExp("^(\\s{0," + indentstr + "})"),
+                        language:string = (ticks === true)
                             ? lines[a].replace(/\s*((`+)|(~+))\s*/, "").replace(/\s*/g, "")
                             : "",
                         tilde:boolean = (/^(\s*`)/).test(lines[a]) === false,
+                        cchar:string = (tilde === true)
+                            ? "~"
+                            : "`",
+                        len:number = lines[a].split(cchar).length - 1,
+                        endgate:RegExp = new RegExp("^((\\s{0," + indentstr + "})?\s*" + cchar + "{" + len + ",}\\s*)$"),
                         codes:string[] = [];
                     if (ticks === true) {
                         a = a + 1;
-                        if (tilde === true && (/^(\s*~{3})/).test(lines[a]) === true) {
-                            return;
-                        }
-                        if (tilde === false && (/^(\s*`{3})/).test(lines[a]) === true) {
+                        if (endgate.test(lines[a]) === true) {
+                            code("", language);
                             return;
                         }
                     }
                     do {
                         if (lines[a] !== "") {
                             if (ticks === true) {
-                                if (tilde === true && (/^(\s*~{3})/).test(lines[a]) === true) {
+                                if (endgate.test(lines[a]) === true) {
                                     break;
                                 }
-                                if (tilde === false && (/^(\s*`{3})/).test(lines[a]) === true) {
-                                    break;
-                                }
-                                codes.push(lines[a]);
+                                codes.push(lines[a].replace(indent, ""));
                             } else {
                                 codes.push(lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""));
                                 if (lines[a + 1] !== "" && codetest(a + 1) === false) {
@@ -981,7 +987,7 @@
             a = 0;
             do {
                 if (codetest(a) === true) {
-                    if (codetest(a + 1) === true) {
+                    if (codetest(a + 1) === true || (lines[a + 1] === "" && codetest(a + 2) === true)) {
                         codeblock(false);
                     } else {
                         code(lines[a], "");
@@ -993,7 +999,7 @@
                     blockquote();
                 } else if ((/-{3,}\s*\|\s*-{3,}/).test(lines[a + 1]) === true) {
                     table();
-                } else if ((/^(\s*((`{3,})|(~{3,}))+)/).test(lines[a]) === true) {
+                } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+\s*)?)$/).test(lines[a]) === true) {
                     codeblock(true);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
