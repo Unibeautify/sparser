@@ -465,9 +465,15 @@
                     }, "");
                 },
                 codeblock = function lexer_markdown_codeblock(ticks:boolean):void {
-                    const indentstr:number = (ticks === true)
-                            ? (/^(\s*)/).exec(lines[a])[0].length
-                            : 0,
+                    const indentstr:number = (function lexer_markdown_codeblock() {
+                            let inumb:number = (ticks === true)
+                                ? (/^(\s*)/).exec(lines[a])[0].length
+                                : 0;
+                            if (inumb > 3) {
+                                return 0;
+                            }
+                            return inumb;
+                        }()),
                         indent:RegExp = new RegExp("^(\\s{0," + indentstr + "})"),
                         language:string = (ticks === true)
                             ? lines[a].replace(/\s*((`+)|(~+))\s*/, "").replace(/\s*/g, "")
@@ -477,7 +483,7 @@
                             ? "~"
                             : "`",
                         len:number = lines[a].split(cchar).length - 1,
-                        endgate:RegExp = new RegExp("^((\\s{0," + indentstr + "})?\s*" + cchar + "{" + len + ",}\\s*)$"),
+                        endgate:RegExp = new RegExp("^((\\s{0," + indentstr + "})?\\s*" + cchar + "{" + len + ",}\\s*)$"),
                         codes:string[] = [];
                     if (ticks === true) {
                         a = a + 1;
@@ -487,9 +493,12 @@
                         }
                     }
                     do {
+                        if (lines[a] === undefined) {
+                            break;
+                        }
                         if (lines[a] !== "") {
                             if (ticks === true) {
-                                if (endgate.test(lines[a]) === true) {
+                                if (endgate.test(lines[a]) === true && (/^(\u0020{4})/).test(lines[a]) === false) {
                                     break;
                                 }
                                 codes.push(lines[a].replace(indent, ""));
@@ -598,6 +607,9 @@
                                 return false;
                             }
                             if (hrtest(index) === true) {
+                                return false;
+                            }
+                            if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[index]) === true) {
                                 return false;
                             }
                             if (lines[index] === "") {
@@ -999,7 +1011,7 @@
                     blockquote();
                 } else if ((/-{3,}\s*\|\s*-{3,}/).test(lines[a + 1]) === true) {
                     table();
-                } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+\s*)?)$/).test(lines[a]) === true) {
+                } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[a]) === true) {
                     codeblock(true);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
