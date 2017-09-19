@@ -44,7 +44,8 @@
                             gencontent = function lexer_markdown_text_gencontent():string {
                                 return itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "").replace(/\\(?!(\\))/g, "").replace(/\\{2}/g, "\\");
                             };
-                        let str:string[] = item.split(""),
+                        let stray:string = "",
+                            str:string[] = item.split(""),
                             content:string = "",
                             itemx:string[] = [],
                             square:number = 0,
@@ -279,8 +280,8 @@
                                         types: "start"
                                     }, midtag);
                                 }
-                            } else if (str[a] === "`" && esctest() === false) {
-                                content = itemx.join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
+                            } else if (str[aa] === "`" && esctest() === false) {
+                                content = gencontent();
                                 if (content !== "") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
@@ -294,6 +295,7 @@
                                 }
                                 itemx = [];
                                 if (stack[stack.length - 1] === "`") {
+                                    str[aa] = "";
                                     stack.pop();
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
@@ -325,6 +327,25 @@
                             aa = aa + 1;
                         } while (aa < bb);
                         content = gencontent();
+                        if (tag !== "multiline" && data.types[parse.count] === "start" && data.token[parse.count] !== tag) {
+                            stray = data.token[parse.count];
+                            parse.pop(data);
+                            parse.structure.pop();
+                            if (stray === "<code>") {
+                                stray = "`";
+                            } else if (stray === "<em>") {
+                                stray = "*";
+                            } else if (stray === "<strong>") {
+                                stray = "**";
+                            } else if (stray === "<strike>") {
+                                stray = "~";
+                            }
+                            if (data.types[parse.count] === "start") {
+                                content = stray + content;
+                            } else {
+                                data.token[parse.count] = data.token[parse.count] + stray;
+                            }
+                        }
                         if (content !== "") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
