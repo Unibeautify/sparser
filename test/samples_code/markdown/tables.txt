@@ -1,0 +1,35 @@
+asdf|q\|wer
+---|---
+qwer|zxcv
+
+| abc | defghi |
+:-: | -----------:
+bar | baz
+
+| f\|oo  |
+| ------ |
+| b `\|` az |
+| b **\|** im |
+
+| abc | def |
+| --- | --- |
+| bar | baz |
+uytr
+
+| abc | def |
+| --- |
+| bar |
+
+| abc | def |
+| --- | --- |
+| bar |
+| bar | baz | boo |
+
+| abc | def |
+| --- | --- |
+| bar | baz |
+> bar
+
+
+| abc | def |
+| --- | --- |
