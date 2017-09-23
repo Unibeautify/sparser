@@ -29,7 +29,7 @@
                 builder = function web_handler_builder():void {
                     let a:number         = 0,
                         body      = document.createElement("thead");
-                    const len:number       = global.parseFramework.parse.count,
+                    const len:number       = global.parseFramework.parse.count + 1,
                         table     = document.createElement("table"),
                         cell      = function web_handler_builder_cell(text:string, type:string, row, className:string):void {
                             const el = document.createElement(type);
@@ -162,5 +162,41 @@
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {
         input.value = localStorage.parseCode;
+    }
+    if (location.href.indexOf("//localhost:") > 0) {
+        let port:number = (function port():number {
+            const uri = location.href;
+            let str:string = uri.slice(location.href.indexOf("host:") + 5),
+                ind:number = str.indexOf("/");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = str.indexOf("?");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = str.indexOf("#");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = Number(str);
+            if (isNaN(ind) === true) {
+                return 8080;
+            }
+            return ind;
+        }()),
+        ws = new WebSocket("ws://localhost:" + (port + 1));
+        ws.addEventListener("message", function (event) {
+            if (event.data === "reload") {
+                location.reload();
+            }
+        });
+        if (location.href.indexOf("scrolldown") > 0) {
+            let el = (document.documentElement.clientHeight > document.getElementsByTagName("body")[0].clientHeight)
+                ? document.documentElement
+                : document.getElementsByTagName("body")[0];
+            handler();
+            el.scrollTop = el.scrollHeight;
+        }
     }
 }());

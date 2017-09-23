@@ -7,36 +7,35 @@ table{border-collapse:collapse;box-shadow:0.1em 0.1em 0.5em #999;display:table}
 thead{display:table-header-group}
 tbody{display:table-row-group}
 thead th{background:#ddc}
-tbody .numb{text-align:right}
-tbody tr.odd:hover,
-tbody tr.even:hover{background:#ffa}
+tbody td[class="numb"]{text-align:right}
+tbody tr:hover{background:#ffa}
 tr{display:table-row}
 th,
 td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
 
 li span{color:#070;font-weight:bold}
 #errors span{color: #c00}
-.header th{background:#ddd;text-align:left}
-.markdown td,
-.markdown th{border-color: #000;color:#333}
-.markdown.odd{background: #e8e8e8}
-.markdown.even{background: #f8f8f8}
-.markup td,
-.markup th{border-color: #933;color:#600}
-.markup.odd{background: #fee}
-.markup.even{background: #fdd}
-.style td,
-.style th{border-color: #66f;color:#009}
-.style.odd{background: #eef8ff}
-.style.even{background: #ddeeff}
-.script td,
-.script th{border-color: #060;color:#040}
-.script.odd{background: #eefff8}
-.script.even{background: #ded}
-.key li{white-space:pre}
-.key .markdown{background:#e8e8e8;color:#000}
-.key .markup{background:#fee;color:#600}
-.key .script{background:#eefff8;color:#040}
-.key .style{background:#eef8ff;color:#009}
-.input label{display:block}
-.input textarea{background:#eee;display:block;height:20em;width:100%;}
+tr[class="header"] th{background:#ddd;text-align:left}
+tr[class="markdown"] td,
+tr[class="markdown"] th{border-color: #000;color:#333}
+tr[class="markdown odd"]{background: #e8e8e8}
+tr[class="markdown even"]{background: #f8f8f8}
+tr[class="markup"] td,
+tr[class="markup"] th{border-color: #933;color:#600}
+tr[class="markup odd"]{background: #fee}
+tr[class="markup even"]{background: #fdd}
+tr[class="script"] td,
+tr[class="script"] th{border-color: #060;color:#040}
+tr[class="script odd"]{background: #eefff8}
+tr[class="script even"]{background: #ded}
+tr[class="style"] td,
+tr[class="style"] th{border-color: #66f;color:#009}
+tr[class="style odd"]{background: #eef8ff}
+tr[class="style even"]{background: #ddeeff}
+ul[class="key"] li{white-space:pre}
+ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
+ul[class="key"] li[class="markup"]{background:#fee;color:#600}
+ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
+ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
+div[class="input"] label{display:block}
+div[class="input"] textarea{background:#eee;display:block;height:20em;width:100%;}

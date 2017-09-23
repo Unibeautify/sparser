@@ -2,7 +2,7 @@
 Parse Framework
 */
 /*eslint no-console: 0*/
-/*global console, global*/
+/*global console, global, location*/
 
 (function parse_init() {
     "use strict";
@@ -653,7 +653,7 @@ Parse Framework
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read the documentation             - \u001b[33mcat readme.md\u001b[39m");
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read about the lexers              - \u001b[33mcat lexers/readme.md\u001b[39m");
         console.log("");
-    } else if (global.process === undefined) {
+    } else if (global.process === undefined && location !== undefined && location.href.indexOf("nocomment") < 0) {
         console.log("");
         console.log("Welcome to the Parse Framework.");
         console.log("");

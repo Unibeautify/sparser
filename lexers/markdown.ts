@@ -380,7 +380,7 @@
                             }, "");
                         }
                         if (listrecurse === true) {
-                            list(true);
+                            list(true, false);
                         }
                         if (tag !== "multiline") {
                             parse.push(data, {
@@ -412,7 +412,7 @@
                         }, struct);
                     }
                     if (listrecurse === true) {
-                        list(true);
+                        list(true, false);
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -565,75 +565,6 @@
                     } while (a < b);
                     code(codes.join(parse.crlf), language);
                 },
-                blockquote = function lexer_markdown_blockquote():void {
-                    let x:number = a,
-                        item:string = "",
-                        block:RegExp,
-                        block1:RegExp;
-                    bc = bc + 1;
-                    block = new RegExp("^((\\s*>\\s*){1," + bc + "})");
-                    block1 = new RegExp("^((\\s*>\\s*){" + (bc + 1) + "})");
-                    parse.push(data, {
-                        begin: parse.structure[parse.structure.length - 1][1],
-                        lexer: "markdown",
-                        lines: 0,
-                        presv: false,
-                        stack: parse.structure[parse.structure.length - 1][0],
-                        token: "<blockquote>",
-                        types: "start"
-                    }, "blockquote");
-                    lines[a] = lines[a].replace(block, "");
-                    do {
-                        if ((block1).test(lines[x]) === true) {
-                            a = x;
-                            if (item !== "") {
-                                parse.push(data, {
-                                    begin: parse.structure[parse.structure.length - 1][1],
-                                    lexer: "markdown",
-                                    lines: 0,
-                                    presv: false,
-                                    stack: parse.structure[parse.structure.length - 1][0],
-                                    token: item.replace(parse.crlf, ""),
-                                    types: "content"
-                                }, "");
-                            }
-                            lexer_markdown_blockquote();
-                            parse.push(data, {
-                                begin: parse.structure[parse.structure.length - 1][1],
-                                lexer: "markdown",
-                                lines: 0,
-                                presv: false,
-                                stack: parse.structure[parse.structure.length - 1][0],
-                                token: "</blockquote>",
-                                types: "end"
-                            }, "");
-                            return;
-                        }
-                        item = item + parse.crlf + lines[x].replace(block, "");
-                        x = x + 1;
-                    } while (x < b && lines[x] !== "" && hrtest(x) === false);
-                    a = x;
-                    if (item !== "") {
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            lexer: "markdown",
-                            lines: 0,
-                            presv: false,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: item.replace(parse.crlf, ""),
-                            types: "content"
-                        }, "");
-                    }
-                    parse.push(data, {
-                        begin: parse.structure[parse.structure.length - 1][1],
-                        lexer: "markdown",
-                        lines: 0,
-                        presv: false,
-                        stack: parse.structure[parse.structure.length - 1][0],
-                        token: "</blockquote>",
-                        types: "end"
-                    }, "");
-                },
                 parabuild = function lexer_markdown_parabuild():void {
                     let x:number = a,
                         tag: string = "<p>",
@@ -642,7 +573,9 @@
                                 return false;
                             }
                             if ((/^(\s{0,3}((=+)|(-+))\s*)$/).test(lines[index]) === true) {
-                                if (lines[index].indexOf("=") > -1) {
+                                if (parse.structure[parse.structure.length - 1][0] === "blockquote") {
+                                    x = x - 1;
+                                } else if (lines[index].indexOf("=") > -1) {
                                     tag = "<h1>";
                                 } else {
                                     tag = "<h2>";
@@ -659,6 +592,22 @@
                                 return false;
                             }
                             if ((/^(\s*>)/).test(lines[index]) === true) {
+                                if (parse.structure[parse.structure.length - 1][0] === "blockquote") {
+                                    if ((/^(\s{0,3}(>\s*)+((=+)|(-+))\s*)$/).test(lines[index]) === true) {
+                                        if (lines[index].indexOf("=") > -1) {
+                                            tag = "<h1>";
+                                        } else {
+                                            tag = "<h2>";
+                                        }
+                                        lines[index] = lines[index].replace(/^(\s*(>\s*)+\s*)/, "");
+                                        return false;
+                                    }
+                                    if ((/^(\s*(>\s*)+(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]) === true) {
+                                        list(false, true);
+                                    }
+                                    lines[index] = lines[index].replace(/^(\s*(>\s*)+\s*)/, "");
+                                    return true;
+                                }
                                 return false;
                             }
                             if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
@@ -743,7 +692,72 @@
                         text(content, "<h" + hash.length + ">", false);
                     }
                 },
-                list     = function lexer_markdown_list(recursed:boolean):void {
+                blockquote = function lexer_markdown_blockquote():void {
+                    let item:string = "",
+                        block:RegExp,
+                        block1:RegExp,
+                        headflag:boolean = false;
+                    bc = bc + 1;
+                    block = new RegExp("^((\\s*>\\s*){1," + bc + "})");
+                    block1 = new RegExp("^((\\s*>\\s*){" + (bc + 1) + "})");
+                    parse.push(data, {
+                        begin: parse.structure[parse.structure.length - 1][1],
+                        lexer: "markdown",
+                        lines: 0,
+                        presv: false,
+                        stack: parse.structure[parse.structure.length - 1][0],
+                        token: "<blockquote>",
+                        types: "start"
+                    }, "blockquote");
+                    lines[a] = lines[a].replace(block, "");
+                    do {
+                        if ((block1).test(lines[a]) === true) {
+                            lexer_markdown_blockquote();
+                            parse.push(data, {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                lexer: "markdown",
+                                lines: 0,
+                                presv: false,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: "</blockquote>",
+                                types: "end"
+                            }, "");
+                            return;
+                        }
+                    if (lines[a] === "" || (listtest(a) === true && (/^\s*>/).test(lines[a]) === false)) {
+                            break;
+                        }
+                        if ((/^(\s{0,3}(>\s*)+((=+)|(-+))\s*)$/).test(lines[a]) === false) {
+                            lines[a] = lines[a].replace(block, "");
+                        }
+                        if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
+                            heading();
+                        } else if (listtest(a) === true) {
+                            list(false, true);
+                        } else {
+                            parabuild();
+                        }
+                        if ((/^(\s{0,3}((=+)|(-+))\s*)$/).test(lines[a + 1]) === true) {
+                            break;
+                        }
+                        if (lines[a] === "") {
+                            break;
+                        }
+                        headflag = false;
+                        a = a + 1;
+                    } while (a < b && lines[a] !== "" && hrtest(a) === false);
+                    parse.push(data, {
+                        begin: parse.structure[parse.structure.length - 1][1],
+                        lexer: "markdown",
+                        lines: 0,
+                        presv: false,
+                        stack: parse.structure[parse.structure.length - 1][0],
+                        token: "</blockquote>",
+                        types: "end"
+                    }, "");
+                    bc = bc - 1;
+                },
+                list     = function lexer_markdown_list(recursed:boolean, blockyquote:boolean):void {
                     const tabs = function lexer_markdown_list(spaces:string):string {
                         let output:string[] = spaces.split(""),
                             uu:number = 0;
@@ -813,6 +827,9 @@
                                 break;
                             }
                         } else {
+                            if (blockyquote === true) {
+                                lines[a] = lines[a].replace(/^(\s*(>\s*)+\s*)/, "");
+                            }
                             y = space(a) - ind;
                             if (y < -1 || y > 9 || hrtest(a) === true) {
                                 z = (lines[a + 1] === "")
@@ -1201,7 +1218,6 @@
                 } else if (hrtest(a) === true) {
                     hr();
                 } else if ((/^(\s*>)/).test(lines[a]) === true) {
-                    bc = 0;
                     blockquote();
                 } else if ((/((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*/).test(lines[a + 1]) === true) {
                     table();
@@ -1210,7 +1226,7 @@
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
                 } else if (listtest(a) === true) {
-                    list(false);
+                    list(false, false);
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     parabuild();
                 }

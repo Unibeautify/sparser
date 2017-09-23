@@ -1,33 +1,45 @@
 {
-  "name": "parse-framework",
-  "version": "1.1.0",
-  "description": "A parsing framework for parsing everything",
-  "main": "js/parse.js",
-  "directories": {
-    "test": "test"
+  "author"         : "Austin Cheney",
+  "bugs"           : {
+      "url": "https://github.com/Unibeautify/parse-framework/issues"
   },
-  "dependencies": {},
-  "devDependencies": {},
-  "scripts": {
-    "test": "node js/test/validate.js"
+  "dependencies"   : {},
+  "description"    : "A parsing framework for parsing everything",
+  "devDependencies": {
+    "nodemon": "^1.12.1",
+    "ws"     : "^3.2.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Unibeautify/parse-framework.git"
+  "directories"    : {
+      "test": "test"
   },
-  "keywords": [
-    "parser",
-    "lexer",
-    "framework",
-    "universal",
-    "language",
-    "parse",
-    "table"
+  "homepage"       : "https://github.com/Unibeautify/parse-framework#readme",
+  "keywords"       : [
+      "parser",
+      "lexer",
+      "framework",
+      "universal",
+      "language",
+      "parse",
+      "table"
   ],
-  "author": "Austin Cheney",
-  "license": "CC0-1.0",
-  "bugs": {
-    "url": "https://github.com/Unibeautify/parse-framework/issues"
+  "license"        : "CC0-1.0",
+  "main"           : "js/parse.js",
+  "name"           : "parse-framework",
+  "nodemonConfig"  : {
+      "exec"   : "tsc",
+      "execMap": {
+          "ts": "typescript"
+      },
+      "ext"    : "ts",
+      "ignore" : ["js", "node_modules", "test/samples_code", "test/samples_parsed"]
   },
-  "homepage": "https://github.com/Unibeautify/parse-framework#readme"
+  "repository"     : {
+      "type": "git",
+      "url" : "git+https://github.com/Unibeautify/parse-framework.git"
+  },
+  "scripts"        : {
+      "start": "nodemon",
+      "test" : "node js/test/validate.js"
+  },
+  "version"        : "1.1.0"
 }
