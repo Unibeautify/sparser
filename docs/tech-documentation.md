@@ -227,7 +227,7 @@ The *types* array contains a string that describes the token value according to 
 * **language.ts** - A convenience utility to guess at the language of a submitted code sample. This utility is handy when executing the framework through one of the provided runtime utilities. For precision and stability I suggest **not** using this file if embedding this framework in another application or if running this application in any public facing production environment.  Instead specify the language and lexer option values manually or through some other setting from an external application.
 * **lexers** - A directory of language specific rules.
 * **parse.ts** - Contains all the framework code.
-* **runtimes** - A directory containing the node and browser run time files plus their dependencies.
+* **runtimes** - A directory containing the node and browser run time files plus their dependencies. For additional information on the supplied automation environment tool please see [docs/developer.md](docs/developer.md).
 * **test** - A directory containing the unit test samples and the validation build file: [test/validate.ts](test/validate.ts).
 
 ### Maintenance and Support

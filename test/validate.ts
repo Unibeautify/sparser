@@ -3,7 +3,7 @@
 /*eslint no-console: 0*/
 // The order array determines which tests run in which order (from last to first
 // index)
-module.exports = (function taskrunner() {
+function taskrunner() {
     "use strict";
     let next       = function taskrunner_nextInit() {
             return;
@@ -183,7 +183,9 @@ module.exports = (function taskrunner() {
             console.error(errtext);
             console.log("");
             humantime(true);
-            process.exit(1);
+            if (process.argv[1].indexOf("validate.js") > -1) {
+                process.exit(1);
+            }
         },
         phases     = {
             codeunits: function taskrunner_coreunits():void {
@@ -262,6 +264,9 @@ module.exports = (function taskrunner() {
                                 // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
                                 // of diff_options.context (not parallel) 6 - total count of differences
                                 do {
+                                    if (report[0][aa] === undefined) {
+                                        errout("report[0][aa] is undefined, aa = " + aa);
+                                    }
                                     if (report[0][aa].indexOf("\u001b[36m") === 0) {
                                         console.log("\u001b[36m" + sampleName + "\u001b[39m");
                                     }
@@ -365,7 +370,9 @@ module.exports = (function taskrunner() {
                                         console.log("Quitting due to error:");
                                         console.log(files.code[a][0]);
                                         console.log(framework.parseerror);
-                                        process.exit(1);
+                                        if (process.argv[1].indexOf("validate.js") > -1) {
+                                            process.exit(1);
+                                        }
                                     }
                                 }
                             } else {
@@ -688,7 +695,11 @@ module.exports = (function taskrunner() {
     node.fs.readdir(relative + node.path.sep + "js" + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
         if (err !== null) {
             console.log(err);
-            process.exit(1);
+            if (process.argv[1].indexOf("validate.js") > -1) {
+                process.exit(1);
+            } else {
+                return;
+            }
         } else {
             files.forEach(function taskrunner_lexers_each(value) {
                 if ((/(\.js)$/).test(value) === true) {
@@ -705,7 +716,9 @@ module.exports = (function taskrunner() {
                 console.log("");
                 console.log("All tasks complete... Exiting clean!");
                 humantime(true);
-                process.exit(0);
+                if (process.argv[1].indexOf("validate.js") > -1) {
+                    process.exit(0);
+                }
             };
         if (order.length < orderlen) {
             console.log("________________________________________________________________________");
@@ -720,4 +733,8 @@ module.exports = (function taskrunner() {
     console.log("");
     next();
     return "";
-}());
+};
+module.exports = taskrunner;
+if (process.argv[1].indexOf("validate.js") > -1) {
+    taskrunner();
+}

@@ -693,10 +693,8 @@
                     }
                 },
                 blockquote = function lexer_markdown_blockquote():void {
-                    let item:string = "",
-                        block:RegExp,
-                        block1:RegExp,
-                        headflag:boolean = false;
+                    let block:RegExp,
+                        block1:RegExp;
                     bc = bc + 1;
                     block = new RegExp("^((\\s*>\\s*){1," + bc + "})");
                     block1 = new RegExp("^((\\s*>\\s*){" + (bc + 1) + "})");
@@ -709,7 +707,6 @@
                         token: "<blockquote>",
                         types: "start"
                     }, "blockquote");
-                    lines[a] = lines[a].replace(block, "");
                     do {
                         if ((block1).test(lines[a]) === true) {
                             lexer_markdown_blockquote();
@@ -724,7 +721,7 @@
                             }, "");
                             return;
                         }
-                    if (lines[a] === "" || (listtest(a) === true && (/^\s*>/).test(lines[a]) === false)) {
+                        if (lines[a] === "" || (listtest(a) === true && (/^\s{0,3}>/).test(lines[a]) === false)) {
                             break;
                         }
                         if ((/^(\s{0,3}(>\s*)+((=+)|(-+))\s*)$/).test(lines[a]) === false) {
@@ -734,6 +731,9 @@
                             heading();
                         } else if (listtest(a) === true) {
                             list(false, true);
+                            if ((lines[a + 1] !== "" && listtest(a + 1) === true) || (lines[a + 1] === "" && listtest(a + 2) === true)) {
+                                break;
+                            }
                         } else {
                             parabuild();
                         }
@@ -743,7 +743,6 @@
                         if (lines[a] === "") {
                             break;
                         }
-                        headflag = false;
                         a = a + 1;
                     } while (a < b && lines[a] !== "" && hrtest(a) === false);
                     parse.push(data, {
@@ -889,6 +888,9 @@
                             } else {
                                 text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "<li>", false);
                             }
+                        }
+                        if (blockyquote === true && (/^(\s{0,3}>)/).test(lines[a + 1]) === false) {
+                            break;
                         }
                         a = a + 1;
                     } while (a < b);

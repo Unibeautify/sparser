@@ -186,7 +186,7 @@
             return ind;
         }()),
         ws = new WebSocket("ws://localhost:" + (port + 1));
-        ws.addEventListener("message", function (event) {
+        ws.addEventListener("message", function web_sockets(event) {
             if (event.data === "reload") {
                 location.reload();
             }
@@ -196,7 +196,9 @@
                 ? document.documentElement
                 : document.getElementsByTagName("body")[0];
             handler();
-            el.scrollTop = el.scrollHeight;
+            setTimeout(function web_scrolldelay() {
+                el.scrollTop = el.scrollHeight;
+            }, 50);
         }
     }
 }());

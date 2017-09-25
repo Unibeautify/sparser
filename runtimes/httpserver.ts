@@ -10,21 +10,19 @@
 
 (function server() {
     "use strict";
-    const http  = require("http"),
-        path    = require("path"),
-        fs      = require("fs"),
-        child   = require("child_process").exec,
-        nodemon = require("nodemon"),
-        socket  = require("ws"),
-        cwd     = process.cwd(),
-        port    = (process.argv[2] === undefined)
+    const http   = require("http"),
+        path     = require("path"),
+        fs       = require("fs"),
+        child    = require("child_process").exec,
+        nodemon  = require("nodemon"),
+        socket   = require("ws"),
+        validate = require(".." + path.sep + "test" + path.sep + "validate.js"),
+        cwd      = process.cwd(),
+        port     = (process.argv[2] === undefined)
             ? 9999
             : Number(process.argv[2]),
-        server  = http.createServer(function server_create(request, response):void {
+        server   = http.createServer(function server_create(request, response):void {
             let quest:number = request.url.indexOf("?"),
-                params:string = (quest > 0)
-                    ? request.url.slice(quest)
-                    : "",
                 uri:string = (quest > 0)
                     ? request.url.slice(0, quest)
                     : request.url,
@@ -72,7 +70,8 @@
     console.log("\u001b[32mStarting nodemon!\u001b[39m");
     nodemon({
         "delay"  : "0",
-        "ignore" : ["js", "node_modules", "test/samples_code", "test/samples_parsed"],
+        "ext" : "txt ts css xhtml",
+        "ignore" : ["js", "node_modules", "test" + path.sep + "samples_code"],
         "system" : process.cwd(),
         "timeout": 0
     }).on("restart", function nodemon_restart(event) {
@@ -81,7 +80,7 @@
                 const list = file.split(".");
                 return list[list.length - 1];
             }()),
-            time = function nodemon_time(message:string):void {
+            time = function nodemon_time(message:string):number {
                 const date:Date = new Date(),
                     datearr:string[] = [];
                 let hours:string = String(date.getHours()),
@@ -97,23 +96,60 @@
                 if (seconds.length === 1) {
                     seconds = "0" + seconds;
                 }
-                if (mseconds.length < 4) {
+                if (mseconds.length < 3) {
                     do {
                         mseconds = "0" + mseconds;
-                    } while (mseconds.length < 4);
+                    } while (mseconds.length < 3);
                 }
                 datearr.push(hours);
-                datearr.push(":");
                 datearr.push(minutes);
-                datearr.push(":");
                 datearr.push(seconds);
-                datearr.push(":");
                 datearr.push(mseconds);
-                console.log("[\u001b[36m" + datearr.join("") + "\u001b[39m] " + message);
-            };
+                console.log("[\u001b[36m" + datearr.join(":") + "\u001b[39m] " + message);
+                return date.valueOf();
+            };console.log(file);
         if (extension === "ts") {
+            let start:number,
+                compile:number,
+                duration = function nodemon_duration(length:number):void {
+                    let hours:number = 0,
+                        minutes:number = 0,
+                        seconds:number = 0,
+                        list:string[] = [];
+                    if (length > 3600000) {
+                        hours = Math.floor(length / 3600000);
+                        length = length - (hours * 3600000);
+                    }
+                    list.push(hours.toString());
+                    if (list[0].length < 2) {
+                        list[0] = "0" + list[0];
+                    }
+                    if (length > 60000) {
+                        minutes = Math.floor(length / 60000);
+                        length = length - (minutes * 60000);
+                    }
+                    list.push(minutes.toString());
+                    if (list[1].length < 2) {
+                        list[1] = "0" + list[1];
+                    }
+                    if (length > 1000) {
+                        seconds = Math.floor(length / 1000);
+                        length = length - (seconds * 1000);
+                    }
+                    list.push(seconds.toString());
+                    if (list[2].length < 2) {
+                        list[2] = "0" + list[2];
+                    }
+                    list.push(length.toString());
+                    if (list[3].length < 3) {
+                        do {
+                            list[3] = "0" + list[3];
+                        } while (list[3].length < 3);
+                    }
+                    console.log("[\u001b[36m" + list.join(":") + "\u001b[39m] Total compile time.");
+                };
             console.log("");
-            time("Compiling TypeScript for \u001b[32m" + file + "\u001b[39m");
+            start = time("Compiling TypeScript for \u001b[32m" + file + "\u001b[39m");
             child("tsc", function nodemon_restart_child(err, stdout, stderr):void {
                 if (err !== null) {
                     console.log(err);
@@ -123,14 +159,19 @@
                     console.log(stderr);
                     return;
                 }
-                time("TypeScript Compiled");
+                compile = time("TypeScript Compiled") - start;
+                duration(compile);
                 ws.broadcast("reload");
                 return;
             });
         } else if (extension === "css" || extension === "xhtml" || extension === "js") {
             console.log("");
-            time("Refreshing - \u001b[32m" + file + "\u001b[39m");
+            time("Refreshing browser tab(s) - \u001b[32m" + file + "\u001b[39m");
             ws.broadcast("reload");
+        } else if (extension === "txt" && file.indexOf("samples_parsed") > -1) {
+            console.log("");
+            time("Running validation build");
+            validate();
         }
     });
     server.listen(port);
