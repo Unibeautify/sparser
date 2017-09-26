@@ -507,7 +507,7 @@
                         types: "end"
                     }, "");
                 },
-                codeblock = function lexer_markdown_codeblock(ticks:boolean):void {
+                codeblock = function lexer_markdown_codeblock(ticks:boolean, blockyquote:boolean):void {
                     const indentstr:number = (function lexer_markdown_codeblock() {
                             let inumb:number = (ticks === true)
                                 ? (/^(\s*)/).exec(lines[a])[0].length
@@ -560,6 +560,9 @@
                                 break;
                             }
                             codes.push("");
+                        }
+                        if (blockyquote === true && (/^(\s*>)/).test(lines[a + 1]) === false) {
+                            break;
                         }
                         a = a + 1;
                     } while (a < b);
@@ -696,8 +699,8 @@
                     let block:RegExp,
                         block1:RegExp;
                     bc = bc + 1;
-                    block = new RegExp("^((\\s*>\\s*){1," + bc + "})");
-                    block1 = new RegExp("^((\\s*>\\s*){" + (bc + 1) + "})");
+                    block = new RegExp("^((\\s*>){1," + bc + "})");
+                    block1 = new RegExp("^((\\s*>){" + (bc + 1) + "})");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -726,8 +729,59 @@
                         }
                         if ((/^(\s{0,3}(>\s*)+((=+)|(-+))\s*)$/).test(lines[a]) === false) {
                             lines[a] = lines[a].replace(block, "");
+                            if (lines[a].replace(/^(\s{0,3})$/, "") === "") {
+                                do {
+                                    a = a + 1;
+                                } while (a < b && lines[a].replace(block, "").replace(/^(\s{0,3})$/, "") === "");
+                                if (a === b) {
+                                    break;
+                                }
+                            }
                         }
-                        if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
+                        if (codetest(a) === true) {
+                            codeblock(false, true);
+                        } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[a]) === true) {
+                            if (block.test(lines[a + 1]) === false) {
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "<p>",
+                                    types: "start"
+                                }, "p");
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "<code>",
+                                    types: "start"
+                                }, "code");
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "</code>",
+                                    types: "end"
+                                }, "");
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "</p>",
+                                    types: "end"
+                                }, "");
+                                break;
+                            }
+                            codeblock(true, true);
+                        } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                             heading();
                         } else if (listtest(a) === true) {
                             list(false, true);
@@ -735,7 +789,13 @@
                                 break;
                             }
                         } else {
+                            if (lines[a] === "") {
+                                break;
+                            }
                             parabuild();
+                        }
+                        if (codetest(a + 1) === true) {
+                            break;
                         }
                         if ((/^(\s{0,3}((=+)|(-+))\s*)$/).test(lines[a + 1]) === true) {
                             break;
@@ -1213,7 +1273,7 @@
             do {
                 if (codetest(a) === true) {
                     if (codetest(a + 1) === true || (lines[a + 1] === "" && codetest(a + 2) === true)) {
-                        codeblock(false);
+                        codeblock(false, false);
                     } else {
                         code(lines[a], "");
                     }
@@ -1224,7 +1284,7 @@
                 } else if ((/((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*/).test(lines[a + 1]) === true) {
                     table();
                 } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[a]) === true) {
-                    codeblock(true);
+                    codeblock(true, false);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
                 } else if (listtest(a) === true) {

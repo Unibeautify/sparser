@@ -107,7 +107,7 @@
                 datearr.push(mseconds);
                 console.log("[\u001b[36m" + datearr.join(":") + "\u001b[39m] " + message);
                 return date.valueOf();
-            };console.log(file);
+            };
         if (extension === "ts") {
             let start:number,
                 compile:number,
