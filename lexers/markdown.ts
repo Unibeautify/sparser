@@ -447,7 +447,7 @@
                 listtest = function lexer_markdown_listtest(index:number):boolean {
                     return (/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]);
                 },
-                code     = function lexer_markdown_code(codetext:string, language:string):void {
+                code     = function lexer_markdown_code(codetext:string, language:string, fourspace:boolean):void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -478,6 +478,13 @@
                         }, "");
                     }
                     if (codetext !== "") {
+                        if (fourspace === true) {
+                            if (codetext.indexOf("    ") === 0) {
+                                codetext = codetext.replace(/^(\u0020{4})/, "");
+                            } else {
+                                codetext = codetext.replace(/^(\s*\t)/, "");
+                            }
+                        }
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markdown",
@@ -507,7 +514,7 @@
                         types: "end"
                     }, "");
                 },
-                codeblock = function lexer_markdown_codeblock(ticks:boolean, blockyquote:boolean):void {
+                codeblock = function lexer_markdown_codeblock(ticks:boolean, blockyquote:boolean, fourspace:boolean):void {
                     const indentstr:number = (function lexer_markdown_codeblock() {
                             let inumb:number = (ticks === true)
                                 ? (/^(\s*)/).exec(lines[a])[0].length
@@ -531,7 +538,7 @@
                     if (ticks === true) {
                         a = a + 1;
                         if (endgate.test(lines[a]) === true) {
-                            code("", language);
+                            code("", language, false);
                             return;
                         }
                     }
@@ -566,7 +573,7 @@
                         }
                         a = a + 1;
                     } while (a < b);
-                    code(codes.join(parse.crlf), language);
+                    code(codes.join(parse.crlf), language, fourspace);
                 },
                 parabuild = function lexer_markdown_parabuild(blockyquote:boolean):void {
                     let x:number = a,
@@ -709,8 +716,8 @@
                     let block:RegExp,
                         block1:RegExp;
                     bc = bc + 1;
-                    block = new RegExp("^((\\s*>){1," + bc + "})");
-                    block1 = new RegExp("^((\\s*>){" + (bc + 1) + "})");
+                    block = new RegExp("^((\\s*> ?){1," + bc + "})");
+                    block1 = new RegExp("^((\\s*> ?){" + (bc + 1) + "})");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "markdown",
@@ -751,7 +758,7 @@
                             }
                         }
                         if (codetest(a) === true) {
-                            codeblock(false, true);
+                            codeblock(false, true, true);
                         } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[a]) === true) {
                             if (block.test(lines[a + 1]) === false) {
                                 parse.push(data, {
@@ -792,7 +799,7 @@
                                 }, "");
                                 break;
                             }
-                            codeblock(true, true);
+                            codeblock(true, true, false);
                         } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                             heading();
                         } else if (listtest(a) === true) {
@@ -936,7 +943,7 @@
                                     }
                                     lines[a] = lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, "");
                                     if (codetest(a) === true) {
-                                        code(lines[a], "");
+                                        code(lines[a], "", true);
                                     } else {
                                         text(lines[a], "<p>", false);
                                     }
@@ -1288,9 +1295,9 @@
             do {
                 if (codetest(a) === true) {
                     if (codetest(a + 1) === true || (lines[a + 1] === "" && codetest(a + 2) === true)) {
-                        codeblock(false, false);
+                        codeblock(false, false, true);
                     } else {
-                        code(lines[a], "");
+                        code(lines[a], "", true);
                     }
                 } else if (hrtest(a) === true) {
                     hr();
@@ -1299,7 +1306,7 @@
                 } else if ((/((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*/).test(lines[a + 1]) === true) {
                     table();
                 } else if ((/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[a]) === true) {
-                    codeblock(true, false);
+                    codeblock(true, false, false);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
                 } else if (listtest(a) === true) {
