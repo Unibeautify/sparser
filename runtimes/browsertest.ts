@@ -192,13 +192,16 @@
             }
         });
         if (location.href.indexOf("scrolldown") > 0) {
-            let el = (document.documentElement.clientHeight > document.getElementsByTagName("body")[0].clientHeight)
-                ? document.documentElement
-                : document.getElementsByTagName("body")[0];
+            const body = document.getElementsByTagName("body")[0],
+                el = (document.documentElement.clientHeight > body.clientHeight)
+                    ? document.documentElement
+                    : body;
             handler();
+            body.style.backgroundColor = "#000";
             setTimeout(function web_scrolldelay() {
                 el.scrollTop = el.scrollHeight;
-            }, 50);
+                body.style.backgroundColor = "#fff";
+            }, 200);
         }
     }
 }());

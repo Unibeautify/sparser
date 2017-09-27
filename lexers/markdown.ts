@@ -568,7 +568,7 @@
                     } while (a < b);
                     code(codes.join(parse.crlf), language);
                 },
-                parabuild = function lexer_markdown_parabuild():void {
+                parabuild = function lexer_markdown_parabuild(blockyquote:boolean):void {
                     let x:number = a,
                         tag: string = "<p>",
                         test = function lexer_markdown_text_test(index:number): boolean {
@@ -576,7 +576,7 @@
                                 return false;
                             }
                             if ((/^(\s{0,3}((=+)|(-+))\s*)$/).test(lines[index]) === true) {
-                                if (parse.structure[parse.structure.length - 1][0] === "blockquote") {
+                                if (blockyquote === true) {
                                     x = x - 1;
                                 } else if (lines[index].indexOf("=") > -1) {
                                     tag = "<h1>";
@@ -595,18 +595,24 @@
                                 return false;
                             }
                             if ((/^(\s*>)/).test(lines[index]) === true) {
-                                if (parse.structure[parse.structure.length - 1][0] === "blockquote") {
+                                if (blockyquote === true) {
                                     if ((/^(\s{0,3}(>\s*)+((=+)|(-+))\s*)$/).test(lines[index]) === true) {
                                         if (lines[index].indexOf("=") > -1) {
                                             tag = "<h1>";
                                         } else {
                                             tag = "<h2>";
                                         }
+                                        if ((/^(\s{0,3}>)/).test(lines[index]) === true && lines[index].replace(/^(\s{0,3})>/, "").replace(/\s+/, "") === "") {
+                                            return false;
+                                        }
                                         lines[index] = lines[index].replace(/^(\s*(>\s*)+\s*)/, "");
                                         return false;
                                     }
                                     if ((/^(\s*(>\s*)+(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]) === true) {
                                         list(false, true);
+                                    }
+                                    if ((/^(\s{0,3}>)/).test(lines[index]) === true && lines[index].replace(/^(\s{0,3})>/, "").replace(/\s+/, "") === "") {
+                                        return false;
                                     }
                                     lines[index] = lines[index].replace(/^(\s*(>\s*)+\s*)/, "");
                                     return true;
@@ -634,29 +640,33 @@
                             token: tag,
                             types: "start"
                         }, tag.replace("<", "").replace(">", ""));
-                        do {
-                            text(lines[a], "multiline", false);
+                        if (x === a + 1) {
+                            text(lines[a], tag, false);
+                        } else {
+                            do {
+                                text(lines[a], "multiline", false);
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    presv: false,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "<br/>",
+                                    types: "singleton"
+                                }, "");
+                                a = a + 1;
+                            } while (a < x);
+                            parse.pop(data);
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
                                 lexer: "markdown",
                                 lines: 0,
                                 presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
-                                token: "<br/>",
-                                types: "singleton"
+                                token: tag.replace("<", "</"),
+                                types: "end"
                             }, "");
-                            a = a + 1;
-                        } while (a < x);
-                        parse.pop(data);
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            lexer: "markdown",
-                            lines: 0,
-                            presv: false,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: tag.replace("<", "</"),
-                            types: "end"
-                        }, "");
+                        }
                     } else {
                         text(lines[a], tag, false);
                         if (tag !== "<p>") {
@@ -711,7 +721,7 @@
                         types: "start"
                     }, "blockquote");
                     do {
-                        if ((block1).test(lines[a]) === true) {
+                        if (block1.test(lines[a]) === true) {
                             lexer_markdown_blockquote();
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
@@ -722,6 +732,7 @@
                                 token: "</blockquote>",
                                 types: "end"
                             }, "");
+                            bc = bc - 1;
                             return;
                         }
                         if (lines[a] === "" || (listtest(a) === true && (/^\s{0,3}>/).test(lines[a]) === false)) {
@@ -732,10 +743,11 @@
                             if (lines[a].replace(/^(\s{0,3})$/, "") === "") {
                                 do {
                                     a = a + 1;
-                                } while (a < b && lines[a].replace(block, "").replace(/^(\s{0,3})$/, "") === "");
+                                } while (a < b && lines[a] !== "" && lines[a].replace(block, "").replace(/^(\s{0,3})$/, "") === "");
                                 if (a === b) {
                                     break;
                                 }
+                                lines[a] = lines[a].replace(block, "");
                             }
                         }
                         if (codetest(a) === true) {
@@ -792,7 +804,10 @@
                             if (lines[a] === "") {
                                 break;
                             }
-                            parabuild();
+                            parabuild(true);
+                            if (hrtest(a + 1) === true) {
+                                break;
+                            }
                         }
                         if (codetest(a + 1) === true) {
                             break;
@@ -990,7 +1005,7 @@
                             .replace(/\|$/, "")
                             .split("|");
                     if (line.length !== bar.length) {
-                        return parabuild();
+                        return parabuild(false);
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
@@ -1290,7 +1305,7 @@
                 } else if (listtest(a) === true) {
                     list(false, false);
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
-                    parabuild();
+                    parabuild(false);
                 }
                 a = a + 1;
             } while (a < b);
