@@ -799,6 +799,10 @@
                             };
                         do {
                             if (b[a] === "\n") {
+                                if (options.lang === "apacheVelocity" && lex[0] === "#") {
+                                    a = a - 1;
+                                    break;
+                                }
                                 parse.lineNumber = parse.lineNumber + 1;
                             }
                             if (preserve === true || (/\s/).test(b[a]) === false) {

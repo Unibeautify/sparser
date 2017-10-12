@@ -438,6 +438,9 @@
                         stack = [];
                     }
                 },
+                comtest  = function lexer_markdown_comtest(index:number):boolean {
+                    return (/^(\s{0,3}<!--)/).test(lines[index]);
+                },
                 hrtest = function lexer_markdown_hrtest(index:number):boolean {
                     return (/^(\s*((-\s*){3,}|(_\s*){3,}|(\*\s*){3,})\s*)$/).test(lines[index]);
                 },
@@ -445,7 +448,34 @@
                     return ((/^(\u0020{4,}\s*\S)/).test(lines[index]) === true || (/^(\s*\t\s*\S)/).test(lines[index]) === true);
                 },
                 listtest = function lexer_markdown_listtest(index:number):boolean {
-                    return (/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]);
+                    return (/^(\s*(\*|-|\+|(\d{1,9}(\)|\.)))\s)/).test(lines[index]);
+                },
+                comment  = function lexer_markdown_comment():void {
+                    const com:string[] = [];
+                    let comment:string = "";
+                    if (lines[a].indexOf("-->") < 0) {
+                        do {
+                            com.push(lines[a]);
+                            a = a + 1;
+                        } while (a < b && lines[a].indexOf("-->") < 0);
+                    } else {
+                        com.push(lines[a]);
+                    }
+                    comment = com.join(parse.crlf).replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                    comment = comment.slice(0, comment.indexOf("-->"));
+                    lines[a] = lines[a].slice(lines[a].indexOf("-->") + 3);
+                    if (lines[a].replace(/\s+/, "") !== "") {
+                        a = a - 1;
+                    }
+                    parse.push(data, {
+                        begin: parse.structure[parse.structure.length - 1][1],
+                        lexer: "markdown",
+                        lines: 0,
+                        presv: false,
+                        stack: parse.structure[parse.structure.length - 1][0],
+                        token: comment,
+                        types: "comment"
+                    }, "");
                 },
                 code     = function lexer_markdown_code(codetext:string, language:string, fourspace:boolean):void {
                     parse.push(data, {
@@ -728,7 +758,7 @@
                         types: "start"
                     }, "blockquote");
                     do {
-                        if (block1.test(lines[a]) === true) {
+                        if (block1.test(lines[a]) === true && bc > 0) {
                             lexer_markdown_blockquote();
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
@@ -851,7 +881,8 @@
                         } while (uu < tt);
                         return output.join("");
                     };
-                    let ind:number = ((/^(\s+)/).test(lines[a]) === true)
+                    let paraForce:boolean = false,
+                        ind:number = ((/^(\s+)/).test(lines[a]) === true)
                             ? (/^(\s+)/).exec(lines[a].replace(/^(\s+)/, tabs))[0].length
                             : 0,
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
@@ -865,12 +896,12 @@
                             types: ""
                         },
                         lasttext:string = "",
-                        space = function lexer_markdown_list_space(index:number):number {
+                        space = function lexer_markdown_list_space(index:number, emptyLine:boolean):number {
                             let xind:number = ((/^(\s+)/).test(lines[index]) === true)
                                     ? (/^(\s+)/).exec(lines[index].replace(/^(\s+)/, tabs))[0].length
                                     : 0,
                                 xsym:string = lines[index].replace(/^(\s+)/, "").charAt(0);
-                            if (xsym !== sym) {
+                            if (xsym !== sym && (emptyLine === false || (emptyLine === true && xind - ind < 2))) {
                                 return 10;
                             }
                             return xind;
@@ -879,7 +910,7 @@
                         z:number = 0,
                         order:boolean = false,
                         end:record;
-                    if ((/^(\s*(\d+|[a-zA-Z]+)\.\s)/).test(list[a]) === true) {
+                    if ((/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                         order = true;
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -903,15 +934,22 @@
                     }
 
                     do {
+                        if (comtest(a) === true) {
+                            a = a - 1;
+                            break;
+                        }
                         if (lines[a] === "") {
-                            if (codetest(a + 1) === false) {
+                            y = space(a + 1, true) - ind;
+                            if (y > 1 && lines[a + 1].replace(/\s+/, "").charAt(0) !== sym && (/^(\s{0,3}>)/).test(lines[a + 1]) === false) {
+                                paraForce = true;
+                            } else if (codetest(a + 1) === false && a < b - 1) {
                                 break;
                             }
                         } else {
                             if (blockyquote === true) {
-                                lines[a] = lines[a].replace(/^(\s*(>\s*)+\s*)/, "");
+                                lines[a] = lines[a].replace(/^(\s{0,3}(>\s*)+\s*)/, "");
                             }
-                            y = space(a) - ind;
+                            y = space(a, false) - ind;
                             if (y < -1 || y > 9 || hrtest(a) === true) {
                                 z = (lines[a + 1] === "")
                                     ? a + 2
@@ -922,7 +960,15 @@
                                 }
                             }
                             if (y > 1) {
-                                if (codetest(a) === true && listtest(a) === false) {
+                                if (blockyquote === false && (/^(\s*>)/).test(lines[a]) === true) {
+                                    parse.pop(data);
+                                    blockquote();
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "</li>";
+                                    record.types = "end";
+                                    parse.push(data, record, "");
+                                } else if (paraForce === true || (codetest(a) === true && listtest(a) === false)) {
                                     end = parse.pop(data);
                                     if (lines[a - 1] === "" && data.token[parse.count] !== "</p>") {
                                         lasttext = data.token[parse.count];
@@ -950,7 +996,7 @@
                                     parse.push(data, end, "");
                                 } else {
                                     if (recursed === true) {
-                                        text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "multiline", true);
+                                        text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", true);
                                     } else {
                                         text(lines[a], "multiline", true);
                                     }
@@ -960,15 +1006,15 @@
                                     record.types = "end";
                                     parse.push(data, record, "");
                                 }
-                            } else if (listtest(a + 1) === true && space(a + 1) - space(a) > 1) {
+                            } else if (listtest(a + 1) === true && space(a + 1, false) - space(a, false) > 1) {
                                 record.begin = parse.structure[parse.structure.length - 1][1];
                                 record.stack = parse.structure[parse.structure.length - 1][0];
                                 record.token = "<li>";
                                 record.types = "start";
                                 parse.push(data, record, "li");
-                                text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "multiline", false);
+                                text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
                             } else {
-                                text(lines[a].replace(/^(\s*(\*|-|((\d+|[a-zA-Z]+)\.))\s+)/, ""), "<li>", false);
+                                text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "<li>", false);
                             }
                         }
                         if (blockyquote === true && (/^(\s{0,3}>)/).test(lines[a + 1]) === false) {
@@ -1293,7 +1339,9 @@
             } while (a < b);
             a = 0;
             do {
-                if (codetest(a) === true) {
+                if (comtest(a) === true) {
+                    comment();
+                } else if (codetest(a) === true) {
                     if (codetest(a + 1) === true || (lines[a + 1] === "" && codetest(a + 2) === true)) {
                         codeblock(false, false, true);
                     } else {
@@ -1301,7 +1349,7 @@
                     }
                 } else if (hrtest(a) === true) {
                     hr();
-                } else if ((/^(\s*>)/).test(lines[a]) === true) {
+                } else if ((/^(\s{0,3}>)/).test(lines[a]) === true) {
                     blockquote();
                 } else if ((/((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*/).test(lines[a + 1]) === true) {
                     table();

@@ -78,3 +78,10 @@ bar
 >     19 code
 
 >    20 not code
+
+1.  21 A paragraph
+    with two lines.
+
+        indented code
+
+    > 21 A block quote.
