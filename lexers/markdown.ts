@@ -869,22 +869,8 @@
                     bc = bc - 1;
                 },
                 list     = function lexer_markdown_list(recursed:boolean, blockyquote:boolean):void {
-                    const tabs = function lexer_markdown_list(spaces:string):string {
-                        let output:string[] = spaces.split(""),
-                            uu:number = 0;
-                        const tt:number = output.length;
-                        do {
-                            if (output[uu] === "\t") {
-                                output[uu] = "    ";
-                            }
-                            uu = uu + 1;
-                        } while (uu < tt);
-                        return output.join("");
-                    };
                     let paraForce:boolean = false,
-                        ind:number = ((/^(\s+)/).test(lines[a]) === true)
-                            ? (/^(\s+)/).exec(lines[a].replace(/^(\s+)/, tabs))[0].length
-                            : 0,
+                        ind:number = 0,
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
                         record:record = {
                             begin: -1,
@@ -896,20 +882,43 @@
                             types: ""
                         },
                         lasttext:string = "",
-                        space = function lexer_markdown_list_space(index:number, emptyLine:boolean):number {
-                            let xind:number = ((/^(\s+)/).test(lines[index]) === true)
-                                    ? (/^(\s+)/).exec(lines[index].replace(/^(\s+)/, tabs))[0].length
-                                    : 0,
-                                xsym:string = lines[index].replace(/^(\s+)/, "").charAt(0);
-                            if (xsym !== sym && (emptyLine === false || (emptyLine === true && xind - ind < 2))) {
-                                return 10;
-                            }
-                            return xind;
-                        },
                         y:number = 0,
                         z:number = 0,
                         order:boolean = false,
                         end:record;
+                    const tabs = function lexer_markdown_list_tabs(spaces:string):string {
+                            let output:string[] = spaces.split(""),
+                                uu:number = 0;
+                            const tt:number = output.length;
+                            do {
+                                if (output[uu] === "\t") {
+                                    output[uu] = "    ";
+                                }
+                                uu = uu + 1;
+                            } while (uu < tt);
+                            return output.join("");
+                        },
+                        indentation:RegExp = (/^(\s*(\*|-|\+)?\s*)/),
+                        indlen = function lexer_markdown_list_indlen(index:number):number {
+                            return indentation.exec(lines[index].replace(indentation, tabs))[0].length;
+                        },
+                        space = function lexer_markdown_list_space(index:number, emptyLine:boolean):number {
+                            let xind:number = indlen(index),
+                                xsym:string = (lines[index] === undefined)
+                                    ? ""
+                                    : lines[index].replace(/^(\s+)/, "").charAt(0);
+                            if (order === false && "*-+".indexOf(xsym) > -1 && xsym !== sym && (/\s/).test(lines[index].replace(/^(\s+)/, "").charAt(1)) === true) {
+                                return -1;
+                            }
+                            if (xind - ind < 0) {
+                                return xind;
+                            }
+                            if (xsym !== sym && (emptyLine === false || (emptyLine === true && xind - ind < 2))) {
+                                return 10;
+                            }
+                            return xind;
+                        };
+                    ind = indlen(a);
                     if ((/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                         order = true;
                         parse.push(data, {
@@ -940,7 +949,10 @@
                         }
                         if (lines[a] === "") {
                             y = space(a + 1, true) - ind;
-                            if (y > 1 && lines[a + 1].replace(/\s+/, "").charAt(0) !== sym && (/^(\s{0,3}>)/).test(lines[a + 1]) === false) {
+                            if (y < 0) {
+                                break;
+                            }
+                            if (y > 1 && a < b - 1 && lines[a + 1].replace(/\s+/, "").charAt(0) !== sym && (/^(\s{0,3}>)/).test(lines[a + 1]) === false) {
                                 paraForce = true;
                             } else if (codetest(a + 1) === false && a < b - 1) {
                                 break;

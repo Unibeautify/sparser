@@ -3,7 +3,7 @@
    - 1 bar
      - 1 baz
 
-<!-- commentasdf --->
+<!-- 1 comment --->
 
 1.  2 A paragraph
     with two lines.
@@ -15,3 +15,11 @@
 - 3 one
 
   3 two
+
+ -    4 one
+
+      4 two
+
+ -    5 one
+
+     5 two
