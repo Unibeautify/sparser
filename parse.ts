@@ -576,7 +576,7 @@ Parse Framework
                 } while (a < c - 1);
             }());
             
-            if ((parse.options.lexerOptions[options.lexer] !== undefined && parse.options.lexerOptions[options.lexer].objectSort === true) || parse.options.lexerOptions.markup.tagSort === true) {
+            if ((parse.options.lexerOptions[options.lexer] !== undefined && parse.options.lexerOptions[options.lexer].objectSort === true) || (parse.options.lexerOptions.markup !== undefined && parse.options.lexerOptions.markup.tagSort === true)) {
                 let a:number = 0;
                 const data:data    = parse.data,
                     b:number         = data.begin.length,

@@ -862,6 +862,9 @@
                         },
                         indentation:RegExp = (/^(\s*(\*|-|\+)?\s*)/),
                         indlen = function lexer_markdown_list_indlen(index:number):number {
+                            if (lines[index] === undefined) {
+                                return 0;
+                            }
                             return indentation.exec(lines[index].replace(indentation, tabs))[0].length;
                         },
                         space = function lexer_markdown_list_space(index:number, emptyLine:boolean):number {
@@ -869,6 +872,9 @@
                                 xsym:string = (lines[index] === undefined)
                                     ? ""
                                     : lines[index].replace(/^(\s+)/, "").charAt(0);
+                            if (lines[index] === undefined) {
+                                return 0;
+                            }
                             if (order === false && "*-+".indexOf(xsym) > -1 && xsym !== sym && (/\s/).test(lines[index].replace(/^(\s+)/, "").charAt(1)) === true) {
                                 return -1;
                             }
@@ -962,6 +968,16 @@
                                     lines[a] = lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, "");
                                     if (codetest(a) === true) {
                                         code(lines[a], "", true);
+                                    } else if (data.token[parse.count] === "</p>") {
+                                        parse.pop(data);
+                                        parse.structure.push(["p", data.begin[parse.count]]);
+                                        record.token = "<br/>";
+                                        record.types = "singleton";
+                                        parse.push(data, record, "");
+                                        text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
+                                        record.token = "</p>";
+                                        record.types = "end";
+                                        parse.push(data, record, "");
                                     } else if (data.types[parse.count] === "content") {
                                         a = a - 1;
                                         parse.pop(data);
