@@ -26,14 +26,21 @@
 
   4 two
 
- -    5 one
+1. 5 one
+   5 two
 
-      5 two
+<!-- 3 comment -->
 
  -    6 one
 
-     6 two
+      6 two
 
-   > > *  7 one
+<!-- 4 comment -->
+
+ -    7 one
+
+     7 two
+
+   > > *  8 one
 >>
->>    7 two
+>>    8 two
