@@ -364,7 +364,7 @@
                                 stray = "~";
                             }
                             if (data.types[parse.count] === "start") {
-                                content = stray + content;
+                                content = item;
                             } else {
                                 data.token[parse.count] = data.token[parse.count] + stray;
                             }
@@ -452,7 +452,17 @@
                     return (/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[index]);
                 },
                 listtest = function lexer_markdown_listtest(index:number):boolean {
-                    return (/^(\s*(\*|-|\+|(\d{1,9}(\)|\.)))\s)/).test(lines[index]);
+                    const listy:RegExp = (/^(\s*(\*|-|\+|(\d{1,9}(\)|\.))))/);
+                    if (listy.test(lines[index]) === true) {
+                        const listr = lines[index].replace(listy, "");
+                        if (listr === "") {
+                            lines[index] = lines[index] + " ";
+                        } else if ((/\s/).test(listr.charAt(0)) === false) {
+                            return false;
+                        }
+                        return true;
+                    }
+                    return false;
                 },
                 comment  = function lexer_markdown_comment():void {
                     const com:string[] = [];
@@ -613,8 +623,8 @@
                 },
                 parabuild = function lexer_markdown_parabuild():void {
                     let x:number = a,
-                        tag: string = "<p>",
-                        test = function lexer_markdown_text_test(index:number): boolean {
+                        tag: string = "<p>";
+                    const test = function lexer_markdown_parabuild_test(index:number): boolean {
                             if (lines[index] === undefined) {
                                 return false;
                             }
@@ -641,10 +651,63 @@
                             if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
                                 return false;
                             }
-                            if ((/^(\s{0,3}(\*|-|((\d+|[a-zA-Z]+)\.))\s)/).test(lines[index]) === true) {
-                                return false;
-                            }
                             return true;
+                        },
+                        fixquote = function lexer_markdown_parabuild_fixquote() {
+                            let key:string = "",
+                                x:number = parse.count;
+                            if (quote === "*") {
+                                key = "<em>";
+                            } else if (quote === "**") {
+                                key = "<strong>";
+                            } else if (quote === "~") {
+                                key = "<strike>";
+                            }
+                            parse.structure.pop();
+                            if (data.token[x] !== key) {
+                                do {
+                                    data.begin[x] = parse.structure[parse.structure.length - 1][1];
+                                    data.stack[x] = parse.structure[parse.structure.length - 1][0];
+                                    x = x - 1;
+                                } while (x > 0 && data.token[x] !== key);
+                            }
+                            if (data.types[x + 1] === "content") {
+                                data.token[x + 1] = quote + " " + data.token[x + 1];
+                                parse.splice({
+                                    data: data,
+                                    howmany: 1,
+                                    index: x,
+                                    record: {
+                                        begin: 0,
+                                        lexer: "",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: "",
+                                        token: "",
+                                        types: ""
+                                    }
+                                });
+                            } else if (data.types[x - 1] === "content") {
+                                data.token[x - 1] = data.token[x - 1] + quote;
+                                parse.splice({
+                                    data: data,
+                                    howmany: 1,
+                                    index: x,
+                                    record: {
+                                        begin: 0,
+                                        lexer: "",
+                                        lines: 0,
+                                        presv: false,
+                                        stack: "",
+                                        token: "",
+                                        types: ""
+                                    }
+                                });
+                            } else {
+                                data.token[x] = quote;
+                                data.types[x] = "content";
+                            }
+                            quote = "";
                         };
                     if (test(a + 1) === true) {
                         do {
@@ -676,6 +739,9 @@
                                 a = a + 1;
                             } while (a < x);
                             parse.pop(data);
+                            if (quote !== "") {
+                                fixquote();
+                            }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
                                 lexer: "markdown",
@@ -939,7 +1005,18 @@
 
                     do {
                         paraForce = false;
+                        // lists do not contain comments
                         if (comtest(a) === true) {
+                            a = a - 1;
+                            break;
+                        }
+                        // an ordered list may not have unordered list items
+                        if (order === true && (/^(\s{0,3}(\*|-|\+)\s)/).test(lines[a]) === true) {
+                            a = a - 1;
+                            break;
+                        }
+                        // an unordered list may not have ordered list items
+                        if (order === false && (/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                             a = a - 1;
                             break;
                         }
@@ -964,11 +1041,28 @@
                                     break;
                                 }
                             }
-                            if (y < 1 && listtest(a) === false) {
+                            if (data.token[parse.count - 1] === "<li>") {
+                                paraForce = false;
+                                if (lines[a - 1] === "") {
+                                    a = a - 1;
+                                    break;
+                                }
+                            } else if (y < 1 && listtest(a) === false) {
                                 paraForce = true;
                                 y = 2;
                             }
-                            if (y > 1) {
+                            if ((/^(\s*(\*|-|\+|(\d{1,9}(\)|\.)))\s*)$/).test(lines[a]) === true && lines[a + 1] === "") {
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "<li>";
+                                record.types = "start";
+                                parse.push(data, record, "li");
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
+                            } else if (y > 1) {
                                 if ((/^(\s*>)/).test(lines[a]) === true) {
                                     end = parse.pop(data);
                                     record.begin = end.begin;
@@ -1430,7 +1524,7 @@
                     codeblock(true, false, false);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
-                } else if (listtest(a) === true) {
+                } else if (listtest(a) === true && (a === 0 || lines[a - 1] === "")) {
                     list(false);
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     parabuild();

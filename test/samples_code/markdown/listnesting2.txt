@@ -53,3 +53,43 @@
   ```
 -
       10 baz
+
+<!-- comment 1 -->
+
+1. 11 aaa
+* 11 bbb
+
+<!-- comment 2 -->
+
+* 12 aaa
+1. 12 bbb
+
+<!-- comment 3 -->
+
+- 
+
+  13 space on the above list line
+
+<!-- comment 4 -->
+
+-
+
+  14 no space on the above list line
+
+15 foo
+*
+
+16 foo
+* 16 asdf
+
+17 foo
+17 asdf *
+
+18 foo
+*18 asdf
+
+19 foo
+19 asdf*
+
+20 foo
+1.
