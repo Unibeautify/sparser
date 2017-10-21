@@ -1020,7 +1020,46 @@
                             a = a - 1;
                             break;
                         }
-                        if (lines[a] === "") {
+                        numb = lines[a];
+                        lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
+                        if (listtest(a) === true) {
+                            parse.structure.push(["ul", parse.count - 3]);
+                            list(true);
+                            record.begin = parse.structure[parse.structure.length - 1][1];
+                            record.stack = parse.structure[parse.structure.length - 1][0];
+                            record.token = "<li>";
+                            record.types = "start";
+                            y = parse.count - 1;
+                            do {
+                                data.begin[y] = data.begin[y] - 1;
+                                y = y - 1;
+                            } while (y > 0 && data.token[y + 1] !== "<li>");
+                            parse.splice({
+                                data: data,
+                                howmany: 0,
+                                index: y,
+                                record: record
+                            });
+                            y = y + 1;
+                            do {
+                                if (data.types[y] === "start") {
+                                    data.begin[y] = y - 1;
+                                    data.stack[y] = data.token[y - 1].replace("<", "").replace(">", "");
+                                    z = y;
+                                } else {
+                                    data.begin[y] = z;
+                                    if (data.types[y] === "end") {
+                                        z = z - 1;
+                                    }
+                                }
+                                y = y + 1;
+                            } while (y < parse.count + 1);
+                            record.begin = z;
+                            record.stack = "li";
+                            record.token = "</li>";
+                            record.types = "end";
+                            parse.push(data, record, "");
+                        } else if (lines[a] === "") {
                             y = space(a + 1, true) - ind;
                             if (y < 0) {
                                 break;
@@ -1031,6 +1070,7 @@
                                 break;
                             }
                         } else {
+                            lines[a] = numb;
                             y = space(a, false) - ind;
                             if (y < -1 || y > 9 || hrtest(a) === true) {
                                 z = (lines[a + 1] === "")
@@ -1174,7 +1214,8 @@
                                 parse.push(data, record, "li");
                                 text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
                             } else {
-                                text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "<li>", false);
+                                lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
+                                text(lines[a], "<li>", false);
                             }
                         }
                         a = a + 1;
