@@ -44,3 +44,7 @@
    > > *  8 one
 >>
 >>    8 two
+
+- 9foo
+- 9bar
++ 9baz

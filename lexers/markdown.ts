@@ -1108,8 +1108,10 @@
                                 record.token = "</li>";
                                 record.types = "end";
                                 parse.push(data, record, "");
-                            } else if (y < -1 && a < b - 1) {
-                                a = a - 1;
+                            } else if (y < -1) {
+                                //different list type
+                                lines.splice(a, 0, "");
+                                b = b + 1;
                                 break;
                             } else if (y > 1) {
                                 if ((/^(\s*>)/).test(lines[a]) === true) {
