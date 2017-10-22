@@ -381,7 +381,7 @@
                             }, "");
                         }
                         if (listrecurse === true) {
-                            list(true);
+                            list();
                         }
                         if (tag !== "multiline") {
                             parse.push(data, {
@@ -413,7 +413,7 @@
                         }, struct);
                     }
                     if (listrecurse === true) {
-                        list(true);
+                        list();
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -877,7 +877,7 @@
                         } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                             heading();
                         } else if (listtest(a) === true) {
-                            list(false);
+                            list();
                         } else if (a > x && (/^(\s{0,3}((-{3,})|(={3,}))\s*)$/).test(lines[a + 1]) === true) {
                             text(lines[a], "<p>", false);
                         } else if (lines[a].replace(/\s+/, "") !== "") {
@@ -904,7 +904,7 @@
                         } while (bc2 > 0);
                     }
                 },
-                list     = function lexer_markdown_list(recursed:boolean):void {
+                list     = function lexer_markdown_list():void {
                     let paraForce:boolean = false,
                         ind:number = 0,
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
@@ -935,6 +935,9 @@
                             } while (uu < tt);
                             return output.join("");
                         },
+                        checktest = function lexer_markdown_list_checktest() {
+                            return ((/^(\s*(\*|-|\+)?\s{0,3}\[( |x)\]\s*)$/).test(lines[a]) === true || (/^(\s*(\*|-|\+)?\s{0,3}\[( |x)\]\s+\S)/).test(lines[a]) === true);
+                        },
                         indentation:RegExp = (/^(\s*(\*|-|\+)?\s*)/),
                         indlen = function lexer_markdown_list_indlen(index:number):number {
                             if (lines[index] === undefined) {
@@ -954,7 +957,7 @@
                                 xind = (/^(\s*(\d+(\)|\.)))?\s*/).exec(lines[index])[0].length;
                                 xsym = lines[index].replace(/^(\s*\d+)/, "").charAt(0);
                             }
-                            if (order === false && "*-+".indexOf(xsym) > -1 && xsym !== sym && (/\s/).test(lines[index].replace(/^(\s+)/, "").charAt(1)) === true) {
+                            if (order === false && "*-+".indexOf(xsym) > -1 && xsym !== sym && xind - ind < 2 && (/\s/).test(lines[index].replace(/^(\s+)/, "").charAt(1)) === true) {
                                 return -1;
                             }
                             if (xind - ind < 0) {
@@ -1022,9 +1025,12 @@
                         }
                         numb = lines[a];
                         lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
+                        //recursive list item: - - foo
+                        //console.log((space(a + 1, true) - ind)+" "+lines[a]);
+                        
                         if (listtest(a) === true) {
                             parse.structure.push(["ul", parse.count - 3]);
-                            list(true);
+                            list();
                             record.begin = parse.structure[parse.structure.length - 1][1];
                             record.stack = parse.structure[parse.structure.length - 1][0];
                             record.token = "<li>";
@@ -1102,8 +1108,12 @@
                                 record.token = "</li>";
                                 record.types = "end";
                                 parse.push(data, record, "");
+                            } else if (y < -1 && a < b - 1) {
+                                a = a - 1;
+                                break;
                             } else if (y > 1) {
                                 if ((/^(\s*>)/).test(lines[a]) === true) {
+                                    //blockquote in list item
                                     end = parse.pop(data);
                                     record.begin = end.begin;
                                     record.stack = end.stack;
@@ -1115,6 +1125,7 @@
                                     record.types = "end";
                                     parse.push(data, record, "");
                                 } else if (listtest(a) === true && (/^(\u0020{4,}\s*\S)/).test(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}(\)|\.)))\s)/, "").replace(/^\t/, "    ")) === true) {
+                                    //code line in list item
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "<li>";
@@ -1182,11 +1193,12 @@
                                     }
                                     parse.push(data, end, "");
                                 } else if (listtest(a) === true) {
-                                    if (recursed === true) {
-                                        text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", true);
-                                    } else {
-                                        text(lines[a], "multiline", true);
-                                    }
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "<li>";
+                                    record.types = "start";
+                                    parse.push(data, record, "li");
+                                    list();
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "</li>";
@@ -1206,13 +1218,81 @@
                                 record.token = "</li>";
                                 record.types = "end";
                                 parse.push(data, record, "");
-                            } else if (listtest(a + 1) === true && space(a + 1, false) - space(a, false) > 1) {
+                            } else if (checktest() === true || (listtest(a + 1) === true && space(a + 1, false) - space(a, false) > 1)) {
                                 record.begin = parse.structure[parse.structure.length - 1][1];
                                 record.stack = parse.structure[parse.structure.length - 1][0];
                                 record.token = "<li>";
                                 record.types = "start";
                                 parse.push(data, record, "li");
-                                text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
+                                if (checktest() === true) {
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "class=\"task-list-item\"";
+                                    record.types = "attribute";
+                                    parse.push(data, record, "");
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "input";
+                                    record.types = "singleton";
+                                    parse.push(data, record, "");
+                                    y = parse.count;
+                                    record.begin = y;
+                                    record.stack = "input";
+                                    record.token = "class=\"task-list-item-checkbox\"";
+                                    record.types = "attribute";
+                                    parse.push(data, record, "");
+                                    record.begin = y;
+                                    record.stack = "input";
+                                    record.token = "disabled=\"disabled\"";
+                                    record.types = "attribute";
+                                    parse.push(data, record, "");
+                                    y = lines[a].indexOf("[x]");
+                                    z = lines[a].indexOf("[ ]");
+                                    if (data.types[parse.structure[parse.structure.length - 2][1] + 1] !== "attribute") {
+                                        parse.splice({
+                                            data: data,
+                                            howmany: 0,
+                                            index: parse.structure[parse.structure.length - 2][1] + 1,
+                                            record: {
+                                                begin: parse.structure[parse.structure.length - 2][1],
+                                                lexer: "markdown",
+                                                lines: 0,
+                                                presv: false,
+                                                stack: parse.structure[parse.structure.length - 2][0],
+                                                token: "class=\"contains-task-list\"",
+                                                types: "attribute"
+                                            }
+                                        });
+                                    }
+                                    if (y > -1 && z > -1) {
+                                        if (y < z) {
+                                            lines[a] = lines[a].replace(/\[x\]\s*/, "");
+                                            record.begin = data.begin[parse.count - 1];
+                                            record.stack = "input";
+                                            record.token = "checked=\"checked\"";
+                                            record.types = "attribute";
+                                            parse.push(data, record, "");
+                                        } else {
+                                            lines[a] = lines[a].replace(/\[ \]\s*/, "");
+                                        }
+                                    } else if (y > -1) {
+                                        lines[a] = lines[a].replace(/\[x\]\s*/, "");
+                                        record.begin = data.begin[parse.count - 1];
+                                        record.stack = "input";
+                                        record.token = "checked=\"checked\"";
+                                        record.types = "attribute";
+                                        parse.push(data, record, "");
+                                    } else {
+                                        lines[a] = lines[a].replace(/\[ \]\s*/, "");
+                                    }
+                                }
+                                lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
+                                text(lines[a], "multiline", false);
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
                             } else {
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "<li>", false);
@@ -1566,7 +1646,7 @@
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
                 } else if (listtest(a) === true && (a === 0 || lines[a - 1] === "")) {
-                    list(false);
+                    list();
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     parabuild();
                 }

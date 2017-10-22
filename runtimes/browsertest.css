@@ -15,7 +15,7 @@ td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;paddin
 
 li span{color:#070;font-weight:bold}
 #errors span{color: #c00}
-tr[class="header"] th{background:#ddd;text-align:left}
+tr[class="header"] th{background:#ccc;color:#000;text-align:left}
 tr[class="markdown"] td,
 tr[class="markdown"] th{border-color: #000;color:#333}
 tr[class="markdown odd"]{background: #e8e8e8}
