@@ -25,6 +25,9 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     if (langname === "tss") {
                         return ["tss", "script", "Titanium Stylesheets"];
                     }
+                    if (langname === "markdown") {
+                        return ["markdown", "markdown", "Markdown"];
+                    }
                     return [langname, language.setlangmode(langname), language.nameproper(langname)];
                 },
                 cssA        = function language_auto_cssA(): [string, string, string] {
@@ -213,6 +216,9 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                 };
             if (sample === null) {
                 return;
+            }
+            if ((/\n#+\s+\w/).test(sample) === true && (/\s\*{1,2}\w+(\s+\w+)*\*{1,2}\s/).test(sample) === true) {
+                return output("markdown");
             }
             if ((/^(\s*<\!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");

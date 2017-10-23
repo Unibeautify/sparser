@@ -3,19 +3,20 @@
 /*eslint no-console: 0*/
 // The order array determines which tests run in which order (from last to first
 // index)
-module.exports = (function taskrunner() {
+function taskrunner() {
     "use strict";
     let next       = function taskrunner_nextInit() {
             return;
         },
         parse:parse,
         parse_options:options = {
-            correct: false,
-            crlf: false,
-            lang: "javascript",
-            lexer: "script",
-            lexerOptions: {},
-            source: ""
+            correct        : false,
+            crlf           : false,
+            lang           : "javascript",
+            lexer          : "script",
+            lexerOptions   : {},
+            outputFormat   : "arrays",
+            source         : ""
         },
         framework:parseFramework;
     const order      = [
@@ -180,8 +181,11 @@ module.exports = (function taskrunner() {
         errout     = function taskrunner_errout(errtext):void {
             console.log("");
             console.error(errtext);
+            console.log("");
             humantime(true);
-            process.exit(1);
+            if (process.argv[1].indexOf("validate.js") > -1) {
+                process.exit(1);
+            }
         },
         phases     = {
             codeunits: function taskrunner_coreunits():void {
@@ -191,10 +195,12 @@ module.exports = (function taskrunner() {
                     },
                     count  = {
                         code  : 0,
+                        lexer : 0,
                         parsed: 0
                     },
                     total  = {
                         code  : 0,
+                        lexer : 0,
                         parsed: 0
                     },
                     lexers:string[] = Object.keys(framework.lexer),
@@ -205,7 +211,7 @@ module.exports = (function taskrunner() {
                             lang      = [],
                             a:number         = 0,
                             str:string       = "",
-                            output:data,
+                            outputArrays: data,
                             filecount:number = 0,
                             currentlex:string = "";
                         const lexer     = function taskrunner_coreunits_compare_lexer():void {
@@ -258,6 +264,9 @@ module.exports = (function taskrunner() {
                                 // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
                                 // of diff_options.context (not parallel) 6 - total count of differences
                                 do {
+                                    if (report[0][aa] === undefined) {
+                                        errout("report[0][aa] is undefined, aa = " + aa);
+                                    }
                                     if (report[0][aa].indexOf("\u001b[36m") === 0) {
                                         console.log("\u001b[36m" + sampleName + "\u001b[39m");
                                     }
@@ -339,10 +348,10 @@ module.exports = (function taskrunner() {
                                         parse_options.lang = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
-                                    lang           = framework.language.auto(files.code[a][1], "javascript");
-                                    parse_options.lexer  = lang[1];
-                                    output         = framework.parser(parse_options);
-                                    str            = JSON.stringify(output);
+                                    lang                 = framework.language.auto(files.code[a][1], "javascript");
+                                    parse_options.lexer  = currentlex;
+                                    outputArrays         = framework.parserArrays(parse_options);
+                                    str                  = JSON.stringify(outputArrays);
                                     if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
@@ -354,14 +363,16 @@ module.exports = (function taskrunner() {
                                                 return next();
                                             }
                                         } else {
-                                            diffFiles(files.parsed[a][0], output, JSON.parse(files.parsed[a][1]));
+                                            diffFiles(files.parsed[a][0], outputArrays, JSON.parse(files.parsed[a][1]));
                                         }
                                     } else {
                                         console.log("");
                                         console.log("Quitting due to error:");
                                         console.log(files.code[a][0]);
                                         console.log(framework.parseerror);
-                                        process.exit(1);
+                                        if (process.argv[1].indexOf("validate.js") > -1) {
+                                            process.exit(1);
+                                        }
                                     }
                                 }
                             } else {
@@ -390,9 +401,22 @@ module.exports = (function taskrunner() {
                         console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                         return next();
                     },
-                    readDir = function taskrunner_coreunits_readDir(type:string, lexer:string, final_lexer:boolean):void {
+                    readDir = function taskrunner_coreunits_readDir(type:string, lexer:string):void {
                         const dirpath:string = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
+                            if (err !== null) {
+                                if (err.toString().indexOf("no such file or directory") > 0) {
+                                    return errout("The directory " + dirpath + " \u001b[31mdoesn't exist\u001b[39m. Provide the necessary test samples for \u001b[36m" + lexer + "\u001b[39m.");
+                                }
+                                console.log("Error reading from directory " + dirpath);
+                                return errout(err);
+                            }
+                            if (list === undefined) {
+                                if (total[type] === 0) {
+                                    return errout("No files of type " + type + " for lexer " + lexer + ".");
+                                }
+                                return errout("undefined returned when reading files from " + dirpath);
+                            }
                             const pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
                                     dirpath + val,
@@ -404,7 +428,7 @@ module.exports = (function taskrunner() {
                                         } else {
                                             files[type].push([lexer + node.path.sep + val, fileData]);
                                         }
-                                        if (final_lexer === true && count.code === total.code && count.parsed === total.parsed) {
+                                        if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
                                             compare();
                                         }
                                     }
@@ -414,18 +438,19 @@ module.exports = (function taskrunner() {
                             if (err !== null) {
                                 errout("Error reading from directory: " + dirpath);
                             }
-                            list.forEach(pusher);
+                            if (list.length === 0 && count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
+                                compare();
+                            } else {
+                                list.forEach(pusher);
+                            }
                         });
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
+                total.lexer = lexers.length;
                 lexers.forEach(function taskrunner_coreunits_lexers(value:string, index:number, array:string[]) {
-                    if (index === array.length - 1) {
-                        readDir("code", value, true);
-                        readDir("parsed", value, true);
-                    } else {
-                        readDir("code", value, false);
-                        readDir("parsed", value, false);
-                    }
+                    count.lexer = count.lexer + 1;
+                    readDir("code", value);
+                    readDir("parsed", value);
                 });
             },
             framework: function taskrunner_framework() {
@@ -433,13 +458,15 @@ module.exports = (function taskrunner() {
                     keysort = "";
                 const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
-                framework.parser({
-                    correct: false,
-                    crlf: false,
-                    lang  : "html",
-                    lexer : "markup",
-                    lexerOptions: {},
-                    source: ""
+                console.log("");
+                framework.parserArrays({
+                    correct        : false,
+                    crlf           : false,
+                    lang           : "html",
+                    lexer          : "markup",
+                    lexerOptions   : {},
+                    outputFormat   : "arrays",
+                    source         : ""
                 });
                 keys = Object.keys(parse);
                 keysort = parse.safeSort(keys, "ascend", false).join();
@@ -466,7 +493,7 @@ module.exports = (function taskrunner() {
                 console.log(humantime(false) + "\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[39m");
                 
                 if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
-                    return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', or 'types'.\u001b[39m ");
+                    return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[39m ");
                 }
                 console.log(humantime(false) + "\u001b[32mparse.datanames contains only the data field names.\u001b[39m");
                 
@@ -562,7 +589,7 @@ module.exports = (function taskrunner() {
                                             return;
                                         }
                                         filesCount = filesCount + 1;
-                                        console.log("\u001b[32mLint passed:\u001b[39m " + val);
+                                        console.log(humantime(false) + "\u001b[32mLint passed:\u001b[39m " + val);
                                         if (filesCount === filesTotal) {
                                             console.log("\u001b[32mLint complete!\u001b[39m");
                                             next();
@@ -578,6 +605,7 @@ module.exports = (function taskrunner() {
                         files.forEach(lintit);
                     };
                 console.log("\u001b[36mBeautifying and Linting\u001b[39m");
+                console.log("");
                 (function taskrunner_lint_getFiles():void {
                     let total:number    = 1,
                         count:number    = 0;
@@ -636,6 +664,7 @@ module.exports = (function taskrunner() {
             },
             typescript: function taskrunner_typescript():void {
                 console.log("\u001b[36mTypeScript Compilation\u001b[39m");
+                console.log("");
                 node.child("tsc", function taskrunner_typescript_callback(err, stdout, stderr):void {
                     if (err !== null) {
                         errout(err);
@@ -650,7 +679,7 @@ module.exports = (function taskrunner() {
                         errout(stdout);
                         return;
                     }
-                    console.log("\u001b[32mTypeScript build completed without warnings.\u001b[39m");
+                    console.log(humantime(false) + "\u001b[32mTypeScript build completed without warnings.\u001b[39m");
                     return next();
                 });
             }
@@ -666,7 +695,11 @@ module.exports = (function taskrunner() {
     node.fs.readdir(relative + node.path.sep + "js" + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
         if (err !== null) {
             console.log(err);
-            process.exit(1);
+            if (process.argv[1].indexOf("validate.js") > -1) {
+                process.exit(1);
+            } else {
+                return;
+            }
         } else {
             files.forEach(function taskrunner_lexers_each(value) {
                 if ((/(\.js)$/).test(value) === true) {
@@ -683,14 +716,16 @@ module.exports = (function taskrunner() {
                 console.log("");
                 console.log("All tasks complete... Exiting clean!");
                 humantime(true);
-                process.exit(0);
+                if (process.argv[1].indexOf("validate.js") > -1) {
+                    process.exit(0);
+                }
             };
-        if (order.length < 1) {
-            return complete();
-        }
         if (order.length < orderlen) {
             console.log("________________________________________________________________________");
             console.log("");
+        }
+        if (order.length < 1) {
+            return complete();
         }
         order.splice(0, 1);
         phases[phase]();
@@ -698,4 +733,8 @@ module.exports = (function taskrunner() {
     console.log("");
     next();
     return "";
-}());
+};
+module.exports = taskrunner;
+if (process.argv[1].indexOf("validate.js") > -1) {
+    taskrunner();
+}

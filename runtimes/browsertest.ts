@@ -7,15 +7,17 @@
     const framework:parseFramework = global.parseFramework,
         input   = document.getElementsByTagName("textarea")[0],
         options:options = {
-            correct     : false,
-            crlf        : false,
-            lang        : "",
-            lexer       : "script",
-            lexerOptions: {},
-            source      : ""
+            correct        : false,
+            crlf           : false,
+            lang           : "",
+            lexer          : "script",
+            lexerOptions   : {},
+            outputFormat   : "arrays",
+            source         : ""
         },
         handler = function web_handler():void {
-            let output:data,
+            let outputArrays:data,
+                outputObjects:record[],
                 startTime:number = 0;
             const value:string = input.value,
                 checkboxes:[HTMLInputElement, HTMLInputElement] = [
@@ -24,10 +26,10 @@
                 ],
                 startTotal:number = Math.round(performance.now() * 1000),
                 lang:[string, string, string]   = framework.language.auto(value, "javascript"),
-                builder = function web_handler_builder(data:data):void {
+                builder = function web_handler_builder():void {
                     let a:number         = 0,
                         body      = document.createElement("thead");
-                    const len:number       = data.token.length,
+                    const len:number       = global.parseFramework.parse.count + 1,
                         table     = document.createElement("table"),
                         cell      = function web_handler_builder_cell(text:string, type:string, row, className:string):void {
                             const el = document.createElement(type);
@@ -40,17 +42,32 @@
                         row       = function web_handler_builder_row():void {
                             const tr = document.createElement("tr");
                             cell(a.toString(), "th", tr, "numb");
-                            cell(data.begin[a].toString(), "td", tr, "numb");
-                            cell(data.lexer[a], "td", tr, "");
-                            cell(data.lines[a].toString(), "td", tr, "numb");
-                            cell(data.presv[a].toString(), "td", tr, "");
-                            cell(data.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
-                            cell(data.types[a], "td", tr, "");
-                            cell(data.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
-                            if (a % 2 === 0) {
-                                tr.setAttribute("class", data.lexer[a] + " even");
+                            if (options.outputFormat === "objects") {
+                                cell(outputObjects[a].begin.toString(), "td", tr, "numb");
+                                cell(outputObjects[a].lexer, "td", tr, "");
+                                cell(outputObjects[a].lines.toString(), "td", tr, "numb");
+                                cell(outputObjects[a].presv.toString(), "td", tr, "");
+                                cell(outputObjects[a].stack.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                cell(outputObjects[a].types, "td", tr, "");
+                                cell(outputObjects[a].token.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                if (a % 2 === 0) {
+                                    tr.setAttribute("class", outputObjects[a].lexer + " even");
+                                } else {
+                                    tr.setAttribute("class", outputObjects[a].lexer + " odd");
+                                }
                             } else {
-                                tr.setAttribute("class", data.lexer[a] + " odd");
+                                cell(outputArrays.begin[a].toString(), "td", tr, "numb");
+                                cell(outputArrays.lexer[a], "td", tr, "");
+                                cell(outputArrays.lines[a].toString(), "td", tr, "numb");
+                                cell(outputArrays.presv[a].toString(), "td", tr, "");
+                                cell(outputArrays.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                cell(outputArrays.types[a], "td", tr, "");
+                                cell(outputArrays.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                if (a % 2 === 0) {
+                                    tr.setAttribute("class", outputArrays.lexer[a] + " even");
+                                } else {
+                                    tr.setAttribute("class", outputArrays.lexer[a] + " odd");
+                                }
                             }
                             body.appendChild(tr);
                         },
@@ -67,6 +84,11 @@
                             tr.setAttribute("class", "header");
                             parent.appendChild(tr);
                         };
+                    
+                    if (framework.lexer[options.lexer] === undefined) {
+                        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        return;
+                    }
                     header(body);
                     table.appendChild(body);
                     body = document.createElement("tbody");
@@ -102,13 +124,17 @@
             }
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
-            output = framework.parser(options);
+            if (options.outputFormat === "arrays") {
+                outputArrays = framework.parserArrays(options);
+            } else {
+                outputObjects = framework.parserObjects(options);
+            }
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
                 document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            builder(output);
+            builder();
             (function web_handler_perfTotal():void {
                 const endTime:number = Math.round(performance.now() * 1000),
                     time:number = (endTime - startTotal) / 1000;
@@ -136,5 +162,46 @@
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {
         input.value = localStorage.parseCode;
+    }
+    if (location.href.indexOf("//localhost:") > 0) {
+        let port:number = (function port():number {
+            const uri = location.href;
+            let str:string = uri.slice(location.href.indexOf("host:") + 5),
+                ind:number = str.indexOf("/");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = str.indexOf("?");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = str.indexOf("#");
+            if (ind > 0) {
+                str = str.slice(0, ind);
+            }
+            ind = Number(str);
+            if (isNaN(ind) === true) {
+                return 8080;
+            }
+            return ind;
+        }()),
+        ws = new WebSocket("ws://localhost:" + (port + 1));
+        ws.addEventListener("message", function web_sockets(event) {
+            if (event.data === "reload") {
+                location.reload();
+            }
+        });
+        if (location.href.indexOf("scrolldown") > 0) {
+            const body = document.getElementsByTagName("body")[0],
+                el = (document.documentElement.clientHeight > body.clientHeight)
+                    ? document.documentElement
+                    : body;
+            handler();
+            body.style.backgroundColor = "#000";
+            setTimeout(function web_scrolldelay() {
+                el.scrollTop = el.scrollHeight;
+                body.style.backgroundColor = "#fff";
+            }, 200);
+        }
     }
 }());

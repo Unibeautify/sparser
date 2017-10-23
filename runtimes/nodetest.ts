@@ -13,7 +13,9 @@
     let duration:string,
         lang: [string, string, string],
         startTime: [number, number],
-        framework: parseFramework;
+        framework: parseFramework,
+        outputArrays:data,
+        outputObjects:record[];
     const node      = {
             fs  : require("fs"),
             path: require("path")
@@ -35,9 +37,10 @@
             correct: false,
             crlf: false,
             lang: "",
-            lexer     : "script",
+            lexer: "script",
             lexerOptions: {},
-            source    : ""
+            outputFormat: "arrays",
+            source: ""
         },
         timespan  = function nodetest_timespan():string {
             const dec = function nodetest_timespan_dec(time: [number, number]): number {
@@ -52,10 +55,12 @@
         source:string    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
             ? process.argv[2] + process.argv[3]
             : process.argv[2],
-        display   = function nodetest_display(output):void {
+        display   = function nodetest_display():void {
             let a:number   = 0,
                 str:string[] = [];
-            const b:number = output.token.length,
+            const b:number = (options.outputFormat === "arrays")
+                    ? outputArrays.token.length
+                    : outputObjects.length,
                 pad = function nodetest_display_pad(x:string, y:number):void {
                     const cc:string = x
                             .toString()
@@ -82,23 +87,43 @@
                     console.log(bar);
                 }
                 str = [];
-                if (output.lexer[a] === "markup") {
-                    str.push("\u001b[31m");
-                } else if (output.lexer[a] === "script") {
-                    str.push("\u001b[32m");
-                } else if (output.lexer[a] === "style") {
-                    str.push("\u001b[33m");
+                if (options.outputFormat === "arrays") {
+                    if (outputArrays.lexer[a] === "markup") {
+                        str.push("\u001b[31m");
+                    } else if (outputArrays.lexer[a] === "script") {
+                        str.push("\u001b[32m");
+                    } else if (outputArrays.lexer[a] === "style") {
+                        str.push("\u001b[33m");
+                    }
+                    pad(a.toString(), 5);
+                    pad(outputArrays.begin[a].toString(), 5);
+                    pad(outputArrays.lexer[a].toString(), 5);
+                    pad(outputArrays.lines[a].toString(), 5);
+                    pad(outputArrays.presv[a].toString(), 5);
+                    pad(outputArrays.stack[a].toString(), 11);
+                    pad(outputArrays.types[a].toString(), 11);
+                    str.push(outputArrays.token[a].replace(/\s/g, " "));
+                    str.push("\u001b[39m");
+                    console.log(str.join(""));
+                } else {
+                    if (outputObjects[a].lexer === "markup") {
+                        str.push("\u001b[31m");
+                    } else if (outputObjects[a].lexer === "script") {
+                        str.push("\u001b[32m");
+                    } else if (outputObjects[a].lexer === "style") {
+                        str.push("\u001b[33m");
+                    }
+                    pad(a.toString(), 5);
+                    pad(outputObjects[a].begin.toString(), 5);
+                    pad(outputObjects[a].lexer.toString(), 5);
+                    pad(outputObjects[a].lines.toString(), 5);
+                    pad(outputObjects[a].presv.toString(), 5);
+                    pad(outputObjects[a].stack.toString(), 11);
+                    pad(outputObjects[a].types.toString(), 11);
+                    str.push(outputObjects[a].token.replace(/\s/g, " "));
+                    str.push("\u001b[39m");
+                    console.log(str.join(""));
                 }
-                pad(a.toString(), 5);
-                pad(output.begin[a].toString(), 5);
-                pad(output.lexer[a].toString(), 5);
-                pad(output.lines[a].toString(), 5);
-                pad(output.presv[a].toString(), 5);
-                pad(output.stack[a].toString(), 11);
-                pad(output.types[a].toString(), 11);
-                str.push(output.token[a].replace(/\s/g, " "));
-                str.push("\u001b[39m");
-                console.log(str.join(""));
                 a = a + 1;
             } while (a < b);
             console.log("");
@@ -109,12 +134,17 @@
             }
         },
         execute   = function nodetest_execute(sourcetext) {
-            let output = {};
             lang           = framework.language.auto(sourcetext, "javascript");
             options.lexer  = lang[1];
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source) {
+                    if (source.indexOf("test" + node.path.sep + "samples_code" + node.path.sep) > -1 && source.indexOf("_lang-") < 0) {
+                        options.lexer = (function nodetest_execute_lexer() {
+                            const str = source.split("samples_code" + node.path.sep)[1];
+                            return str.slice(0, str.indexOf(node.path.sep));
+                        }());
+                    }
                     if ((/_correct(\.|_)/).test(source) === true) {
                         options.correct = true;
                     } else {
@@ -145,9 +175,17 @@
                 } else {
                     options.lang   = lang[0];
                 }
-                output = framework.parser(options);
+                if (options.outputFormat === "arrays") {
+                    outputArrays = framework.parserArrays(options);
+                } else {
+                    outputObjects = framework.parserObjects(options);
+                }
                 if (framework.parseerror === "") {
-                    console.log(JSON.stringify(output));
+                    if (options.outputFormat === "arrays") {
+                        console.log(JSON.stringify(outputArrays));
+                    } else {
+                        console.log(JSON.stringify(outputObjects));
+                    }
                 } else {
                     console.log(framework.parseerror);
                 }
@@ -155,9 +193,13 @@
                 options.correct = true;
                 options.lang    = lang[0];
                 startTime       = process.hrtime();
-                output          = framework.parser(options);
+                if (options.outputFormat === "arrays") {
+                    outputArrays = framework.parserArrays(options);
+                } else {
+                    outputObjects = framework.parserObjects(options);
+                }
                 duration        = timespan();
-                display(output);
+                display();
                 //console.log(output);
             }
         };

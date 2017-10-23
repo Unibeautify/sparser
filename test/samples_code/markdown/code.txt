@@ -1,0 +1,56 @@
+
+`hi`lo`
+
+      tab line plus **two** spaces
+      4 spaces line plus two spaces
+
+```javascript
+     let a = 1;
+function foo() {
+    return bimbamsmash;
+}
+```
+
+    chunk1
+
+      chunk2
+  
+ 
+ 
+    chunk3
+
+````
+xxx
+```
+``````
+
+   ```
+   aaa
+    bbb
+  ccc
+  ddd
+   ```
+```
+```
+    ```
+    eee
+    ```
+```
+fff
+  ```
+   ```
+ggg
+  ```
+```
+hhh
+    ```
+```
+foo
+```
+bar
+```
+baz
+
+```
+``` iii
+```

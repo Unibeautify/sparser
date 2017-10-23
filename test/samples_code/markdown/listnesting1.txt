@@ -1,0 +1,50 @@
+
+- 1 foo
+   - 1 bar
+     - 1 baz
+
+<!-- 1 comment --->
+
+1.  2 A paragraph
+    with two lines.
+
+        indented code
+
+    > 2 A block quote.
+
+<!-- 2 comment --->
+
+1.  3 A paragraph
+    with three lines
+    of text.
+
+        indented code
+
+    > 3 A block quote.
+
+- 4 one
+
+  4 two
+
+1. 5 one
+   5 two
+
+<!-- 3 comment -->
+
+ -    6 one
+
+      6 two
+
+<!-- 4 comment -->
+
+ -    7 one
+
+     7 two
+
+   > > *  8 one
+>>
+>>    8 two
+
+- 9foo
+- 9bar
++ 9baz

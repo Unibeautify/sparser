@@ -399,7 +399,11 @@
                                         // put certain attributes together for coldfusion
                                         record.token = store.join(" ");
                                         parse.push(data, record, "");
-                                        record.token = attstore[ind];
+                                        if (attstore[ind].indexOf("=") > 0 && attstore[ind].indexOf("//") < 0 && attstore[ind].charAt(0) !== ";") {
+                                            record.token = attstore[ind].replace(/\s$/, "");
+                                        } else {
+                                            record.token = attstore[ind];
+                                        }
                                         parse.push(data, record, "");
                                         store        = [];
                                     } else if (ltype === "sgml") {
@@ -409,7 +413,7 @@
                                         store.push(attstore[ind]);
                                     } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
                                         // tags stored as attributes of other tags
-                                        record.token = attstore[ind];
+                                        record.token = attstore[ind].replace(/\s$/, "");
                                         parse.push(data, record, "");
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
@@ -455,7 +459,8 @@
                                                 parse.structure.pop();
                                             }
                                         } else {
-                                            record.token = name + "=" + slice;
+                                            name = name + "=" + slice;
+                                            record.token = name.replace(/(\s+)$/, "");
                                             parse.push(data, record, "");
                                         }
                                     }
@@ -794,6 +799,10 @@
                             };
                         do {
                             if (b[a] === "\n") {
+                                if (options.lang === "apacheVelocity" && lex[0] === "#") {
+                                    a = a - 1;
+                                    break;
+                                }
                                 parse.lineNumber = parse.lineNumber + 1;
                             }
                             if (preserve === true || (/\s/).test(b[a]) === false) {

@@ -1,0 +1,59 @@
+## foo ##
+  ###   bar    ###
+# foo ##################################
+##### foo ##
+####### trash
+### foo ### b
+# foo#
+### foo \###
+## foo #\##
+# foo \#
+****
+## foo
+****
+
+Foo bar
+# baz
+Bar foo
+
+## 
+# 
+### ###
+
+Foo *bar
+baz*
+====
+
+Long line
+-------------------------
+
+Short line heading
+=
+
+   Foo
+---
+
+  Foo
+-----
+
+  Foo
+  ===
+
+    Foo
+    ---
+
+    Foo
+---
+
+Foo
+   ----      
+
+
+Foo\
+----
+
+`Foo
+----
+`
+
+====

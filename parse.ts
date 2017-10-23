@@ -2,7 +2,7 @@
 Parse Framework
 */
 /*eslint no-console: 0*/
-/*global console, global*/
+/*global console, global, location*/
 
 (function parse_init() {
     "use strict";
@@ -29,7 +29,7 @@ Parse Framework
                 token: [],
                 types: []
             },
-            datanames: ["begin", "lexer", "lines", "presv", "stack", "token", "token"],
+            datanames: ["begin", "lexer", "lines", "presv", "stack", "token", "types"],
             lineNumber: 1,
             linesSpace: 0,
             objectSort: function parse_objectSort(data: data):void {
@@ -226,6 +226,7 @@ Parse Framework
                 lexerOptions: {
                     script: {}
                 },
+                outputFormat: "arrays",
                 source: ""
             },
             pop: function parse_pop(data: data): record {
@@ -501,7 +502,7 @@ Parse Framework
             },
             structure: [["global", -1]]
         },
-        parser  = function parser_(options: options): data {
+        parser  = function parser_(options: options): void {
             parse.count      = -1;
             parse.data       = {
                 begin: [],
@@ -543,7 +544,8 @@ Parse Framework
             };
             if (framework.lexer[options.lexer] === undefined) {
                 framework.parseerror = "Lexer '" + options.lexer + "' isn't available.";
-            } else if (typeof framework.lexer[options.lexer] !== "function") {
+            }
+            if (typeof framework.lexer[options.lexer] !== "function") {
                 framework.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
             } else {
                 framework.parseerror = "";
@@ -573,8 +575,8 @@ Parse Framework
                     a = a + 1;
                 } while (a < c - 1);
             }());
-
-            if (parse.options.lexerOptions[options.lexer].objectSort === true || parse.options.lexerOptions.markup.tagSort === true) {
+            
+            if ((parse.options.lexerOptions[options.lexer] !== undefined && parse.options.lexerOptions[options.lexer].objectSort === true) || (parse.options.lexerOptions.markup !== undefined && parse.options.lexerOptions.markup.tagSort === true)) {
                 let a:number = 0;
                 const data:data    = parse.data,
                     b:number         = data.begin.length,
@@ -604,17 +606,40 @@ Parse Framework
                     a = a + 1;
                 } while (a < b);
             }
+        },
+        parserArrays = function parserArrays(options: options):data {
+            parser(options);
             return parse.data;
+        },
+        parserObjects = function parserObjects(options: options): record[] {
+            let a:number = 0;
+            const data:record[] = [];
+            parser(options);
+            do {
+                data.push({
+                    begin: parse.data.begin[a],
+                    lexer: parse.data.lexer[a],
+                    lines: parse.data.lines[a],
+                    presv: parse.data.presv[a],
+                    stack: parse.data.stack[a],
+                    token: parse.data.token[a],
+                    types: parse.data.types[a]
+                });
+                a = a + 1;
+            } while (a < parse.count);
+            return data;
         };
     global.parseFramework = (global.parseFramework || {
         lexer: {},
         parse: parse,
         parseerror: "",
-        parser: parser
+        parserArrays: parserArrays,
+        parserObjects: parserObjects
     });
     framework = global.parseFramework;
-    framework.parse     = parse;
-    framework.parser    = parser;
+    framework.parse        = parse;
+    framework.parserArrays = parserArrays;
+    framework.parserObjects = parserObjects;
     
     if (global.v8debug !== undefined && global.process.argv.length > 2 && global.process.argv[2].indexOf("parse.js") > 0) {
         console.log("");
@@ -628,7 +653,7 @@ Parse Framework
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read the documentation             - \u001b[33mcat readme.md\u001b[39m");
         console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read about the lexers              - \u001b[33mcat lexers/readme.md\u001b[39m");
         console.log("");
-    } else if (global.process === undefined) {
+    } else if (global.process === undefined && location !== undefined && location.href.indexOf("nocomment") < 0) {
         console.log("");
         console.log("Welcome to the Parse Framework.");
         console.log("");

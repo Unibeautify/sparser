@@ -1,0 +1,11 @@
+- list item in first list
+
+        code in list item of first list
+- second list item
+    paragraph continuation in list item of first list
+
+* list item in second list
+
+        code in list item of second list
+* second list item
+    paragraph continuation in list item of second list
