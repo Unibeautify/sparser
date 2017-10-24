@@ -131,6 +131,7 @@ Name | Type | Default | Description
 **crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
 **lang** | string | "javascript" | A lowercase name of a language for certain language specific features
 **lexer** | string | "script" | the lexer to start scanning the code
+**outputFormat** | string | "arrays" or "objects" | describes the format of the output.  The value *"arrays"* is the default which specifies an object containing 7 parallel arrays as described in the *Output* section.  The value *"objects"* instead creates an array of objects where each object property is named and described as the seven output arrays in the *Output* section.  If testing with the *nodetest.js* file on the command line the argument **--outputFormat** can be supplied to force the *"objects"* variation.
 **source** | string | "" (empty string) | the code to parse
 
 ### Lexer Options
@@ -143,7 +144,7 @@ Name | Type | Default | Lexers | Description
 **tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
 
 ## Output
-There will be a single standard format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.
+The default format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.  An alternate output format is available if specifying an option named **outputFormat** with the value *objects*.  This alternate format will produce an array of objects where each object contains properties named and described as arrays below.  Essentially the alternate format simply inverts the object/array structure of the standard format.
  
 * begin
 * lexer
@@ -155,7 +156,7 @@ There will be a single standard format for output that will be uniform for all o
 
 Each of these keys will store an array and all these arrays will contain the same number of indexes.  Think of this as a database table such that each array is a column, the name of the array (the object key name) is the column metadata, and finally each index of the arrays is a record in the table.  Here is an example:
 
-Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
+Consider the code `<a><b class="cat"></b></a>`.  The parsed output in the default format will be:
 ```
 {
     begin: [
@@ -178,6 +179,57 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output will be:
     ],
     types: ["start", "start", "attribute", "end", "end"];
 }
+```
+
+The output in the `outputFormat="objects"` format will be:
+```
+[
+    {
+        begin: 0,
+        lexer: "markup",
+        lines: 0,
+        presv: false,
+        stack: "global",
+        token: "<a>",
+        types: "start"
+    },
+    {
+        begin: 0,
+        lexer: "markup",
+        lines: 0,
+        presv: false,
+        stack: "a",
+        token: "<b>",
+        types: "start"
+    },
+    {
+        begin: 0,
+        lexer: "markup",
+        lines: 1,
+        presv: false,
+        stack: "b",
+        token: "class=\"cat\"",
+        types: "attribute"
+    },
+    {
+        begin: 0,
+        lexer: "markup",
+        lines: 1,
+        presv: false,
+        stack: "global",
+        token: "</b>",
+        types: "end"
+    },
+    {
+        begin: 0,
+        lexer: "markup",
+        lines: 0,
+        presv: false,
+        stack: "global",
+        token: "</a>",
+        types: "end"
+    }
+]
 ```
 
 If that parsed output were arranged as a table it would look something like:

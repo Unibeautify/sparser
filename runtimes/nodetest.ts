@@ -39,7 +39,14 @@
             lang: "",
             lexer: "script",
             lexerOptions: {},
-            outputFormat: "arrays",
+            outputFormat:  (function nodetest_outputFormat():"objects"|"arrays" {
+                const index:number = process.argv.indexOf("--outputFormat");
+                if (index < 0) {
+                    return "arrays";
+                }
+                process.argv.splice(index, 1);
+                return "objects";
+            }()),
             source: ""
         },
         timespan  = function nodetest_timespan():string {

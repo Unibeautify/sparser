@@ -11,6 +11,7 @@
                 lengthb:number        = 0,
                 wordTest:number       = -1,
                 paren:number          = -1,
+
                 tempstore:record,
                 pstack:[string, number];
             const parse:parse          = framework.parse,
@@ -111,6 +112,10 @@
                         token: ltoke,
                         types: ltype
                     };
+                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(ltoke) === true) {
+                        record.presv = true;
+                        record.types = "ignore";
+                    }
                     parse.push(data, record, structure);
                 },
                 // remove "vart" object data
@@ -406,9 +411,10 @@
                     let ee:number     = 0,
                         output:string = "",
                         escape:boolean = false,
-                        build:string[]  = [starting];
-                    const ender:string[]  = ending.split(""),
-                        endlen:number = ender.length,
+                        ignorecom:string[] = [],
+                        build:string[]  = [starting],
+                        ender:string[]  = ending.split("");
+                    const endlen:number = ender.length,
                         jj:number     = b,
                         base:number   = a + starting.length;
                     if (wordTest > -1) {
@@ -499,32 +505,63 @@
                         build.pop();
                     }
                     output = build.join("");
-                    if (starting === "//") {
-                        output = output.replace(/(\s+)$/, "");
-                    } else if (starting === "/*") {
-                        build = output.split(parse.crlf);
-                        ee    = build.length - 1;
-                        if (ee > -1) {
-                            do {
-                                build[ee] = build[ee].replace(/(\s+)$/, "");
-                                ee        = ee - 1;
-                            } while (ee > -1);
+                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(output) === true && ee < jj) {
+                        ender = [];
+                        do {
+                            if (ender[0] === undefined && (c[ee] === "/" || c[ee] === "*") && c[ee - 1] === "/") {
+                                ignorecom.push(c[ee - 1]);
+                                if (c[ee] === "*") {
+                                    ender = ["*", "/"];
+                                } else {
+                                    ender = ["\n"];
+                                }
+                            } else if ((c[ee] === ender[1] || ender[1] === undefined) && c[ee - 1] === ender[0]) {
+                                if ((/^(\/(\/|\*)\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
+                                    a = ee - 1;
+                                    output = build.join("");
+                                    break;
+                                }
+                                ignorecom = [];
+                                ender = [];
+                            }
+                            if (ender[0] !== undefined) {
+                                ignorecom.push(c[ee]);
+                            }
+                            build.push(c[ee]);
+                            ee = ee + 1;
+                        } while (ee < jj);
+                        if (ee === jj) {
+                            output = build.join("");
+                            a = ee;
                         }
-                        output = build.join(parse.crlf);
-                    }
-                    if (starting === "{%") {
-                        if (output.indexOf("{%-") < 0) {
-                            output = output
-                                .replace(/^(\{%\s*)/, "{% ")
-                                .replace(/(\s*%\})$/, " %}");
-                        } else {
-                            output = output
-                                .replace(/^(\{%-\s*)/, "{%- ")
-                                .replace(/(\s*-%\})$/, " -%}");
+                    } else {
+                        if (starting === "//") {
+                            output = output.replace(/(\s+)$/, "");
+                        } else if (starting === "/*") {
+                            build = output.split(parse.crlf);
+                            ee    = build.length - 1;
+                            if (ee > -1) {
+                                do {
+                                    build[ee] = build[ee].replace(/(\s+)$/, "");
+                                    ee        = ee - 1;
+                                } while (ee > -1);
+                            }
+                            output = build.join(parse.crlf);
                         }
-                    }
-                    if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
-                        output = output.replace(/(\s+)$/, "");
+                        if (starting === "{%") {
+                            if (output.indexOf("{%-") < 0) {
+                                output = output
+                                    .replace(/^(\{%\s*)/, "{% ")
+                                    .replace(/(\s*%\})$/, " %}");
+                            } else {
+                                output = output
+                                    .replace(/^(\{%-\s*)/, "{%- ")
+                                    .replace(/(\s*-%\})$/, " -%}");
+                            }
+                        }
+                        if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
+                            output = output.replace(/(\s+)$/, "");
+                        }
                     }
                     return output;
                 },
@@ -1914,6 +1951,7 @@
                         data.lines[parse.count] = 0;
                     } else {
                         if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                            let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
                             parse.splice({
                                 data: data,
                                 howmany: 0,
@@ -1922,10 +1960,12 @@
                                     begin: data.begin[parse.count],
                                     lexer: "script",
                                     lines: parse.linesSpace,
-                                    presv: false,
+                                    presv: (ignore === true),
                                     stack: data.stack[parse.count],
                                     token: ltoke,
-                                    types: "comment"
+                                    types: (ignore === true)
+                                        ? "ignore"
+                                        : "comment"
                                 }
                             });
                         } else {
@@ -1949,6 +1989,7 @@
                         sourcemap[1] = ltoke;
                     }
                     if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                        let ignore = ((/^(\/\/\s*parse-ignore-start)/).test(ltoke) === true);
                         parse.splice({
                             data: data,
                             howmany: 0,
@@ -1957,10 +1998,12 @@
                                 begin: data.begin[parse.count],
                                 lexer: "script",
                                 lines: parse.linesSpace,
-                                presv: false,
+                                presv: (ignore === true),
                                 stack: data.stack[parse.count],
                                 token: ltoke,
-                                types: "comment"
+                                types: (ignore === true)
+                                    ? "ignore"
+                                    : "comment"
                             }
                         });
                     } else {
