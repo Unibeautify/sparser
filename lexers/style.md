@@ -22,3 +22,22 @@ The style lexer takes the identifier, typically a selector, preceeding the start
 
 ## style options
 * **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
+
+## Escaping code from the parser
+The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are JavaScript-like line comments or standard block comments.
+
+Example:
+
+```javascript
+if (b[a] === "\n") {
+    /* parse-ignore-start */
+    if (options.lang === "apacheVelocity" && lex[0] === "#") {
+        a = a - 1;
+        break;
+    }
+    /* parse-ignore-end */
+    parse.lineNumber = parse.lineNumber + 1;
+}
+```
+
+Code from the opening comment to the closing comment is parsed as a single token of types value *ignore* presv value *true*.

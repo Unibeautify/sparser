@@ -180,7 +180,9 @@
                         begin: parse.structure[parse.structure.length - 1][1],
                         lexer: "style",
                         lines: parse.linesSpace,
-                        presv: false,
+                        presv: (ltype === "ignore")
+                            ? true
+                            : false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: ltoke,
                         types: ltype
@@ -394,7 +396,7 @@
                     if (parse.structure[parse.structure.length - 1][0] === "map" && out[0] === "(") {
                         mapper[mapper.length - 1] = mapper[mapper.length - 1] - 1;
                     }
-                    if (comma === true && parse.structure[parse.structure.length - 1][0] !== "map" && data.types[parse.count] !== "comment") {
+                    if (comma === true && parse.structure[parse.structure.length - 1][0] !== "map" && data.types[parse.count] !== "comment" && data.types[parse.count] !== "ignore") {
                         data.token[parse.count] = data.token[parse.count] + out
                             .join("")
                             .replace(/\s+/g, " ")
@@ -444,19 +446,19 @@
                             : "",
                         toked:string  = tokel.slice(tokel.length - 2);
                     //backtrack through immediately prior comments to find the correct token
-                    if (ltype === "comment") {
+                    if (ltype === "comment" || ltype === "ignore") {
                         do {
                             aa    = aa - 1;
                             ltype = data.types[aa];
                             coms.push(data.token[aa]);
-                        } while (aa > 0 && (ltype === "comment"));
+                        } while (aa > 0 && (ltype === "comment" || ltype === "ignore"));
                     } else {
                         aa = aa - 1;
                     }
                     //if the last non-comment type is 'item' then id it
                     if (ltype === "item" && data.lexer[aa] === "style") {
                         if (type === "start") {
-                            if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
+                            if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "ignore" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
                                 let cc:number    = aa,
                                     dd:number    = 0;
                                 const parts:string[] = [];
@@ -469,7 +471,7 @@
                                     }
                                     cc = cc - 1;
                                 } while (
-                                    cc > -1 && data.types[cc] !== "comment" && data.types[cc] !== "end" && data.types[cc] !== "start" && data.types[cc] !== "semi" && data.types[cc] !== undefined
+                                    cc > -1 && data.types[cc] !== "comment" && data.types[cc] !== "ignore" && data.types[cc] !== "end" && data.types[cc] !== "start" && data.types[cc] !== "semi" && data.types[cc] !== undefined
                                 );
                                 parts.reverse();
                                 cc             = cc + 1;
@@ -816,13 +818,15 @@
                         } while (a < len);
                     }
                 },
-                //finds comments include those JS looking '//' comments
+                //finds comments including those JS looking '//' comments
                 comment     = function lexer_style_comment(inline:boolean):void {
                     let aa:number          = a + 1,
                         bb:number          = 0,
+                        ender:string[]     = [],
+                        ignorecom:string[] = [],
                         extra:string       = "";
-                    const out:string[]         = [b[a]],
-                        store:record[]       = [];
+                    const out:string[] = [b[a]],
+                        store:record[] = [];
                     if (aa < len) {
                         do {
                             out.push(b[aa]);
@@ -865,7 +869,38 @@
                     a = aa;
                     ltype = "comment";
                     ltoke = out.join("");
-                    if (parse.count > -1 && store.length > 0 && (ltype === "selector" || ltype === "variable") && data.types[parse.count] !== "comment") {
+                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(ltoke) === true) {
+                        do {
+                            if (ender[0] === undefined && (b[bb] === "/" || b[bb] === "*") && b[bb - 1] === "/") {
+                                ignorecom.push(b[bb - 1]);
+                                if (b[bb] === "*") {
+                                    ender = ["*", "/"];
+                                } else {
+                                    ender = ["\n"];
+                                }
+                            } else if ((b[bb] === ender[1] || ender[1] === undefined) && b[bb - 1] === ender[0]) {
+                                if ((/^(\/(\/|\*)\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
+                                    a = bb - 1;
+                                    ltoke = out.join("");
+                                    ltype = "ignore";
+                                    break;
+                                }
+                                ignorecom = [];
+                                ender = [];
+                            }
+                            if (ender[0] !== undefined) {
+                                ignorecom.push(b[bb]);
+                            }
+                            out.push(b[bb]);
+                            bb = bb + 1;
+                        } while (bb < len);
+                        if (bb === len) {
+                            ltoke = out.join("");
+                            ltype = "ignore";
+                            a = bb;
+                        }
+                    }
+                    if (parse.count > -1 && store.length > 0 && (ltype === "selector" || ltype === "variable") && data.types[parse.count] !== "comment" && data.types[parse.count] !== "ignore") {
                         parse.pop(data);
                         recordPush("");
                         ltoke = store[0].token;
