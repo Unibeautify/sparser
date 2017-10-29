@@ -6,7 +6,6 @@
   "dependencies"   : {},
   "description"    : "A parsing framework for parsing everything",
   "devDependencies": {
-    "nodemon": "^1.12.1",
     "ws"     : "^3.2.0"
   },
   "directories"    : {

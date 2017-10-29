@@ -9,6 +9,11 @@ function taskrunner() {
             return;
         },
         parse:parse,
+        project:string = (function taskrunner_project() {
+            const path = require("path"),
+                dirs:string[] = __dirname.split(path.sep);
+            return dirs.slice(0, dirs.length - 2).join(path.sep);
+        }()),
         parse_options:options = {
             correct        : false,
             crlf           : false,
@@ -578,7 +583,9 @@ function taskrunner() {
                         let filesCount:number = 0;
                         const filesTotal = files.length,
                             lintit = function taskrunner_lint_lintrun_lintit(val:string):void {
-                                node.child("eslint " + val, function taskrunner_lint_lintrun_lintit_eslint(err, stdout, stderr) {
+                                node.child("eslint " + val, {
+                                    cwd: project
+                                }, function taskrunner_lint_lintrun_lintit_eslint(err, stdout, stderr) {
                                     if (stdout === "") {
                                         if (err !== null) {
                                             errout(err);
@@ -665,7 +672,9 @@ function taskrunner() {
             typescript: function taskrunner_typescript():void {
                 console.log("\u001b[36mTypeScript Compilation\u001b[39m");
                 console.log("");
-                node.child("tsc", function taskrunner_typescript_callback(err, stdout, stderr):void {
+                node.child("tsc", {
+                    cwd: project
+                }, function taskrunner_typescript_callback(err, stdout, stderr):void {
                     if (err !== null) {
                         errout(err);
                         return;

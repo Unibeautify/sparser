@@ -14,11 +14,29 @@
         path     = require("path"),
         fs       = require("fs"),
         child    = require("child_process").exec,
-        nodemon  = require("nodemon"),
         socket   = require("ws"),
         validate = require(".." + path.sep + "test" + path.sep + "validate.js"),
         cwd      = process.cwd(),
-        port     = (process.argv[2] === undefined)
+        ignore   = function server_indexOf(input:string):boolean {
+            if (input.indexOf(".git") === 0) {
+                return true;
+            }
+            if (input.indexOf("node_modules") === 0) {
+                return true;
+            }
+            if (input.indexOf("js") === 0) {
+                return true;
+            }
+            if (input.indexOf("test" + path.sep + "samples_code") === 0) {
+                return true;
+            }
+            return false;
+        },
+        project:string = (function server_project() {
+            const dirs:string[] = __dirname.split(path.sep);
+            return dirs.slice(0, dirs.length - 2).join(path.sep);
+        }()),
+        port:number = (process.argv[2] === undefined)
             ? 9999
             : Number(process.argv[2]),
         server   = http.createServer(function server_create(request, response):void {
@@ -68,16 +86,14 @@
     };
     console.log("HTTP server is up at: \u001b[36mhttp://localhost:" + port + "\u001b[39m");
     console.log("\u001b[32mStarting nodemon!\u001b[39m");
-    nodemon({
-        "delay"  : "0",
-        "ext" : "txt ts css xhtml",
-        "ignore" : ["js", "node_modules", "test" + path.sep + "samples_code"],
-        "system" : process.cwd(),
-        "timeout": 0
-    }).on("restart", function nodemon_restart(event) {
-        const file:string = event[0].slice(event[0].indexOf("parse-framework") + 16).replace(/(\s+)$/, ""),
-            extension:string = (function nodemon_start_extension() {
-                const list = file.split(".");
+    fs.watch(project, {
+        recursive: true
+    }, function server_watch(type, filename) {
+        if (ignore(filename) === true) {
+            return;
+        }
+        const extension:string = (function nodemon_start_extension() {
+                const list = filename.split(".");
                 return list[list.length - 1];
             }()),
             time = function nodemon_time(message:string):number {
@@ -149,7 +165,7 @@
                     console.log("[\u001b[36m" + list.join(":") + "\u001b[39m] Total compile time.");
                 };
             console.log("");
-            start = time("Compiling TypeScript for \u001b[32m" + file + "\u001b[39m");
+            start = time("Compiling TypeScript for \u001b[32m" + filename + "\u001b[39m");
             child("tsc", function nodemon_restart_child(err, stdout, stderr):void {
                 if (err !== null) {
                     console.log(err);
@@ -166,9 +182,9 @@
             });
         } else if (extension === "css" || extension === "xhtml" || extension === "js") {
             console.log("");
-            time("Refreshing browser tab(s) - \u001b[32m" + file + "\u001b[39m");
+            time("Refreshing browser tab(s) - \u001b[32m" + filename + "\u001b[39m");
             ws.broadcast("reload");
-        } else if (extension === "txt" && file.indexOf("samples_parsed") > -1) {
+        } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
             console.log("");
             time("Running validation build");
             validate();
