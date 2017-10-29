@@ -28,15 +28,17 @@ The parser is capable of selectively ignoring blocks of code.  This occurs when 
 
 Example:
 
-```javascript
-if (b[a] === "\n") {
-    /* parse-ignore-start */
-    if (options.lang === "apacheVelocity" && lex[0] === "#") {
-        a = a - 1;
-        break;
-    }
-    /* parse-ignore-end */
-    parse.lineNumber = parse.lineNumber + 1;
+```css
+a {
+    color: red;
+}
+/* parse-ignore-start */
+div {
+    background: blue;
+}
+/* parse-ignore-end */
+td {
+    text-align: right;
 }
 ```
 
