@@ -20,6 +20,10 @@
             fs  : require("fs"),
             path: require("path")
         },
+        project:string = (function nodetest_project() {
+            const dirs:string[] = __dirname.split(node.path.sep);
+            return dirs.slice(0, dirs.length - 2).join(node.path.sep);
+        }()),
         color     = function nodetest_color(numb: string): string {
             return "\u001b[1m\u001b[" + numb + "m";
         },
@@ -210,6 +214,7 @@
                 //console.log(output);
             }
         };
+    
     require(directory + "parse.js");
     require(directory + "language.js");
     framework = global.parseFramework;

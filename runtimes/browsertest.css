@@ -1,7 +1,8 @@
 
 body{background:#fff;font-family:monospace;margin:1em;font-size:10px}
 div{font-size:1.2em}
-h1{margin-top:0}
+h1{margin:0}
+.version{color:#070}
 textarea{font-family:monospace}
 table{border-collapse:collapse;box-shadow:0.1em 0.1em 0.5em #999;display:table}
 thead{display:table-header-group}

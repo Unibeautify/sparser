@@ -85,7 +85,7 @@
         });
     };
     console.log("HTTP server is up at: \u001b[36mhttp://localhost:" + port + "\u001b[39m");
-    console.log("\u001b[32mStarting nodemon!\u001b[39m");
+    console.log("\u001b[32mStarting web server and file system watcher!\u001b[39m");
     fs.watch(project, {
         recursive: true
     }, function server_watch(type, filename) {
