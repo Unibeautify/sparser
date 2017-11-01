@@ -1,8 +1,10 @@
 /*
 Parse Framework
 */
+/*jslint node:true */
+/*eslint-env node*/
 /*eslint no-console: 0*/
-/*global console, global, location*/
+/*global global, location*/
 
 (function parse_init() {
     "use strict";
@@ -553,6 +555,7 @@ Parse Framework
                 Object.keys(framework.lexer).forEach(function parse_lexers(value) {
                     options.lexerOptions[value] = (options.lexerOptions[value] || {});
                 });
+                // This line parses the code using a lexer file
                 framework.lexer[options.lexer](options.source + " ");
             }
 
@@ -641,27 +644,23 @@ Parse Framework
     framework.parserArrays = parserArrays;
     framework.parserObjects = parserObjects;
     
-    if (global.v8debug !== undefined && global.process.argv.length > 2 && global.process.argv[2].indexOf("parse.js") > 0) {
-        console.log("");
-        console.log("Welcome to the \u001b[32mParse Framework\u001b[39m.");
-        console.log("");
-        console.log("Here are things to try:");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Run the unit tests                 - \u001b[33mnode js/test/validate.js\u001b[39m");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Parse some text                    - \u001b[33mnode js/runtimes/nodetest.js \"<a><b></b></a>\"\u001b[39m");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Parse a file                       - \u001b[33mnode js/runtimes/nodetest.js myfile.jsx\u001b[39m");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Produce an unformatted parse table - \u001b[33mnode js/runtimes/nodetest.js myfile.jsx --raw\u001b[39m");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read the documentation             - \u001b[33mcat readme.md\u001b[39m");
-        console.log("\u001b[1m\u001b[31m*\u001b[39m\u001b[0m Read about the lexers              - \u001b[33mcat lexers/readme.md\u001b[39m");
-        console.log("");
+    if (
+        global.process !== undefined &&
+        global.process.argv !== undefined &&
+        global.process.argv.length > 1 &&
+        global.process.argv[1].indexOf("nodetest") < 0 &&
+        global.process.argv[0].indexOf("services") < 0 &&
+        global.process.argv[1].indexOf("services") < 0
+    ) {
+        const path = require("path");
+        require(__dirname + path.sep + "services")();
     } else if (global.process === undefined && location !== undefined && location.href.indexOf("nocomment") < 0) {
         console.log("");
         console.log("Welcome to the Parse Framework.");
         console.log("");
-        console.log("Here are things to try with Node.js:");
-        console.log("* Run the unit tests                 - node js/test/validate.js");
-        console.log("* Parse some text                    - node js/runtimes/nodetest.js \"<a><b></b></a>\"");
-        console.log("* Parse a file                       - node js/runtimes/nodetest.js myfile.jsx");
-        console.log("* Produce an unformatted parse table - node js/runtimes/nodetest.js myfile.jsx --raw");
+        console.log("To see all the support features for Node.js:");
+        console.log("node js/services commands");
+        console.log("");
         console.log("* Read the documentation             - cat readme.md");
         console.log("* Read about the lexers              - cat lexers/readme.md");
         console.log("");

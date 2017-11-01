@@ -28,24 +28,28 @@
 1. [Files](#files)
 
 ## Execution
-Execute the application by simply running this instruction, where the options is an object described in [Input](#input):
+```javascript
+global.parseFramework.parserArrays(options);
+```
+
+or
 
 ```javascript
-global.parseFramework.parser(options);
+global.parseFramework.parserObjects(options);
 ```
+
+Execute the application by simply running this instruction, where the options is an object described in [Input](#input).  The first code example, parserArrays, produces the default format of a single object containing 7 parallel arrays.  The second code example, parserObjects, produces a single array containing objects of 7 data properties for each parsed token.
 
 ### Supplied Runtimes
 The framework is intended for inclusion in other applications as an embedded utility.  To run the framework immediately and experiment without any configuration some simple runtime interfaces are provided.
 
 #### Browser Runtime
-A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  Some browsers don't play well when running pages from the local file system, so a simple Node http server runtime is included as *js/runtimes/httpserver.js*.
+A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  To run the web server simply execute `node js/services server` on the command line.  The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.
 
 The browser utility produces output in a HTML table and color codes the output based upon the lexer used.
 
 #### Terminal Runtime
-A handy terminal utility is included but requires Node.js to run.  You can run this from the terminal as `node js/runtimes/nodetest.js codesample`.  The code sample can be a path to a local file or string to parse.  For proper execution with Node the first command must be `node` and the second must be the file to execute: `js/runtimes/nodetest.js`.
-
-By default the terminal utility will log a formatted table to the terminal.  To generate raw parse data include the `--raw` option before or after the code sample.
+All Node.js support is consolidated into a single location.  To examine available features run this command: `node js/services command`
 
 ### Embedding
 The framework is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.  Getting the framework to run in different environments requires a bit of configuration that varies by environment.
@@ -56,7 +60,7 @@ The minimum requirements for embedding into all environments is to include the *
 In browser applications the additional file *js/runtimes/global.js* must be included.  This file should be referrenced before other code from the framework.
 
 #### Node Embedding
-When running the framework in a Node application the *js/runtimes/global.js* must not be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of *js/runtimes/nodetest.js* for an example.
+When running the framework in a Node application the *js/runtimes/global.js* must **not** be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of the *js/runtimes/nodetest.js* file for an example.
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.  Please see [Input](#input) for details about the options object and [lexers/readme.md](lexers/readme.md) for technical guidance on starting a new lexer file.
@@ -68,7 +72,7 @@ The application operates as a global object containing a few data properties and
 
 ### Definition of Terms
 * **record** - In the documentation the word *record* appears frequently.  This term represents a single index of data at the same index from all arrays comprising the *standard format*.
-* **record format** - Record format refers to an object containing property names as defined by `parse.datanames`.  Unlike *standard format* record format has literal values assigned to its properties with the appropriate data types.
+* **record format** - Record format refers to an object containing property names as defined by `parse.datanames`.  Unlike *standard format* record format has primitive values assigned to its properties with the appropriate data types.
 * **standard format** - The standard format describes an object with property names from `parse.datanames` where the value of each property is an array and each of those arrays contain an identical number of indexes.  These arrays will never be sparse arrays.
 
 ### Architecture

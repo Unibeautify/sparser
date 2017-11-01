@@ -744,6 +744,6 @@ function taskrunner() {
     return "";
 };
 module.exports = taskrunner;
-if (process.argv[1].indexOf("validate.js") > -1) {
+if (process.argv[1].replace(/\\/g, "/").indexOf("js/test/validate") > -1) {
     taskrunner();
 }

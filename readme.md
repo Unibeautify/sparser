@@ -61,7 +61,7 @@ tsc
 If you wish to run the optional validation build it can be run this way:
 
 ```bash
-node js/test/validate.js
+node js/services validation
 ```
 
 Or simply:
@@ -85,31 +85,13 @@ Arrays are faster to access at execution time potentially allowing consumers to 
 Most importantly, though, is this allows a simplified standard format that is easy to maintain, document, and consume.  If you don't like the lexers provided in the framework then write your own and submit a pull request.
 
 ### How fast does it parse JavaScript?
-#### Methodology
-I ran this application against [jQuery Mobile 1.4.2 minified](http://code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js) and analyzed the execution time using the performance profiler in the browser's developer tools to isolate application timing apart from any time associated with DOM interaction or page paint.  I also ran the [Esprima Speed Comparison page](http://esprima.org/test/compare.html) in the same browser.
+Try it yourself:
 
-#### Results (all results in milliseconds)
-* Firefox 54.0.1 (64 bit), Windows 10 (1703) with 64gb ram and Xeon E5-1660 3.3GHz
-   - parse-framework - 144.0
-   - Esprima - 142.0 ±9.0%
-   - Acorn - 175.9 ±14.9%
-* Opera 46.0.2597.57, Mac OSX 10.12.5 with 16gb ram and Intel i7 2.9GHz
-   - parse-framework - 97.8
-   - Esprima - 76.6 ±9.8%
-   - Acorn - 83.5 ±7.8%
-* Chrome 60.0.3112.101, Mac OSX 10.12.5 with 16gb ram and Intel i7 2.9GHz
-   - parse-framework - 248.6
-   - Esprima - 66.0 ±8.8%
-   - Acorn - 73.5 ±7.2%
-* Safari 10.1.1, Mac OSX 10.12.5 with 16gb ram and Intel i7 2.9GHz
-   - parse-framework - 290.1
-   - Esprima - 37.9 ±3.0%
-   - Acorn - 3403 ±0.7%
+1. get the [jQuery Mobile 1.4.2](code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js) file and save it to your local file system.
+1. Run the performance tool: `node js/services performance ../jquery.mobile-1.4.2.min.js`
+1. Compare the results against other parsers on the [Esprima Comparison page](esprima.org/test/compare.html).
 
-#### Conclusions
-* Performance is neutral in Firefox and Opera where it does not appear there is optimization by convention.
-* Chrome is known for providing numerous micro-optimizations and parse-framework is not making as aggressive use of those. A minor penalty is noted for creating objects as temporary storage containers for dynamic population and for performing automatic semicolon insertion logic.
-* Safari provides brutal penalties to the Array *pop* method, which is critical to parse-framework. The standard pop method appears to be a vanity method over the Array *splice* method in the compiler. Take note of the wide performance differences between Esprima and Acorn in Safari.
+I find this application generally performs half as fast as the fastest JavaScript parser, Esprima, but makes up for it with wider language support and extensible tooling.
 
 ### Why is the code so big?
 This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.

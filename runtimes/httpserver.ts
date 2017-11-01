@@ -3,12 +3,7 @@
 /*eslint no-console: 0*/
 /*jslint node: true*/
 
-// I don't have Firefox on my new work computer and cannot install software. I
-// do have Chrome, but Chrome barfs and throws errors if sees localStorage
-// referenced from the file scheme. So, I am creating a server to work on my
-// local file.
-
-(function server() {
+function server() {
     "use strict";
     const http   = require("http"),
         path     = require("path"),
@@ -39,6 +34,18 @@
         port:number = (process.argv[2] === undefined)
             ? 9999
             : Number(process.argv[2]),
+        serverError = function server_serverError(error) {
+            if (error.code === "EADDRINUSE") {
+                if (error.port === port + 1) {
+                    console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Web socket channel port, \u001b[36m" + port + "\u001b[39m, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.");
+                } else {
+                    console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port, \u001b[36m" + port + "\u001b[39m, is in use!");
+                }
+            } else {
+                console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m " + error.Error);
+            }
+            return process.exit(1);
+        },
         server   = http.createServer(function server_create(request, response):void {
             let quest:number = request.url.indexOf("?"),
                 uri:string = (quest > 0)
@@ -71,7 +78,7 @@
     let ws;
     if (isNaN(port) === true) {
         console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port is, " + port + ", which not a number!");
-        process.exit(1);
+        return process.exit(1);
     }
     if (cwd.indexOf("parse-framework") < cwd.length - 15) {
         process.chdir(cwd.slice(0, cwd.indexOf("parse-framework") + 15));
@@ -190,5 +197,10 @@
             validate();
         }
     });
+    server.on("error", serverError);
     server.listen(port);
-}());
+}
+module.exports = server;
+if (process.argv[1].replace(/\\/g, "").indexOf("js/runtimes/httpserver") > -1) {
+    server();
+}

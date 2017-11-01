@@ -8,7 +8,7 @@
     This code is not a formal part of the project at this time.
 */
 
-(function nodetest() {
+function nodetest() {
     "use strict";
     let duration:string,
         lang: [string, string, string],
@@ -20,10 +20,6 @@
             fs  : require("fs"),
             path: require("path")
         },
-        project:string = (function nodetest_project() {
-            const dirs:string[] = __dirname.split(node.path.sep);
-            return dirs.slice(0, dirs.length - 2).join(node.path.sep);
-        }()),
         color     = function nodetest_color(numb: string): string {
             return "\u001b[1m\u001b[" + numb + "m";
         },
@@ -256,4 +252,8 @@
             execute(source);
         }
     });
-}());
+}
+module.exports = nodetest;
+if (process.argv[1].replace(/\\/g, "/").indexOf("js/runtimes/nodetest") > -1) {
+    nodetest();
+}
