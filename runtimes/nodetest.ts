@@ -8,7 +8,7 @@
     This code is not a formal part of the project at this time.
 */
 
-function nodetest() {
+const nodetest = function nodetest_() {
     "use strict";
     let duration:string,
         lang: [string, string, string],
@@ -252,7 +252,7 @@ function nodetest() {
             execute(source);
         }
     });
-}
+};
 module.exports = nodetest;
 if (process.argv[1].replace(/\\/g, "/").indexOf("js/runtimes/nodetest") > -1) {
     nodetest();

@@ -649,6 +649,7 @@ Parse Framework
         global.process.argv !== undefined &&
         global.process.argv.length > 1 &&
         global.process.argv[1].indexOf("nodetest") < 0 &&
+        global.process.argv[1].indexOf("validate") < 0 &&
         global.process.argv[0].indexOf("services") < 0 &&
         global.process.argv[1].indexOf("services") < 0
     ) {

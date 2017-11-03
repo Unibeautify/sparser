@@ -3,7 +3,7 @@
 /*eslint no-console: 0*/
 /*jslint node: true*/
 
-function server() {
+const server = function server_() {
     "use strict";
     const http   = require("http"),
         path     = require("path"),
@@ -208,7 +208,7 @@ function server() {
     });
     server.on("error", serverError);
     server.listen(port);
-}
+};
 module.exports = server;
 if (process.argv[1].replace(/\\/g, "").indexOf("js/runtimes/httpserver") > -1) {
     server();

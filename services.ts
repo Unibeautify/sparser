@@ -5,7 +5,7 @@
 /* This file exists to consolidate the various Node service offerings in
    this application. */
 
-function services() {
+const services = function services_() {
     "use strict";
     let version:string = "",
         command:string = "";
@@ -405,9 +405,9 @@ function services() {
                         }
                         return errout(errfile);
                     }
-                    const parse = require(project + "js" + node.path.sep + "parse"),
-                        language = require(project + "js" + node.path.sep + "language"),
-                        framework = global.parseFramework,
+                    require(project + "js" + node.path.sep + "parse");
+                    require(project + "js" + node.path.sep + "language");
+                    const framework = global.parseFramework,
                         lang = framework.language.auto(filedata, "javascript"),
                         options:options = {
                             correct: false,
@@ -431,7 +431,7 @@ function services() {
                         });
                         const store:number[] = [],
                             output:data = framework.parserArrays(options),
-                            comma = function (input:number):string {
+                            comma = function services_action_performance_readFile_readdir_comma(input:number):string {
                                 const arr = input.toString().split("").reverse(),
                                     len = arr.length - 1;
                                 let ind:number = 0;
@@ -485,7 +485,6 @@ function services() {
             }
         },
         keys:string[] = Object.keys(commandList);
-    
     
     command = (args[0] === undefined)
         ? ""
@@ -542,7 +541,7 @@ function services() {
             action[command]();
         }
     });
-}
+};
 module.exports = services;
 if (process.argv[1].replace(/\\/g, "/").indexOf("js/services") > -1) {
     services();

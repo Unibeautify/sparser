@@ -3,7 +3,7 @@
 /*eslint no-console: 0*/
 // The order array determines which tests run in which order (from last to first
 // index)
-function taskrunner() {
+const taskrunner = function taskrunner_() {
     "use strict";
     let next       = function taskrunner_nextInit() {
             return;
