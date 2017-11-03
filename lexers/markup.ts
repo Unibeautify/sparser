@@ -422,7 +422,11 @@
                                         if (options.lang === "html") {
                                             name = name.toLowerCase();
                                         }
-                                        record.token = name + "=\"" + attstore[ind] + "\"";
+                                        if (options.lang === "jsx") {
+                                            record.token = name;
+                                        } else {
+                                            record.token = name + "=\"" + attstore[ind] + "\"";
+                                        }
                                         parse.push(data, record, "");
                                     } else {
                                         // separates out the attribute name from its value

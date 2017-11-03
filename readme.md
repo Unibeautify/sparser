@@ -1,6 +1,6 @@
 # Parse Framework
 
-## Version 1.1.3
+## Version 1.1.4
 Play around with this application [in your browser](http://prettydiff.com/parse-framework/runtimes/browsertest.xhtml).
 
 ### Todo

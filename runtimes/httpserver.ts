@@ -51,9 +51,9 @@ function server() {
                 uri:string = (quest > 0)
                     ? request.url.slice(0, quest)
                     : request.url,
-                file:string = uri.slice(1);
+                file:string = project + path.sep + uri.slice(1);
             if (uri === "/") {
-                file = "runtimes/browsertest.xhtml";
+                file = project + path.sep + "runtimes/browsertest.xhtml";
             }
             if (request.url.indexOf("favicon.ico") < 0) {
                 fs.readFile(file, "utf8", function server_create_readFile(err, data):void {
@@ -66,6 +66,13 @@ function server() {
                         response.write(JSON.stringify(err));
                         console.log(err);
                         return;
+                    }
+                    if (file.indexOf(".js") === file.length - 3) {
+                        response.writeHead(200, {"Content-Type": "application/javascript"});
+                    } else if (file.indexOf(".css") === file.length - 4) {
+                        response.writeHead(200, {"Content-Type": "text/css"});
+                    } else if (file.indexOf(".xhtml") === file.length - 6) {
+                        response.writeHead(200, {"Content-Type": "application/xhtml+xml"});
                     }
                     response.write(data);
                     response.end();
@@ -169,11 +176,13 @@ function server() {
                             list[3] = "0" + list[3];
                         } while (list[3].length < 3);
                     }
-                    console.log("[\u001b[36m" + list.join(":") + "\u001b[39m] Total compile time.");
+                    console.log("[\u001b[35m" + list.join(":") + "\u001b[39m] Total compile time.");
                 };
             console.log("");
             start = time("Compiling TypeScript for \u001b[32m" + filename + "\u001b[39m");
-            child("tsc", function nodemon_restart_child(err, stdout, stderr):void {
+            child("tsc", {
+                cwd: project
+            }, function nodemon_restart_child(err, stdout, stderr):void {
                 if (err !== null) {
                     console.log(err);
                     return;
