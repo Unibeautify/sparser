@@ -75,7 +75,7 @@ Contributing is simple and this project needs lots of help.  Here are some sugge
 
 * If contributing code ensure that you provide a healthy serving of unit test code samples and pass the validation build.  I am not emotionally tied to code style concerns.  I tried to add as many of my preferred code style opinions to the ESLint validation rules, so as long as contributing code passes the validation build and includes enough coverage from unit test samples I will accept it.
 * If you wish to contribute new language support or write a new lexer file please see the [lexer readme](lexers/readme.md) to get started.
-* QA and user acceptance is always a huge concern.  If you notice a defect please open a [github issue](github.com/Unibeautify/parse-framework/issues/).  I cannot be aware of all user concerns or edge cases and so feedback from users is absolutely critical to building a quality application.
+* QA and user acceptance is always a huge concern.  If you notice a defect please open a [github issue](https://github.com/Unibeautify/parse-framework/issues/new).  I cannot be aware of all user concerns or edge cases and so feedback from users is absolutely critical to building a quality application.
 
 ## FAQ
 
