@@ -10,7 +10,7 @@ const server = function server_() {
         fs       = require("fs"),
         child    = require("child_process").exec,
         socket   = require("ws"),
-        validate = require(".." + path.sep + "test" + path.sep + "validate.js"),
+        validate = require(`..${path.sep}test${path.sep}validate.js`),
         cwd      = process.cwd(),
         ignore   = function server_indexOf(input:string):boolean {
             if (input.indexOf(".git") === 0) {
@@ -22,7 +22,7 @@ const server = function server_() {
             if (input.indexOf("js") === 0) {
                 return true;
             }
-            if (input.indexOf("test" + path.sep + "samples_code") === 0) {
+            if (input.indexOf(`test${path.sep}samples_code`) === 0) {
                 return true;
             }
             return false;
@@ -37,12 +37,12 @@ const server = function server_() {
         serverError = function server_serverError(error) {
             if (error.code === "EADDRINUSE") {
                 if (error.port === port + 1) {
-                    console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Web socket channel port, \u001b[36m" + port + "\u001b[39m, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.");
+                    console.log(`\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Web socket channel port, \u001b[36m${port}\u001b[39m, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.`);
                 } else {
-                    console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port, \u001b[36m" + port + "\u001b[39m, is in use!");
+                    console.log(`\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port, \u001b[36m${port}\u001b[39m, is in use!`);
                 }
             } else {
-                console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m " + error.Error);
+                console.log(`\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m ${error.Error}`);
             }
             return process.exit(1);
         },
@@ -53,14 +53,14 @@ const server = function server_() {
                     : request.url,
                 file:string = project + path.sep + uri.slice(1);
             if (uri === "/") {
-                file = project + path.sep + "runtimes/browsertest.xhtml";
+                file = `${project + path.sep}runtimes/browsertest.xhtml`;
             }
             if (request.url.indexOf("favicon.ico") < 0) {
                 fs.readFile(file, "utf8", function server_create_readFile(err, data):void {
                     if (err !== undefined && err !== null) {
                         if (err.toString().indexOf("no such file or directory") > 0) {
                             response.writeHead(404, {"Content-Type": "text/plain"});
-                            console.log("\u001b[31m\u001b[1m404\u001b[0m\u001b[39m for " + file);
+                            console.log(`\u001b[31m\u001b[1m404\u001b[0m\u001b[39m for ${file}`);
                             return;
                         }
                         response.write(JSON.stringify(err));
@@ -76,7 +76,7 @@ const server = function server_() {
                     }
                     response.write(data);
                     response.end();
-                    //console.log("Responded with " + file);
+                    //console.log(`Responded with ${file}`);
                 });
             } else {
                 response.end();
@@ -84,7 +84,7 @@ const server = function server_() {
         });
     let ws;
     if (isNaN(port) === true) {
-        console.log("\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port is, " + port + ", which not a number!");
+        console.log(`\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port is, ${port}, which not a number!`);
         return process.exit(1);
     }
     if (cwd.indexOf("parse-framework") < cwd.length - 15) {
@@ -98,7 +98,7 @@ const server = function server_() {
             }
         });
     };
-    console.log("HTTP server is up at: \u001b[36mhttp://localhost:" + port + "\u001b[39m");
+    console.log(`HTTP server is up at: \u001b[36mhttp://localhost:${port}\u001b[39m`);
     console.log("\u001b[32mStarting web server and file system watcher!\u001b[39m");
     fs.watch(project, {
         recursive: true
@@ -118,24 +118,24 @@ const server = function server_() {
                     seconds:string = String(date.getSeconds()),
                     mseconds:string = String(date.getMilliseconds());
                 if (hours.length === 1) {
-                    hours = "0" + hours;
+                    hours = `0${hours}`;
                 }
                 if (minutes.length === 1) {
-                    minutes = "0" + minutes;
+                    minutes = `0${minutes}`;
                 }
                 if (seconds.length === 1) {
-                    seconds = "0" + seconds;
+                    seconds = `0${seconds}`;
                 }
                 if (mseconds.length < 3) {
                     do {
-                        mseconds = "0" + mseconds;
+                        mseconds = `0${mseconds}`;
                     } while (mseconds.length < 3);
                 }
                 datearr.push(hours);
                 datearr.push(minutes);
                 datearr.push(seconds);
                 datearr.push(mseconds);
-                console.log("[\u001b[36m" + datearr.join(":") + "\u001b[39m] " + message);
+                console.log(`[\u001b[36m${datearr.join(":")}\u001b[39m] ${message}`);
                 return date.valueOf();
             };
         if (extension === "ts") {
@@ -152,7 +152,7 @@ const server = function server_() {
                     }
                     list.push(hours.toString());
                     if (list[0].length < 2) {
-                        list[0] = "0" + list[0];
+                        list[0] = `0${list[0]}`;
                     }
                     if (length > 60000) {
                         minutes = Math.floor(length / 60000);
@@ -160,7 +160,7 @@ const server = function server_() {
                     }
                     list.push(minutes.toString());
                     if (list[1].length < 2) {
-                        list[1] = "0" + list[1];
+                        list[1] = `0${list[1]}`;
                     }
                     if (length > 1000) {
                         seconds = Math.floor(length / 1000);
@@ -168,18 +168,18 @@ const server = function server_() {
                     }
                     list.push(seconds.toString());
                     if (list[2].length < 2) {
-                        list[2] = "0" + list[2];
+                        list[2] = `0${list[2]}`;
                     }
                     list.push(length.toString());
                     if (list[3].length < 3) {
                         do {
-                            list[3] = "0" + list[3];
+                            list[3] = `0${list[3]}`;
                         } while (list[3].length < 3);
                     }
-                    console.log("[\u001b[35m" + list.join(":") + "\u001b[39m] Total compile time.");
+                    console.log(`[\u001b[35m${list.join(":")}\u001b[39m] Total compile time.`);
                 };
             console.log("");
-            start = time("Compiling TypeScript for \u001b[32m" + filename + "\u001b[39m");
+            start = time(`Compiling TypeScript for \u001b[32m${filename}\u001b[39m`);
             child("tsc", {
                 cwd: project
             }, function nodemon_restart_child(err, stdout, stderr):void {
@@ -198,7 +198,7 @@ const server = function server_() {
             });
         } else if (extension === "css" || extension === "xhtml" || extension === "js") {
             console.log("");
-            time("Refreshing browser tab(s) - \u001b[32m" + filename + "\u001b[39m");
+            time(`Refreshing browser tab(s) - \u001b[32m${filename}\u001b[39m`);
             ws.broadcast("reload");
         } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
             console.log("");

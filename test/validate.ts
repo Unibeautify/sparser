@@ -9,11 +9,6 @@ const taskrunner = function taskrunner_() {
             return;
         },
         parse:parse,
-        project:string = (function taskrunner_project() {
-            const path = require("path"),
-                dirs:string[] = __dirname.split(path.sep);
-            return dirs.slice(0, dirs.length - 2).join(path.sep);
-        }()),
         parse_options:options = {
             correct        : false,
             crlf           : false,
@@ -36,6 +31,10 @@ const taskrunner = function taskrunner_() {
             fs   : require("fs"),
             path : require("path")
         },
+        project:string = (function taskrunner_project() {
+            const dirs:string[] = __dirname.split(node.path.sep);
+            return dirs.slice(0, dirs.length - 2).join(node.path.sep) + node.path.sep;
+        }()),
         orderlen:number   = order.length,
         relative:string   = __dirname.replace(/((\/|\\)js(\/|\\)test)$/, ""),
         humantime  = function taskrunner_humantime(finished:boolean):string {
@@ -106,7 +105,7 @@ const taskrunner = function taskrunner_() {
                         output = "0.00B";
                     } else if (triples === 0) {
                         //input less than 1000
-                        output = an_integer + "B";
+                        output = `${an_integer}B`;
                     } else {
                         //for input greater than 999
                         length = Math.floor((an_integer / power) * 100) / 100;
@@ -116,37 +115,37 @@ const taskrunner = function taskrunner_() {
                 },
                 plural       = function core__proctime_plural(x:number, y:string):string {
                     if (x !== 1) {
-                        return x + y + "s ";
+                        return `${x + y}s `;
                     }
-                    return x + y + " ";
+                    return `${x + y} `;
                 },
                 minute       = function core__proctime_minute():void {
                     minutes      = parseInt((elapsed / 60).toString(), 10);
                     minuteString = (finished === true)
                         ? plural(minutes, " minute")
                         : (minutes < 10)
-                            ? "0" + minutes
-                            : "" + minutes;
+                            ? `0${minutes}`
+                            : String(minutes);
                     minutes      = elapsed - (minutes * 60);
                     secondString = (finished === true)
                         ? (minutes === 1)
                             ? " 1 second "
-                            : minutes.toFixed(3) + " seconds "
+                            : `${minutes.toFixed(3)} seconds `
                         : minutes.toFixed(3);
                 };
             memory       = process.memoryUsage();
             finalMem     = prettybytes(memory.rss);
 
             //last line for additional instructions without bias to the timer
-            secondString = elapsed + "";
+            secondString = String(elapsed);
             strSplit     = secondString.split(".");
             if (strSplit[1].length < 9) {
                 do {
                     strSplit[1]  = strSplit[1] + 0;
                 } while (strSplit[1].length < 9);
-                secondString = strSplit[0] + "." + strSplit[1];
+                secondString = `${strSplit[0]}.${strSplit[1]}`;
             } else if (strSplit[1].length > 9) {
-                secondString = strSplit[0] + "." + strSplit[1].slice(0, 9);
+                secondString = `${strSplit[0]}.${strSplit[1].slice(0, 9)}`;
             }
             if (elapsed >= 60 && elapsed < 3600) {
                 minute();
@@ -156,8 +155,8 @@ const taskrunner = function taskrunner_() {
                 hourString = (finished === true)
                     ? plural(hours, " hour")
                     : (hours < 10)
-                        ? "0" + hours
-                        : "" + hours;
+                        ? `0${hours}`
+                        : String(hours);
                 minute();
             } else {
                 secondString = (finished === true)
@@ -166,8 +165,8 @@ const taskrunner = function taskrunner_() {
             }
             if (finished === true) {
                 finalTime = hourString + minuteString + secondString;
-                console.log(finalMem + " of memory consumed");
-                console.log(finalTime + "total time");
+                console.log(`${finalMem} of memory consumed`);
+                console.log(`${finalTime}total time`);
                 console.log("");
             } else {
                 if (hourString === "") {
@@ -177,10 +176,9 @@ const taskrunner = function taskrunner_() {
                     minuteString = "00";
                 }
                 if ((/^([0-9]\.)/).test(secondString) === true) {
-                    secondString = "0" + secondString;
+                    secondString = `0${secondString}`;
                 }
-                return "\u001b[36m[" + hourString + ":" + minuteString + ":" +
-                        secondString + "]\u001b[39m ";
+                return `\u001b[36m[${hourString}:${minuteString}:${secondString}]\u001b[39m `;
             }
         },
         errout     = function taskrunner_errout(errtext):void {
@@ -222,7 +220,7 @@ const taskrunner = function taskrunner_() {
                         const lexer     = function taskrunner_coreunits_compare_lexer():void {
                                 const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
                                 console.log("");
-                                console.log("Tests for lexer - \u001b[36m" + lex + "\u001b[39m");
+                                console.log(`Tests for lexer - \u001b[36m${lex}\u001b[39m`);
                                 currentlex = lex;
                             },
                             diffFiles  = function taskrunner_coreunits_compare_diffFiles(sampleName:string, sampleSource:data, sampleDiff:data):void {
@@ -232,7 +230,7 @@ const taskrunner = function taskrunner_() {
                                     plural:string = "",
                                     report:any[] = [],
                                     total:number  = 0;
-                                const diffview = require(relative + node.path.sep + "test" + node.path.sep + "diffview.js"),
+                                const diffview = require(`${relative + node.path.sep}test${node.path.sep}diffview.js`),
                                     record = function taskrunner_coreunits_compare_diffFiles_record(data:data):record[] {
                                         let x:number = 0;
                                         const len:number = data.token.length,
@@ -270,10 +268,10 @@ const taskrunner = function taskrunner_() {
                                 // of diff_options.context (not parallel) 6 - total count of differences
                                 do {
                                     if (report[0][aa] === undefined) {
-                                        errout("report[0][aa] is undefined, aa = " + aa);
+                                        errout(`report[0][aa] is undefined, aa = ${aa}`);
                                     }
                                     if (report[0][aa].indexOf("\u001b[36m") === 0) {
-                                        console.log("\u001b[36m" + sampleName + "\u001b[39m");
+                                        console.log(`\u001b[36m${sampleName}\u001b[39m`);
                                     }
                                     if (report[0][aa].indexOf("\u001b[36mLine: ") !== 0) {
                                         if (report[0][aa].indexOf("\u001b[31m") === 0) {
@@ -288,13 +286,8 @@ const taskrunner = function taskrunner_() {
                                     aa = aa + 1;
                                 } while (aa < pdlen);
                                 console.log("");
-                                console.log(
-                                    total + plus + " \u001b[32mdifference" + plural + " counted.\u001b[39m"
-                                );
-                                errout(
-                                    "Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m" + sampleName + "" +
-                                    "\u001b[39m"
-                                );
+                                console.log(`${total + plus} \u001b[32mdifference${plural} counted.\u001b[39m`);
+                                errout(`Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m${sampleName}\u001b[39m`);
                             };
                         files.code   = parse.safeSort(files.code, "ascend", false);
                         files.parsed = parse.safeSort(files.parsed, "ascend", false);
@@ -305,14 +298,10 @@ const taskrunner = function taskrunner_() {
                             }
                             if (files.code[a] === undefined || files.parsed[a] === undefined) {
                                 if (files.code[a] === undefined) {
-                                    console.log(
-                                        "\u001b[33msamples_code directory is missing file:\u001b[39m " + files.parsed[a][0]
-                                    );
+                                    console.log(`\u001b[33msamples_code directory is missing file:\u001b[39m${files.parsed[a][0]}`);
                                     files.parsed.splice(a, 1);
                                 } else {
-                                    console.log(
-                                        "\u001b[33msamples_parse directory is missing file:\u001b[39m " + files.code[a][0]
-                                    );
+                                    console.log(`\u001b[33msamples_parse directory is missing file:\u001b[39m ${files.code[a][0]}`);
                                     files.code.splice(a, 1);
                                 }
                                 len = (files.code.length > files.parsed.length)
@@ -321,9 +310,9 @@ const taskrunner = function taskrunner_() {
                                 a   = a - 1;
                             } else if (files.code[a][0] === files.parsed[a][0]) {
                                 if (files.parsed[a][1] === "") {
-                                    console.log("\u001b[33mParsed file is empty:\u001b[39m " + files.parsed[a][0]);
+                                    console.log(`\u001b[33mParsed file is empty:\u001b[39m ${files.parsed[a][0]}`);
                                 } else if (files.code[a][1] === "") {
-                                    console.log("\u001b[33mCode file is empty:\u001b[39m " + files.code[a][0]);
+                                    console.log(`\u001b[33mCode file is empty:\u001b[39m ${files.code[a][0]}`);
                                 } else {
                                     if ((/_correct(\.|_)/).test(files.code[a][0]) === true) {
                                         parse_options.correct = true;
@@ -360,9 +349,7 @@ const taskrunner = function taskrunner_() {
                                     if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
                                             filecount = filecount + 1;
-                                            console.log(
-                                                humantime(false) + "\u001b[32mPass " + filecount + ":\u001b[39m " + files.parsed[a][0].replace(currentlex + node.path.sep, "")
-                                            );
+                                            console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[39m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
                                             if (a === len - 1) {
                                                 console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                                                 return next();
@@ -382,14 +369,10 @@ const taskrunner = function taskrunner_() {
                                 }
                             } else {
                                 if (files.code[a][0] < files.parsed[a][0]) {
-                                    console.log(
-                                        "\u001b[33mParsed samples directory is missing file:\u001b[39m " + files.code[a][0]
-                                    );
+                                    console.log(`\u001b[33mParsed samples directory is missing file:\u001b[39m ${files.code[a][0]}`);
                                     files.code.splice(a, 1);
                                 } else {
-                                    console.log(
-                                        "\u001b[33mCode samples directory is missing file:\u001b[39m " + files.parsed[a][0]
-                                    );
+                                    console.log(`\u001b[33mCode samples directory is missing file:\u001b[39m ${files.parsed[a][0]}`);
                                     files.parsed.splice(a, 1);
                                 }
                                 len = (files.code.length > files.parsed.length)
@@ -407,20 +390,20 @@ const taskrunner = function taskrunner_() {
                         return next();
                     },
                     readDir = function taskrunner_coreunits_readDir(type:string, lexer:string):void {
-                        const dirpath:string = relative + node.path.sep + "test" + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep;
+                        const dirpath:string = `${relative + node.path.sep}test${node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep}`;
                         node.fs.readdir(dirpath, function taskrunner_coreunits_readDir_callback(err, list) {
                             if (err !== null) {
                                 if (err.toString().indexOf("no such file or directory") > 0) {
-                                    return errout("The directory " + dirpath + " \u001b[31mdoesn't exist\u001b[39m. Provide the necessary test samples for \u001b[36m" + lexer + "\u001b[39m.");
+                                    return errout(`The directory ${dirpath} \u001b[31mdoesn't exist\u001b[39m. Provide the necessary test samples for \u001b[36m${lexer}\u001b[39m.`);
                                 }
-                                console.log("Error reading from directory " + dirpath);
+                                console.log(`Error reading from directory ${dirpath}`);
                                 return errout(err);
                             }
                             if (list === undefined) {
                                 if (total[type] === 0) {
-                                    return errout("No files of type " + type + " for lexer " + lexer + ".");
+                                    return errout(`No files of type ${type} for lexer ${lexer}.`);
                                 }
-                                return errout("undefined returned when reading files from " + dirpath);
+                                return errout(`undefined returned when reading files from ${dirpath}`);
                             }
                             const pusher = function taskrunner_coreunits_readDir_callback_pusher(val) {
                                 node.fs.readFile(
@@ -429,7 +412,7 @@ const taskrunner = function taskrunner_() {
                                     function taskrunner_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
                                         count[type] = count[type] + 1;
                                         if (erra !== null && erra !== undefined) {
-                                            errout("Error reading file: " + relative + node.path.sep + "samples_" + type + node.path.sep + lexer + node.path.sep + val);
+                                            errout(`Error reading file: ${relative + node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep + val}`);
                                         } else {
                                             files[type].push([lexer + node.path.sep + val, fileData]);
                                         }
@@ -441,7 +424,7 @@ const taskrunner = function taskrunner_() {
                             };
                             total[type] = total[type] + list.length;
                             if (err !== null) {
-                                errout("Error reading from directory: " + dirpath);
+                                errout(`Error reading from directory: ${dirpath}`);
                             }
                             if (list.length === 0 && count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
                                 compare();
@@ -452,7 +435,7 @@ const taskrunner = function taskrunner_() {
                     };
                 console.log("\u001b[36mCore Unit Testing\u001b[39m");
                 total.lexer = lexers.length;
-                lexers.forEach(function taskrunner_coreunits_lexers(value:string, index:number, array:string[]) {
+                lexers.forEach(function taskrunner_coreunits_lexers(value:string) {
                     count.lexer = count.lexer + 1;
                     readDir("code", value);
                     readDir("parsed", value);
@@ -478,91 +461,91 @@ const taskrunner = function taskrunner_() {
                 if (keysort !== keylist) {
                     return errout("\u001b[31mParse framework failure:\u001b[39m The \"parse\" object does not match the known list of required properties.");
                 }
-                console.log(humantime(false) + "\u001b[32mObject parse contains only the standard properties.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mObject parse contains only the standard properties.\u001b[39m`);
                 
                 if (typeof parse.concat !== "function" || parse.concat.name !== "parse_concat") {
                     return errout("\u001b[31mParse framework failure:\u001b[39m parse.concat does not point to the function named parse_concat.");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.concat points to function parse_concat.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.concat points to function parse_concat.\u001b[39m`);
                 
                 if (parse.count !== -1) {
                     return errout("\u001b[31mParse framework failure:\u001b[39m The default for parse.count isn't -1 or type number.");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.count has default value of -1 and type number.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.count has default value of -1 and type number.\u001b[39m`);
                 
                 if (
                     typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"lexer\":[],\"lines\":[],\"presv\":[],\"stack\":[],\"token\":[],\"types\":[]}"
                 ) {
                     return errout("\u001b[31mParse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[39m`);
                 
                 if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
                     return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.datanames contains only the data field names.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.datanames contains only the data field names.\u001b[39m`);
                 
                 if (parse.crlf !== "\n" && parse.crlf !== "\r\n") {
                     return errout("\u001b[31mParse framework failure: parse.lf does have a value of \"\\n\" or \"\\r\\n\".\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.lf has a value of \"\\n\" or \"\\r\\n\".\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.lf has a value of \"\\n\" or \"\\r\\n\".\u001b[39m`);
                 
                 if (parse.lineNumber !== 1) {
                     return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 and type number.\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[39m`);
                 
                 // The correct default for linesSpace is 0
                 // but the default is changed by the source of empty string.
                 if (parse.linesSpace !== 1) {
                     return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 0 and type number.\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[39m`);
                 
                 if (typeof parse.objectSort !== "function" || parse.objectSort.name !== "parse_objectSort") {
                     return errout("\u001b[31mParse framework failure: parse.objectSort is not assigned to named function parse_objectSort\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.objectSort is assigned to named function parse_objectSort\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.objectSort is assigned to named function parse_objectSort\u001b[39m`);
                 
                 if (typeof parse.pop !== "function" || parse.pop.name !== "parse_pop") {
                     return errout("\u001b[31mParse framework failure: parse.pop is not assigned to named function parse_pop\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.pop is assigned to named function parse_pop\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.pop is assigned to named function parse_pop\u001b[39m`);
                 
                 if (typeof parse.push !== "function" || parse.push.name !== "parse_push") {
                     return errout("\u001b[31mParse framework failure: parse.push is not assigned to named function parse_push\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.push is assigned to named function parse_push\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.push is assigned to named function parse_push\u001b[39m`);
                 
                 if (parse.push.toString().indexOf("parse.structure.push([structure, parse.count])") < 0 || parse.push.toString().indexOf("parse.structure.pop") < 0) {
                     return errout("\u001b[31mParse framework failure: parse.push does not regulate parse.structure\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.push contains references to push and pop parse.structure\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.push contains references to push and pop parse.structure\u001b[39m`);
 
                 if (typeof parse.safeSort !== "function" || parse.safeSort.name !== "parse_safeSort") {
                     return errout("\u001b[31mParse framework failure: parse.safeSort is not assigned to named function parse_safeSort\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.safeSort is assigned to named function parse_safeSort\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.safeSort is assigned to named function parse_safeSort\u001b[39m`);
                 
                 if (typeof parse.spacer !== "function" || parse.spacer.name !== "parse_spacer") {
                     return errout("\u001b[31mParse framework failure: parse.spacer is not assigned to named function parse_spacer\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.spacer is assigned to named function parse_spacer\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.spacer is assigned to named function parse_spacer\u001b[39m`);
                 
                 if (typeof parse.splice !== "function" || parse.splice.name !== "parse_splice") {
                     return errout("\u001b[31mParse framework failure: parse.splice is not assigned to named function parse_splice\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.splice is assigned to named function parse_splice\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.splice is assigned to named function parse_splice\u001b[39m`);
 
                 if (Array.isArray(parse.structure) === false || parse.structure.length !== 1 || Array.isArray(parse.structure[0]) === false || parse.structure[0][0] !== "global" || parse.structure[0][1] !== -1) {
                     return errout("\u001b[31mParse framework failure: parse.structure is not assigned the default [[\"global\", -1]]\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.structure is assigned the default of [[\"global\", -1]]\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.structure is assigned the default of [[\"global\", -1]]\u001b[39m`);
 
                 if (parse.structure.pop.name !== "parse_structure_pop") {
                     return errout("\u001b[31mParse framework failure: parse.structure does not have a custom 'pop' method.\u001b[39m ");
                 }
-                console.log(humantime(false) + "\u001b[32mparse.structure does have a custom 'pop' method.\u001b[39m");
+                console.log(`${humantime(false)}\u001b[32mparse.structure does have a custom 'pop' method.\u001b[39m`);
                 
                 console.log("\u001b[32mFramework testing complete!\u001b[39m");
                 return next();
@@ -583,7 +566,7 @@ const taskrunner = function taskrunner_() {
                         let filesCount:number = 0;
                         const filesTotal = files.length,
                             lintit = function taskrunner_lint_lintrun_lintit(val:string):void {
-                                node.child("eslint " + val, {
+                                node.child(`eslint ${val}`, {
                                     cwd: project
                                 }, function taskrunner_lint_lintrun_lintit_eslint(err, stdout, stderr) {
                                     if (stdout === "") {
@@ -596,7 +579,7 @@ const taskrunner = function taskrunner_() {
                                             return;
                                         }
                                         filesCount = filesCount + 1;
-                                        console.log(humantime(false) + "\u001b[32mLint passed:\u001b[39m " + val);
+                                        console.log(`${humantime(false)}\u001b[32mLint passed:\u001b[39m ${val}`);
                                         if (filesCount === filesTotal) {
                                             console.log("\u001b[32mLint complete!\u001b[39m");
                                             next();
@@ -628,7 +611,7 @@ const taskrunner = function taskrunner_() {
                                             function taskrunner_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
                                                 let a:number         = 0,
                                                     ignoreDir:boolean = false;
-                                                const dirtest:string   = filepath.replace(/\\/g, "/") + "/" + val;
+                                                const dirtest:string   = `${filepath.replace(/\\/g, "/")}/${val}`;
                                                 if (errb !== null) {
                                                     return errout(errb);
                                                 }
@@ -659,7 +642,7 @@ const taskrunner = function taskrunner_() {
                                         );
                                     };
                                     if (erra !== null) {
-                                        return errout("Error reading path: " + filepath + "\n" + erra);
+                                        return errout(`Error reading path: ${filepath}\n${erra}`);
                                     }
                                     total = total + list.length - 1;
                                     list.forEach(fileEval);
@@ -688,36 +671,19 @@ const taskrunner = function taskrunner_() {
                         errout(stdout);
                         return;
                     }
-                    console.log(humantime(false) + "\u001b[32mTypeScript build completed without warnings.\u001b[39m");
+                    console.log(`${humantime(false)}\u001b[32mTypeScript build completed without warnings.\u001b[39m`);
                     return next();
                 });
             }
         };
 
-    require(".." + node.path.sep + "parse.js");
-    require(".." + node.path.sep + "language.js");
+    require(`${project}js${node.path.sep}parse.js`);
+    require(`${project}js${node.path.sep}language.js`);
     framework = global.parseFramework;
     framework.lexer      = {};
     framework.parseerror = "";
     parse             = framework.parse;
-
-    node.fs.readdir(relative + node.path.sep + "js" + node.path.sep + "lexers", function taskrunner_lexers(err, files) {
-        if (err !== null) {
-            console.log(err);
-            if (process.argv[1].indexOf("validate.js") > -1) {
-                process.exit(1);
-            } else {
-                return;
-            }
-        } else {
-            files.forEach(function taskrunner_lexers_each(value) {
-                if ((/(\.js)$/).test(value) === true) {
-                    require(relative + node.path.sep + "js" + node.path.sep + "lexers" + node.path.sep + value);
-                    parse_options.lexerOptions[value.slice(0, value.indexOf("."))] = {};
-                }
-            });
-        }
-    });
+    require(`${project}js${node.path.sep}lexers${node.path.sep}all.js`)(parse_options);
 
     next = function taskrunner_next() {
         let phase = order[0];

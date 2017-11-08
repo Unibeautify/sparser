@@ -43,22 +43,22 @@ const services = function services_() {
             "parse-array" : {
                 brief: "Prints to standard output the parsed data as an object of parallel arrays.",
                 detail: "Prints to standard output the parsed data as an object of parallel arrays.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: "parse-array js" + node.path.sep + "example" + node.path.sep + "file.js"
+                example: `parse-array js${node.path.sep}example${node.path.sep}file.js`
             },
             "parse-object": {
                 brief: "Prints to standard output the parsed data as an array of objects.",
                 detail: "Prints to standard output the parsed data as an array of objects.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: "parse-object js" + node.path.sep + "example" + node.path.sep + "file.js"
+                example: `parse-object js${node.path.sep}example${node.path.sep}file.js`
             },
             "parse-table" : {
                 brief: "Prints to standard output the parsed data formatted into a grid with ANSI colors.",
                 detail: "Prints to standard output the parsed data formatted into a grid with ANSI colors.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: "parse-table js" + node.path.sep + "example" + node.path.sep + "file.js"
+                example: `parse-table js${node.path.sep}example${node.path.sep}file.js`
             },
             "performance" : {
                 brief: "Test a parse operation with nanosecond precision.",
                 detail: "Prints to screen a time duration in nanoseconds for a parse operation.  The raw data is acquired by running an initial operation that is discard and then averaging from 10 additional operations.  The time duration is only a measure of the actual parse operation and the timer code.  All other operations, including those related to Node.js aren't included in the timer.  A relative address to a file is required.",
-                example: "performance js" + node.path.sep + "example" + node.path.sep + "file.js"
+                example: `performance js${node.path.sep}example${node.path.sep}file.js`
             },
             "server"      : {
                 brief: "Starts a web server and opens a web socket channel.",
@@ -104,7 +104,7 @@ const services = function services_() {
                             length = commandlist;
                             // applies left padding
                             do {
-                                chars[index] = chars[index] + " ";
+                                chars[index] = `${chars[index]} `;
                                 length = length - 1;
                             } while (length > 0);
                             break;
@@ -119,7 +119,6 @@ const services = function services_() {
             return input;
         },
         time = function services_time(message:string):number {
-            console.log(process.hrtime());
             const date:Date = new Date(),
                 datearr:string[] = [];
             let hours:string = String(date.getHours()),
@@ -127,24 +126,24 @@ const services = function services_() {
                 seconds:string = String(date.getSeconds()),
                 mseconds:string = String(date.getMilliseconds());
             if (hours.length === 1) {
-                hours = "0" + hours;
+                hours = `0${hours}`;
             }
             if (minutes.length === 1) {
-                minutes = "0" + minutes;
+                minutes = `0${minutes}`;
             }
             if (seconds.length === 1) {
-                seconds = "0" + seconds;
+                seconds = `0${seconds}`;
             }
             if (mseconds.length < 3) {
                 do {
-                    mseconds = "0" + mseconds;
+                    mseconds = `0${mseconds}`;
                 } while (mseconds.length < 3);
             }
             datearr.push(hours);
             datearr.push(minutes);
             datearr.push(seconds);
             datearr.push(mseconds);
-            console.log("[\u001b[36m" + datearr.join(":") + "\u001b[39m] " + message);
+            console.log(`[\u001b[36m${datearr.join(":")}\u001b[39m] ${message}`);
             return date.valueOf();
         },
         duration = function services_duration(length:number, message:string):void {
@@ -158,7 +157,7 @@ const services = function services_() {
             }
             list.push(hours.toString());
             if (list[0].length < 2) {
-                list[0] = "0" + list[0];
+                list[0] = `0${list[0]}`;
             }
             if (length > 60000) {
                 minutes = Math.floor(length / 60000);
@@ -166,7 +165,7 @@ const services = function services_() {
             }
             list.push(minutes.toString());
             if (list[1].length < 2) {
-                list[1] = "0" + list[1];
+                list[1] = `0${list[1]}`;
             }
             if (length > 1000) {
                 seconds = Math.floor(length / 1000);
@@ -174,15 +173,15 @@ const services = function services_() {
             }
             list.push(seconds.toString());
             if (list[2].length < 2) {
-                list[2] = "0" + list[2];
+                list[2] = `0${list[2]}`;
             }
             list.push(length.toString());
             if (list[3].length < 3) {
                 do {
-                    list[3] = "0" + list[3];
+                    list[3] = `0${list[3]}`;
                 } while (list[3].length < 3);
             }
-            console.log("[\u001b[36m" + list.join(":") + "\u001b[39m] " + message);
+            console.log(`[\u001b[36m${list.join(":")}\u001b[39m] ${message}`);
         },
         errout = function services_errout(message:string):void {
             let stack = new Error().stack;
@@ -279,23 +278,23 @@ const services = function services_() {
                     });
                     console.log("");
                     console.log("Examples:");
-                    console.log("\u001b[36mnode js" + node.path.sep + "services commands server");
-                    console.log("\u001b[36mnode js" + node.path.sep + "services version");
-                    console.log("\u001b[36mnode js" + node.path.sep + "services parse-table js/parse.js");
-                    console.log("\u001b[36mnode js" + node.path.sep + "services server 3000");
+                    console.log(`\u001b[36mnode js${node.path.sep}services commands server`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services version`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services parse-table js/parse.js`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services server 3000`);
                 } else {
-                    console.log("\u001b[4m" + args[1] + "\u001b[0m");
+                    console.log(`\u001b[4m${args[1]}\u001b[0m`);
                     console.log("");
                     console.log(wrap(commandList[args[1]].detail, longest));
                     console.log("");
                     console.log("Example");
-                    console.log("\u001b[36mnode js" + node.path.sep + "services " + commandList[args[1]].example + "\u001b[39m");
+                    console.log(`\u001b[36mnode js${node.path.sep}services ${commandList[args[1]].example}\u001b[39m`);
                 }
                 console.log("");
             },
             help: function services_action_help():void {
                 console.log("");
-                console.log("Thank you for experimenting with the \u001b[4mUnibeautify Parse-Framework\u001b[0m \u001b[32m" + version + "\u001b[39m in Node.js");
+                console.log(`Thank you for experimenting with the \u001b[4mUnibeautify Parse-Framework\u001b[0m \u001b[32m${version}\u001b[39m in Node.js`);
                 console.log("");
                 console.log("\u001b[31m*\u001b[39m For a list of commands please try: \u001b[36mnode js/service commands\u001b[39m");
                 console.log("\u001b[31m*\u001b[39m For a description of the project please read the readme.md document.");
@@ -320,7 +319,7 @@ const services = function services_() {
                 console.log("\u001b[4mInventory of mentioned languages\u001b[0m");
                 console.log("");
                 console.log(wrap("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.lang'. Other languages may be supported without dedicated logic.", 0));
-                node.fs.readdir(project + "lexers", function services_action_inventory_readdir(err, files) {
+                node.fs.readdir(`${project}lexers`, function services_action_inventory_readdir(err, files) {
                     if (err !== null) {
                         return errout(err);
                     }
@@ -334,7 +333,7 @@ const services = function services_() {
                         }
                     } while (index > 0);
                     files.forEach(function services_action_inventory_readdir_each(filename) {
-                        node.fs.readFile(project + "lexers" + node.path.sep + filename, {
+                        node.fs.readFile(`${project}lexers${node.path.sep + filename}`, {
                             encoding: "utf8"
                         }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
                             if (errf !== null) {
@@ -361,11 +360,11 @@ const services = function services_() {
                                 const keys = Object.keys(langs).sort();
                                 console.log("");
                                 keys.forEach(function services_action_inventory_readdir_each_readfile_output(value) {
-                                    console.log("\u001b[31m*\u001b[39m \u001b[32m" + value + "\u001b[39m");
+                                    console.log(`\u001b[31m*\u001b[39m \u001b[32m${value}\u001b[39m`);
                                     if (langs[value].keys.length > 0) {
                                         langs[value].keys.sort();
                                         langs[value].keys.forEach(function services_action_inventory_readdir_each_readfile_output_dedicated(dedval) {
-                                            console.log("   \u001b[31m-\u001b[39m " + dedval);
+                                            console.log(`   \u001b[31m-\u001b[39m ${dedval}`);
                                         });
                                     }
                                 });
@@ -376,10 +375,10 @@ const services = function services_() {
                 });
             },
             parse: function services_action_parse():void {
-                const nodetest = require(project + "js" + node.path.sep + "runtimes" + node.path.sep + "nodetest");
+                const nodetest = require(`${project}js${node.path.sep}runtimes${node.path.sep}nodetest`);
                 process.argv.splice(0, 1);
                 if (process.argv[2] === undefined) {
-                    return errout("No code sample or file path. The \u001b[31m" + command + "\u001b[39m command requires an additional argument.");
+                    return errout(`No code sample or file path. The \u001b[31m${command}\u001b[39m command requires an additional argument.`);
                 }
                 if (command === "parse-table") {
                     return nodetest();
@@ -401,12 +400,12 @@ const services = function services_() {
                     if (errfile !== null) {
                         const errstring = errfile.toString();
                         if (errstring.indexOf("no such file or directory") > 0) {
-                            return errout("No file exists as the path specified: " + args[1]);
+                            return errout(`No file exists as the path specified: ${args[1]}`);
                         }
                         return errout(errfile);
                     }
-                    require(project + "js" + node.path.sep + "parse");
-                    require(project + "js" + node.path.sep + "language");
+                    require(`${project}js${node.path.sep}parse`);
+                    require(`${project}js${node.path.sep}language`);
                     const framework = global.parseFramework,
                         lang = framework.language.auto(filedata, "javascript"),
                         options:options = {
@@ -417,18 +416,8 @@ const services = function services_() {
                             lexerOptions: {},
                             outputFormat: "arrays",
                             source: filedata
-                        },
-                        dir = project + "js" + node.path.sep + "lexers";
-                    node.fs.readdir(dir, function services_action_performance_readFile_readdir(err, files) {
-                        if (err !== null) {
-                            return errout(err);
-                        }
-                        files.forEach(function services_action_performance_readFile_readdir_each(value) {
-                            if ((/(\.js)$/).test(value) === true) {
-                                require(dir + node.path.sep + value);
-                                options.lexerOptions[value.replace(".js", "")] = {};
-                            }
-                        });
+                        };
+                    require(`${project}js${node.path.sep}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
                         const store:number[] = [],
                             output:data = framework.parserArrays(options),
                             comma = function services_action_performance_readFile_readdir_comma(input:number):string {
@@ -439,7 +428,7 @@ const services = function services_() {
                                     do {
                                         ind = ind + 3;
                                         if (ind < len) {
-                                            arr[ind - 1] = "," + arr[ind - 1];
+                                            arr[ind - 1] = `,${arr[ind - 1]}`;
                                         }
                                     } while (ind < len);
                                 }
@@ -467,18 +456,18 @@ const services = function services_() {
                             }
                         });
 
-                        console.log("[\u001b[32m" + (total / 1e7) + "\u001b[39m] Milliseconds, \u00b1\u001b[36m" + ((((high - low) / total) / 2) * 100).toFixed(2) + "\u001b[39m%");
-                        console.log("[\u001b[36m" + comma(filedata.length) + "\u001b[39m] Character size");
-                        console.log("[\u001b[36m" + comma(output.token.length) + "\u001b[39m] Token length");
+                        console.log(`[\u001b[32m${(total / 1e7)}\u001b[39m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
+                        console.log(`[\u001b[36m${comma(filedata.length)}\u001b[39m] Character size`);
+                        console.log(`[\u001b[36m${comma(output.token.length)}\u001b[39m] Token length`);
                     });
                 });
             },
             server: function services_action_server():void {
                 process.argv.splice(0, 1);
-                require(project + "js" + node.path.sep + "runtimes" + node.path.sep + "httpserver")();
+                require(`${project}js${node.path.sep}runtimes${node.path.sep}httpserver`)();
             },
             validation: function services_action_validation():void {
-                require(project + "js" + node.path.sep + "test" + node.path.sep + "validate")();
+                require(`${project}js${node.path.sep}test${node.path.sep}validate`)();
             },
             version: function services_action_version():void {
                 console.log(version);
@@ -496,7 +485,7 @@ const services = function services_() {
     }
 
     // updates the files that mention a version number
-    node.fs.readFile(project + "package.json", {
+    node.fs.readFile(`${project}package.json`, {
         encoding: "utf8"
     }, function service_version(err, file) {
         if (err !== null) {
@@ -504,7 +493,7 @@ const services = function services_() {
         }
         const versionFiles = [
             "readme.md",
-            "runtimes" + node.path.sep + "browsertest.xhtml"
+            `runtimes${node.path.sep}browsertest.xhtml`
         ];
         version = JSON.parse(file).version;
         versionFiles.forEach(function service_version_each(filePath) {
@@ -512,7 +501,7 @@ const services = function services_() {
                 encoding: "utf8"
             }, function service_version_each_read(erra, fileData) {
                 if (erra !== null) {
-                    return errout("Error reading " + filePath + " file");
+                    return errout(`Error reading ${filePath} file`);
                 }
                 let ftest = (filePath === "readme.md")
                         ? "Version "
@@ -529,7 +518,7 @@ const services = function services_() {
                         encoding: "utf8"
                     }, function service_version_each_read_write(errw) {
                         if (errw !== null) {
-                            return errout("Error writing version update to " + filePath);
+                            return errout(`Error writing version update to ${filePath}`);
                         }
                     });
                 }

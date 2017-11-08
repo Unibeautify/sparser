@@ -21,7 +21,7 @@ const nodetest = function nodetest_() {
             path: require("path")
         },
         color     = function nodetest_color(numb: string): string {
-            return "\u001b[1m\u001b[" + numb + "m";
+            return `\u001b[1m\u001b[${numb}m`;
         },
         clear:string     = "\u001b[39m\u001b[0m",
         directory:string = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
@@ -57,7 +57,7 @@ const nodetest = function nodetest_() {
                 end:number = dec(process.hrtime()),
                 sta:number = dec(startTime),
                 dur:number = (end - sta) / 1000000;
-            return "Parser executed in " + color("32") + dur + clear + " milliseconds.";
+            return `Parser executed in ${color("32") + dur + clear} milliseconds.`;
         },
         source:string    = (process.argv.length > 3 && process.argv[2].indexOf("samples_code") === process.argv[2].length - 13)
             ? process.argv[2] + process.argv[3]
@@ -135,9 +135,9 @@ const nodetest = function nodetest_() {
             } while (a < b);
             console.log("");
             console.log(duration);
-            console.log("Presumed language is " + color("33") + lang[2] + clear);
+            console.log(`Presumed language is ${color("33") + lang[2] + clear}`);
             if (framework.parseerror !== "") {
-                console.log(color("31") + "Error:" + clear + " " + framework.parseerror);
+                console.log(`${color("31")}Error:${clear} ${framework.parseerror}`);
             }
         },
         execute   = function nodetest_execute(sourcetext) {
@@ -146,9 +146,9 @@ const nodetest = function nodetest_() {
             options.source = sourcetext;
             if (raw === true) {
                 if (sourcetext !== source) {
-                    if (source.indexOf("test" + node.path.sep + "samples_code" + node.path.sep) > -1 && source.indexOf("_lang-") < 0) {
+                    if (source.indexOf(`test${node.path.sep}samples_code${node.path.sep}`) > -1 && source.indexOf("_lang-") < 0) {
                         options.lexer = (function nodetest_execute_lexer() {
-                            const str = source.split("samples_code" + node.path.sep)[1];
+                            const str = source.split(`samples_code${node.path.sep}`)[1];
                             return str.slice(0, str.indexOf(node.path.sep));
                         }());
                     }
@@ -211,30 +211,17 @@ const nodetest = function nodetest_() {
             }
         };
     
-    require(directory + "parse.js");
-    require(directory + "language.js");
+    require(`${directory}parse.js`);
+    require(`${directory}language.js`);
     framework = global.parseFramework;
     framework.lexer = {};
     framework.parseerror = "";
-    node.fs.readdir(directory + "lexers", function nodetest_readdir(err, files) {
-        if (err !== null) {
-            console.log(err);
-            return process.exit(1);
-        }
-        files.forEach(function nodetest_readdir_each(value) {
-            if ((/(\.js)$/).test(value) === true) {
-                require(directory + "lexers" + node.path.sep + value);
-                options.lexerOptions[value.replace(".js", "")] = {};
-            }
-        });
+    require(`${directory}lexers${node.path.sep}all.js`)(options, function nodetest_lexers() {
         if ((/([a-zA-Z0-9]+\.[a-zA-Z0-9]+)$/).test(source) === true) {
             node.fs.stat(source, function nodetest_readdir_stat(err, stats) {
                 if (err !== null) {
                     if (err.toString().indexOf("no such file or directory") > 0) {
-                        return console.log(
-                            "Presumed input is a file but such a " + color("31") + "file name does not exist" +
-                            clear + " as " + node.path.resolve(source)
-                        );
+                        return console.log(`Presumed input is a file but such a ${color("31")}file name does not exist${clear} as ${node.path.resolve(source)}`);
                     }
                     return console.log(err);
                 }
