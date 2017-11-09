@@ -1,6 +1,6 @@
 # Parse Framework
 
-## Version 1.1.5
+## Version 1.1.6
 Play around with this application [in your browser](http://prettydiff.com/parse-framework/runtimes/browsertest.xhtml).
 
 ### Todo
@@ -54,7 +54,7 @@ cd node_modules/parse-framework
 Finally, we need to run the TypeScript build to convert the code from TypeScript to JavaScript:
 
 ```bash
-tsc
+node js/services build
 ```
 
 ### Validation Build

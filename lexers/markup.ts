@@ -784,7 +784,11 @@
                                         aa            = aa + 1;
                                     } while (aa < bb);
                                 }
-                                atty = attribute.join(parse.crlf);
+                                if (options.crlf === true) {
+                                    atty = attribute.join("\r\n");
+                                } else {
+                                    atty = attribute.join("\r\n");
+                                }
                                 if (atty === "=") {
                                     attstore[attstore.length - 1] = attstore[attstore.length - 1] + "=";
                                 } else if (atty.charAt(0) === "=" && attstore.length > 0 && attstore[attstore.length - 1].indexOf("=") < 0) {

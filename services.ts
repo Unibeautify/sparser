@@ -19,10 +19,11 @@ const services = function services_() {
             const dirs:string[] = __dirname.split(node.path.sep);
             return dirs.slice(0, dirs.length - 1).join(node.path.sep) + node.path.sep;
         }()),
+        js = `${project}js${node.path.sep}`,
         commandList = {
             "build"       : {
                 brief: "Run the project's TypeScript build.",
-                detail: "Run the project's TypeScript build.  This command accepts no options.",
+                detail: "Run the project's TypeScript build and produces a single large file for use in the browser.  This command accepts no options.",
                 example: "build"
             },
             "commands"    : {
@@ -215,9 +216,15 @@ const services = function services_() {
             if (comms.charAt(0) === "i") {
                 return "inventory";
             }
-            if (comms.indexOf("p") === 0 && comms !== "parse-array" && comms !== "parse-object") {
+            if (comms.indexOf("p") === 0) {
                 if (comms.indexOf("pe") === 0) {
                     return "performance";
+                }
+                if (comms.indexOf("parse-a") === 0) {
+                    return "parse-array";
+                }
+                if (comms.indexOf("parse-o") === 0) {
+                    return "parse-object";
                 }
                 return "parse-table";
             }
@@ -245,8 +252,70 @@ const services = function services_() {
                     if (stderr !== null && stderr !== "") {
                         return errout(stderr);
                     }
-                    duration(time("Build complete") - start, "Total compile time");
-                    console.log("");
+                    let output:string = "window.parseFramework={language:function framework_language(){\"use strict\";return},lexer:{},parse:{},parseerror:\"\",parser:function framework_parser(){\"use strict\";return}};",
+                        outputa:string = "";
+                    node.fs.readFile(`${js}parse.js`, {
+                        encoding: "utf8"
+                    }, function services_action_build_callback_parse(errp, datap) {
+                        if (errp !== null) {
+                            return errout(errp);
+                        }
+                        datap = datap.replace(/global\.parseFramework/g, "window.parseFramework");
+                        datap = `${datap.slice(0, datap.indexOf("global.") - 4)}}());`;
+                        output = output + datap;
+                        outputa = output;
+                        node.fs.readdir(`${js}lexers`, function services_action_build_callback_parse_lexers(errf, files) {
+                            if (errf !== null) {
+                                return errout(errf);
+                            }
+                            files.splice(files.indexOf("all.js"), 1);
+                            files.forEach(function services_action_build_callback_parse_lexers_each(value, index, array) {
+                                array[index] = `${js}lexers${node.path.sep + value}`;
+                            });
+                            files.push(`${js}language.js`);
+                            let a = files.length;
+                            let b = 0;
+                            let c = a;
+                            do {
+                                node.fs.readFile(files[b], {
+                                    encoding: "utf8"
+                                }, function services_action_build_callback_parse_lexers_each_files(errx, filex) {
+                                    if (errx !== null) {
+                                        return errout(errx);
+                                    }
+                                    output = output + filex.replace(/global\.parseFramework/g, "window.parseFramework");
+                                    outputa = outputa + filex.replace(/global\.parseFramework/g, "window.parseFramework");
+                                    c = c - 1;
+                                    if (c < 1) {
+                                        node.fs.writeFile(`${js}browser.js`, outputa, function services_action_build_callback_parse_lexers_each_files_write(errb) {
+                                            if (errb !== null) {
+                                                return errout(errb);
+                                            }
+                                        });
+                                        node.fs.readFile(`${js}runtimes${node.path.sep}browsertest.js`, {
+                                            encoding: "utf8"
+                                        }, function services_action_build_callback_parse_lexers_each_files_web(errw, filew) {
+                                            if (errw !== null) {
+                                                return errout(errw);
+                                            }
+                                            output = output + filew.replace(/global\.parseFramework/g, "window.parseFramework");
+                                            node.fs.writeFile(`${js}browsertest.js`, output, function services_action_build_callback_parse_lexers_each_files_web_write(erro) {
+                                                if (erro !== null) {
+                                                    return errout(erro);
+                                                }
+                                                duration(time("Build complete") - start, "Total compile time");
+                                                console.log("");
+                                            });
+                                        });
+                                    }
+                                });
+                                if (files[b].indexOf("lexers") > 0) {
+                                    outputa = `${outputa}window.parseFramework.parse.options.lexerOptions.${files[b].replace(`${js}lexers${node.path.sep}`, "").replace(".js", "")}={};`
+                                }
+                                b = b + 1;
+                            } while (b < a);
+                        });
+                    });
                 });
             },
             commands: function services_action_commands():void {
@@ -375,7 +444,7 @@ const services = function services_() {
                 });
             },
             parse: function services_action_parse():void {
-                const nodetest = require(`${project}js${node.path.sep}runtimes${node.path.sep}nodetest`);
+                const nodetest = require(`${js}runtimes${node.path.sep}nodetest`);
                 process.argv.splice(0, 1);
                 if (process.argv[2] === undefined) {
                     return errout(`No code sample or file path. The \u001b[31m${command}\u001b[39m command requires an additional argument.`);
@@ -404,8 +473,8 @@ const services = function services_() {
                         }
                         return errout(errfile);
                     }
-                    require(`${project}js${node.path.sep}parse`);
-                    require(`${project}js${node.path.sep}language`);
+                    require(`${js}parse`);
+                    require(`${js}language`);
                     const framework = global.parseFramework,
                         lang = framework.language.auto(filedata, "javascript"),
                         options:options = {
@@ -417,7 +486,7 @@ const services = function services_() {
                             outputFormat: "arrays",
                             source: filedata
                         };
-                    require(`${project}js${node.path.sep}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
+                    require(`${js}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
                         const store:number[] = [],
                             output:data = framework.parserArrays(options),
                             comma = function services_action_performance_readFile_readdir_comma(input:number):string {
@@ -464,10 +533,10 @@ const services = function services_() {
             },
             server: function services_action_server():void {
                 process.argv.splice(0, 1);
-                require(`${project}js${node.path.sep}runtimes${node.path.sep}httpserver`)();
+                require(`${js}runtimes${node.path.sep}httpserver`)();
             },
             validation: function services_action_validation():void {
-                require(`${project}js${node.path.sep}test${node.path.sep}validate`)();
+                require(`${js}test${node.path.sep}validate`)();
             },
             version: function services_action_version():void {
                 console.log(version);

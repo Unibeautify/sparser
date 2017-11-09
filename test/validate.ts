@@ -484,12 +484,7 @@ const taskrunner = function taskrunner_() {
                     return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[39m ");
                 }
                 console.log(`${humantime(false)}\u001b[32mparse.datanames contains only the data field names.\u001b[39m`);
-                
-                if (parse.crlf !== "\n" && parse.crlf !== "\r\n") {
-                    return errout("\u001b[31mParse framework failure: parse.lf does have a value of \"\\n\" or \"\\r\\n\".\u001b[39m ");
-                }
-                console.log(`${humantime(false)}\u001b[32mparse.lf has a value of \"\\n\" or \"\\r\\n\".\u001b[39m`);
-                
+
                 if (parse.lineNumber !== 1) {
                     return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 and type number.\u001b[39m ");
                 }

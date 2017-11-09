@@ -538,7 +538,11 @@
                         if (starting === "//") {
                             output = output.replace(/(\s+)$/, "");
                         } else if (starting === "/*") {
-                            build = output.split(parse.crlf);
+                            if (options.crlf === true) {
+                                build = output.split("\r\n");
+                            } else {
+                                build = output.split("\n");
+                            }
                             ee    = build.length - 1;
                             if (ee > -1) {
                                 do {
@@ -546,7 +550,11 @@
                                     ee        = ee - 1;
                                 } while (ee > -1);
                             }
-                            output = build.join(parse.crlf);
+                            if (options.crlf === true) {
+                                output = build.join("\r\n");
+                            } else {
+                                output = build.join("\n");
+                            }
                         }
                         if (starting === "{%") {
                             if (output.indexOf("{%-") < 0) {

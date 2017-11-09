@@ -44,7 +44,7 @@ Execute the application by simply running this instruction, where the options is
 The framework is intended for inclusion in other applications as an embedded utility.  To run the framework immediately and experiment without any configuration some simple runtime interfaces are provided.
 
 #### Browser Runtime
-A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  To run the web server simply execute `node js/services server` on the command line.  The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.
+A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  First, run the build, `node js/services build`, to create the necessary JavaScript file.  To run the web server simply execute `node js/services server` on the command line.  The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.
 
 The browser utility produces output in a HTML table and color codes the output based upon the lexer used.
 
@@ -57,10 +57,12 @@ The framework is completely environment agnostic, which means it can be embedded
 The minimum requirements for embedding into all environments is to include the *js/parse.js* file and included the desired lexer files from the *lexers* directory.
 
 #### Browser Embedding
-In browser applications the additional file *js/runtimes/global.js* must be included.  This file should be referrenced before other code from the framework.
+The browser environment makes use of a single dynamically created file: *js/browser.js*.  Just simply run the build `node js/services build` to compile the TypeScript and generate this file.  This file is actually API agnostic except that it builds out the application and attaches it as a property of the *window* object.  The file also contains every available lexer.
+
+The *js/browser.js* file should not be confused with the *js/browsertest.js* file which provides the custom interface code for the *runtimes/browsertest.xhtml* file.
 
 #### Node Embedding
-When running the framework in a Node application the *js/runtimes/global.js* must **not** be used.  You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of the *js/runtimes/nodetest.js* file for an example.
+You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of the *js/runtimes/nodetest.js* file for an example.
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.  Please see [Input](#input) for details about the options object and [lexers/readme.md](lexers/readme.md) for technical guidance on starting a new lexer file.
@@ -76,9 +78,7 @@ The application operates as a global object containing a few data properties and
 * **standard format** - The standard format describes an object with property names from `parse.datanames` where the value of each property is an array and each of those arrays contain an identical number of indexes.  These arrays will never be sparse arrays.
 
 ### Architecture
-This application is written entirely in vanilla JavaScript and is completely environment agnostic.  Traditionally JavaScript did not have a native module system or IO interface, which means JavaScript code must be managed by an external means.  This further means every environment has a different way to manage input and output.  Recently JavaScript has standardized a module system, which is vaguely supported inside the browser environment and not anywhere else.
-
-To uniformly solve the problem of IO this project writes all things to a global object simply named *global*.  A global object of that name exists natively in the Node.js runtime.  To appease other environments I conveniently include a file named *js/runtimes/global.js* to provide that namespace without preference.  In non-Node environments the global.js file must be referenced before any other file.
+The application is arranged as an object named *parseFramework*.  This object is attached to Node.js's *global* object.  This means of organization allows a convenient means to extend code in a module way without a module focused convention.  This also allows a code organization that is easy to extend and modify without regards for any specific environment.  In order to adapt this organization to the web browser all necessary files are combined into a single file and the *parseFramework* object is assigned to the *window* object instead of *global*.
 
 ### global
 The *global* object contains five key references.

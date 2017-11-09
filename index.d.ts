@@ -31,7 +31,6 @@ interface options {
 interface parse {
     concat(data : data, array : data)                               : void,
     count                                                           : number,
-    crlf                                                            : "\n" | "\r\n",
     data                                                            : data,
     datanames                                                       : string[],
     lineNumber                                                      : number,

@@ -21,7 +21,6 @@ Parse Framework
                 }
             },
             count: -1,
-            crlf: "\n",
             data: {
                 begin: [],
                 lexer: [],
@@ -524,9 +523,6 @@ Parse Framework
                 "token",
                 "types"
             ];
-            parse.crlf       = (options.crlf === true)
-                ? "\r\n"
-                : "\n";
             parse.linesSpace = 0;
             parse.lineNumber = 1;
             parse.structure  = [

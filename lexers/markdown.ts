@@ -11,7 +11,10 @@
                 stack:string[] = [];
             const parse: parse    = framework.parse,
                 data   : data     = parse.data,
-                lines  : string[] = source.replace(/\u0000/g, "\ufffd").split(parse.crlf),
+                options: options  = parse.options,
+                lines  : string[] = (options.crlf === true)
+                    ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
+                    : source.replace(/\u0000/g, "\ufffd").split("\n"),
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
@@ -475,7 +478,11 @@
                     } else {
                         com.push(lines[a]);
                     }
-                    comment = com.join(parse.crlf).replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                    if (options.crlf === true) {
+                        comment = com.join("\r\n").replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                    } else {
+                        comment = com.join("\n").replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                    }
                     comment = comment.slice(0, comment.indexOf("-->"));
                     if (lines[a] !== undefined) {
                         lines[a] = lines[a].slice(lines[a].indexOf("-->") + 3);
@@ -619,7 +626,11 @@
                         }
                         a = a + 1;
                     } while (a < b);
-                    code(codes.join(parse.crlf), language, fourspace);
+                    if (options.crlf === true) {
+                        code(codes.join("\r\n"), language, fourspace);
+                    } else {
+                        code(codes.join("\n"), language, fourspace);
+                    }
                 },
                 parabuild = function lexer_markdown_parabuild():void {
                     let x:number = a,
