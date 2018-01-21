@@ -479,9 +479,9 @@
                         com.push(lines[a]);
                     }
                     if (options.crlf === true) {
-                        comment = com.join("\r\n").replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                        comment = com.join("\r\n").replace(/^(\s*<!--+\s*)/, "").replace(/\s*-+->/, "-->");
                     } else {
-                        comment = com.join("\n").replace(/^(\s*<\!--+\s*)/, "").replace(/\s*-+->/, "-->");
+                        comment = com.join("\n").replace(/^(\s*<!--+\s*)/, "").replace(/\s*-+->/, "-->");
                     }
                     comment = comment.slice(0, comment.indexOf("-->"));
                     if (lines[a] !== undefined) {

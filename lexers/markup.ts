@@ -1800,7 +1800,7 @@
                         }
                         record.begin = counta;
                         element      = element
-                            .replace(/^(\s*<\!\[cdata\[)/i, "")
+                            .replace(/^(\s*<!\[cdata\[)/i, "")
                             .replace(/(\]\]>\s*)$/, "");
                         record.token = "<![CDATA[";
                         parse.push(data, record, "");

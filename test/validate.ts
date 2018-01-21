@@ -444,7 +444,7 @@ const taskrunner = function taskrunner_() {
             framework: function taskrunner_framework() {
                 let keys    = [],
                     keysort = "";
-                const keylist = "concat,count,crlf,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
+                const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
                 console.log("");
                 framework.parserArrays({
@@ -459,6 +459,10 @@ const taskrunner = function taskrunner_() {
                 keys = Object.keys(parse);
                 keysort = parse.safeSort(keys, "ascend", false).join();
                 if (keysort !== keylist) {
+                    console.log("\u001b[36mExpected Keys\u001b[39m");
+                    console.log(keylist);
+                    console.log("\u001b[36mActual Keys\u001b[39m");
+                    console.log(keysort);
                     return errout("\u001b[31mParse framework failure:\u001b[39m The \"parse\" object does not match the known list of required properties.");
                 }
                 console.log(`${humantime(false)}\u001b[32mObject parse contains only the standard properties.\u001b[39m`);

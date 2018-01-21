@@ -246,13 +246,13 @@ const services = function services_() {
                 node.child("tsc", {
                     cwd: project.slice(0, project.length - 1)
                 }, function services_action_build_callback(err, stdout, stderr):void {
-                    if (err !== null) {console.log("asdfasdf");
+                    if (err !== null) {
                         return errout(err);
                     }
                     if (stderr !== null && stderr !== "") {
                         return errout(stderr);
                     }
-                    let output:string = "window.parseFramework={language:function framework_language(){\"use strict\";return},lexer:{},parse:{},parseerror:\"\",parser:function framework_parser(){\"use strict\";return}};",
+                    let output:string = "window.parseFramework={language:function framework_language(){\"use strict\";return;},lexer:{},parse:{},parseerror:\"\",parser:function framework_parser(){\"use strict\";return;}};",
                         outputa:string = "";
                     node.fs.readFile(`${js}parse.js`, {
                         encoding: "utf8"
@@ -413,7 +413,7 @@ const services = function services_() {
                                 keys: [],
                                 values: {}
                             };
-                            const fragments:string[] = filedata.replace(/options\.lang\s*(((\!|=)==)|=)\s*/g, "options.lang===").split("options.lang===");
+                            const fragments:string[] = filedata.replace(/options\.lang\s*(((!|=)==)|=)\s*/g, "options.lang===").split("options.lang===");
                             if (fragments.length > 1) {
                                 fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
                                     if (value.charAt(0) === "\"" || value.charAt(0) === "'") {

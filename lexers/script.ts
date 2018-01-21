@@ -1943,7 +1943,7 @@
                     markup();
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                     // comment block
-                    ltoke = generic("/*", "*\/");
+                    ltoke = generic("/*", "*\u002f");
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;

@@ -127,13 +127,13 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     if ((/\s\/\//).test(sample) === false && (/\/\/\s/).test(sample) === false && (/^(\s*(\{|\[)(?!%))/).test(sample) === true && (/((\]|\})\s*)$/).test(sample) && sample.indexOf(",") !== -1) {
                         return output("json");
                     }
-                    if ((/((\}?(\(\))?\)*;?\s*)|([a-z0-9]("|')?\)*);?(\s*\})*)$/i).test(sample) === true && (vartest === true || publicprivate === true || (/console\.log\(/).test(sample) === true || (/export\s+default\s+class\s+/).test(sample) === true || (/document\.get/).test(sample) === true || (/((\=|(\$\())\s*function)|(\s*function\s+(\w*\s+)?\()/).test(sample) === true || sample.indexOf("{") === -1 || (/^(\s*if\s+\()/).test(sample) === true)) {
+                    if ((/((\}?(\(\))?\)*;?\s*)|([a-z0-9]("|')?\)*);?(\s*\})*)$/i).test(sample) === true && (vartest === true || publicprivate === true || (/console\.log\(/).test(sample) === true || (/export\s+default\s+class\s+/).test(sample) === true || (/document\.get/).test(sample) === true || (/((=|(\$\())\s*function)|(\s*function\s+(\w*\s+)?\()/).test(sample) === true || sample.indexOf("{") === -1 || (/^(\s*if\s+\()/).test(sample) === true)) {
                         return javascriptA();
                     }
                     // * u007b === {
                     // * u0024 === $
                     // * u002e === .
-                    if (sample.indexOf("{") > -1 && ((/^(\s*[\u007b\u0024\u002e#@a-z0-9])/i).test(sample) === true || (/^(\s*\/(\*|\/))/).test(sample) === true || (/^(\s*\*\s*\{)/).test(sample) === true) && (/^(\s*if\s*\()/).test(sample) === false && (/\=\s*(\{|\[|\()/).test(join) === false && (((/(\+|-|\=|\?)\=/).test(join) === false || (/\/\/\s*\=+/).test(join) === true) || ((/\=+('|")?\)/).test(sample) === true && (/;\s*base64/).test(sample) === true)) && (/function(\s+\w+)*\s*\(/).test(join) === false) {
+                    if (sample.indexOf("{") > -1 && ((/^(\s*[\u007b\u0024\u002e#@a-z0-9])/i).test(sample) === true || (/^(\s*\/(\*|\/))/).test(sample) === true || (/^(\s*\*\s*\{)/).test(sample) === true) && (/^(\s*if\s*\()/).test(sample) === false && (/=\s*(\{|\[|\()/).test(join) === false && (((/(\+|-|=|\?)=/).test(join) === false || (/\/\/\s*=+/).test(join) === true) || ((/=+('|")?\)/).test(sample) === true && (/;\s*base64/).test(sample) === true)) && (/function(\s+\w+)*\s*\(/).test(join) === false) {
                         if ((/\s*#((include)|(define)|(endif))\s+/).test(sample)) {
                             return output("c_cpp");
                         }
@@ -163,7 +163,7 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
 
                             return output("html");
                         }
-                        if ((/\s?\{%/).test(sample) === true && (/\{(\{|#)(?!(\{|#|\=))/).test(sample) === true) {
+                        if ((/\s?\{%/).test(sample) === true && (/\{(\{|#)(?!(\{|#|=))/).test(sample) === true) {
                             return output("twig");
                         }
                         if ((/<\?/).test(sample) === true) {
@@ -197,7 +197,7 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
 
                         return output("xml");
                     }
-                    if ((/\s?\{%/).test(sample) === true && (/\{\{(?!(\{|#|\=))/).test(sample) === true) {
+                    if ((/\s?\{%/).test(sample) === true && (/\{\{(?!(\{|#|=))/).test(sample) === true) {
                         return output("twig");
                     }
                     if ((/<\?(?!(xml))/).test(sample) === true) {
@@ -220,23 +220,23 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
             if ((/\n#+\s+\w/).test(sample) === true && (/\s\*{1,2}\w+(\s+\w+)*\*{1,2}\s/).test(sample) === true) {
                 return output("markdown");
             }
-            if ((/^(\s*<\!DOCTYPE\s+html>)/i).test(sample) === true) {
+            if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");
             }
             if ((/^(\s*((if)|(for)|(function))\s*\()/).test(sample) === false && (/(\s|;|\})((if)|(for)|(function\s*\w*))\s*\(/).test(sample) === false && vartest === false && (/return\s*\w*\s*(;|\})/).test(sample) === false && (sample === undefined || (/^(\s*#(?!(!\/)))/).test(sample) === true || ((/\n\s*(\.|@)\w+(\(?|(\s*:))/).test(sample) === true && (/>\s*<\w/).test(sample) === false))) {
                 return cssA();
             }
             b = sample
-                .replace(/\[[a-zA-Z][\w\-]*\=("|')?[a-zA-Z][\w\-]*("|')?\]/g, "")
+                .replace(/\[[a-zA-Z][\w-]*=("|')?[a-zA-Z][\w-]*("|')?\]/g, "")
                 .split("");
             c = b.length;
             if ((/^(\s*\{(%|#|\{))/).test(sample) === true) {
                 return markup();
             }
-            if (((/^([\s\w\-]*<)/).test(sample) === false && (/(>[\s\w\-]*)$/).test(sample) === false) || finalstatic === true) {
+            if (((/^([\s\w-]*<)/).test(sample) === false && (/(>[\s\w-]*)$/).test(sample) === false) || finalstatic === true) {
                 return notmarkup();
             }
-            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:\-\[]+/).test(sample) === true || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
+            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:-[]+/).test(sample) === true || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
                 if ((/^([\s\w]*<)/).test(sample) === false || (/(>[\s\w]*)$/).test(sample) === false) {
                     return notmarkup();
                 }
