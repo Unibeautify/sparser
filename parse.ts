@@ -503,7 +503,7 @@ Parse Framework
             },
             structure: [["global", -1]]
         },
-        parser  = function parser_(options: options): void {
+        parser  = function parser_(options: parseOptions): void {
             parse.count      = -1;
             parse.data       = {
                 begin: [],
@@ -606,11 +606,11 @@ Parse Framework
                 } while (a < b);
             }
         },
-        parserArrays = function parserArrays(options: options):data {
+        parserArrays = function parserArrays(options: parseOptions):data {
             parser(options);
             return parse.data;
         },
-        parserObjects = function parserObjects(options: options): record[] {
+        parserObjects = function parserObjects(options: parseOptions): record[] {
             let a:number = 0;
             const data:record[] = [];
             parser(options);

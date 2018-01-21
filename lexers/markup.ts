@@ -13,7 +13,7 @@
                 ext:boolean           = false;
             const parse:parse       = framework.parse,
                 data:data          = parse.data,
-                options:options       = parse.options,
+                options:parseOptions       = parse.options,
                 b:string[]             = source.split(""),
                 c:number             = b.length,
                 // Find the lowercase tag name of the provided token.

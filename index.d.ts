@@ -15,7 +15,7 @@ interface language {
 interface lexer {
     [key:string]: (source: string) => data;
 }
-interface options {
+interface parseOptions {
     correct        : boolean;
     crlf           : boolean;
     lang           : string;
@@ -36,7 +36,7 @@ interface parse {
     lineNumber                                                      : number,
     linesSpace                                                      : number,
     objectSort(data : data)                                         : void,
-    options                                                         : options,
+    options                                                         : parseOptions,
     pop(data : data)                                                : record,
     push(data : data, record : record, structure : string)          : void,
     safeSort(array : any[], operation : string, recursive : boolean): any[],
@@ -49,8 +49,8 @@ interface parseFramework {
     lexer                       : lexer;
     parse                       : parse;
     parseerror                  : string;
-    parserArrays(obj : options) : data;
-    parserObjects(obj : options): record[];
+    parserArrays(obj : parseOptions) : data;
+    parserObjects(obj : parseOptions): record[];
 }
 interface record {
     begin: number;

@@ -246,7 +246,7 @@ const services = function services_() {
                 node.child("tsc", {
                     cwd: project.slice(0, project.length - 1)
                 }, function services_action_build_callback(err, stdout, stderr):void {
-                    if (err !== null) {
+                    if (err !== null) {console.log("asdfasdf");
                         return errout(err);
                     }
                     if (stderr !== null && stderr !== "") {
@@ -347,10 +347,10 @@ const services = function services_() {
                     });
                     console.log("");
                     console.log("Examples:");
-                    console.log(`\u001b[36mnode js${node.path.sep}services commands server`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services version`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services parse-table js/parse.js`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services server 3000`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services commands server\u001b[39m`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services version\u001b[39m`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services parse-table js/parse.js\u001b[39m`);
+                    console.log(`\u001b[36mnode js${node.path.sep}services server 3000\u001b[39m`);
                 } else {
                     console.log(`\u001b[4m${args[1]}\u001b[0m`);
                     console.log("");
@@ -362,6 +362,7 @@ const services = function services_() {
                 console.log("");
             },
             help: function services_action_help():void {
+                console.log("");
                 console.log("");
                 console.log(`Thank you for experimenting with the \u001b[4mUnibeautify Parse-Framework\u001b[0m \u001b[32m${version}\u001b[39m in Node.js`);
                 console.log("");
@@ -477,7 +478,7 @@ const services = function services_() {
                     require(`${js}language`);
                     const framework = global.parseFramework,
                         lang = framework.language.auto(filedata, "javascript"),
-                        options:options = {
+                        options:parseOptions = {
                             correct: false,
                             crlf: false,
                             lang: lang[0],

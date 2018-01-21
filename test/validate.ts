@@ -9,7 +9,7 @@ const taskrunner = function taskrunner_() {
             return;
         },
         parse:parse,
-        parse_options:options = {
+        parse_options:parseOptions = {
             correct        : false,
             crlf           : false,
             lang           : "javascript",

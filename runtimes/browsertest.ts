@@ -6,7 +6,7 @@
     "use strict";
     const framework:parseFramework = global.parseFramework,
         input   = document.getElementsByTagName("textarea")[0],
-        options:options = {
+        options:parseOptions = {
             correct        : false,
             crlf           : false,
             lang           : "",

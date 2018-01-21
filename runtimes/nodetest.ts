@@ -33,7 +33,7 @@ const nodetest = function nodetest_() {
             process.argv.splice(index, 1);
             return true;
         }()),
-        options:options   = {
+        options:parseOptions   = {
             correct: false,
             crlf: false,
             lang: "",

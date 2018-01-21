@@ -1,36 +1,38 @@
 {
-  "author"         : "Austin Cheney",
-  "bugs"           : {
-      "url": "https://github.com/Unibeautify/parse-framework/issues"
-  },
-  "dependencies"   : {},
-  "description"    : "A parsing framework for parsing everything",
-  "devDependencies": {
-    "ws"     : "^3.2.0"
-  },
-  "directories"    : {
-      "test": "test"
-  },
-  "homepage"       : "https://github.com/Unibeautify/parse-framework#readme",
-  "keywords"       : [
-      "parser",
-      "lexer",
-      "framework",
-      "universal",
-      "language",
-      "parse",
-      "table"
-  ],
-  "license"        : "CC0-1.0",
-  "main"           : "js/parse.js",
-  "name"           : "parse-framework",
-  "repository"     : {
-      "type": "git",
-      "url" : "git+https://github.com/Unibeautify/parse-framework.git"
-  },
-  "scripts"        : {
-      "start": "node js/services build --browser",
-      "test" : "node js/services validation"
-  },
-  "version"        : "1.1.6"
+    "author": "Austin Cheney",
+    "bugs": {
+        "url": "https://github.com/Unibeautify/parse-framework/issues"
+    },
+    "dependencies": {
+        "@types/node": "latest"
+    },
+    "description": "A parsing framework for parsing everything",
+    "devDependencies": {
+        "ws": "^3.2.0"
+    },
+    "directories": {
+        "test": "test"
+    },
+    "homepage": "https://github.com/Unibeautify/parse-framework#readme",
+    "keywords": [
+        "parser",
+        "lexer",
+        "framework",
+        "universal",
+        "language",
+        "parse",
+        "table"
+    ],
+    "license": "CC0-1.0",
+    "main": "js/parse.js",
+    "name": "parse-framework",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Unibeautify/parse-framework.git"
+    },
+    "scripts": {
+        "start": "node js/services build --browser",
+        "test": "node js/services validation"
+    },
+    "version": "1.1.7"
 }

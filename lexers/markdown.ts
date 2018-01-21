@@ -11,7 +11,7 @@
                 stack:string[] = [];
             const parse: parse    = framework.parse,
                 data   : data     = parse.data,
-                options: options  = parse.options,
+                options: parseOptions  = parse.options,
                 lines  : string[] = (options.crlf === true)
                     ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
                     : source.replace(/\u0000/g, "\ufffd").split("\n"),

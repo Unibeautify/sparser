@@ -9,7 +9,7 @@
                 endtest:boolean     = false;
             const parse:parse     = framework.parse,
                 data:data        = parse.data,
-                options:options     = parse.options,
+                options:parseOptions     = parse.options,
                 colors:string[]      = [],
                 colorNames  = {
                     aliceblue           : 0.9288006825347457,

@@ -16,7 +16,7 @@
                 pstack:[string, number];
             const parse:parse          = framework.parse,
                 data:data           = parse.data,
-                options:options        = parse.options,
+                options:parseOptions        = parse.options,
                 sourcemap:[number, string]      = [
                     0, ""
                 ],
