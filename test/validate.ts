@@ -444,7 +444,7 @@ const taskrunner = function taskrunner_() {
             framework: function taskrunner_framework() {
                 let keys    = [],
                     keysort = "";
-                const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,options,pop,push,safeSort,spacer,splice,structure";
+                const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure";
                 console.log("\u001b[36mFramework Testing\u001b[39m");
                 console.log("");
                 framework.parserArrays({
@@ -568,7 +568,7 @@ const taskrunner = function taskrunner_() {
                                 node.child(`eslint ${val}`, {
                                     cwd: project
                                 }, function taskrunner_lint_lintrun_lintit_eslint(err, stdout, stderr) {
-                                    if (stdout === "") {
+                                    if (stdout === "" || stdout.indexOf("0:0  warning  File ignored because of a matching ignore pattern.") > -1) {
                                         if (err !== null) {
                                             errout(err);
                                             return;

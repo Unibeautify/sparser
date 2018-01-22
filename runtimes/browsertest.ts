@@ -31,38 +31,113 @@
                         body      = document.createElement("thead");
                     const len:number       = global.parseFramework.parse.count + 1,
                         table     = document.createElement("table"),
-                        cell      = function web_handler_builder_cell(text:string, type:string, row, className:string):void {
-                            const el = document.createElement(type);
-                            if (className !== "") {
-                                el.setAttribute("class", className);
+                        cell      = function web_handler_builder_cell(data:htmlCellBuilder):void {
+                            const el = document.createElement(data.type);
+                            if (data.className !== "") {
+                                el.setAttribute("class", data.className);
                             }
-                            el.innerHTML = text;
-                            row.appendChild(el);
+                            el.innerHTML = data.text;
+                            data.row.appendChild(el);
                         },
                         row       = function web_handler_builder_row():void {
                             const tr = document.createElement("tr");
-                            cell(a.toString(), "th", tr, "numb");
+                            cell({
+                                text: a.toString(),
+                                type: "th",
+                                row: tr,
+                                className: "numb"
+                            });
                             if (options.outputFormat === "objects") {
-                                cell(outputObjects[a].begin.toString(), "td", tr, "numb");
-                                cell(outputObjects[a].lexer, "td", tr, "");
-                                cell(outputObjects[a].lines.toString(), "td", tr, "numb");
-                                cell(outputObjects[a].presv.toString(), "td", tr, "");
-                                cell(outputObjects[a].stack.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
-                                cell(outputObjects[a].types, "td", tr, "");
-                                cell(outputObjects[a].token.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                cell({
+                                    text: outputObjects[a].begin.toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
+                                    text: outputObjects[a].lexer,
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputObjects[a].lines.toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
+                                    text: outputObjects[a].presv.toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputObjects[a].stack.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputObjects[a].types,
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputObjects[a].token.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
                                 if (a % 2 === 0) {
                                     tr.setAttribute("class", outputObjects[a].lexer + " even");
                                 } else {
                                     tr.setAttribute("class", outputObjects[a].lexer + " odd");
                                 }
                             } else {
-                                cell(outputArrays.begin[a].toString(), "td", tr, "numb");
-                                cell(outputArrays.lexer[a], "td", tr, "");
-                                cell(outputArrays.lines[a].toString(), "td", tr, "numb");
-                                cell(outputArrays.presv[a].toString(), "td", tr, "");
-                                cell(outputArrays.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
-                                cell(outputArrays.types[a], "td", tr, "");
-                                cell(outputArrays.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"), "td", tr, "");
+                                cell({
+                                    text: outputArrays.begin[a].toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
+                                    text: outputArrays.lexer[a],
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputArrays.lines[a].toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
+                                    text: outputArrays.presv[a].toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputArrays.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputArrays.types[a],
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
+                                cell({
+                                    text: outputArrays.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                    type: "td",
+                                    row: tr,
+                                    className: ""
+                                });
                                 if (a % 2 === 0) {
                                     tr.setAttribute("class", outputArrays.lexer[a] + " even");
                                 } else {
@@ -73,14 +148,54 @@
                         },
                         header    = function web_handler_builder_header(parent):void {
                             const tr   = document.createElement("tr");
-                            cell("index", "th", tr, "numb");
-                            cell("begin", "th", tr, "numb");
-                            cell("lexer", "th", tr, "");
-                            cell("lines", "th", tr, "numb");
-                            cell("presv", "th", tr, "");
-                            cell("stack", "th", tr, "");
-                            cell("types", "th", tr, "");
-                            cell("token", "th", tr, "");
+                            cell({
+                                text: "index",
+                                type: "th",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: "begin",
+                                type: "th",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: "lexer",
+                                type: "th",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: "lines",
+                                type: "th",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: "presv",
+                                type: "th",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: "stack",
+                                type: "th",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: "types",
+                                type: "th",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: "token",
+                                type: "th",
+                                row: tr,
+                                className: ""
+                            });
                             tr.setAttribute("class", "header");
                             parent.appendChild(tr);
                         };

@@ -219,7 +219,7 @@ Parse Framework
                 }
                 return;
             },
-            options: {
+            parseOptions: {
                 correct: false,
                 crlf: false,
                 lang: "javascript",
@@ -503,7 +503,7 @@ Parse Framework
             },
             structure: [["global", -1]]
         },
-        parser  = function parser_(options: parseOptions): void {
+        parser  = function parser_(parseOptions: parseOptions): void {
             parse.count      = -1;
             parse.data       = {
                 begin: [],
@@ -528,7 +528,7 @@ Parse Framework
             parse.structure  = [
                 ["global", -1]
             ];
-            parse.options    = options;
+            parse.parseOptions    = parseOptions;
 
             parse.structure.pop = function parse_structure_pop(): [string, number] {
                 const len:number = parse.structure.length - 1,
@@ -540,19 +540,19 @@ Parse Framework
                 }
                 return arr;
             };
-            if (framework.lexer[options.lexer] === undefined) {
-                framework.parseerror = "Lexer '" + options.lexer + "' isn't available.";
+            if (framework.lexer[parseOptions.lexer] === undefined) {
+                framework.parseerror = "Lexer '" + parseOptions.lexer + "' isn't available.";
             }
-            if (typeof framework.lexer[options.lexer] !== "function") {
-                framework.parseerror = "Specified lexer, " + options.lexer + ", is not a function.";
+            if (typeof framework.lexer[parseOptions.lexer] !== "function") {
+                framework.parseerror = "Specified lexer, " + parseOptions.lexer + ", is not a function.";
             } else {
                 framework.parseerror = "";
-                options.lexerOptions = (options.lexerOptions || {});
+                parseOptions.lexerOptions = (parseOptions.lexerOptions || {});
                 Object.keys(framework.lexer).forEach(function parse_lexers(value) {
-                    options.lexerOptions[value] = (options.lexerOptions[value] || {});
+                    parseOptions.lexerOptions[value] = (parseOptions.lexerOptions[value] || {});
                 });
                 // This line parses the code using a lexer file
-                framework.lexer[options.lexer](options.source + " ");
+                framework.lexer[parseOptions.lexer](parseOptions.source + " ");
             }
 
             // validate that all the data arrays are the same length
@@ -575,7 +575,7 @@ Parse Framework
                 } while (a < c - 1);
             }());
             
-            if ((parse.options.lexerOptions[options.lexer] !== undefined && parse.options.lexerOptions[options.lexer].objectSort === true) || (parse.options.lexerOptions.markup !== undefined && parse.options.lexerOptions.markup.tagSort === true)) {
+            if ((parse.parseOptions.lexerOptions[parseOptions.lexer] !== undefined && parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true) || (parse.parseOptions.lexerOptions.markup !== undefined && parse.parseOptions.lexerOptions.markup.tagSort === true)) {
                 let a:number = 0;
                 const data:data    = parse.data,
                     b:number         = data.begin.length,
@@ -585,9 +585,9 @@ Parse Framework
                         structure.pop();
                     }
                     if (data.begin[a] !== structure[structure.length - 1]) {
-                        if (parse.options.lexerOptions[options.lexer].objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
+                        if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
                             data.begin[a] = structure[structure.length - 1];
-                        } else if (parse.options.lexerOptions.markup.tagSort === true && data.lexer[a] === "markup") {
+                        } else if (parse.parseOptions.lexerOptions.markup.tagSort === true && data.lexer[a] === "markup") {
                             data.begin[a] = structure[structure.length - 1];
                         }
                     }
@@ -606,14 +606,14 @@ Parse Framework
                 } while (a < b);
             }
         },
-        parserArrays = function parserArrays(options: parseOptions):data {
-            parser(options);
+        parserArrays = function parserArrays(parseOptions: parseOptions):data {
+            parser(parseOptions);
             return parse.data;
         },
-        parserObjects = function parserObjects(options: parseOptions): record[] {
+        parserObjects = function parserObjects(parseOptions: parseOptions): record[] {
             let a:number = 0;
             const data:record[] = [];
-            parser(options);
+            parser(parseOptions);
             do {
                 data.push({
                     begin: parse.data.begin[a],

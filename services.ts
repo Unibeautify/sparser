@@ -273,9 +273,9 @@ const services = function services_() {
                                 array[index] = `${js}lexers${node.path.sep + value}`;
                             });
                             files.push(`${js}language.js`);
-                            let a = files.length;
-                            let b = 0;
-                            let c = a;
+                            let a = files.length,
+                                b = 0,
+                                c = a;
                             do {
                                 node.fs.readFile(files[b], {
                                     encoding: "utf8"

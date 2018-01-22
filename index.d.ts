@@ -36,7 +36,7 @@ interface parse {
     lineNumber                                                      : number,
     linesSpace                                                      : number,
     objectSort(data : data)                                         : void,
-    options                                                         : parseOptions,
+    parseOptions                                                    : parseOptions,
     pop(data : data)                                                : record,
     push(data : data, record : record, structure : string)          : void,
     safeSort(array : any[], operation : string, recursive : boolean): any[],
@@ -51,6 +51,12 @@ interface parseFramework {
     parseerror                  : string;
     parserArrays(obj : parseOptions) : data;
     parserObjects(obj : parseOptions): record[];
+}
+interface htmlCellBuilder {
+    text:string;
+    type:string;
+    row:HTMLTableRowElement;
+    className:string;
 }
 interface record {
     begin: number;
