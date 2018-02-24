@@ -8,7 +8,7 @@
     },
     "description": "A parsing framework for parsing everything",
     "devDependencies": {
-        "ws": "^3.2.0"
+        "ws": "^4.1.0"
     },
     "directories": {
         "test": "test"
