@@ -83,6 +83,7 @@ Here is a brief code example demonstrating how to initiate the framework as an N
 
 ```javascript
 options.lexerOptions = {};
+let sep = node.path.sep; // directory separator from node's path module
 require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}parse`);
 const all = require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}lexers${sep}all`);
 all(options, function node_apps_mode_allLexers() {
