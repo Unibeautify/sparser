@@ -243,7 +243,7 @@ const services = function services_() {
             build: function services_action_build():void {
                 console.log("");
                 const start = time("Running TypeScript build");
-                node.child("tsc", {
+                node.child("tsc --pretty", {
                     cwd: project.slice(0, project.length - 1)
                 }, function services_action_build_callback(err, stdout, stderr):void {
                     if (err !== null) {

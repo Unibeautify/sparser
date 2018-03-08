@@ -59,10 +59,37 @@ The minimum requirements for embedding into all environments is to include the *
 #### Browser Embedding
 The browser environment makes use of a single dynamically created file: *js/browser.js*.  Just simply run the build `node js/services build` to compile the TypeScript and generate this file.  This file is actually API agnostic except that it builds out the application and attaches it as a property of the *window* object.  The file also contains every available lexer.
 
+Include the js/browser.js file in your HTML assuming the framework is an NPM dependency:
+```html
+<script src="node_modules/parse-framework/js/browser.js" type="application/javascript"></script>
+```
+
+Inside your browser-based JavaScript application simply call the framework, which returns a parse table in string format (stringified JSON):
+```javascript
+window.parseFramework.parserArrays(options);
+```
+
 The *js/browser.js* file should not be confused with the *js/browsertest.js* file which provides the custom interface code for the *runtimes/browsertest.xhtml* file.
 
 #### Node Embedding
-You can pick and choose which lexer files to run through manual inclusion.  To efficiently include all lexers I recommend performing a `fs.readdir` on the *lexers* directory and including each file with a simple forEach loop.  Look into the bottom of the *js/runtimes/nodetest.js* file for an example.
+You can pick and choose which lexer files to run through manual inclusion.  To include all supported lexer files simply require the *lexers/all.js* file.
+
+Here is a brief code example demonstrating how to initiate the framework as an NPM dependency with all lexers:
+
+1. Ensure the necessary `lexerOptions` property is present on your options object
+1. Require the framework
+1. Require the *lexers/all.js* file
+1. Call the function from the *lexers/all.js* file passing in options and a callback
+
+```javascript
+options.lexerOptions = {};
+require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}parse`);
+const all = require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}lexers${sep}all`);
+all(options, function node_apps_mode_allLexers() {
+    options.parsed = global.parseFramework.parserArrays(options);
+    console.log(options.parsed);
+});
+```
 
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.  Please see [Input](#input) for details about the options object and [lexers/readme.md](lexers/readme.md) for technical guidance on starting a new lexer file.

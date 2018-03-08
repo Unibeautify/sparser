@@ -21,7 +21,7 @@ const taskrunner = function taskrunner_() {
         framework:parseFramework;
     const order      = [
             "typescript", // - run the TypeScript build (tsc) to see if there are type erros
-            "lint", //       - run jslint on all unexcluded JS files in the repo
+            "lint", //       - run eslint on all unexcluded JS files in the repo
             "framework", //  - test the framework
             "codeunits" //   - test the lexers
         ],
@@ -113,13 +113,13 @@ const taskrunner = function taskrunner_() {
                     }
                     return output;
                 },
-                plural       = function core__proctime_plural(x:number, y:string):string {
+                plural       = function taskrunner_proctime_plural(x:number, y:string):string {
                     if (x !== 1) {
                         return `${x + y}s `;
                     }
                     return `${x + y} `;
                 },
-                minute       = function core__proctime_minute():void {
+                minute       = function taskrunner_proctime_minute():void {
                     minutes      = parseInt((elapsed / 60).toString(), 10);
                     minuteString = (finished === true)
                         ? plural(minutes, " minute")
@@ -654,7 +654,7 @@ const taskrunner = function taskrunner_() {
             typescript: function taskrunner_typescript():void {
                 console.log("\u001b[36mTypeScript Compilation\u001b[39m");
                 console.log("");
-                node.child("tsc", {
+                node.child("tsc --pretty", {
                     cwd: project
                 }, function taskrunner_typescript_callback(err, stdout, stderr):void {
                     if (err !== null) {
