@@ -647,7 +647,8 @@ Parse Framework
         global.process.argv[1].indexOf("nodetest") < 0 &&
         global.process.argv[1].indexOf("validate") < 0 &&
         global.process.argv[0].indexOf("services") < 0 &&
-        global.process.argv[1].indexOf("services") < 0
+        global.process.argv[1].indexOf("services") < 0 &&
+        global.process.cwd().indexOf("parse-framework") > -1
     ) {
         const path = require("path");
         require(__dirname + path.sep + "services")();
