@@ -50,9 +50,8 @@ const nodetest = function nodetest_() {
             source: ""
         },
         timespan  = function nodetest_timespan():string {
-            const dec = function nodetest_timespan_dec(time: [number, number]): number {
-                    time[0] = time[0] * 1000000000;
-                    return time[0] + time[1];
+            const dec = function nodetest_timespan_dec(time: [number, number]):number {
+                    return (time[0] * 1e9) + time[1];
                 },
                 end:number = dec(process.hrtime()),
                 sta:number = dec(startTime),

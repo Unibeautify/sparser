@@ -1,36 +1,106 @@
-/*global global*/
-
-/*
-Taken from Pretty Diff.  This file is not a formal release product. It exists to make testing code in node and browser a bit faster.
-*/
-(function language_init() {
+(function language_init():void {
     "use strict";
     const language:language = {
-        auto: function language_auto(sample:string, defaultLang:string):[string, string, string] {
-            let b:string[]  = [],
-                c:number     = 0;
+        setlangmode: function language_setlangmode(input:string):string {
+            const langmap = {
+                c_cpp     : "script",
+                coldfusion: "markup",
+                csharp    : "script",
+                css       : "style",
+                csv       : "csv",
+                dustjs    : "markup",
+                ejs       : "markup",
+                go        : "markup",
+                handlebars: "markup",
+                html      : "markup",
+                html_ruby : "markup",
+                java      : "script",
+                javascript: "script",
+                json      : "script",
+                jsp       : "markup",
+                jsx       : "script",
+                less      : "style",
+                markup    : "markup",
+                php       : "script",
+                qml       : "style",
+                scss      : "style",
+                swig      : "markup",
+                text      : "text",
+                titanium  : "script",
+                tss       : "script",
+                twig      : "markup",
+                typescript: "script",
+                velocity  : "markup",
+                xhtml     : "markup",
+                xml       : "markup"
+            };
+            if (typeof input !== "string") {
+                return "script";
+            }
+            if (input.indexOf("html") > -1) {
+                return "markup";
+            }
+            if (langmap[input] === undefined) {
+                return "script";
+            }
+            return langmap[input];
+        },
+        nameproper: function language_nameproper(input:string):string {
+            const langmap = {
+                c_cpp     : "C++ (Not yet supported)",
+                coldfusion: "ColdFusion",
+                csharp    : "C#",
+                dustjs    : "Dust.js",
+                ejs       : "EJS Template",
+                elm       : "Elm Template",
+                go        : "Go Lang Template",
+                handlebars: "Handlebars Template",
+                html_ruby : "ERB (Ruby) Template",
+                java      : "Java",
+                javascript: "JavaScript",
+                jsp       : "JSTL (JSP)",
+                jsx       : "React JSX",
+                liquid    : "Liquid Template",
+                markup    : "markup",
+                scss      : "SCSS",
+                text      : "Plain Text",
+                titanium  : "Titanium Stylesheets",
+                tss       : "Titanium Stylesheets",
+                twig      : "HTML TWIG Template",
+                typescript: "TypeScript",
+                velocity  : "Apache Velocity",
+                volt      : "Volt Template"
+            };
+            if (typeof input !== "string" || langmap[input] === undefined) {
+                return input.toUpperCase();
+            }
+            return langmap[input];
+        },
+        // * [0] = language value for ace mode
+        // * [1] = prettydiff language category from [0]
+        // * [2] = pretty formatting for text output to user
+        auto: function language_auto(sample:string, defaultLang:string):languageAuto {
+            let b:string[]           = [],
+                c:number           = 0;
             const vartest:boolean     = (
                     /(((var)|(let)|(const)|(function)|(import))\s+(\w|\$)+[a-zA-Z0-9]*)/
                 ).test(sample),
                 finalstatic:boolean = (/((((final)|(public)|(private))\s+static)|(static\s+void))/).test(
                     sample
                 ),
-                output      = function language_auto_output(langname:string): [string, string, string] {
+                output      = function language_auto_output(langname:string):languageAuto {
                     if (langname === "unknown") {
                         return [defaultLang, language.setlangmode(defaultLang), "unknown"];
                     }
                     if (langname === "xhtml" || langname === "markup") {
-                        return ["xml", "markup", "XHTML"];
+                        return ["xml", "html", "XHTML"];
                     }
                     if (langname === "tss") {
-                        return ["tss", "script", "Titanium Stylesheets"];
-                    }
-                    if (langname === "markdown") {
-                        return ["markdown", "markdown", "Markdown"];
+                        return ["tss", "tss", "Titanium Stylesheets"];
                     }
                     return [langname, language.setlangmode(langname), language.nameproper(langname)];
                 },
-                cssA        = function language_auto_cssA(): [string, string, string] {
+                cssA        = function language_auto_cssA():languageAuto {
                     if ((/\$[a-zA-Z]/).test(sample) === true || (/\{\s*(\w|\.|\$|#)+\s*\{/).test(sample) === true) {
                         return output("scss");
                     }
@@ -39,15 +109,15 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     }
                     return output("css");
                 },
-                notmarkup   = function language_auto_notmarkup(): [string, string, string] {
-                    let d:number         = 1,
-                        join:string      = "",
-                        flaga:boolean    = false,
-                        flagb:boolean    = false;
+                notmarkup   = function language_auto_notmarkup():languageAuto {
+                    let  d:number               = 1,
+                        join:string            = "",
+                        flaga:boolean           = false,
+                        flagb:boolean           = false;
                     const publicprivate:boolean   = (
                             /((public)|(private))\s+(static\s+)?(((v|V)oid)|(class)|(final))/
                         ).test(sample),
-                        javascriptA     = function language_auto_notmarkup_javascriptA(): [string, string, string] {
+                        javascriptA     = function language_auto_notmarkup_javascriptA():languageAuto {
                             if (sample.indexOf("(") > -1 || sample.indexOf("=") > -1 || (sample.indexOf(";") > -1 && sample.indexOf("{") > -1)) {
                                 if (vartest === false && ((/\n\s+#region\s/).test(sample) === true || (/\[\w+:/).test(sample) === true)) {
                                     return output("csharp");
@@ -61,14 +131,11 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                                 if ((/final\s+static/).test(sample) === true) {
                                     return output("java");
                                 }
-                                if ((/(\(|\}|\?|,|(return)|(=>?))\s*</).test(sample) === true) {
-                                    return output("jsx");
-                                }
                                 return output("javascript");
                             }
                             return output("unknown");
                         },
-                        cssOrJavaScript = function language_auto_notmarkup_cssOrJavaScript():[string, string, string] {
+                        cssOrJavaScript = function language_auto_notmarkup_cssOrJavaScript():languageAuto {
                             if ((/:\s*((number)|(string))/).test(sample) === true && (/((public)|(private))\s+/).test(sample) === true) {
                                 return output("typescript");
                             }
@@ -147,8 +214,8 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     }
                     return output("unknown");
                 },
-                markup      = function language_auto_markup():[string, string, string] {
-                    const html = function language_auto_markup_html():[string, string, string] {
+                markup      = function language_auto_markup():languageAuto {
+                    const html = function language_auto_markup_html():languageAuto {
                         if ((/<%\s*\}/).test(sample) === true) {
                             return output("ejs");
                         }
@@ -209,16 +276,10 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
                     if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                         return output("jsp");
                     }
-                    if ((/<cfset\s/i).test(sample) === true && (/<cfif\s/i).test(sample) === true) {
-                        return output("coldfusion");
-                    }
                     return output("xml");
                 };
             if (sample === null) {
                 return;
-            }
-            if ((/\n#+\s+\w/).test(sample) === true && (/\s\*{1,2}\w+(\s+\w+)*\*{1,2}\s/).test(sample) === true) {
-                return output("markdown");
             }
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");
@@ -236,90 +297,13 @@ Taken from Pretty Diff.  This file is not a formal release product. It exists to
             if (((/^([\s\w-]*<)/).test(sample) === false && (/(>[\s\w-]*)$/).test(sample) === false) || finalstatic === true) {
                 return notmarkup();
             }
-            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:-[]+/).test(sample) === true || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
+            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:\-[]+/).test(sample) === true || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
                 if ((/^([\s\w]*<)/).test(sample) === false || (/(>[\s\w]*)$/).test(sample) === false) {
                     return notmarkup();
                 }
                 return markup();
             }
             return output("unknown");
-        },
-        nameproper: function language_nameproper(input:string):string {
-            const langmap = {
-                c_cpp     : "C++ (Not yet supported)",
-                coldfusion: "ColdFusion",
-                csharp    : "C#",
-                dustjs    : "Dust.js",
-                ejs       : "EJS Template",
-                elm       : "Elm Template",
-                go        : "Go Lang Template",
-                handlebars: "Handlebars Template",
-                html_ruby : "ERB (Ruby) Template",
-                java      : "Java",
-                javascript: "JavaScript",
-                jsp       : "JSTL (JSP)",
-                jsx       : "React JSX",
-                liquid    : "Liquid Template",
-                markup    : "markup",
-                scss      : "SCSS",
-                text      : "Plain Text",
-                titanium  : "Titanium Stylesheets",
-                tss       : "Titanium Stylesheets",
-                twig      : "HTML TWIG Template",
-                typescript: "TypeScript",
-                velocity  : "Apache Velocity",
-                volt      : "Volt Template"
-            };
-            if (typeof input !== "string" || langmap[input] === undefined) {
-                return input.toUpperCase();
-            }
-            return langmap[input];
-        },
-        // [0] = language value for ace mode [1] = prettydiff language category from [0]
-        // [2] = pretty formatting for text output to user
-        setlangmode: function language_setlangmode(input:string):string {
-            const langmap = {
-                c_cpp     : "script",
-                coldfusion: "markup",
-                csharp    : "script",
-                css       : "style",
-                csv       : "csv",
-                dustjs    : "markup",
-                ejs       : "markup",
-                go        : "markup",
-                handlebars: "markup",
-                html      : "markup",
-                html_ruby : "markup",
-                java      : "script",
-                javascript: "script",
-                json      : "script",
-                jsp       : "markup",
-                jsx       : "script",
-                less      : "style",
-                markup    : "markup",
-                php       : "markup",
-                qml       : "markup",
-                scss      : "style",
-                swig      : "markup",
-                text      : "text",
-                titanium  : "script",
-                tss       : "script",
-                twig      : "markup",
-                typescript: "script",
-                velocity  : "markup",
-                xhtml     : "markup",
-                xml       : "markup"
-            };
-            if (typeof input !== "string") {
-                return "script";
-            }
-            if (input.indexOf("html") > -1) {
-                return "markup";
-            }
-            if (langmap[input] === undefined) {
-                return "script";
-            }
-            return langmap[input];
         }
     };
     global.parseFramework.language = language;

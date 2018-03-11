@@ -7,8 +7,9 @@ interface data {
     token: string[];
     types: string[];
 }
+type languageAuto = [string, string, string];
 interface language {
-    auto(sample : string, defaultLang : string): [string, string, string];
+    auto(sample : string, defaultLang : string): languageAuto;
     nameproper(input : string)                 : string;
     setlangmode(input : string)                : string;
 }

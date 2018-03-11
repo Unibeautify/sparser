@@ -504,7 +504,7 @@ const services = function services_() {
                                 }
                                 return arr.reverse().join("");
                             };
-                        let index:number = 10,
+                        let index:number = 11,
                             total:number = 0,
                             low:number = 0,
                             high:number = 0,
@@ -517,18 +517,26 @@ const services = function services_() {
                             end = process.hrtime(start);
                             store.push((end[0] * 1e9) + end[1]);
                         } while (index > 0);
-                        store.forEach(function services_action_performance_readFile_readdir_total(value) {
-                            total = total + value;
-                            if (value > high) {
-                                high = value;
-                            } else if (value < low) {
-                                low = value;
+                        console.log("");
+                        store.forEach(function services_action_performance_readFile_readdir_total(value:number, index:number) {
+                            if (index > 0) {
+                                console.log(`\u001b[33m${index}:\u001b[0m ${value}`);
+                                total = total + value;
+                                if (value > high) {
+                                    high = value;
+                                } else if (value < low) {
+                                    low = value;
+                                }
+                            } else {
+                                console.log(`\u001b[33m0:\u001b[0m ${value} \u001b[31m(first run is ignored)\u001b[0m`);
                             }
                         });
-
-                        console.log(`[\u001b[32m${(total / 1e7)}\u001b[39m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
+                        console.log("");
+                        console.log(`[\u001b[1m\u001b[32m${(total / 1e7)}\u001b[0m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
                         console.log(`[\u001b[36m${comma(filedata.length)}\u001b[39m] Character size`);
                         console.log(`[\u001b[36m${comma(output.token.length)}\u001b[39m] Token length`);
+                        console.log(`Parsed as \u001b[36m${lang[2]}\u001b[0m with lexer \u001b[36m${lang[1]}\u001b[0m.`);
+                        console.log("");
                     });
                 });
             },
