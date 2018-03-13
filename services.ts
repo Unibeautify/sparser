@@ -310,7 +310,7 @@ const services = function services_() {
                                     }
                                 });
                                 if (files[b].indexOf("lexers") > 0) {
-                                    outputa = `${outputa}window.parseFramework.parse.options.lexerOptions.${files[b].replace(`${js}lexers${node.path.sep}`, "").replace(".js", "")}={};`
+                                    outputa = `${outputa}window.parseFramework.parse.parseOptions.lexerOptions.${files[b].replace(`${js}lexers${node.path.sep}`, "").replace(".js", "")}={};`
                                 }
                                 b = b + 1;
                             } while (b < a);
