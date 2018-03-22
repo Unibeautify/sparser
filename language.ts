@@ -77,7 +77,7 @@
             return langmap[input];
         },
         // * [0] = language value for ace mode
-        // * [1] = prettydiff language category from [0]
+        // * [1] = prettydiff language category (lexer) from [0]
         // * [2] = pretty formatting for text output to user
         auto: function language_auto(sample:string, defaultLang:string):languageAuto {
             let b:string[]           = [],
@@ -93,10 +93,10 @@
                         return [defaultLang, language.setlangmode(defaultLang), "unknown"];
                     }
                     if (langname === "xhtml" || langname === "markup") {
-                        return ["xml", "html", "XHTML"];
+                        return ["xml", language.setlangmode("xml"), "XHTML"];
                     }
                     if (langname === "tss") {
-                        return ["tss", "tss", "Titanium Stylesheets"];
+                        return ["tss", language.setlangmode("tss"), "Titanium Stylesheets"];
                     }
                     return [langname, language.setlangmode(langname), language.nameproper(langname)];
                 },

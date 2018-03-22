@@ -5,7 +5,8 @@
 
 const server = function server_() {
     "use strict";
-    let timeStore:number = 0;
+    let ws:any,
+        timeStore:number = 0;
     const http   = require("http"),
         path     = require("path"),
         fs       = require("fs"),
@@ -83,7 +84,6 @@ const server = function server_() {
                 response.end();
             }
         });
-    let ws;
     if (isNaN(port) === true) {
         console.log(`\u001b[31m\u001b[1mError:\u001b[0m\u001b[39m Specified port is, ${port}, which not a number!`);
         return process.exit(1);
