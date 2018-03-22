@@ -79,11 +79,13 @@
                 // cleans up improperly applied ASI
                 asifix         = function lexer_script_asifix():void {
                     let len:number = parse.count;
-                    do {
-                        len = len - 1;
-                    } while (
-                        len > 0 && data.types[len] === "comment"
-                    );
+                    if (data.types[len] === "comment") {
+                        do {
+                            len = len - 1;
+                        } while (
+                            len > 0 && data.types[len] === "comment"
+                        );
+                    }
                     if (data.token[len] === "from") {
                         len = len - 2;
                     }
@@ -415,7 +417,6 @@
                         build:string[]  = [starting],
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
-                        jj:number     = b,
                         base:number   = a + starting.length;
                     if (wordTest > -1) {
                         word();
@@ -443,7 +444,7 @@
                         }
                     }
                     ee = base;
-                    if (ee < jj) {
+                    if (ee < b) {
                         do {
                             if (ee > a + 1) {
                                 if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
@@ -476,7 +477,7 @@
                             } else {
                                 build.push(c[ee]);
                             }
-                            if ((starting === "\"" || starting === "'") && options.lang !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === jj - 1)) {
+                            if ((starting === "\"" || starting === "'") && options.lang !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === b - 1)) {
                                 framework.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
@@ -492,7 +493,7 @@
                                 }
                             }
                             ee = ee + 1;
-                        } while (ee < jj);
+                        } while (ee < b);
                     }
                     if (escape === true) {
                         output = build[build.length - 1];
@@ -505,7 +506,7 @@
                         build.pop();
                     }
                     output = build.join("");
-                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(output) === true && ee < jj) {
+                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(output) === true && ee < b) {
                         ender = [];
                         do {
                             if (ender[0] === undefined && (c[ee] === "/" || c[ee] === "*") && c[ee - 1] === "/") {
@@ -529,8 +530,8 @@
                             }
                             build.push(c[ee]);
                             ee = ee + 1;
-                        } while (ee < jj);
-                        if (ee === jj) {
+                        } while (ee < b);
+                        if (ee === b) {
                             output = build.join("");
                             a = ee;
                         }
@@ -1894,7 +1895,7 @@
                     }
                 };
             do {
-                if ((/\s/).test(c[a])) {
+                if ((/\s/).test(c[a]) === true) {
                     if (wordTest > -1) {
                         word();
                     }

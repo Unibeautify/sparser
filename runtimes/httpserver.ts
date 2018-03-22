@@ -5,6 +5,7 @@
 
 const server = function server_() {
     "use strict";
+    let timeStore:number = 0;
     const http   = require("http"),
         path     = require("path"),
         fs       = require("fs"),
@@ -136,9 +137,10 @@ const server = function server_() {
                 datearr.push(seconds);
                 datearr.push(mseconds);
                 console.log(`[\u001b[36m${datearr.join(":")}\u001b[39m] ${message}`);
-                return date.valueOf();
+                timeStore = date.valueOf();
+                return timeStore;
             };
-        if (extension === "ts") {
+        if (extension === "ts" && timeStore < Date.now() - 2000) {
             let start:number,
                 compile:number,
                 duration = function nodemon_duration(length:number):void {
@@ -180,14 +182,14 @@ const server = function server_() {
                 };
             console.log("");
             start = time(`Compiling TypeScript for \u001b[32m${filename}\u001b[39m`);
-            child("tsc", {
+            child(`node js${path.sep}services build`, {
                 cwd: project
-            }, function nodemon_restart_child(err, stdout, stderr):void {
+            }, function nodemon_restart_child(err:Error, stdout:string, stderr:string):void {
                 if (err !== null) {
-                    console.log(err);
+                    console.log(err.toString());
                     return;
                 }
-                if (stderr !== null && stderr !== "") {
+                if (stderr !== "") {
                     console.log(stderr);
                     return;
                 }
