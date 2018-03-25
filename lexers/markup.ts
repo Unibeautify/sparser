@@ -444,6 +444,8 @@
                                                     tagName(element).replace(/\/$/, ""),
                                                     parse.count
                                                 ]);
+                                            } else if (ltype !== "start") {
+                                                record.begin = record.begin - 1;
                                             }
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
@@ -453,7 +455,7 @@
                                                 .replace(/^(\s*\{)/, "")
                                                 .replace(/(\}\s*)$/, jsxAttribute);
                                             framework.lexer.script(name);
-                                            record.begin = record.begin + 1;
+                                            record.begin = parse.structure[parse.structure.length - 1][1];
                                             record.token = "}";
                                             record.types = "jsx_attribute_end";
                                             parse.push(data, record, "");
@@ -1435,19 +1437,14 @@
                                     struc = [["cfmodule", ss]];
                                     ss  = parse.count + 1;
                                     do {
+                                        data.begin[tt] = struc[struc.length - 1][1];
+                                        data.stack[tt] = struc[struc.length - 1][0];
                                         if (data.types[tt] === "end" || data.types[tt] === "template_end") {
-                                            data.begin[tt] = struc[struc.length - 1][1];
-                                            data.stack[tt] = struc[struc.length - 1][0];
                                             if (struc.length > 1) {
                                                 struc.pop();
                                             }
                                         } else if (data.types[tt] === "start" || data.types[tt] === "template_start" || (data.types[tt] === "cdata" && data.token[data.begin[tt + 1]].toLowerCase().indexOf("<script") === 0)) {
-                                            data.begin[tt] = struc[struc.length - 1][1];
-                                            data.stack[tt] = struc[struc.length - 1][0];
                                             struc.push([tagName(data.token[tt]), tt]);
-                                        } else {
-                                            data.begin[tt] = struc[struc.length - 1][1];
-                                            data.stack[tt] = struc[struc.length - 1][0];
                                         }
                                         tt = tt + 1;
                                     } while (tt < ss);
