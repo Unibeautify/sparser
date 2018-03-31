@@ -8,7 +8,6 @@
                 list:number          = 0,
                 litag:number         = 0,
                 sgmlflag:number      = 0,
-                minspace:string      = "",
                 cftransaction:boolean = false,
                 ext:boolean           = false;
             const parse:parse       = framework.parse,
@@ -2141,7 +2140,7 @@
                             //typically this logic is for artifacts nested within an SGML tag
                             if (square === true && b[a] === "]") {
                                 a = a - 1;
-                                ltoke = minspace + lex.join("");
+                                ltoke = lex.join("").replace(/\s+$/, "");
                                 liner = 0;
                                 record.token = ltoke;
                                 parse.push(data, record, "");
@@ -2154,7 +2153,7 @@
                                 //dustjs template handling
                                 if (options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
-                                    ltoke = minspace + lex.join("");
+                                    ltoke = lex.join("").replace(/\s+$/, "");
                                     liner = 0;
                                     record.token = ltoke;
                                     parse.push(data, record, "");
@@ -2167,7 +2166,7 @@
 
                                 //regular content
                                 a = a - 1;
-                                ltoke = minspace + lex.join("");
+                                ltoke = lex.join("").replace(/\s+$/, "");
                                 liner = 0;
                                 record.token = ltoke;
                                 parse.push(data, record, "");
@@ -2195,7 +2194,7 @@
                     } else if (a !== now || (a === now && ext === false)) {
 
                         //regular content at the end of the supplied source
-                        ltoke = minspace + lex.join("");
+                        ltoke = lex.join("").replace(/\s+$/, "");
                         liner = 0;
                         
                         //this condition prevents adding content that was just added in the loop above
