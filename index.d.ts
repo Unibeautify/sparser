@@ -1,3 +1,4 @@
+declare var ace: any;
 interface data {
     begin: number[];
     lexer: string[];

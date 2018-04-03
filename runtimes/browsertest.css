@@ -1,6 +1,9 @@
 
 body{background:#fff;font-family:monospace;margin:1em;font-size:10px}
-div{font-size:1.2em}
+li,
+.output,
+p{font-size:1.2em}
+div#input{border:0.1em solid #000;font-size:1.4em}
 h1{margin:0}
 .version{color:#070}
 textarea{font-family:monospace}
@@ -13,6 +16,15 @@ tbody tr:hover{background:#ffa}
 tr{display:table-row}
 th,
 td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
+
+#input .ace_editor{background:#fff;border-color:#999}
+#input .ace-tm .ace_marker-layer .ace_selection,
+#input .ace-canvas .ace_marker-layer .ace_selection,
+#input .ace_selection.ace_start{background:#def}
+#input .ace_marker-layer .ace_start{background:#f99}
+#input .ace-tm .ace_marker-layer .ace_selected-word{background:#ff9}
+#input .ace_gutter{background:#ddd;border-color:#999}
+#input .readonly .ace_scroller{background:#eee}
 
 li span{color:#070;font-weight:bold}
 #errors span{color: #c00}
@@ -39,4 +51,5 @@ ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
 ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
 div[class="input"] label{display:block}
-div[class="input"] textarea{background:#eee;display:block;height:20em;width:100%;}
+div[class="input"] #input{display:block;height:20em;width:100%;}
+div[class="input"] textarea{background:#eee}

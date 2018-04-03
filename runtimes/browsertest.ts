@@ -1,10 +1,12 @@
 /*jslint browser:true */
 /*eslint-env browser*/
-/*global global, performance, window*/
+/*global ace, global, performance, window*/
 
 (function web() {
     "use strict";
     const framework:parseFramework = global.parseFramework,
+        acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
+        aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input   = document.getElementsByTagName("textarea")[0],
         options:parseOptions = {
             correct        : false,
@@ -19,10 +21,12 @@
             let outputArrays:data,
                 outputObjects:record[],
                 startTime:number = 0;
-            const value:string = input.value,
+            const value:string = (acetest === true)
+                    ? editor.getValue()
+                    : input.value,
                 checkboxes:[HTMLInputElement, HTMLInputElement] = [
-                    document.getElementsByTagName("input")[0],
-                    document.getElementsByTagName("input")[1]
+                    document.getElementsByTagName("input")[1],
+                    document.getElementsByTagName("input")[2]
                 ],
                 startTotal:number = Math.round(performance.now() * 1000),
                 lang:[string, string, string]   = framework.language.auto(value, "javascript"),
@@ -225,6 +229,15 @@
             Object.keys(framework.lexer).forEach(function web_handler_lexers(value):void {
                 options.lexerOptions[value] = {};
             });
+            if (acetest === true) {
+                let acelang:string = lang[1];
+                if (acelang === "style") {
+                    acelang = "css";
+                } else if (acelang === "markup") {
+                    acelang = "html";
+                }
+                editor.getSession().setMode(`ace/mode/${acelang}`);
+            }
             options.lexerOptions.script.objectSort = (checkboxes[0].checked === true);
             options.lexerOptions.style.objectSort  = (checkboxes[0].checked === true);
             options.lexerOptions.markup.tagSort    = (checkboxes[1].checked === true);
@@ -269,14 +282,73 @@
                 return false;
             }
         };
-    input.onkeyup = handler;
+    let editor:any;
+    if (typeof ace === "object") {
+        aceControl.onclick = function web_aceControl() {
+            if (aceControl.checked === true) {
+                location.replace(location.href.replace(/(\?|&)ace=false/, ""));
+            } else {
+                if (location.href.indexOf("?") > 0) {
+                    location.replace(location.href.replace("?", "?ace=false"));
+                } else {
+                    location.replace(`${location.href}?ace=false`);
+                }
+            }
+        };
+        if (location.href.indexOf("ace=false") > 0) {
+            aceControl.checked = false;
+            input.onkeyup = handler;
+        } else {
+            const div:HTMLDivElement        = document.createElement("div"),
+                parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
+                attributes:NamedNodeMap = input.attributes,
+                label:HTMLLabelElement = parent.getElementsByTagName("label")[0],
+                dollar:string     = "$",
+                len:number        = attributes.length;
+            let a:number          = 0,
+                edit:any       = {},
+                textarea:HTMLTextAreaElement;
+            do {
+                if (attributes[a].name !== "rows" && attributes[a].name !== "cols" && attributes[a].name !== "wrap") {
+                    div.setAttribute(attributes[a].name, attributes[a].value);
+                }
+                a = a + 1;
+            } while (a < len);
+            label.parentNode.removeChild(label);
+            parent.removeChild(input.parentNode);
+            parent.appendChild(label);
+            parent.appendChild(div);
+            edit                            = ace.edit(div);
+            textarea = div.getElementsByTagName("textarea")[0];
+            textarea.onkeyup = handler;
+            edit.setTheme("ace/theme/textmate");
+            edit.focus();
+            edit[`${dollar}blockScrolling`] = Infinity;
+            editor = edit;
+        }
+    } else {
+        aceControl.checked = false;
+        input.onkeyup = handler;
+    }
     document.onkeypress = backspace;
     document.onkeydown = backspace;
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {
-        input.value = localStorage.parseCode;
+        if (acetest === true) {
+            let lang:[string, string, string]   = framework.language.auto(localStorage.parseCode, "javascript");
+            editor.setValue(localStorage.parseCode);
+            if (lang[1] === "style") {
+                lang[1] = "css";
+            } else if (lang[1] === "markup") {
+                lang[1] = "html";
+            }
+            editor.getSession().setMode(`ace/mode/${lang[1]}`);
+            editor.clearSelection();
+        } else {
+            input.value = localStorage.parseCode;
+        }
     }
     if (location.href.indexOf("//localhost:") > 0) {
         let port:number = (function port():number {
