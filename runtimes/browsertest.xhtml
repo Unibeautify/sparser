@@ -21,15 +21,14 @@
             </ul>
         </div>
         <div class="input">
-            <label for="input">Input</label>
-            <textarea id="input"></textarea>
+            <p><label for="input">Input</label>
+                <textarea id="input"></textarea></p>
+            <p><label for="aceControl">Use Ace code editor</label> <input type="checkbox" id="aceControl" checked="checked"/></p>
         </div>
-        <div style="display:none">
+        <div>
             <h2>Options</h2>
             <div>
                 <ul>
-                    <!--li><input type="checkbox" id="conditional"/> <label for="conditional">conditional</label></li>
-                    <li><input type="checkbox" id="crlf"/> <label for="crlf">crlf</label></li-->
                     <li><input type="checkbox" id="tagSort"/> <label for="tagSort">tagSort</label></li>
                     <li><input type="checkbox" id="objectSort"/> <label for="objectSort">objectSort</label></li>
                 </ul>
@@ -46,6 +45,7 @@
             </ul>
             <div id="data"></div>
         </div>
+        <script src="node_modules/ace-builds/src-min-noconflict/ace.js" type="application/javascript"></script>
         <script type="application/javascript" src="../js/browsertest.js"></script>
     </body>
 </html>
