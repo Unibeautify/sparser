@@ -230,13 +230,7 @@
                 options.lexerOptions[value] = {};
             });
             if (acetest === true) {
-                let acelang:string = lang[1];
-                if (acelang === "style") {
-                    acelang = "css";
-                } else if (acelang === "markup") {
-                    acelang = "html";
-                }
-                editor.getSession().setMode(`ace/mode/${acelang}`);
+                editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
             options.lexerOptions.script.objectSort = (checkboxes[0].checked === true);
             options.lexerOptions.style.objectSort  = (checkboxes[0].checked === true);
@@ -339,12 +333,7 @@
         if (acetest === true) {
             let lang:[string, string, string]   = framework.language.auto(localStorage.parseCode, "javascript");
             editor.setValue(localStorage.parseCode);
-            if (lang[1] === "style") {
-                lang[1] = "css";
-            } else if (lang[1] === "markup") {
-                lang[1] = "html";
-            }
-            editor.getSession().setMode(`ace/mode/${lang[1]}`);
+            editor.getSession().setMode(`ace/mode/${lang[0]}`);
             editor.clearSelection();
         } else {
             input.value = localStorage.parseCode;
