@@ -502,7 +502,8 @@
                         build.push(output);
                     }
                     a = ee;
-                    if (starting === "//") {
+                    if (ending === "\n") {
+                        a = a - 1;
                         build.pop();
                     }
                     output = build.join("");
