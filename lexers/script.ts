@@ -1218,6 +1218,10 @@
                             return "=";
                         }
                     }
+                    if (c[a] === ":" && data.types[parse.count] === "word" && data.token[parse.count - 1] === "[") {
+                        parse.structure[parse.structure.length - 1][0] = "attribute";
+                        data.stack[parse.count] = "attribute";
+                    }
                     if (output === "") {
                         if ((c[a + 1] === "+" && c[a + 2] === "+") || (c[a + 1] === "-" && c[a + 2] === "-")) {
                             output = c[a];
@@ -1887,8 +1891,6 @@
                         } else {
                             stack = "paren";
                         }
-                    } else if (ltoke === ":" && data.types[aa] === "word" && data.token[aa - 1] === "[") {
-                        stack = "attribute";
                     }
                     recordPush(stack);
                     if (classy.length > 0) {
