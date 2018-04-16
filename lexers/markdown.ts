@@ -13,7 +13,9 @@
                 data   : data     = parse.data,
                 options: parseOptions  = parse.parseOptions,
                 lines  : string[] = (options.crlf === true)
+                    // eslint-disable-next-line
                     ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
+                    // eslint-disable-next-line
                     : source.replace(/\u0000/g, "\ufffd").split("\n"),
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {

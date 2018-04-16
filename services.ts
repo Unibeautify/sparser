@@ -260,7 +260,9 @@ const services = function services_() {
                         if (errp !== null) {
                             return errout(errp);
                         }
-                        datap = datap.replace(/global\.parseFramework/g, "window.parseFramework");
+                        datap = datap
+                            .replace(/#\!\/usr\/bin\/env\s+node\s+/, "")
+                            .replace(/global\.parseFramework/g, "window.parseFramework");
                         datap = `${datap.slice(0, datap.indexOf("global.") - 4)}}());`;
                         output = output + datap;
                         outputa = output;
