@@ -228,7 +228,8 @@ Parse Framework
                     script: {}
                 },
                 outputFormat: "arrays",
-                source: ""
+                source: "",
+                wrap: 0
             },
             pop: function parse_pop(data: data): record {
                 const output = {

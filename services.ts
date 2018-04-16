@@ -485,7 +485,8 @@ const services = function services_() {
                             lexer: lang[1],
                             lexerOptions: {},
                             outputFormat: "arrays",
-                            source: filedata
+                            source: filedata,
+                            wrap: 0
                         };
                     require(`${js}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
                         const store:number[] = [],

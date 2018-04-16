@@ -47,7 +47,8 @@ const nodetest = function nodetest_() {
                 process.argv.splice(index, 1);
                 return "objects";
             }()),
-            source: ""
+            source: "",
+            wrap: 0
         },
         timespan  = function nodetest_timespan():string {
             const dec = function nodetest_timespan_dec(time: [number, number]):number {
@@ -156,6 +157,17 @@ const nodetest = function nodetest_() {
                     } else {
                         options.correct = false;
                     }
+                    if ((/_wrap-\d+(\.|_)/).test(source) === true) {
+                        let wrap:string = source.slice(source.indexOf("_wrap-") + 6),
+                            notnumb:number = 0;
+                        do {
+                            notnumb = notnumb + 1;
+                        } while ((/\D/).test(wrap.charAt(notnumb)) === true);
+                        wrap = wrap.slice(0, notnumb);
+                        if (isNaN(Number(wrap)) === false) {
+                            options.wrap = Number(wrap);
+                        }
+                    }
                     if ((/_objectSort(\.|_)/).test(source) === true) {
                         options.lexerOptions.style.objectSort = true;
                         options.lexerOptions.script.objectSort = true;
@@ -206,7 +218,6 @@ const nodetest = function nodetest_() {
                 }
                 duration        = timespan();
                 display();
-                //console.log(output);
             }
         };
     

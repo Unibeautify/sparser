@@ -16,7 +16,8 @@ const taskrunner = function taskrunner_() {
             lexer          : "script",
             lexerOptions   : {},
             outputFormat   : "arrays",
-            source         : ""
+            source         : "",
+            wrap           : 0
         },
         framework:parseFramework;
     const order      = [
@@ -319,6 +320,17 @@ const taskrunner = function taskrunner_() {
                                     } else {
                                         parse_options.correct = false;
                                     }
+                                    if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
+                                        let wrap:string = files.code[a][0].slice(files[a][0].indexOf("_wrap-") + 6),
+                                            notnumb:number = 0;
+                                        do {
+                                            notnumb = notnumb + 1;
+                                        } while ((/\D/).test(wrap.charAt(notnumb)) === true);
+                                        wrap = wrap.slice(0, notnumb);
+                                        if (isNaN(Number(wrap)) === false) {
+                                            parse_options.wrap = Number(wrap);
+                                        }
+                                    }
                                     if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
                                         parse_options.lexerOptions.script.objectSort = true;
                                         parse_options.lexerOptions.style.objectSort = true;
@@ -454,7 +466,8 @@ const taskrunner = function taskrunner_() {
                     lexer          : "markup",
                     lexerOptions   : {},
                     outputFormat   : "arrays",
-                    source         : ""
+                    source         : "",
+                    wrap           : 0
                 });
                 keys = Object.keys(parse);
                 keysort = parse.safeSort(keys, "ascend", false).join();

@@ -15,7 +15,8 @@
             lexer          : "script",
             lexerOptions   : {},
             outputFormat   : "arrays",
-            source         : ""
+            source         : "",
+            wrap           : 0
         },
         handler = function web_handler():void {
             let outputArrays:data,

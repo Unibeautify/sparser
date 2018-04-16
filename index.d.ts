@@ -29,6 +29,7 @@ interface parseOptions {
     };
     outputFormat: "objects" | "arrays";
     source      : string;
+    wrap        : number;
 }
 interface parse {
     concat(data : data, array : data)                               : void,
