@@ -11,7 +11,6 @@
                 lengthb:number        = 0,
                 wordTest:number       = -1,
                 paren:number          = -1,
-
                 tempstore:record,
                 pstack:[string, number];
             const parse:parse          = framework.parse,
@@ -417,7 +416,49 @@
                         build:string[]  = [starting],
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
-                        base:number   = a + starting.length;
+                        base:number   = a + starting.length,
+                        wrapCommentLine = function lexer_script_wrapCommentLine() {
+                            let line:number = 0,
+                                xx:number = ee;
+                            do {
+                                if (c[xx] === "\n") {
+                                    if (line > 0) {
+                                        break;
+                                    }
+                                    line = xx;
+                                }
+                                xx = xx + 1;
+                            } while ((/\s/).test(c[xx]) === true && xx < b);
+                            if (c[xx] === "/" && c[xx + 1] === "/") {
+                                ee = xx + 2;
+                                if ((/\s/).test(c[ee]) === true) {
+                                    do {
+                                        if (c[ee] === "\n") {
+                                            break;
+                                        }
+                                        ee = ee + 1;
+                                    } while ((/\s/).test(c[ee]) === true && ee < b);
+                                }
+                                if ((c[ee] === "-" || c[ee] === "*") && (/\s/).test(c[ee + 1]) ===  true) {
+                                    ee = xx;
+                                    return true;
+                                }
+                                if ((/\d/).test(c[ee]) === true) {
+                                    if ((/\d/).test(c[ee + 1]) === true) {
+                                        do {
+                                            ee = ee + 1;
+                                        } while ((/\d/).test(c[ee + 1]) === true && ee < b);
+                                    }
+                                    if (c[ee + 1] === "." && (/\s/).test(c[ee + 2]) ===  true) {
+                                        ee = xx;
+                                        return true;
+                                    }
+                                }
+                                build[build.length - 1] = " ";
+                                return false;
+                            }
+                            return true;
+                        };
                     if (wordTest > -1) {
                         word();
                     }
@@ -483,7 +524,14 @@
                             }
                             if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
                                 if (endlen === 1) {
-                                    break;
+                                    // comment wrapping
+                                    if (starting === "//" && options.wrap !== 0) {
+                                        if (wrapCommentLine() === true) {
+                                            break;
+                                        }
+                                    } else {
+                                        break;
+                                    }
                                 }
                                 // `ee - base` is a cheap means of computing length of build array the `ee -
                                 // base` and `endlen` are both length based values, so adding two (1 for each)
@@ -539,6 +587,27 @@
                     } else {
                         if (starting === "//") {
                             output = output.replace(/(\s+)$/, "");
+                            if (options.wrap > 0 && starting === "//" && output.length > options.wrap) {
+                                output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
+                                do {
+                                    ee = options.wrap - 3;
+                                    do {
+                                        if ((/\s/).test(output.charAt(ee)) === true) {
+                                            break;
+                                        }
+                                        ee = ee - 1;
+                                    } while (ee > 0);
+                                    ltoke = `// ${output.slice(0, ee)}`;
+                                    ltype = "comment";
+                                    output = output.slice(ee + 1);
+                                    if (data.token[parse.count].slice(0, 2) === "//" && parse.linesSpace < 3) {
+                                        parse.linesSpace = 2;
+                                    }
+                                    recordPush("");
+                                } while (output.length > options.wrap);
+                                parse.linesSpace = 2;
+                                output = `// ${output.replace(/^\s+/, "")}`;
+                            }
                         } else if (starting === "/*") {
                             if (options.crlf === true) {
                                 build = output.split("\r\n");
@@ -1897,7 +1966,7 @@
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
                 };
-            do {
+            options.wrap=80;do {
                 if ((/\s/).test(c[a]) === true) {
                     if (wordTest > -1) {
                         word();
