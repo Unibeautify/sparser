@@ -281,10 +281,10 @@
     if (typeof ace === "object") {
         aceControl.onclick = function web_aceControl() {
             if (aceControl.checked === true) {
-                location.replace(location.href.replace(/(\?|&)ace=false/, ""));
+                location.replace(location.href.replace(/ace=false&?/, "").replace(/\?$/, ""));
             } else {
                 if (location.href.indexOf("?") > 0) {
-                    location.replace(location.href.replace("?", "?ace=false"));
+                    location.replace(location.href.replace("?", "?ace=false&"));
                 } else {
                     location.replace(`${location.href}?ace=false`);
                 }
@@ -297,7 +297,6 @@
             const div:HTMLDivElement        = document.createElement("div"),
                 parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
                 attributes:NamedNodeMap = input.attributes,
-                label:HTMLLabelElement = parent.getElementsByTagName("label")[0],
                 dollar:string     = "$",
                 len:number        = attributes.length;
             let a:number          = 0,
@@ -309,9 +308,7 @@
                 }
                 a = a + 1;
             } while (a < len);
-            label.parentNode.removeChild(label);
             parent.removeChild(input.parentNode);
-            parent.appendChild(label);
             parent.appendChild(div);
             edit                            = ace.edit(div);
             textarea = div.getElementsByTagName("textarea")[0];

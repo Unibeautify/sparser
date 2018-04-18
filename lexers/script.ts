@@ -16,6 +16,9 @@
             const parse:parse          = framework.parse,
                 data:data           = parse.data,
                 options:parseOptions        = parse.parseOptions,
+                lf:string = (options.crlf === true)
+                    ? "\r\n"
+                    : "\n",
                 sourcemap:[number, string]      = [
                     0, ""
                 ],
@@ -405,11 +408,141 @@
                     }
                     return false;
                 },
+                // parsing block comments and simultaneously applying word wrap
+                wrapCommentBlock = function lexer_script_wrapCommentBlock():void {
+                    let ee:number = a + 2,
+                        ff:number = 0,
+                        gg:number = 0,
+                        space:string[] = [],
+                        codeflag:boolean = false;
+                    const build:string[] = ["/* "],
+                        spacegen = function lexer_script_wrapCommentBlock_spacegen():string[] {
+                            gg = ee;
+                            do {
+                                ee = ee + 1;
+                            } while (ee < b && (/\s/).test(c[ee]) === true);
+                            return c.slice(gg, ee).join("").split("\n");
+                        },
+                        insertSpace = function lexer_Script_wrapCommentBlock_insertSpace():void {
+                            if (build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
+                                build.push(" ");
+                                ff = ff + 1;
+                            }
+                        },
+                        code = function lexer_script_wrapCommentBlock_code():void {
+                            if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
+                                ff = 0;
+                                if (space.length > 2) {
+                                    build.push(lf);
+                                }
+                                build.push(lf);
+                                build.push(space[space.length - 1]);
+                                do {
+                                    if (c[ee + 1] === "*" && c[ee + 2] === "/") {
+                                        return;
+                                    }
+                                    build.push(c[ee]);
+                                    ee = ee + 1;
+                                } while (ee < b && c[ee] !== "\n");
+                                space = spacegen();
+                                if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
+                                    codeflag = true;
+                                    lexer_script_wrapCommentBlock_code();
+                                } else {
+                                    ee = ee - 1;
+                                    if (space.length > 2) {
+                                        build.push(lf);
+                                    }
+                                    build.push(lf);
+                                    build.push("   ");
+                                    codeflag = false;
+                                }
+                                return;
+                            }
+                            if (space.length > 2) {
+                                ff = 0;
+                                build.push(lf);
+                                build.push(lf);
+                                build.push("   ");
+                            }
+                            if (space.length > 1) {
+                                codeflag = false;
+                            }
+                            ee = ee - 1;
+                        };
+                    // bypass space at the start
+                    if ((/\s/).test(c[ee]) === true) {
+                        do {
+                            ee = ee + 1;
+                        } while ((/\s/).test(c[ee]) === true);
+                    }
+                    do {
+                        if ((/\s/).test(c[ee]) === true) {
+                            // check for blank lines and code sections
+                            if ((/\s/).test(c[ee + 1]) === true) {
+                                if ((/\s/).test(c[ee - 1]) === true) {
+                                    do {
+                                        ee = ee - 1;
+                                    } while (ee > b && (/\s/).test(c[ee - 1]) === true);
+                                }
+                                space = spacegen();
+                                code();
+                                if (ff > options.wrap - 3) {
+                                    ff = 0;
+                                    build.push(lf);
+                                    build.push("   ");
+                                } else {
+                                    insertSpace();
+                                }
+                            } else {
+                                // remove the word that crosses the wrap boundary and insert at newline
+                                if (ff > options.wrap - 3) {
+                                    gg = build.length;
+                                    space = [];
+                                    do {
+                                        space.push(build.pop());
+                                        gg = gg - 1;
+                                    } while (gg > 0 && build[gg - 1] !== " ");
+                                    build.pop();
+                                    ff = space.length + 1;
+                                    build.push(lf);
+                                    build.push("   ");
+                                    build.push(space.reverse().join(""));
+                                    build.push(" ");
+                                } else {
+                                    insertSpace();
+                                }
+                            }
+                        } else {
+                            build.push(c[ee]);
+                            ff = ff + 1;
+                        }
+                        ee = ee + 1;
+                    } while (ee < b && c[ee] !== "*" && c[ee + 1] !== "/");
+                    a = ee + 1;
+                    ee = build.length - 1;
+                    if ((/^(\s+)$/).test(build[ee]) === true) {
+                        do {
+                            build[ee] = "";
+                            ee = ee - 1;
+                        } while (ee > 0 && (/^(\s+)$/).test(build[ee]) === true);
+                    }
+                    if (codeflag === false && ff < options.wrap - 6 && ff > 0) {
+                        build.push(" ");
+                    } else {
+                        build.push(lf);
+                    }
+                    build.push("*/");
+                    ltoke = build.join("");
+                    ltype = "comment";
+                    recordPush("");
+                },
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
                 generic        = function lexer_script_genericBuilder(starting:string, ending:string):string {
                     let ee:number     = 0,
+                        ff:number     = 0,
                         output:string = "",
                         escape:boolean = false,
                         ignorecom:string[] = [],
@@ -417,7 +550,7 @@
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
                         base:number   = a + starting.length,
-                        wrapCommentLine = function lexer_script_wrapCommentLine() {
+                        wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
                             let line:number = 0,
                                 xx:number = ee;
                             do {
@@ -609,23 +742,13 @@
                                 output = `// ${output.replace(/^\s+/, "")}`;
                             }
                         } else if (starting === "/*") {
-                            if (options.crlf === true) {
-                                build = output.split("\r\n");
-                            } else {
-                                build = output.split("\n");
-                            }
+                            build = output.split(lf);
                             ee    = build.length - 1;
-                            if (ee > -1) {
-                                do {
-                                    build[ee] = build[ee].replace(/(\s+)$/, "");
-                                    ee        = ee - 1;
-                                } while (ee > -1);
-                            }
-                            if (options.crlf === true) {
-                                output = build.join("\r\n");
-                            } else {
-                                output = build.join("\n");
-                            }
+                            do {
+                                build[ee] = build[ee].replace(/(\s+)$/, "");
+                                ee        = ee - 1;
+                            } while (ee > -1);
+                            output = build.join(lf);
                         }
                         if (starting === "{%") {
                             if (output.indexOf("{%-") < 0) {
@@ -2016,41 +2139,45 @@
                     markup();
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                     // comment block
-                    ltoke = generic("/*", "*\u002f");
-                    if (ltoke.indexOf("# sourceMappingURL=") === 2) {
-                        sourcemap[0] = parse.count + 1;
-                        sourcemap[1] = ltoke;
-                    }
-                    ltype = "comment";
-                    if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
-                        tempstore    = parse.pop(data);
-                        recordPush("");
-                        parse.push(data, tempstore, "");
-                        if (data.lines[parse.count - 2] === 0) {
-                            data.lines[parse.count - 2] = data.lines[parse.count];
-                        }
-                        data.lines[parse.count] = 0;
+                    if (options.wrap > 0) {
+                        wrapCommentBlock();
                     } else {
-                        if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                            let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
-                            parse.splice({
-                                data: data,
-                                howmany: 0,
-                                index: parse.count,
-                                record: {
-                                    begin: data.begin[parse.count],
-                                    lexer: "script",
-                                    lines: parse.linesSpace,
-                                    presv: (ignore === true),
-                                    stack: data.stack[parse.count],
-                                    token: ltoke,
-                                    types: (ignore === true)
-                                        ? "ignore"
-                                        : "comment"
-                                }
-                            });
-                        } else {
+                        ltoke = generic("/*", "*\u002f");
+                        if (ltoke.indexOf("# sourceMappingURL=") === 2) {
+                            sourcemap[0] = parse.count + 1;
+                            sourcemap[1] = ltoke;
+                        }
+                        ltype = "comment";
+                        if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
+                            tempstore    = parse.pop(data);
                             recordPush("");
+                            parse.push(data, tempstore, "");
+                            if (data.lines[parse.count - 2] === 0) {
+                                data.lines[parse.count - 2] = data.lines[parse.count];
+                            }
+                            data.lines[parse.count] = 0;
+                        } else {
+                            if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                                let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
+                                parse.splice({
+                                    data: data,
+                                    howmany: 0,
+                                    index: parse.count,
+                                    record: {
+                                        begin: data.begin[parse.count],
+                                        lexer: "script",
+                                        lines: parse.linesSpace,
+                                        presv: (ignore === true),
+                                        stack: data.stack[parse.count],
+                                        token: ltoke,
+                                        types: (ignore === true)
+                                            ? "ignore"
+                                            : "comment"
+                                    }
+                                });
+                            } else {
+                                recordPush("");
+                            }
                         }
                     }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {

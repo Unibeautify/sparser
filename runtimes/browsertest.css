@@ -50,6 +50,6 @@ ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
 ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
 ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
-div[class="input"] label{display:block}
+div[class="input"] label{display:inline-block}
 div[class="input"] #input{display:block;height:20em;width:100%;}
 div[class="input"] textarea{background:#eee}
