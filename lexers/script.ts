@@ -542,7 +542,6 @@
                 // chars end is how is to identify where the token ends
                 generic        = function lexer_script_genericBuilder(starting:string, ending:string):string {
                     let ee:number     = 0,
-                        ff:number     = 0,
                         output:string = "",
                         escape:boolean = false,
                         ignorecom:string[] = [],

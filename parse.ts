@@ -1,11 +1,9 @@
-#!/usr/bin/env node
-
 /*
 Parse Framework
 */
 /*jslint node:true */
 /*eslint-env node*/
-/*eslint no-console: 0*/
+/*eslint no-console:0*/
 /*global global, location*/
 
 (function parse_init() {

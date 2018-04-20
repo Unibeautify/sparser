@@ -261,7 +261,7 @@ const services = function services_() {
                             return errout(errp);
                         }
                         datap = datap
-                            .replace(/#\!\/usr\/bin\/env\s+node\s+/, "")
+                            .replace(/#!\/usr\/bin\/env\s+node\s+/, "")
                             .replace(/global\.parseFramework/g, "window.parseFramework");
                         datap = `${datap.slice(0, datap.indexOf("global.") - 4)}}());`;
                         output = output + datap;
