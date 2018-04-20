@@ -2089,7 +2089,7 @@
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
                 };
-            options.wrap=80;do {
+            do {
                 if ((/\s/).test(c[a]) === true) {
                     if (wordTest > -1) {
                         word();

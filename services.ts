@@ -285,7 +285,7 @@ const services = function services_() {
                                     if (errx !== null) {
                                         return errout(errx);
                                     }
-                                    output = output + filex.replace(/global\.parseFramework/g, "window.parseFramework");
+                                    output = output + filex;
                                     outputa = outputa + filex.replace(/global\.parseFramework/g, "window.parseFramework");
                                     c = c - 1;
                                     if (c < 1) {
