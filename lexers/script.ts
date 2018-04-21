@@ -550,23 +550,26 @@
                     const endlen:number = ender.length,
                         base:number   = a + starting.length,
                         wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
-                            let line:number = 0,
-                                xx:number = ee;
+                            let xx:number = ee;
                             do {
-                                if (c[xx] === "\n") {
-                                    if (line > 0) {
-                                        break;
-                                    }
-                                    line = xx;
+                                if (c[xx] === "\n" && xx > ee) {
+                                    break;
                                 }
                                 xx = xx + 1;
                             } while ((/\s/).test(c[xx]) === true && xx < b);
+                            if ((/^\/\/\s+$/).test(c.slice(a, xx).join("")) === true) {
+                                ee = xx;
+                                return true;
+                            }
                             if (c[xx] === "/" && c[xx + 1] === "/") {
+                                if (c[xx + 2] === "\t" || c.slice(xx + 2, xx + 6).join("") === "    ") {
+                                    return true;
+                                }
                                 ee = xx + 2;
                                 if ((/\s/).test(c[ee]) === true) {
                                     do {
                                         if (c[ee] === "\n") {
-                                            break;
+                                            return true;
                                         }
                                         ee = ee + 1;
                                     } while ((/\s/).test(c[ee]) === true && ee < b);
@@ -587,6 +590,7 @@
                                     }
                                 }
                                 build[build.length - 1] = " ";
+                                ee = ee - 1;
                                 return false;
                             }
                             return true;
@@ -657,7 +661,10 @@
                             if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
                                 if (endlen === 1) {
                                     // comment wrapping
-                                    if (starting === "//" && options.wrap !== 0) {
+                                    if (starting === "//" && options.wrap !== 0 && (/^\/\/(\t|(\u0020{4}))/).test(data.token[parse.count]) === false) {
+                                        if (c[a + 2] === "\t" || c.slice(a + 2, a + 6).join("") === "    ") {
+                                            break;
+                                        }
                                         if (wrapCommentLine() === true) {
                                             break;
                                         }
@@ -719,26 +726,58 @@
                     } else {
                         if (starting === "//") {
                             output = output.replace(/(\s+)$/, "");
-                            if (options.wrap > 0 && starting === "//" && output.length > options.wrap) {
-                                output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
-                                do {
-                                    ee = options.wrap - 3;
+                            if (output === "//" && data.token[parse.count] === "//") {
+                                return "";
+                            }
+                            if (
+                                options.wrap > 0 &&
+                                starting === "//" &&
+                                (/^\/\/(\t|\u0020{4})/).test(output) === false
+                            ) {
+                                if (output.length > options.wrap) {
+                                    let tag:string = "";
+                                    output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
                                     do {
-                                        if ((/\s/).test(output.charAt(ee)) === true) {
-                                            break;
+                                        ee = options.wrap - 3;
+                                        do {
+                                            if ((/\s/).test(output.charAt(ee)) === true) {
+                                                /*if (tag === "") {
+                                                    if ((/\s/).test(output.charAt(ee)) === true && ff < 0) {
+                                                        break;
+                                                    }
+                                                    if (output.charAt(ee - 1) === "?" && output.charAt(ee) === ">") {
+                                                        tag = "<?";
+                                                    } else if (output.charAt(ee - 1) === "%" && output.charAt(ee) === ">") {
+                                                        tag = "<%";
+                                                    } else if (output.charAt(ee - 1) === "%" && output.charAt(ee) === "}") {
+                                                        tag = "{%";
+                                                    } else if (output.charAt(ee - 2) === "{" && output.charAt(ee - 1) === "}" && output.charAt(ee) === "}") {
+                                                        tag = "{{{";
+                                                    } else if (output.charAt(ee - 1) === "}" && output.charAt(ee) === "}") {
+                                                        tag = "{{";
+                                                    } else if (output.charAt(ee - 2) === "-" && output.charAt(ee - 1) === "-" && output.charAt(ee) === ">") {
+                                                        tag = "<!--#";
+                                                    }
+                                                } else if (output.slice(ee, ee + (tag.length - 1)) === tag) {
+                                                    tag = "";
+                                                }*/
+                                                break;
+                                            }
+                                            ee = ee - 1;
+                                        } while (ee > 0);
+                                        ltoke = `// ${output.slice(0, ee)}`;
+                                        ltype = "comment";
+                                        output = output.slice(ee + 1);
+                                        if (data.token[parse.count].slice(0, 2) === "//" && parse.linesSpace < 3) {
+                                            parse.linesSpace = 2;
                                         }
-                                        ee = ee - 1;
-                                    } while (ee > 0);
-                                    ltoke = `// ${output.slice(0, ee)}`;
-                                    ltype = "comment";
-                                    output = output.slice(ee + 1);
-                                    if (data.token[parse.count].slice(0, 2) === "//" && parse.linesSpace < 3) {
-                                        parse.linesSpace = 2;
-                                    }
-                                    recordPush("");
-                                } while (output.length > options.wrap);
-                                parse.linesSpace = 2;
-                                output = `// ${output.replace(/^\s+/, "")}`;
+                                        recordPush("");
+                                    } while (output.length > options.wrap);
+                                    parse.linesSpace = 2;
+                                    output = `// ${output.replace(/^\s+/, "")}`;
+                                } else {
+                                    output = output.replace(/\/\/\s+/, "// ");
+                                }
                             }
                         } else if (starting === "/*") {
                             build = output.split(lf);
@@ -2088,7 +2127,7 @@
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
                 };
-            do {
+            options.wrap=80;do {
                 if ((/\s/).test(c[a]) === true) {
                     if (wordTest > -1) {
                         word();
@@ -2213,7 +2252,7 @@
                                     : "comment"
                             }
                         });
-                    } else {
+                    } else if (ltoke !== "") {
                         recordPush("");
                     }
                     a = parse.spacer({array: c, end: b, index: a});

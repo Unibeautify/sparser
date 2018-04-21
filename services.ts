@@ -286,22 +286,26 @@ const services = function services_() {
                                         return errout(errx);
                                     }
                                     output = output + filex;
-                                    outputa = outputa + filex.replace(/global\.parseFramework/g, "window.parseFramework");
                                     c = c - 1;
                                     if (c < 1) {
-                                        node.fs.writeFile(`${js}browser.js`, outputa, function services_action_build_callback_parse_lexers_each_files_write(errb) {
-                                            if (errb !== null) {
-                                                return errout(errb);
+                                        node.fs.writeFile(
+                                            `${js}browser.js`,
+                                            output.replace(/global\.parseFramework/g, "window.parseFramework"),
+                                            function services_action_build_callback_parse_lexers_each_files_write(errb) {
+                                                if (errb !== null) {
+                                                    return errout(errb);
+                                                }
                                             }
-                                        });
+                                        );
                                         node.fs.readFile(`${js}runtimes${node.path.sep}browsertest.js`, {
                                             encoding: "utf8"
                                         }, function services_action_build_callback_parse_lexers_each_files_web(errw, filew) {
                                             if (errw !== null) {
                                                 return errout(errw);
                                             }
-                                            output = output + filew.replace(/global\.parseFramework/g, "window.parseFramework");
-                                            node.fs.writeFile(`${js}browsertest.js`, output, function services_action_build_callback_parse_lexers_each_files_web_write(erro) {
+                                            outputa = output + filew;
+                                            outputa = outputa.replace(/global\.parseFramework/g, "window.parseFramework");
+                                            node.fs.writeFile(`${js}browsertest.js`, outputa, function services_action_build_callback_parse_lexers_each_files_web_write(erro) {
                                                 if (erro !== null) {
                                                     return errout(erro);
                                                 }
@@ -465,8 +469,33 @@ const services = function services_() {
                 if (args[1] === undefined) {
                     return errout("The \u001b[31mperformance\u001b[39m command requires a relative path to a file");
                 }
-                args[1] = node.path.normalize(project + args[1]);
-                node.fs.readFile(args[1], {
+                const optionValue = function services_action_performance_optionValue(name:string, defaultValue:string|number|boolean, ):any {
+                        if (args.join("").indexOf(`${name}:`) > -1) {
+                            let argNumb:number = args.length;
+                            do {
+                                argNumb = argNumb - 1;
+                                if (args[argNumb].indexOf(`${name}:`) === 0) {
+                                    if (defaultValue === true || defaultValue === false) {
+                                        return args[argNumb].replace(`${name}:`, "") === "true";
+                                    }
+                                    if (typeof defaultValue === "number") {
+                                        return Number(args[argNumb].replace(`${name}:`, ""));
+                                    }
+                                    return args[argNumb].replace(`${name}:`, "");
+                                }
+                            } while (argNumb > 0);
+                            if (defaultValue === true || defaultValue === false) {
+                                return args[argNumb].replace(`${name}:`, "") === "true";
+                            }
+                            if (typeof defaultValue === "number") {
+                                return Number(args[argNumb].replace(`${name}:`, ""));
+                            }
+                            return args[argNumb].replace(`${name}:`, "");
+                        }
+                        return defaultValue;
+                    },
+                    sourcePath:string = node.path.normalize(optionValue("source", ""));
+                node.fs.readFile(sourcePath, {
                     encoding: "utf8"
                 }, function services_action_performance_readFile(errfile, filedata) {
                     if (errfile !== null) {
@@ -481,14 +510,14 @@ const services = function services_() {
                     const framework = global.parseFramework,
                         lang = framework.language.auto(filedata, "javascript"),
                         options:parseOptions = {
-                            correct: false,
-                            crlf: false,
+                            correct: optionValue("correct", false),
+                            crlf: optionValue("crlf", false),
                             lang: lang[0],
                             lexer: lang[1],
                             lexerOptions: {},
                             outputFormat: "arrays",
                             source: filedata,
-                            wrap: 0
+                            wrap: optionValue("wrap", 0)
                         };
                     require(`${js}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
                         const store:number[] = [],

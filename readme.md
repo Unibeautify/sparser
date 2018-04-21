@@ -2,7 +2,7 @@
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/Unibeautify/parse-framework.svg)](https://greenkeeper.io/)
 
-## Version 1.1.25
+## Version 1.1.26
 Play around with this application [in your browser](http://prettydiff.com/parse-framework/runtimes/browsertest.xhtml).
 
 ### Todo
