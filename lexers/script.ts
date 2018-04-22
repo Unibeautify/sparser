@@ -551,14 +551,16 @@
                         base:number   = a + starting.length,
                         wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
                             let xx:number = ee;
+                            if ((/\/\/\s+/).test(c.slice(a, xx).join("")) === true) {
+                                return true;
+                            }
                             do {
                                 if (c[xx] === "\n" && xx > ee) {
                                     break;
                                 }
                                 xx = xx + 1;
                             } while ((/\s/).test(c[xx]) === true && xx < b);
-                            if ((/^\/\/\s+$/).test(c.slice(a, xx).join("")) === true) {
-                                ee = xx;
+                            if ((/\/\/\s+/).test(c.slice(a, xx).join("")) === true) {
                                 return true;
                             }
                             if (c[xx] === "/" && c[xx + 1] === "/") {
@@ -661,7 +663,7 @@
                             if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
                                 if (endlen === 1) {
                                     // comment wrapping
-                                    if (starting === "//" && options.wrap !== 0 && (/^\/\/(\t|(\u0020{4}))/).test(data.token[parse.count]) === false) {
+                                    if (starting === "//" && options.wrap !== 0) {
                                         if (c[a + 2] === "\t" || c.slice(a + 2, a + 6).join("") === "    ") {
                                             break;
                                         }
@@ -741,26 +743,6 @@
                                         ee = options.wrap - 3;
                                         do {
                                             if ((/\s/).test(output.charAt(ee)) === true) {
-                                                /*if (tag === "") {
-                                                    if ((/\s/).test(output.charAt(ee)) === true && ff < 0) {
-                                                        break;
-                                                    }
-                                                    if (output.charAt(ee - 1) === "?" && output.charAt(ee) === ">") {
-                                                        tag = "<?";
-                                                    } else if (output.charAt(ee - 1) === "%" && output.charAt(ee) === ">") {
-                                                        tag = "<%";
-                                                    } else if (output.charAt(ee - 1) === "%" && output.charAt(ee) === "}") {
-                                                        tag = "{%";
-                                                    } else if (output.charAt(ee - 2) === "{" && output.charAt(ee - 1) === "}" && output.charAt(ee) === "}") {
-                                                        tag = "{{{";
-                                                    } else if (output.charAt(ee - 1) === "}" && output.charAt(ee) === "}") {
-                                                        tag = "{{";
-                                                    } else if (output.charAt(ee - 2) === "-" && output.charAt(ee - 1) === "-" && output.charAt(ee) === ">") {
-                                                        tag = "<!--#";
-                                                    }
-                                                } else if (output.slice(ee, ee + (tag.length - 1)) === tag) {
-                                                    tag = "";
-                                                }*/
                                                 break;
                                             }
                                             ee = ee - 1;
@@ -2127,7 +2109,7 @@
                         classy[classy.length - 1] = classy[classy.length - 1] + 1;
                     }
                 };
-            options.wrap=80;do {
+            do {
                 if ((/\s/).test(c[a]) === true) {
                     if (wordTest > -1) {
                         word();

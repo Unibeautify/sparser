@@ -245,6 +245,38 @@
             if (Object.keys(window).indexOf("localStorage") > -1) {
                 localStorage.parseCode = value;
             }
+            {
+                const params:string[] = (location.href.indexOf("?") > 0)
+                    ? location.href.split("?")[1].split("&")
+                    : [];
+                if (params.length > 1) {
+                    let aa:number = params.length,
+                        name:string = "",
+                        value:string = "";
+                    do {
+                        aa = aa - 1;
+                        name = params[aa].slice(0, params[aa].indexOf("="));
+                        value = (params[aa].indexOf("=") > 0)
+                            ? params[aa].slice(params[aa].indexOf("=") + 1)
+                            : "";
+                        if (options[params[aa]] !== undefined && typeof options[params[aa]] === "boolean") {
+                            options[params[aa]] = true;
+                        } else if (options[name] !== undefined && value !== "") {
+                            if (typeof options[name] === "boolean") {
+                                if (value === "true") {
+                                    options[name] = true;
+                                } else if (value === "false") {
+                                    options[name] = false;
+                                }
+                            } else if (typeof options[name] === "number" && isNaN(Number(value)) === false) {
+                                options[name] = Number(value);
+                            } else {
+                                options[name] = value;
+                            }
+                        }
+                    } while (aa > 0);
+                }
+            }
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
             if (options.outputFormat === "arrays") {
