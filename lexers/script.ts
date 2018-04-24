@@ -551,8 +551,11 @@
                         base:number   = a + starting.length,
                         wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
                             let xx:number = ee;
-                            if ((/\/\/\s+/).test(c.slice(a, xx).join("")) === true) {
-                                return true;
+                            if ((/\/\/\s+\/\//).test(c.slice(a, xx).join("")) === true) {
+                                ltoke = "//";
+                                ltype = "comment";
+                                recordPush("");
+                                a = a + 3;
                             }
                             do {
                                 if (c[xx] === "\n" && xx > ee) {
@@ -560,9 +563,6 @@
                                 }
                                 xx = xx + 1;
                             } while ((/\s/).test(c[xx]) === true && xx < b);
-                            if ((/\/\/\s+/).test(c.slice(a, xx).join("")) === true) {
-                                return true;
-                            }
                             if (c[xx] === "/" && c[xx + 1] === "/") {
                                 if (c[xx + 2] === "\t" || c.slice(xx + 2, xx + 6).join("") === "    ") {
                                     return true;
@@ -571,6 +571,14 @@
                                 if ((/\s/).test(c[ee]) === true) {
                                     do {
                                         if (c[ee] === "\n") {
+                                            if ((/\n\s*\/\/\s*$/).test(c.slice(a, ee).join("")) === true) {
+                                                do {
+                                                    ee = ee - 1;
+                                                    if (c[ee + 1] === "/" && c[ee + 2] === "/") {
+                                                        break;
+                                                    }
+                                                } while (ee > 0);
+                                            }
                                             return true;
                                         }
                                         ee = ee + 1;
@@ -591,7 +599,6 @@
                                         return true;
                                     }
                                 }
-                                build[build.length - 1] = " ";
                                 ee = ee - 1;
                                 return false;
                             }
