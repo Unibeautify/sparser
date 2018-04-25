@@ -414,7 +414,8 @@
                         ff:number = 0,
                         gg:number = 0,
                         space:string[] = [],
-                        codeflag:boolean = false;
+                        codeflag:boolean = false,
+                        slice:string = "";
                     const build:string[] = ["/* "],
                         spacegen = function lexer_script_wrapCommentBlock_spacegen():string[] {
                             gg = ee;
@@ -477,6 +478,9 @@
                         } while ((/\s/).test(c[ee]) === true);
                     }
                     do {
+                        if (c[ee] === "*" && c[ee + 1] === "/") {
+                            break;
+                        }
                         if ((/\s/).test(c[ee]) === true) {
                             // check for blank lines and code sections
                             if ((/\s/).test(c[ee + 1]) === true) {
@@ -518,7 +522,8 @@
                             ff = ff + 1;
                         }
                         ee = ee + 1;
-                    } while (ee < b && c[ee] !== "*" && c[ee + 1] !== "/");
+                    } while (ee < b);
+                    slice = c.slice(a, ee + 1).join("");
                     a = ee + 1;
                     ee = build.length - 1;
                     if ((/^(\s+)$/).test(build[ee]) === true) {
@@ -534,6 +539,13 @@
                     }
                     build.push("*/");
                     ltoke = build.join("");
+                    if (slice.indexOf("\n") < 0 && (/\/\*\w/).test(slice.slice(0,3)) === true && data.types.indexOf("word") < 0) {
+                        // Sometimes block comments convey application directives and some applications are picky about the formatting of those comments. This section transforms comments into white space conservative units under the conditions:
+                        // * the original comment was on a single line of code
+                        // * the original comment did not contain any white space at the start of the comment
+                        // * the comment exists before any references or keywords
+                        ltoke = ltoke.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
+                    }
                     ltype = "comment";
                     recordPush("");
                 },
