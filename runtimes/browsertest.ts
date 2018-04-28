@@ -233,9 +233,9 @@
             if (acetest === true) {
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
-            options.lexerOptions.script.objectSort = (checkboxes[0].checked === true);
-            options.lexerOptions.style.objectSort  = (checkboxes[0].checked === true);
-            options.lexerOptions.markup.tagSort    = (checkboxes[1].checked === true);
+            options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
+            options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
+            options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
             options.lang                           = lang[0];
             options.lexer                          = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
@@ -272,6 +272,15 @@
                                 options[name] = Number(value);
                             } else {
                                 options[name] = value;
+                            }
+                        }
+                        if (name === "objectSort") {
+                            if (value === "true") {
+                                options.lexerOptions.script.objectSort = true;
+                                options.lexerOptions.style.objectSort = true;
+                            } else if (value === "false") {
+                                options.lexerOptions.script.objectSort = false;
+                                options.lexerOptions.style.objectSort = false;
                             }
                         }
                     } while (aa > 0);

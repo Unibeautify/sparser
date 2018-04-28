@@ -756,7 +756,6 @@
                                 (/^\/\/(\t|\u0020{4})/).test(output) === false
                             ) {
                                 if (output.length > options.wrap) {
-                                    let tag:string = "";
                                     output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
                                     do {
                                         ee = options.wrap - 3;
@@ -1983,6 +1982,7 @@
                     }
                     return "template";
                 },
+                // operations for start types: (, [, {
                 start          = function lexer_script_start(x:string):void {
                     let aa:number    = parse.count,
                         wordx:string = "",
@@ -2028,10 +2028,26 @@
                             data.types[aa] = "start";
                         }
                     }
-                    wordx = data.token[aa];
+                    wordx = (function lexer_script_start_wordx():string {
+                        let bb:number = parse.count;
+                        if (data.types[bb] === "comment") {
+                            do {
+                                bb = bb - 1;
+                            } while (bb > 0 && data.types[bb] === "comment");
+                        }
+                        return data.token[bb];
+                    }());
                     wordy = (data.stack[aa] === undefined)
                         ? ""
-                        : data.token[data.begin[aa] - 1];
+                        : (function lexer_script_start_wordy():string {
+                            let bb:number = parse.count;
+                            if (data.types[bb] === "comment") {
+                                do {
+                                    bb = bb - 1;
+                                } while (bb > 0 && data.types[bb] === "comment");
+                            }
+                            return data.token[data.begin[bb] - 1];
+                        }());
                     if (ltoke === "{" || ltoke === "x{") {
                         if (wordx === "else" || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
                             stack = wordx;
