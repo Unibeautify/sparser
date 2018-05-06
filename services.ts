@@ -494,7 +494,7 @@ const services = function services_() {
                         }
                         return defaultValue;
                     },
-                    sourcePath:string = node.path.normalize(optionValue("source", ""));
+                    sourcePath:string = node.path.normalize(optionValue("source", process.argv[3]));
                 node.fs.readFile(sourcePath, {
                     encoding: "utf8"
                 }, function services_action_performance_readFile(errfile, filedata) {
@@ -520,6 +520,12 @@ const services = function services_() {
                             wrap: optionValue("wrap", 0)
                         };
                     require(`${js}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
+                        let index:number = 11,
+                            total:number = 0,
+                            low:number = 0,
+                            high:number = 0,
+                            start:[number, number],
+                            end:[number, number];
                         const store:number[] = [],
                             output:data = framework.parserArrays(options),
                             comma = function services_action_performance_readFile_readdir_comma(input:number):string {
@@ -535,40 +541,40 @@ const services = function services_() {
                                     } while (ind < len);
                                 }
                                 return arr.reverse().join("");
-                            };
-                        let index:number = 11,
-                            total:number = 0,
-                            low:number = 0,
-                            high:number = 0,
-                            start:[number, number],
-                            end:[number, number];
-                        do {
-                            index = index - 1;
-                            start = process.hrtime();
-                            framework.parserArrays(options);
-                            end = process.hrtime(start);
-                            store.push((end[0] * 1e9) + end[1]);
-                        } while (index > 0);
-                        console.log("");
-                        store.forEach(function services_action_performance_readFile_readdir_total(value:number, index:number) {
-                            if (index > 0) {
-                                console.log(`\u001b[33m${index}:\u001b[0m ${value}`);
-                                total = total + value;
-                                if (value > high) {
-                                    high = value;
-                                } else if (value < low) {
-                                    low = value;
+                            },
+                            interval = function services_action_performance_readFile_readdir_interval():void {
+                                index = index - 1;
+                                if (index > -1) {
+                                    start = process.hrtime();
+                                    framework.parserArrays(options);
+                                    end = process.hrtime(start);
+                                    store.push((end[0] * 1e9) + end[1]);
+                                    // specifying a delay between intervals allows for garbage collection without interference to the performance testing
+                                    setTimeout(services_action_performance_readFile_readdir_interval, 400);
+                                } else {
+                                    console.log("");
+                                    store.forEach(function services_action_performance_readFile_readdir_total(value:number, index:number) {
+                                        if (index > 0) {
+                                            console.log(`\u001b[33m${index}:\u001b[0m ${value}`);
+                                            total = total + value;
+                                            if (value > high) {
+                                                high = value;
+                                            } else if (value < low) {
+                                                low = value;
+                                            }
+                                        } else {
+                                            console.log(`\u001b[33m0:\u001b[0m ${value} \u001b[31m(first run is ignored)\u001b[0m`);
+                                        }
+                                    });
+                                    console.log("");
+                                    console.log(`[\u001b[1m\u001b[32m${(total / 1e7)}\u001b[0m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
+                                    console.log(`[\u001b[36m${comma(filedata.length)}\u001b[39m] Character size`);
+                                    console.log(`[\u001b[36m${comma(output.token.length)}\u001b[39m] Token length`);
+                                    console.log(`Parsed as \u001b[36m${lang[2]}\u001b[0m with lexer \u001b[36m${lang[1]}\u001b[0m.`);
+                                    console.log("");
                                 }
-                            } else {
-                                console.log(`\u001b[33m0:\u001b[0m ${value} \u001b[31m(first run is ignored)\u001b[0m`);
-                            }
-                        });
-                        console.log("");
-                        console.log(`[\u001b[1m\u001b[32m${(total / 1e7)}\u001b[0m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
-                        console.log(`[\u001b[36m${comma(filedata.length)}\u001b[39m] Character size`);
-                        console.log(`[\u001b[36m${comma(output.token.length)}\u001b[39m] Token length`);
-                        console.log(`Parsed as \u001b[36m${lang[2]}\u001b[0m with lexer \u001b[36m${lang[1]}\u001b[0m.`);
-                        console.log("");
+                            };
+                        interval();
                     });
                 });
             },

@@ -11,6 +11,7 @@
                 lengthb:number        = 0,
                 wordTest:number       = -1,
                 paren:number          = -1,
+                funreferences:string[] = [],
                 tempstore:record,
                 pstack:[string, number];
             const parse:parse          = framework.parse,
@@ -22,6 +23,7 @@
                 sourcemap:[number, string]      = [
                     0, ""
                 ],
+                references:string[][] = [[]],
                 b:number              = source.length,
                 c:string[]              = source.split(""),
                 brace:string[]          = [],
@@ -140,7 +142,9 @@
                     let f:number        = wordTest,
                         g:number        = 1,
                         output:string   = "",
-                        nextitem:string = "";
+                        nextitem:string = "",
+                        tokel:string = ltoke,
+                        typel:string = ltype;
                     const lex      = [],
                         elsefix  = function lexer_script_word_elsefix():void {
                             brace.push("x{");
@@ -169,6 +173,17 @@
                                 token: data.token[index],
                                 types: data.types[index]
                             };
+                        },
+                        hoisting = function lexer_script_word_hoisting(index:number, ref:string):void {
+                            do {
+                                if (data.token[index] === ref) {
+                                    data.types[index] = "reference";
+                                }
+                                if (data.token[index - 1] === "{" && data.stack[index] === "function") {
+                                    return;
+                                }
+                                index = index - 1;
+                            } while (index > 0);
                         };
                     do {
                         lex.push(c[f]);
@@ -329,8 +344,74 @@
                                 } while (e > -1);
                             }
                         }
+                        if (typel === "comment") {
+                            let d:number = parse.count;
+                            do {
+                                d = d - 1;
+                            } while (d > 0 && data.types[d] === "comment");
+                            typel = data.types[d];
+                            tokel = data.token[d];
+                        }
+                        if (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var") {
+                            ltype = "reference";
+                            references[references.length - 1].push(output);
+                            if (options.lang === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
+                                hoisting(parse.count, output);
+                            }
+                        } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && tokel !== ":") {
+                            ltype = "reference";
+                            funreferences.push(output);
+                        } else if (tokel === ",") {
+                            let d:number = parse.count;
+                            const e:number = parse.structure[parse.structure.length - 1][1];
+                            do {
+                                if (data.begin[d] === e) {
+                                    if (data.token[d] === ";") {
+                                        break;
+                                    }
+                                    if (data.token[d] === "var" || data.token[d] === "let" || data.token[d] === "const") {
+                                        break;
+                                    }
+                                } else if (data.types[d] === "end") {
+                                    d = data.begin[d];
+                                }
+                                d = d - 1;
+                            } while (d > e);
+                            if (data.token[d] === "var" && options.lang === "javascript") {
+                                ltype = "reference";
+                                references[references.length - 1].push(output);
+                                hoisting(d, output);
+                            } else if (data.token[d] === "let" || data.token[d] === "const") {
+                                ltype = "reference";
+                                references[references.length - 1].push(output);
+                            } else {
+                                ltype = "word";
+                            }
+                        } else {
+                            let d:number = references.length,
+                                e:number = 0;
+                            do {
+                                d = d - 1;
+                                e = references[d].length;
+                                if (e > 0) {
+                                    do {
+                                        e = e - 1;
+                                        if (output === references[d][e]) {
+                                            break;
+                                        }
+                                    } while (e > 0);
+                                    if (output === references[d][e]) {
+                                        break;
+                                    }
+                                }
+                            } while (d > 0);
+                            if (references[d][e] === output) {
+                                ltype = "reference";
+                            } else {
+                                ltype = "word";
+                            }
+                        }
                         ltoke = output;
-                        ltype = "word";
                         if (output === "from" && data.token[parse.count] === "}") {
                             asifix();
                         }
@@ -413,6 +494,7 @@
                     let ee:number = a + 2,
                         ff:number = 0,
                         gg:number = 0,
+                        lastspace:number = 0,
                         space:string[] = [],
                         codeflag:boolean = false,
                         slice:string = "";
@@ -424,9 +506,13 @@
                             } while (ee < b && (/\s/).test(c[ee]) === true);
                             return c.slice(gg, ee).join("").split("\n");
                         },
+                        fixStarEnd = function lexer_script_fixStarEnd(input:string):string {
+                            return lf + input.replace(/\s+/g, "");
+                        },
                         insertSpace = function lexer_Script_wrapCommentBlock_insertSpace():void {
                             if (build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
                                 build.push(" ");
+                                lastspace = build.length - 1;
                                 ff = ff + 1;
                             }
                         },
@@ -445,6 +531,7 @@
                                     build.push(c[ee]);
                                     ee = ee + 1;
                                 } while (ee < b && c[ee] !== "\n");
+
                                 space = spacegen();
                                 if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
                                     codeflag = true;
@@ -519,7 +606,12 @@
                             }
                         } else {
                             build.push(c[ee]);
-                            ff = ff + 1;
+                            if (ff > options.wrap - 3) {
+                                ff = 0;
+                                build[lastspace] = `${lf}   `;
+                            } else {
+                                ff = ff + 1;
+                            }
                         }
                         ee = ee + 1;
                     } while (ee < b);
@@ -545,6 +637,13 @@
                         // * the original comment did not contain any white space at the start of the comment
                         // * the comment exists before any references or keywords
                         ltoke = ltoke.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
+                    } else {
+                        if ((/^\/\u002a\u0020\*+\r?\n/).test(ltoke) === true) {
+                            ltoke = ltoke.replace(" ", "");
+                        }
+                        if ((/\n\u0020{3}\*+\s+\u002a\/$/).test(ltoke) === true) {
+                            ltoke = ltoke.replace(/\n\u0020{3}\*+\s+\u002a\/$/, fixStarEnd);
+                        }
                     }
                     ltype = "comment";
                     recordPush("");
@@ -557,7 +656,9 @@
                         output:string = "",
                         escape:boolean = false,
                         ignorecom:string[] = [],
-                        build:string[]  = [starting],
+                        build:string[]  = (starting === "//" && options.wrap !== 0)
+                            ? []
+                            : [starting],
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
                         base:number   = a + starting.length,
@@ -670,7 +771,23 @@
                                     build.push(lexer_script_genericBuilder("<!--#", "-->"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else {
-                                    build.push(c[ee]);
+                                    if (starting === "//" && options.wrap !== 0 && (/\s/).test(c[ee]) === true) {
+                                        let line:boolean = false;
+                                        build.push(" ");
+                                        if ((/\s/).test(c[ee + 1]) === true) {
+                                            do {
+                                                if (c[ee] === "\n") {
+                                                    line = true;
+                                                }
+                                                ee = ee + 1;
+                                            } while (ee < b && (/\s/).test(c[ee + 1]) === true);
+                                            if (line === true && c[ee] + c[ee + 1] !== "//") {
+                                                break;
+                                            }
+                                        }
+                                    } else {
+                                        build.push(c[ee]);
+                                    }
                                 }
                             } else {
                                 build.push(c[ee]);
@@ -746,7 +863,7 @@
                         }
                     } else {
                         if (starting === "//") {
-                            output = output.replace(/(\s+)$/, "");
+                            output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
                             if (output === "//" && data.token[parse.count] === "//") {
                                 return "";
                             }
@@ -755,7 +872,7 @@
                                 starting === "//" &&
                                 (/^\/\/(\t|\u0020{4})/).test(output) === false
                             ) {
-                                if (output.length > options.wrap) {
+                                if (output.length > options.wrap - 3) {
                                     output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
                                     do {
                                         ee = options.wrap - 3;
@@ -772,12 +889,15 @@
                                             parse.linesSpace = 2;
                                         }
                                         recordPush("");
-                                    } while (output.length > options.wrap);
+                                    } while (output.length > options.wrap - 3);
                                     parse.linesSpace = 2;
                                     output = `// ${output.replace(/^\s+/, "")}`;
                                 } else {
                                     output = output.replace(/\/\/\s+/, "// ");
                                 }
+                            }
+                            if (output.indexOf("// ") !== 0) {
+                                output = `// ${output.replace(/^\/\//, "")}`;
                             }
                         } else if (starting === "/*") {
                             build = output.split(lf);
@@ -1114,7 +1234,7 @@
                                     } while (data.types[inc] === "end" && inc > 0);
                                 }
                             } while (
-                                inc > 0 && (data.token[inc] === "." || data.types[inc] === "word" || data.types[inc] === "end")
+                                inc > 0 && (data.token[inc] === "." || data.types[inc] === "word" || data.types[inc] === "reference" || data.types[inc] === "end")
                             );
                             if (data.token[inc] === "," && c[a] !== ";" && next !== ";" && c[a] !== "}" && next !== "}" && c[a] !== ")" && next !== ")") {
                                 return;
@@ -1398,7 +1518,7 @@
                     if (wordTest > -1) {
                         word();
                     }
-                    if (c[a] === "/" && (parse.count > -1 && (ltype !== "word" || ltoke === "typeof" || ltoke === "return" || ltoke === "else") && ltype !== "number" && ltype !== "string" && ltype !== "end")) {
+                    if (c[a] === "/" && (parse.count > -1 && ((ltype !== "word" && ltype !== "reference") || ltoke === "typeof" || ltoke === "return" || ltoke === "else") && ltype !== "number" && ltype !== "string" && ltype !== "end")) {
                         if (ltoke === "return" || ltoke === "typeof" || ltoke === "else" || ltype !== "word") {
                             ltoke = regex();
                             ltype = "regex";
@@ -1448,7 +1568,7 @@
                             return "=";
                         }
                     }
-                    if (c[a] === ":" && data.types[parse.count] === "word" && data.token[parse.count - 1] === "[") {
+                    if (c[a] === ":" && (data.types[parse.count] === "word" || data.types[parse.count] === "reference") && data.token[parse.count - 1] === "[") {
                         parse.structure[parse.structure.length - 1][0] = "attribute";
                         data.stack[parse.count] = "attribute";
                     }
@@ -1618,7 +1738,7 @@
                         ltype = "generic";
                         ltoke = "<>";
                     }
-                    if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "string" || ltype === "number" || (ltype === "word" && ltoke !== "return")))) {
+                    if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "string" || ltype === "number" || ltype === "reference" || (ltype === "word" && ltoke !== "return")))) {
                         ltype = "operator";
                         ltoke = operator();
                         return recordPush("");
@@ -1903,6 +2023,9 @@
                         brace.pop();
                     }
                     recordPush("");
+                    if (ltoke === "}" && data.stack[parse.count] !== "object") {
+                        references.pop();
+                    }
                     if (insert === true) {
                         ltoke = "x{";
                         ltype = "start";
@@ -2058,11 +2181,30 @@
                             stack = "class";
                         } else if (data.token[aa] === "]" && data.token[aa - 1] === "[") {
                             stack = "array";
-                        } else if (data.types[aa] === "word" && (data.types[aa - 1] === "word" || (data.token[aa - 1] === "?" && data.types[aa - 2] === "word")) && data.token[aa] !== "in" && data.token[aa - 1] !== "export" && data.token[aa - 1] !== "import") {
+                        } else if (
+                            (data.types[aa] === "word" || data.types[aa] === "reference") &&
+                            (
+                                data.types[aa - 1] === "word" ||
+                                data.types[aa - 1] === "reference" ||
+                                (data.token[aa - 1] === "?" && (data.types[aa - 2] === "word" || data.types[aa - 2] === "reference"))
+                            ) &&
+                            data.token[aa] !== "in" &&
+                            data.token[aa - 1] !== "export" &&
+                            data.token[aa - 1] !== "import"
+                        ) {
                             stack = "map";
-                        } else if (data.stack[aa] === "method" && data.types[aa] === "end" && data.types[data.begin[aa] - 1] === "word" && data.token[data.begin[aa] - 2] === "new") {
+                        } else if (
+                            data.stack[aa] === "method" &&
+                            data.types[aa] === "end" &&
+                            (data.types[data.begin[aa] - 1] === "word" || data.types[data.begin[aa] - 1] === "reference") &&
+                            data.token[data.begin[aa] - 2] === "new"
+                        ) {
                             stack = "initializer";
-                        } else if (ltoke === "{" && (wordx === ")" || wordx === "x)") && (data.types[data.begin[aa] - 1] === "word" || data.token[data.begin[aa] - 1] === "]")) {
+                        } else if (
+                            ltoke === "{" &&
+                            (wordx === ")" || wordx === "x)") &&
+                            (data.types[data.begin[aa] - 1] === "word" || data.types[data.begin[aa] - 1] === "reference" || data.token[data.begin[aa] - 1] === "]")
+                        ) {
                             if (wordy === "if") {
                                 stack = "if";
                             } else if (wordy === "for") {
@@ -2093,7 +2235,16 @@
                         } else if (data.stack[aa] === "notation") {
                             // if following a TSX array type declaration
                             stack = "function";
-                        } else if ((data.types[aa] === "number" || data.types[aa] === "string" || data.types[aa] === "word") && data.types[aa - 1] === "word" && data.token[data.begin[aa] - 1] !== "for") {
+                        } else if (
+                            (
+                                data.types[aa] === "number" ||
+                                data.types[aa] === "string" ||
+                                data.types[aa] === "word" ||
+                                data.types[aa] === "reference"
+                            ) &&
+                            (data.types[aa - 1] === "word" || data.types[aa - 1] === "reference") &&
+                            data.token[data.begin[aa] - 1] !== "for"
+                        ) {
                             // if preceed by a word and either string or word public class {
                             stack = "function";
                         } else if (parse.structure.length > 0 && data.token[aa] !== ":" && parse.structure[parse.structure.length - 1][0] === "object" && (
@@ -2108,7 +2259,11 @@
                         } else if (wordx === "=>") {
                             // checking for fat arrow assignment
                             stack = "function";
-                        } else if (wordx === ")" && data.stack[aa] === "method" && data.types[data.begin[aa] - 1] === "word") {
+                        } else if (
+                            wordx === ")" &&
+                            data.stack[aa] === "method" &&
+                            (data.types[data.begin[aa] - 1] === "word" || data.types[data.begin[aa] - 1] === "reference")
+                        ) {
                             stack = "function";
                         } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
                             // ES6 block
@@ -2116,8 +2271,16 @@
                         } else {
                             stack = "object";
                         }
+                        if (stack !== "object") {
+                            if (stack === "function") {
+                                references.push(funreferences);
+                                funreferences = [];
+                            } else {
+                                references.push([]);
+                            }
+                        }
                     } else if (ltoke === "[") {
-                        if ((/\s/).test(c[a - 1]) === true && data.types[aa] === "word" && wordx !== "return" && options.lang !== "twig") {
+                        if ((/\s/).test(c[a - 1]) === true && (data.types[aa] === "word" || data.types[aa] === "reference") && wordx !== "return" && options.lang !== "twig") {
                             stack = "notation";
                         } else {
                             stack = "array";
@@ -2133,7 +2296,7 @@
                             stack = "method";
                         } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
                             stack = "expression";
-                        } else if (data.types[aa] === "word") {
+                        } else if (data.types[aa] === "word" || data.types[aa] === "reference") {
                             stack = "method";
                         } else {
                             stack = "paren";
@@ -2235,6 +2398,9 @@
                             }
                         }
                     }
+                    if ((/\/\*\s*global\s+/).test(data.token[parse.count]) === true && data.types.indexOf("word") < 0) {
+                        references[0] = data.token[parse.count].replace(/\/\*\s*global\s+/, "").replace("\u002a\/", "").replace(/,\s+/g, ",").split(",");
+                    }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     // shebang
                     ltoke      = generic("#!" + c[a + 2], "\n");
@@ -2303,7 +2469,13 @@
                     ltoke = generic(c[a], c[a]);
                     ltype = "string";
                     recordPush("");
-                } else if (c[a] === "-" && (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") && (ltype === "number" || ltype === "word") && ltoke !== "return" && (ltoke === ")" || ltoke === "]" || ltype === "word" || ltype === "number")) {
+                } else if (
+                    c[a] === "-" &&
+                    (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") &&
+                    (ltype === "number" || ltype === "word" || ltype === "reference") &&
+                    ltoke !== "return" &&
+                    (ltoke === ")" || ltoke === "]" || ltype === "word" || ltype === "reference" || ltype === "number")
+                ) {
                     // subtraction
                     if (wordTest > -1) {
                         word();
@@ -2352,7 +2524,7 @@
                         ltype = "separator";
                         recordPush("");
                         ltoke = vart.word[vart.len];
-                        ltype = "word";
+                        ltype = "reference";
                         recordPush("");
                         vart.index[vart.len] = parse.count;
                     } else {

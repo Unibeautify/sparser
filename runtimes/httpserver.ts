@@ -62,7 +62,9 @@ const server = function server_() {
                     if (err !== undefined && err !== null) {
                         if (err.toString().indexOf("no such file or directory") > 0) {
                             response.writeHead(404, {"Content-Type": "text/plain"});
-                            console.log(`\u001b[31m\u001b[1m404\u001b[0m\u001b[39m for ${file}`);
+                            if (file.indexOf("apple-touch") < 0 && file.indexOf("favicon") < 0) {
+                                console.log(`\u001b[31m\u001b[1m404\u001b[0m\u001b[39m for ${file}`);
+                            }
                             return;
                         }
                         response.write(JSON.stringify(err));
