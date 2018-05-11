@@ -550,9 +550,7 @@ Parse Framework
             if (framework.lexer[parseOptions.lexer] === undefined) {
                 framework.parseerror = "Lexer '" + parseOptions.lexer + "' isn't available.";
             }
-            if (typeof framework.lexer[parseOptions.lexer] !== "function") {
-                framework.parseerror = "Specified lexer, " + parseOptions.lexer + ", is not a function.";
-            } else {
+            if (typeof framework.lexer[parseOptions.lexer] === "function") {
                 framework.parseerror = "";
                 parseOptions.lexerOptions = (parseOptions.lexerOptions || {});
                 Object.keys(framework.lexer).forEach(function parse_lexers(value) {
@@ -560,6 +558,8 @@ Parse Framework
                 });
                 // This line parses the code using a lexer file
                 framework.lexer[parseOptions.lexer](parseOptions.source + " ");
+            } else {
+                framework.parseerror = "Specified lexer, " + parseOptions.lexer + ", is not a function.";
             }
 
             // validate that all the data arrays are the same length
@@ -670,7 +670,7 @@ Parse Framework
         global.process.cwd().indexOf("parse-framework") > -1
     ) {
         const path = require("path");
-        require(__dirname + path.sep + "services")();
+        require(`${__dirname + path.sep}services`)();
     } else if (global.process === undefined && location !== undefined && location.href.indexOf("nocomment") < 0) {
         console.log("");
         console.log("Welcome to the Parse Framework.");

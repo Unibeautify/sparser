@@ -1442,7 +1442,10 @@
                                             if (struc.length > 1) {
                                                 struc.pop();
                                             }
-                                        } else if (data.types[tt] === "start" || data.types[tt] === "template_start" || (data.types[tt] === "cdata" && data.token[data.begin[tt + 1]].toLowerCase().indexOf("<script") === 0)) {
+                                        } else if (
+                                            data.lexer[tt] === "markup" &&
+                                            (data.types[tt] === "start" || data.types[tt] === "template_start")
+                                        ) {
                                             struc.push([tagName(data.token[tt]), tt]);
                                         }
                                         tt = tt + 1;

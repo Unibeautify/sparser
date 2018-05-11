@@ -358,7 +358,7 @@
                             if (options.lang === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
                                 hoisting(parse.count, output);
                             }
-                        } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && tokel !== ":") {
+                        } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && ltype !== "operator") {
                             ltype = "reference";
                             funreferences.push(output);
                         } else if (tokel === ",") {
@@ -405,7 +405,7 @@
                                     }
                                 }
                             } while (d > 0);
-                            if (references[d][e] === output) {
+                            if (references[d][e] === output && tokel !== ".") {
                                 ltype = "reference";
                             } else {
                                 ltype = "word";
@@ -2399,7 +2399,7 @@
                         }
                     }
                     if ((/\/\*\s*global\s+/).test(data.token[parse.count]) === true && data.types.indexOf("word") < 0) {
-                        references[0] = data.token[parse.count].replace(/\/\*\s*global\s+/, "").replace("\u002a\/", "").replace(/,\s+/g, ",").split(",");
+                        references[0] = data.token[parse.count].replace(/\/\*\s*global\s+/, "").replace("\u002a/", "").replace(/,\s+/g, ",").split(",");
                     }
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     // shebang

@@ -244,6 +244,9 @@
                         }
                         return output("html");
                     };
+                    if ((/<cfset\s/i).test(sample) === true || (/<cfif\s/i).test(sample) === true) {
+                        return output("coldfusion");
+                    }
                     if ((/^(\s*<!doctype\u0020html>)/i).test(sample) === true || (/^(\s*<html)/i).test(sample) === true || ((/^(\s*<!DOCTYPE\s+((html)|(HTML))\s+PUBLIC\s+)/).test(sample) === true && (/XHTML\s+1\.1/).test(sample) === false && (/XHTML\s+1\.0\s+(S|s)((trict)|(TRICT))/).test(sample) === false)) {
                         return html();
                     }

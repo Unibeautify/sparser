@@ -212,7 +212,8 @@ const taskrunner = function taskrunner_() {
                         let len:number       = (files.code.length > files.parsed.length)
                                 ? files.code.length
                                 : files.parsed.length,
-                            lang      = [],
+                            lang:languageAuto,
+                            fail:boolean = false,
                             a:number         = 0,
                             str:string       = "",
                             outputArrays: data,
@@ -343,6 +344,7 @@ const taskrunner = function taskrunner_() {
                                     } else {
                                         parse_options.lexerOptions.markup.tagSort = false;
                                     }
+                                    lang = framework.language.auto(files.code[a][1], "javascript");
                                     if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
                                         parse_options.lang = files.code[a][0].split("_lang-")[1];
                                         if (parse_options.lang.indexOf("_") > 0) {
@@ -354,7 +356,6 @@ const taskrunner = function taskrunner_() {
                                         parse_options.lang = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
-                                    lang                 = framework.language.auto(files.code[a][1], "javascript");
                                     parse_options.lexer  = currentlex;
                                     outputArrays         = framework.parserArrays(parse_options);
                                     str                  = JSON.stringify(outputArrays);
@@ -363,10 +364,15 @@ const taskrunner = function taskrunner_() {
                                             filecount = filecount + 1;
                                             console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[39m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
                                             if (a === len - 1) {
+                                                if (fail === true) {
+                                                    errout("\u001b[31mUnit test failure!\u001b[39m");
+                                                    return;
+                                                }
                                                 console.log("\u001b[32mCore unit testing complete!\u001b[39m");
                                                 return next();
                                             }
                                         } else {
+                                            fail = true;
                                             diffFiles(files.parsed[a][0], outputArrays, JSON.parse(files.parsed[a][1]));
                                         }
                                     } else {
