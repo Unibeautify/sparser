@@ -12,6 +12,7 @@ When option *correct* is true missing syntax characters are inserted, which can 
 * **generic** - Java and C# styled type generics as used in TypeScript
 * **operator** - JavaScript operators and other syntax characters not otherwise described here.
 * **number** - Numbers.
+* **reference** - A word token type that is declared in the code sample.
 * **regex** - Regular expressions. Described as delimited by `/` characters but not in such a way that the first character could suggestion a division operator.
 * **separator** - Describes `,`, `.`, and `;`.
 * **string** - Strings, which includes JavaScript template strings.
@@ -20,7 +21,7 @@ When option *correct* is true missing syntax characters are inserted, which can 
 * **template_else** - A template type that is used as the *else* block of a condition.
 * **template_end** - A terminal token of a template body.
 * **template_start** - A start token of a template body.
-* **word** - A collection of characters that comprise a JavaScript reference name or keyword.  This parser is less strict than a JavaScript compiler in that it does not, at this time, trap certain extended UTF8 control characters that aren't valid in identifiers.
+* **word** - A collection of characters that comprise a JavaScript keyword or reference not explicitly declared in the code sample.  This parser is less strict than a JavaScript compiler in that it does not, at this time, trap certain extended UTF8 control characters that aren't valid in identifiers.
 
 ## stack values
 The stack values are identified by either a known categorical term that describes a common structure or by a keyword that immediately describes the current block.
@@ -53,6 +54,10 @@ The stack values are identified by either a known categorical term that describe
 
 ## script options
 * **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
+* **varword** - Whether variables should be declared as:
+   - *list*: a comma separated list
+   - *each*: separate declaration statements
+   - *none*: or left alone
 
 ## Escaping code from the parser
 The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are line comments or a block comments.
