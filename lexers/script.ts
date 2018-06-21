@@ -355,7 +355,7 @@
                         if (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var") {
                             ltype = "reference";
                             references[references.length - 1].push(output);
-                            if (options.lang === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
+                            if (options.language === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
                                 hoisting(parse.count, output);
                             }
                         } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && ltype !== "operator") {
@@ -377,7 +377,7 @@
                                 }
                                 d = d - 1;
                             } while (d > e);
-                            if (data.token[d] === "var" && options.lang === "javascript") {
+                            if (data.token[d] === "var" && options.language === "javascript") {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                                 hoisting(d, output);
@@ -470,7 +470,7 @@
                             recordPush("else");
                         }
                     }
-                    if ((output === "for" || output === "if" || output === "switch" || output === "catch") && options.lang !== "twig" && data.token[parse.count - 1] !== ".") {
+                    if ((output === "for" || output === "if" || output === "switch" || output === "catch") && options.language !== "twig" && data.token[parse.count - 1] !== ".") {
                         nextitem = nextchar(1, true);
                         if (nextitem !== "(") {
                             paren = parse.count;
@@ -659,7 +659,8 @@
                         build:string[]  = (starting === "//" && options.wrap !== 0)
                             ? []
                             : [starting],
-                        ender:string[]  = ending.split("");
+                        ender:string[]  = ending.split(""),
+                        wrapignore:boolean = (starting === "//" && options.wrap !== 0 && (c[a + 2] === "\t" || c.slice(a + 2, a + 6).join("") === "    "));
                     const endlen:number = ender.length,
                         base:number   = a + starting.length,
                         wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
@@ -771,7 +772,7 @@
                                     build.push(lexer_script_genericBuilder("<!--#", "-->"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else {
-                                    if (starting === "//" && options.wrap !== 0 && (/\s/).test(c[ee]) === true) {
+                                    if (starting === "//" && options.wrap !== 0 && (/\s/).test(c[ee]) === true && wrapignore === false) {
                                         let line:boolean = false;
                                         build.push(" ");
                                         if ((/\s/).test(c[ee + 1]) === true) {
@@ -792,11 +793,14 @@
                             } else {
                                 build.push(c[ee]);
                             }
-                            if ((starting === "\"" || starting === "'") && options.lang !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === b - 1)) {
+                            if (wrapignore === true && c[ee] === "\n") {
+                                break;
+                            }
+                            if ((starting === "\"" || starting === "'") && options.language !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === b - 1)) {
                                 framework.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
-                            if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
+                            if (c[ee] === ender[endlen - 1] && wrapignore === false && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
                                 if (endlen === 1) {
                                     // comment wrapping
                                     if (starting === "//" && options.wrap !== 0) {
@@ -863,6 +867,12 @@
                         }
                     } else {
                         if (starting === "//") {
+                            if ((/^\s+$/).test(output) === true || output === "") {
+                                return "//";
+                            }
+                            if (wrapignore === true) {
+                                return "//" + output;
+                            }
                             output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
                             if (output === "//" && data.token[parse.count] === "//") {
                                 return "";
@@ -931,7 +941,7 @@
                         name:string  = "";
                     const g:number   = parse.count,
                         lines:number = parse.linesSpace;
-                    if (options.lang === "json") {
+                    if (options.language === "json") {
                         return;
                     }
                     if (data.stack[parse.count] === "do" && next === "while" && data.token[parse.count] === "}") {
@@ -1036,13 +1046,13 @@
                         clist:string  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
-                    if (data.lexer[parse.count - 1] !== "script" || options.lang === "java" || options.lang === "csharp") {
+                    if (data.lexer[parse.count - 1] !== "script" || options.language === "java" || options.language === "csharp") {
                         return;
                     }
-                    if (options.lang === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
+                    if (options.language === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
                         return;
                     }
-                    if (((record.stack === "global" && record.types !== "end") || (record.types === "end" && data.stack[record.begin - 1] === "global")) && (next === "" || next === "}") && record.stack === data.stack[parse.count - 1] && options.lang === "jsx") {
+                    if (((record.stack === "global" && record.types !== "end") || (record.types === "end" && data.stack[record.begin - 1] === "global")) && (next === "" || next === "}") && record.stack === data.stack[parse.count - 1] && options.language === "jsx") {
                         return;
                     }
                     if (record.stack === "array" && record.token !== "]") {
@@ -1054,7 +1064,7 @@
                     if (next === ";" && isEnd === false) {
                         return;
                     }
-                    if (options.lang === "qml") {
+                    if (options.language === "qml") {
                         if (record.types === "start") {
                             return;
                         }
@@ -1743,10 +1753,10 @@
                         ltoke = operator();
                         return recordPush("");
                     }
-                    if (options.lang !== "typescript" && (data.token[d] === "return" || data.types[d] === "operator" || data.types[d] === "start" || data.types[d] === "separator" || (data.token[d] === "}" && parse.structure[parse.structure.length - 1][0] === "global"))) {
+                    if (options.language !== "typescript" && (data.token[d] === "return" || data.types[d] === "operator" || data.types[d] === "start" || data.types[d] === "separator" || (data.token[d] === "}" && parse.structure[parse.structure.length - 1][0] === "global"))) {
                         ltype        = "markup";
-                        options.lang = "jsx";
-                    } else if (options.lang === "typescript" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
+                        options.language = "jsx";
+                    } else if (options.language === "typescript" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
                         // Java type generics
                         let comma:boolean    = false,
                             e:number        = 1,
@@ -2280,7 +2290,7 @@
                             }
                         }
                     } else if (ltoke === "[") {
-                        if ((/\s/).test(c[a - 1]) === true && (data.types[aa] === "word" || data.types[aa] === "reference") && wordx !== "return" && options.lang !== "twig") {
+                        if ((/\s/).test(c[a - 1]) === true && (data.types[aa] === "word" || data.types[aa] === "reference") && wordx !== "return" && options.language !== "twig") {
                             stack = "notation";
                         } else {
                             stack = "array";
@@ -2413,6 +2423,13 @@
                     asi(false);
                     ltoke = generic("//", "\n");
                     ltype = "comment";
+                    if (options.crlf === true) {
+                        if (ltoke.charAt(ltoke.length - 1) !== "\r") {
+                            ltoke = ltoke + "\r";
+                        }
+                    } else {
+                        ltoke = ltoke.replace(/\r$/, "");
+                    }
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;
@@ -2556,7 +2573,7 @@
                     if (wordTest > -1) {
                         word();
                     }
-                    if (options.lang === "qml") {
+                    if (options.language === "qml") {
                         ltoke = "x;";
                         ltype = "separator";
                         recordPush("");
@@ -2614,7 +2631,7 @@
             if (wordTest > -1) {
                 word();
             }
-            if (options.correct === true && options.lang !== "jsx" && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
+            if (options.correct === true && options.language !== "jsx" && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
                 asi(false);
             }
             if (sourcemap[0] === parse.count) {

@@ -180,7 +180,7 @@ const server = function server_() {
                             list[3] = `0${list[3]}`;
                         } while (list[3].length < 3);
                     }
-                    console.log(`[\u001b[35m${list.join(":")}\u001b[39m] Total compile time.`);
+                    console.log(`[\u001b[36m${list.join(":")}\u001b[39m] Total compile time.\u0007`);
                 };
             console.log("");
             start = time(`Compiling TypeScript for \u001b[32m${filename}\u001b[39m`);

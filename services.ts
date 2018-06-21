@@ -38,7 +38,7 @@ const services = function services_() {
             },
             "inventory"   : {
                 brief: "List the currently supplied lexers and their language's in language specific logic.",
-                detail: "The generated list is computed by scraping the code for the 'options.lang' data property.  This means the specified supported languages are languages that demand unique instructions.  Other languages that aren't in this list may also be supported.  This command accepts no options.",
+                detail: "The generated list is computed by scraping the code for the 'options.language' data property.  This means the specified supported languages are languages that demand unique instructions.  Other languages that aren't in this list may also be supported.  This command accepts no options.",
                 example: "inventory"
             },
             "parse-array" : {
@@ -394,7 +394,7 @@ const services = function services_() {
             inventory: function services_action_inventory():void {
                 console.log("\u001b[4mInventory of mentioned languages\u001b[0m");
                 console.log("");
-                console.log(wrap("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.lang'. Other languages may be supported without dedicated logic.", 0));
+                console.log(wrap("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.", 0));
                 node.fs.readdir(`${project}lexers`, function services_action_inventory_readdir(err, files) {
                     if (err !== null) {
                         return errout(err);
@@ -419,7 +419,7 @@ const services = function services_() {
                                 keys: [],
                                 values: {}
                             };
-                            const fragments:string[] = filedata.replace(/options\.lang\s*(((!|=)==)|=)\s*/g, "options.lang===").split("options.lang===");
+                            const fragments:string[] = filedata.replace(/options\.language\s*(((!|=)==)|=)\s*/g, "options.language===").split("options.language===");
                             if (fragments.length > 1) {
                                 fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
                                     if (value.charAt(0) === "\"" || value.charAt(0) === "'") {
@@ -512,7 +512,7 @@ const services = function services_() {
                         options:parseOptions = {
                             correct: optionValue("correct", false),
                             crlf: optionValue("crlf", false),
-                            lang: lang[0],
+                            language: lang[0],
                             lexer: lang[1],
                             lexerOptions: {},
                             outputFormat: "arrays",

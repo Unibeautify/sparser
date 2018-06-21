@@ -20,7 +20,7 @@ interface lexer {
 interface parseOptions {
     correct        : boolean;
     crlf           : boolean;
-    lang           : string;
+    language       : string;
     lexer          : string;
     lexerOptions   : {
         [key: string]: {

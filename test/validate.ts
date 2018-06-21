@@ -12,7 +12,7 @@ const taskrunner = function taskrunner_() {
         parse_options:parseOptions = {
             correct        : false,
             crlf           : false,
-            lang           : "javascript",
+            language       : "javascript",
             lexer          : "script",
             lexerOptions   : {},
             outputFormat   : "arrays",
@@ -252,7 +252,7 @@ const taskrunner = function taskrunner_() {
                                         context: 2,
                                         diff: record(sampleDiff),
                                         diffcli: true,
-                                        lang: "text",
+                                        language: "text",
                                         mode: "diff",
                                         source: record(sampleSource)
                                     };
@@ -346,14 +346,14 @@ const taskrunner = function taskrunner_() {
                                     }
                                     lang = framework.language.auto(files.code[a][1], "javascript");
                                     if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
-                                        parse_options.lang = files.code[a][0].split("_lang-")[1];
-                                        if (parse_options.lang.indexOf("_") > 0) {
-                                            parse_options.lang = parse_options.lang.split("_")[0];
+                                        parse_options.language = files.code[a][0].split("_lang-")[1];
+                                        if (parse_options.language.indexOf("_") > 0) {
+                                            parse_options.language = parse_options.language.split("_")[0];
                                         } else {
-                                            parse_options.lang = parse_options.lang.split(".")[0];
+                                            parse_options.language = parse_options.language.split(".")[0];
                                         }
                                     } else {
-                                        parse_options.lang = lang[0];
+                                        parse_options.language = lang[0];
                                     }
                                     parse_options.source = files.code[a][1];
                                     parse_options.lexer  = currentlex;
@@ -468,7 +468,7 @@ const taskrunner = function taskrunner_() {
                 framework.parserArrays({
                     correct        : false,
                     crlf           : false,
-                    lang           : "html",
+                    language       : "html",
                     lexer          : "markup",
                     lexerOptions   : {},
                     outputFormat   : "arrays",

@@ -36,7 +36,7 @@ const nodetest = function nodetest_() {
         options:parseOptions   = {
             correct: false,
             crlf: false,
-            lang: "",
+            language: "",
             lexer: "script",
             lexerOptions: {},
             outputFormat:  (function nodetest_outputFormat():"objects"|"arrays" {
@@ -181,17 +181,17 @@ const nodetest = function nodetest_() {
                         options.lexerOptions.markup.tagSort = false;
                     }
                     if ((/_lang-\w+(\.|_)/).test(source) === true) {
-                        options.lang = source.split("_lang-")[1];
-                        if (options.lang.indexOf("_") > 0) {
-                            options.lang = options.lang.split("_")[0];
+                        options.language = source.split("_lang-")[1];
+                        if (options.language.indexOf("_") > 0) {
+                            options.language = options.language.split("_")[0];
                         } else {
-                            options.lang = options.lang.split(".")[0];
+                            options.language = options.language.split(".")[0];
                         }
                     } else {
-                        options.lang   = lang[0];
+                        options.language   = lang[0];
                     }
                 } else {
-                    options.lang   = lang[0];
+                    options.language   = lang[0];
                 }
                 if (options.outputFormat === "arrays") {
                     outputArrays = framework.parserArrays(options);
@@ -209,7 +209,7 @@ const nodetest = function nodetest_() {
                 }
             } else {
                 options.correct = true;
-                options.lang    = lang[0];
+                options.language    = lang[0];
                 startTime       = process.hrtime();
                 if (options.outputFormat === "arrays") {
                     outputArrays = framework.parserArrays(options);

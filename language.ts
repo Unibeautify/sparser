@@ -282,12 +282,12 @@
                     return output("xml");
                 };
             if (sample === null) {
-                return;
+                return output("unknown");
             }
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");
             }
-            if ((/^(\s*((if)|(for)|(function))\s*\()/).test(sample) === false && (/(\s|;|\})((if)|(for)|(function\s*\w*))\s*\(/).test(sample) === false && vartest === false && (/return\s*\w*\s*(;|\})/).test(sample) === false && (sample === undefined || (/^(\s*#(?!(!\/)))/).test(sample) === true || ((/\n\s*(\.|@)\w+(\(?|(\s*:))/).test(sample) === true && (/>\s*<\w/).test(sample) === false))) {
+            if (finalstatic === false && (/^(\s*((if)|(for)|(function))\s*\()/).test(sample) === false && (/(\s|;|\})((if)|(for)|(function\s*\w*))\s*\(/).test(sample) === false && vartest === false && (/return\s*\w*\s*(;|\})/).test(sample) === false && (sample === undefined || (/^(\s*#(?!(!\/)))/).test(sample) === true || ((/\n\s*(\.|@)\w+(\(?|(\s*:))/).test(sample) === true && (/>\s*<\w/).test(sample) === false))) {
                 return cssA();
             }
             b = sample

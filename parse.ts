@@ -228,7 +228,7 @@ Parse Framework
             parseOptions: {
                 correct: false,
                 crlf: false,
-                lang: "javascript",
+                language: "javascript",
                 lexer: "script",
                 lexerOptions: {
                     script: {}

@@ -31,7 +31,7 @@
                     name  = (space < 0)
                         ? name.slice(1, el.length - 1)
                         : name.slice(1, space);
-                    if (options.lang === "html" || options.lang === "coldfusion") {
+                    if (options.language === "html" || options.language === "coldfusion") {
                         name = name.toLowerCase();
                     }
                     name = name.replace(/(\}\})$/, "");
@@ -368,7 +368,7 @@
                             }
 
                             // sort the attributes
-                            if (options.lexerOptions.markup.tagSort === true && jscom === false && options.lang !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.lexerOptions.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore, "", false);
                                 record.presv = true;
                             } else {
@@ -418,10 +418,10 @@
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
                                         name = attstore[ind];
-                                        if (options.lang === "html") {
+                                        if (options.language === "html") {
                                             name = name.toLowerCase();
                                         }
-                                        if (options.lang === "jsx") {
+                                        if (options.language === "jsx") {
                                             record.token = name;
                                         } else {
                                             record.token = name + "=\"" + attstore[ind] + "\"";
@@ -434,10 +434,10 @@
                                             slice = "\"" + slice + "\"";
                                         }
                                         name = attstore[ind].slice(0, eq);
-                                        if (options.lang === "html" && cft === undefined) {
+                                        if (options.language === "html" && cft === undefined) {
                                             name = name.toLowerCase();
                                         }
-                                        if (options.lang === "jsx" && (/^(\s*\{)/).test(slice) === true) {
+                                        if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
                                             if (ind === 0 && (ltype === "singleton" || ltype === "template")) {
                                                 parse.structure.push([
                                                     tagName(element).replace(/\/$/, ""),
@@ -587,7 +587,7 @@
                             }
                         } else if (b[a] === "{") {
                             preserve = true;
-                            if (options.lang === "jsx") {
+                            if (options.language === "jsx") {
                                 ext          = true;
                                 earlyexit    = true;
                                 record.token = "{";
@@ -596,7 +596,7 @@
                                 parse.structure.push(["script", parse.count]);
                                 return;
                             }
-                            if (options.lang === "dustjs") {
+                            if (options.language === "dustjs") {
                                 if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a            = a + 6;
                                     earlyexit    = true;
@@ -670,7 +670,7 @@
                         } else if (b[a] === "[" && b[a + 1] === "%") {
                             end   = "%]";
                             ltype = "template";
-                        } else if (b[a] === "#" && options.lang === "apacheVelocity") {
+                        } else if (b[a] === "#" && options.language === "apacheVelocity") {
                             if (b[a + 1] === "*") {
                                 preserve = true;
                                 comment  = true;
@@ -702,7 +702,7 @@
                                 end   = "\n";
                                 ltype = "template";
                             }
-                        } else if (b[a] === "$" && options.lang === "apacheVelocity") {
+                        } else if (b[a] === "$" && options.language === "apacheVelocity") {
                             end   = "\n";
                             ltype = "template";
                         }
@@ -765,7 +765,7 @@
                                     if (name[0] === "data-parse-ignore" || name[0] === "data-prettydiff-ignore") {
                                         ignoreme = true;
                                     }
-                                    if (options.lang === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
+                                    if (options.language === "jsx" && attribute[0] === "{" && attribute[attribute.length - 1] === "}") {
                                         jsxcount = 0;
                                     }
                                 }
@@ -799,7 +799,7 @@
                                     // if an attribute follows an attribute ending with `=` then adjoin it to the
                                     // last attribute
                                     attstore[attstore.length - 1] = attstore[attstore.length - 1] + atty;
-                                } else if (options.lang === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1].charAt(attstore[attstore.length - 1].length - 1)) > -1)) {
+                                } else if (options.language === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1].charAt(attstore[attstore.length - 1].length - 1)) > -1)) {
                                     attstore[attstore.length - 1] = attstore[attstore.length - 1] + " " + atty;
                                 } else if (atty !== "" && atty !== " ") {
                                     attstore.push(atty);
@@ -808,7 +808,7 @@
                             };
                         do {
                             if (b[a] === "\n") {
-                                if (options.lang === "apacheVelocity" && lex[0] === "#") {
+                                if (options.language === "apacheVelocity" && lex[0] === "#") {
                                     a = a - 1;
                                     break;
                                 }
@@ -852,7 +852,7 @@
                                 }
                             } else {
                                 if (quote === "") {
-                                    if (options.lang === "jsx") {
+                                    if (options.language === "jsx") {
                                         if (b[a] === "{") {
                                             jsxcount = jsxcount + 1;
                                         } else if (b[a] === "}") {
@@ -863,7 +863,7 @@
                                         data.types[parse.count] = "template_start";
                                         break;
                                     }
-                                    if (b[a] === "<" && options.lang !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
+                                    if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
                                         framework.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
@@ -882,7 +882,7 @@
                                                 }
                                                 attribute.push(b[a]);
 
-                                                if ((b[a] === "<" || b[a] === ">") && (quote === "" || quote === ">") && options.lang !== "jsx") {
+                                                if ((b[a] === "<" || b[a] === ">") && (quote === "" || quote === ">") && options.language !== "jsx") {
                                                     if (quote === "" && b[a] === "<") {
                                                         quote     = ">";
                                                         braccount = 1;
@@ -921,7 +921,7 @@
                                                         }
                                                         break;
                                                     }
-                                                    if (b[a] === "{" && b[a - 1] === "=" && options.lang !== "jsx") {
+                                                    if (b[a] === "{" && b[a - 1] === "=" && options.language !== "jsx") {
                                                         quote = "}";
                                                     } else if (b[a] === "\"" || b[a] === "'") {
                                                         quote = b[a];
@@ -938,7 +938,7 @@
                                                     } else if (b[a] === "(") {
                                                         quote     = ")";
                                                         parncount = 1;
-                                                    } else if (options.lang === "jsx") {
+                                                    } else if (options.language === "jsx") {
                                                         //jsx variable attribute
                                                         if ((b[a - 1] === "=" || (/\s/).test(b[a - 1]) === true) && b[a] === "{") {
                                                             quote  = "}";
@@ -951,7 +951,7 @@
                                                                 quote = "\n";
                                                             }
                                                         }
-                                                    } else if (lex[0] !== "{" && b[a] === "{" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                                    } else if (lex[0] !== "{" && b[a] === "{" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                                         //opening embedded template expression
                                                         if (b[a + 1] === "{") {
                                                             if (b[a + 2] === "{") {
@@ -959,7 +959,7 @@
                                                             } else {
                                                                 quote = "}}";
                                                             }
-                                                        } else if (options.lang === "dustjs") {
+                                                        } else if (options.language === "dustjs") {
                                                             quote = "}";
                                                         } else {
                                                             quote = b[a + 1] + "}";
@@ -1005,7 +1005,7 @@
                                                             break;
                                                         }
                                                     }
-                                                } else if (options.lang === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "*/" && b[a - 1] === "*" && b[a] === "/"))) {
+                                                } else if (options.language === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "*/" && b[a - 1] === "*" && b[a] === "/"))) {
                                                     //jsx attributes
                                                     if (quote === "}") {
                                                         if (b[a] === "{") {
@@ -1017,7 +1017,7 @@
                                                                 quote    = "";
                                                                 element  = attribute.join("");
                                                                 if (options.lexerOptions.markup.unformatted === false) {
-                                                                    if (options.lang === "jsx") {
+                                                                    if (options.language === "jsx") {
                                                                         if ((/^(\s*)$/).test(element) === false) {
                                                                             attstore.push(element);
                                                                         }
@@ -1101,7 +1101,7 @@
                                         quote = b[a];
                                     } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[parse.count] !== "conditional") {
                                         quote = "-->";
-                                    } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                    } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                         //opening embedded template expression
                                         if (b[a + 1] === "{") {
                                             if (b[a + 2] === "{") {
@@ -1109,7 +1109,7 @@
                                             } else {
                                                 quote = "}}";
                                             }
-                                        } else if (options.lang === "dustjs") {
+                                        } else if (options.language === "dustjs") {
                                             quote = "}";
                                         } else {
                                             quote = b[a + 1] + "}";
@@ -1124,7 +1124,7 @@
                                         } else {
                                             stest = true;
                                         }
-                                    } else if (simple === true && options.lang === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
+                                    } else if (simple === true && options.language === "jsx" && b[a] === "/" && (b[a + 1] === "*" || b[a + 1] === "/")) {
                                         //jsx comment immediately following tag name
                                         stest               = true;
                                         lex[lex.length - 1] = " ";
@@ -1134,7 +1134,7 @@
                                         } else {
                                             jsxquote = "\n";
                                         }
-                                    } else if ((b[a] === lastchar || (end === "\n" && b[a + 1] === "<")) && (lex.length > end.length + 1 || lex[0] === "]") && (options.lang !== "jsx" || jsxcount === 0)) {
+                                    } else if ((b[a] === lastchar || (end === "\n" && b[a + 1] === "<")) && (lex.length > end.length + 1 || lex[0] === "]") && (options.language !== "jsx" || jsxcount === 0)) {
                                         if (end === "\n") {
                                             if ((/\s/).test(lex[lex.length - 1]) === true) {
                                                 do {
@@ -1168,7 +1168,7 @@
                                             }
                                         }
                                     }
-                                } else if (b[a] === quote.charAt(quote.length - 1) && ((options.lang === "jsx" && end === "}" && (b[a - 1] !== "\\" || slashy() === false)) || options.lang !== "jsx" || end !== "}")) {
+                                } else if (b[a] === quote.charAt(quote.length - 1) && ((options.language === "jsx" && end === "}" && (b[a - 1] !== "\\" || slashy() === false)) || options.language !== "jsx" || end !== "}")) {
                                     //find the closing quote or embedded template expression
                                     f     = 0;
                                     if (lex.length > 1) {
@@ -1232,7 +1232,7 @@
                             .replace(/^\//, "");
                     }
 
-                    if (preserve === false && options.lang !== "jsx") {
+                    if (preserve === false && options.language !== "jsx") {
                         element = element.replace(/\s+/g, " ");
                     }
 
@@ -1336,7 +1336,7 @@
                             const lastToken:string = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && lastToken.charAt(lastToken.length - 2) !== "/" && "/" + tagName(lastToken) === tname) {
                                 data.types[parse.count - 1] = "start";
-                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.lexerOptions.markup.tagMerge === true && (data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.lang !== "html" || (options.lang === "html" && tname !== "/li"))) {
+                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.lexerOptions.markup.tagMerge === true && (data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.language !== "html" || (options.language === "html" && tname !== "/li"))) {
                                 parse.pop(data);
                                 if (data.types[parse.count] === "start") {
                                     data.token[parse.count] = data
@@ -1473,7 +1473,7 @@
                             return false;
                         }
 
-                        if (options.lang === "html") {
+                        if (options.language === "html") {
                             // html gets tag names in lowercase, if you want to preserve case sensitivity
                             // beautify as XML
                             if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
@@ -1568,7 +1568,7 @@
                     }
 
                     //correction for dustjs tags to template singleton types
-                    if (options.lang === "dustjs" && data.types[parse.count] === "template_start") {
+                    if (options.language === "dustjs" && data.types[parse.count] === "template_start") {
                         const first:string = element.charAt(1),
                             ending:string  = element.slice(element.length - 2);
                         if ((ending === "/}" || ending.charAt(0) === first) && (first === "#" || first === "?" || first === "^" || first === "@" || first === "<" || first === "+")) {
@@ -1674,14 +1674,14 @@
                                             delim = "\"";
                                         } else if (b[a] === "'") {
                                             delim = "'";
-                                        } else if (tags[0] !== "{" && b[a] === "{" && (options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                        } else if (tags[0] !== "{" && b[a] === "{" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                             if (b[a + 1] === "{") {
                                                 if (b[a + 2] === "{") {
                                                     delim = "}}}";
                                                 } else {
                                                     delim = "}}";
                                                 }
-                                            } else if (options.lang === "dustjs") {
+                                            } else if (options.language === "dustjs") {
                                                 delim = "}";
                                             } else {
                                                 delim = b[a + 1] + "}";
@@ -2015,7 +2015,7 @@
                                         } else if (b[a + 1] === "/") {
                                             quote = "/";
                                         } else if (name === "script" && "([{!=,;.?:&<>".indexOf(b[a - 1]) > -1) {
-                                            if (options.lang !== "jsx" || b[a - 1] !== "<") {
+                                            if (options.language !== "jsx" || b[a - 1] !== "<") {
                                                 quote = "reg";
                                             }
                                         }
@@ -2151,10 +2151,10 @@
                             }
 
                             //general content processing
-                            if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.lang === "jsx" || options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
+                            if (ext === false && lex.length > 0 && ((b[a] === "<" && b[a + 1] !== "=" && (/\s|\d/).test(b[a + 1]) === false) || (b[a] === "[" && b[a + 1] === "%") || (b[a] === "{" && (options.language === "jsx" || options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")))) {
 
                                 //dustjs template handling
-                                if (options.lang === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
+                                if (options.language === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
                                     ltoke = lex.join("").replace(/\s+$/, "");
                                     liner = 0;
@@ -2219,13 +2219,13 @@
                     tag("");
                 } else if (b[a] === "[" && b[a + 1] === "%") {
                     tag("%]");
-                } else if (b[a] === "{" && (options.lang === "jsx" || options.lang === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                } else if (b[a] === "{" && (options.language === "jsx" || options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                     tag("");
                 } else if (b[a] === "]" && sgmlflag > 0) {
                     tag("]>");
-                } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && options.lang === "jekyll") {
+                } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && options.language === "jekyll") {
                     tag("---");
-                } else if (options.lang === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
+                } else if (options.language === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
                     if (b[a] === "#" && ((/\w/).test(b[a + 1]) === true || b[a + 1] === "*" || b[a + 1] === "#" || (b[a + 1] === "[" && b[a + 2] === "["))) {
                         tag("");
                     } else if (b[a] === "$" && b[a + 1] !== "$" && b[a + 1] !== "=" && b[a + 1] !== "[") {

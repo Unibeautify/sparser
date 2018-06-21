@@ -11,7 +11,7 @@
         options:parseOptions = {
             correct        : false,
             crlf           : false,
-            lang           : "",
+            language       : "",
             lexer          : "script",
             lexerOptions   : {},
             outputFormat   : "arrays",
@@ -236,7 +236,7 @@
             options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
             options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
             options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
-            options.lang                           = lang[0];
+            options.language                       = lang[0];
             options.lexer                          = lang[1];
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             if (options.lexer === "javascript") {
