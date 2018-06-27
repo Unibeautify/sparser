@@ -648,6 +648,72 @@
                     ltype = "comment";
                     recordPush("");
                 },
+                // convert long strings into string concat at options.wrap
+                wrapString = function lexer_script_wrapString(build:boolean, item:string) {
+                    const limit:number = options.wrap,
+                        q:string = item.charAt(0),
+                        uchar:RegExp     = (/u[0-9a-fA-F]{4}/),
+                        xchar:RegExp     = (/x[0-9a-fA-F]{2}/);
+                    item = item.slice(1, item.length - 1);
+                    let segment:string = "";
+                    if (build === true) {
+                        const space:RegExp = (/\s/);
+                        let aa:number = a + 1,
+                            plus:boolean = false;
+                        do {
+                            if (c[aa] !== "+" && space.test(c[aa]) === false && c[aa] !== "\"" && c[aa] !== "'") {
+                                break;
+                            }
+                            if (c[aa] === "+") {
+                                plus = true;
+                            }
+                            if (c[aa] === "\"" || c[aa] === "'") {
+                                if (plus === true) {
+                                    plus = false;
+                                    a = aa;
+                                    segment = generic(c[a], c[a]);
+                                    aa = a;
+                                    item = item + segment.slice(1, segment.length - 1);
+                                } else {
+                                    break;
+                                }
+                            }
+                            aa = aa + 1;
+                        } while (aa < b);
+                    }
+                    if (item.length > limit && limit > 0) {
+                        do {
+                            segment = item.slice(0, limit);
+                            if (segment.charAt(limit - 5) === "\\" && uchar.test(item.slice(limit - 4, limit + 1)) === true) {
+                                segment = segment.slice(0, limit - 5);
+                            } else if (segment.charAt(limit - 4) === "\\" && uchar.test(item.slice(limit - 3, limit + 2)) === true) {
+                                segment = segment.slice(0, limit - 4);
+                            } else if (segment.charAt(limit - 3) === "\\" && (uchar.test(item.slice(limit - 2, limit + 3)) === true || xchar.test(item.slice(limit - 2, limit + 1)) === true)) {
+                                segment = segment.slice(0, limit - 3);
+                            } else if (segment.charAt(limit - 2) === "\\" && (uchar.test(item.slice(limit - 1, limit + 4)) === true || xchar.test(item.slice(limit - 1, limit + 2)) === true)) {
+                                segment = segment.slice(0, limit - 2);
+                            } else if (segment.charAt(limit - 1) === "\\") {
+                                segment = segment.slice(0, limit - 1);
+                            }
+                            segment = q + segment + q;
+                            item = item.slice(segment.length - 2);
+                            ltoke = segment;
+                            ltype = "string";
+                            recordPush("");
+                            parse.linesSpace = 0;
+                            ltoke = "+";
+                            ltype = "operator";
+                            recordPush("");
+                        } while (item.length > limit);
+                    }
+                    if (item === "") {
+                        parse.pop(data);
+                    } else {
+                        ltoke = q + item + q;
+                        ltype = "string";
+                        recordPush("");
+                    }
+                },
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
@@ -2484,8 +2550,17 @@
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);
-                    ltype = "string";
-                    recordPush("");
+                    if (options.language === "json") {
+                        ltype = "string";
+                        recordPush("");
+                    } else if (ltoke.length > options.wrap) {
+                        wrapString(false, ltoke);
+                    } else if (options.wrap !== 0 && nextchar(1, false) === "+") {
+                        wrapString(true, ltoke);
+                    } else {
+                        ltype = "string";
+                        recordPush("");
+                    }
                 } else if (
                     c[a] === "-" &&
                     (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") &&

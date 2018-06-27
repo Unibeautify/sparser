@@ -1,1 +1,11 @@
-{"begin":[-1,0,1,1,3,3,1,1,0],"lexer":["markdown","markdown","markdown","markdown","markdown","markdown","markdown","markdown","markdown"],"lines":[0,0,0,1,0,0,1,0,0],"presv":[false,false,false,false,false,false,false,false,false],"stack":["global","body","p","p","em","em","p","p","body"],"token":["<body>","<p>","foo","<em>","bar","</em>","*baz* \\\\","</p>","</body>"],"types":["start","start","content","start","content","end","content","end","end"]}
+[
+{"begin":-1,"lexer":"markdown","lines":0,"presv":false,"stack":"global","token":"<body>","types":"start"},
+{"begin":0,"lexer":"markdown","lines":0,"presv":false,"stack":"body","token":"<p>","types":"start"},
+{"begin":1,"lexer":"markdown","lines":0,"presv":false,"stack":"p","token":"foo","types":"content"},
+{"begin":1,"lexer":"markdown","lines":1,"presv":false,"stack":"p","token":"<em>","types":"start"},
+{"begin":3,"lexer":"markdown","lines":0,"presv":false,"stack":"em","token":"bar","types":"content"},
+{"begin":3,"lexer":"markdown","lines":0,"presv":false,"stack":"em","token":"</em>","types":"end"},
+{"begin":1,"lexer":"markdown","lines":1,"presv":false,"stack":"p","token":"*baz* \\\\","types":"content"},
+{"begin":1,"lexer":"markdown","lines":0,"presv":false,"stack":"p","token":"</p>","types":"end"},
+{"begin":0,"lexer":"markdown","lines":0,"presv":false,"stack":"body","token":"</body>","types":"end"}
+]

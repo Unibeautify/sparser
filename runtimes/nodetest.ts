@@ -25,8 +25,8 @@ const nodetest = function nodetest_() {
         },
         clear:string     = "\u001b[39m\u001b[0m",
         directory:string = __dirname.replace(/runtimes(\/|\\)?/, "") + node.path.sep,
-        raw:boolean       = (function nodetest_raw():boolean {
-            const index:number = process.argv.indexOf("--raw");
+        testprep:boolean       = (function nodetest_testprep():boolean {
+            const index:number = process.argv.indexOf("--testprep");
             if (index < 0) {
                 return false;
             }
@@ -144,21 +144,25 @@ const nodetest = function nodetest_() {
             lang           = framework.language.auto(sourcetext, "javascript");
             options.lexer  = lang[1];
             options.source = sourcetext;
-            if (raw === true) {
+            options.outputFormat = (process.argv.indexOf("outputFormat:arrays") > -1)
+                ? "arrays"
+                : "objects";
+            if (testprep === true) {
                 if (sourcetext !== source) {
-                    if (source.indexOf(`test${node.path.sep}samples_code${node.path.sep}`) > -1 && source.indexOf("_lang-") < 0) {
+                    const sourcepath:string = source.replace(/\\|\//g, "/");
+                    if (sourcepath.indexOf(`test/samples_code/`) > -1) {
                         options.lexer = (function nodetest_execute_lexer() {
-                            const str = source.split(`samples_code${node.path.sep}`)[1];
-                            return str.slice(0, str.indexOf(node.path.sep));
+                            const str = sourcepath.split(`samples_code/`)[1];
+                            return str.slice(0, str.indexOf("/"));
                         }());
                     }
-                    if ((/_correct(\.|_)/).test(source) === true) {
+                    if ((/_correct(\.|_)/).test(sourcepath) === true) {
                         options.correct = true;
                     } else {
                         options.correct = false;
                     }
-                    if ((/_wrap-\d+(\.|_)/).test(source) === true) {
-                        let wrap:string = source.slice(source.indexOf("_wrap-") + 6),
+                    if ((/_wrap-\d+(\.|_)/).test(sourcepath) === true) {
+                        let wrap:string = sourcepath.slice(sourcepath.indexOf("_wrap-") + 6),
                             notnumb:number = 0;
                         do {
                             notnumb = notnumb + 1;
@@ -168,20 +172,20 @@ const nodetest = function nodetest_() {
                             options.wrap = Number(wrap);
                         }
                     }
-                    if ((/_objectSort(\.|_)/).test(source) === true) {
+                    if ((/_objectSort(\.|_)/).test(sourcepath) === true) {
                         options.lexerOptions.style.objectSort = true;
                         options.lexerOptions.script.objectSort = true;
                     } else {
                         options.lexerOptions.style.objectSort = false;
                         options.lexerOptions.script.objectSort = false;
                     }
-                    if ((/_tagSort(\.|_)/).test(source) === true) {
+                    if ((/_tagSort(\.|_)/).test(sourcepath) === true) {
                         options.lexerOptions.markup.tagSort = true;
                     } else {
                         options.lexerOptions.markup.tagSort = false;
                     }
-                    if ((/_lang-\w+(\.|_)/).test(source) === true) {
-                        options.language = source.split("_lang-")[1];
+                    if ((/_lang-\w+(\.|_)/).test(sourcepath) === true) {
+                        options.language = sourcepath.split("_lang-")[1];
                         if (options.language.indexOf("_") > 0) {
                             options.language = options.language.split("_")[0];
                         } else {
@@ -202,7 +206,17 @@ const nodetest = function nodetest_() {
                     if (options.outputFormat === "arrays") {
                         console.log(JSON.stringify(outputArrays));
                     } else {
-                        console.log(JSON.stringify(outputObjects));
+                        let x:number = 0;
+                        const len:number = outputObjects.length - 1;
+                        console.log("[");
+                        if (len > 0) {
+                            do {
+                                console.log(`${JSON.stringify(outputObjects[x])},`);
+                                x = x + 1;
+                            } while (x < len);
+                        }
+                        console.log(JSON.stringify(outputObjects[len]));
+                        console.log("]");
                     }
                 } else {
                     console.log(framework.parseerror);

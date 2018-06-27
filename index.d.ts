@@ -8,6 +8,9 @@ interface data {
     token: string[];
     types: string[];
 }
+interface recordList extends Array<record>{
+    [index:number]: record;
+}
 type languageAuto = [string, string, string];
 interface language {
     auto(sample : string, defaultLang : string): languageAuto;

@@ -459,7 +459,7 @@ const services = function services_() {
                 if (command === "parse-table") {
                     return nodetest();
                 }
-                process.argv.push("--raw");
+                process.argv.push("--testprep");
                 if (command === "parse-object") {
                     process.argv.push("--outputFormat");
                 }

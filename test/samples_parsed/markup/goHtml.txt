@@ -1,1 +1,24 @@
-{"begin":[-1,0,1,0,-1,-1,5,5,7,7,5,5,5,-1,13,13,-1,16,16,-1,19,19],"lexer":["markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup","markup"],"lines":[0,2,0,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,2,2],"presv":[true,true,true,true,true,true,true,true,true,true,true,true,true,true,false,true,true,false,true,true,false,true],"stack":["global","define","with","define","global","global","define","define","with","with","define","define","define","global","define","define","global","define","define","global","define","define"],"token":["{{define \"css\"}}","{{with .Get \"CSS\"}}","{{end}}","{{end}}","{{* Work Fine*}}","{{define \"body\"}}","{{.Get \"User\" | hello}}","{{with .Get \"User\"}}","{{.Title}}","{{end}}","{{$conf:=.Get \"Ctx\"}}","{{$conf.Get \"template\"}}","{{-end}}","{{define \"kooter\"}}","Footer Of The Index.tpl","{{- end}}","{{define \"footer\"}}","Footer Of The Index.tpl","{{end -}}","{{define \"zooter\"}}","Footer Of The Index.tpl","{{end-}}"],"types":["template_start","template_start","template_end","template_end","template","template_start","template","template_start","template","template_end","template","template","template_end","template_start","content","template_end","template_start","content","template_end","template_start","content","template_end"]}
+[
+{"begin":-1,"lexer":"markup","lines":0,"presv":true,"stack":"global","token":"{{define \"css\"}}","types":"template_start"},
+{"begin":0,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{with .Get \"CSS\"}}","types":"template_start"},
+{"begin":1,"lexer":"markup","lines":0,"presv":true,"stack":"with","token":"{{end}}","types":"template_end"},
+{"begin":0,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{end}}","types":"template_end"},
+{"begin":-1,"lexer":"markup","lines":1,"presv":true,"stack":"global","token":"{{* Work Fine*}}","types":"template"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":true,"stack":"global","token":"{{define \"body\"}}","types":"template_start"},
+{"begin":5,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{.Get \"User\" | hello}}","types":"template"},
+{"begin":5,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{with .Get \"User\"}}","types":"template_start"},
+{"begin":7,"lexer":"markup","lines":2,"presv":true,"stack":"with","token":"{{.Title}}","types":"template"},
+{"begin":7,"lexer":"markup","lines":2,"presv":true,"stack":"with","token":"{{end}}","types":"template_end"},
+{"begin":5,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{$conf:=.Get \"Ctx\"}}","types":"template"},
+{"begin":5,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{$conf.Get \"template\"}}","types":"template"},
+{"begin":5,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{-end}}","types":"template_end"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":true,"stack":"global","token":"{{define \"kooter\"}}","types":"template_start"},
+{"begin":13,"lexer":"markup","lines":2,"presv":false,"stack":"define","token":"Footer Of The Index.tpl","types":"content"},
+{"begin":13,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{- end}}","types":"template_end"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":true,"stack":"global","token":"{{define \"footer\"}}","types":"template_start"},
+{"begin":16,"lexer":"markup","lines":2,"presv":false,"stack":"define","token":"Footer Of The Index.tpl","types":"content"},
+{"begin":16,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{end -}}","types":"template_end"},
+{"begin":-1,"lexer":"markup","lines":3,"presv":true,"stack":"global","token":"{{define \"zooter\"}}","types":"template_start"},
+{"begin":19,"lexer":"markup","lines":2,"presv":false,"stack":"define","token":"Footer Of The Index.tpl","types":"content"},
+{"begin":19,"lexer":"markup","lines":2,"presv":true,"stack":"define","token":"{{end-}}","types":"template_end"}
+]

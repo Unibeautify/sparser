@@ -30,6 +30,7 @@ const taskrunner = function taskrunner_() {
         node       = {
             child: require("child_process").exec,
             fs   : require("fs"),
+            os   : require("os"),
             path : require("path")
         },
         project:string = (function taskrunner_project() {
@@ -216,7 +217,7 @@ const taskrunner = function taskrunner_() {
                             fail:boolean = false,
                             a:number         = 0,
                             str:string       = "",
-                            outputArrays: data,
+                            outputObjects:recordList,
                             filecount:number = 0,
                             currentlex:string = "";
                         const lexer     = function taskrunner_coreunits_compare_lexer():void {
@@ -225,39 +226,44 @@ const taskrunner = function taskrunner_() {
                                 console.log(`Tests for lexer - \u001b[36m${lex}\u001b[39m`);
                                 currentlex = lex;
                             },
-                            diffFiles  = function taskrunner_coreunits_compare_diffFiles(sampleName:string, sampleSource:data, sampleDiff:data):void {
+                            comparePass = function taskrunner_coreunits_compare_comparePass():void {
+                                filecount = filecount + 1;
+                                console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[39m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                if (a === len - 1) {
+                                    console.log("\u001b[32mCore unit testing complete!\u001b[39m");
+                                    next();
+                                }
+                            },
+                            diffFiles  = function taskrunner_coreunits_compare_diffFiles(sampleName:string, sampleSource:recordList, sampleDiff:recordList):boolean {
                                 let aa:number     = 0,
-                                    pdlen:number  = 0,
                                     plus:string   = "",
                                     plural:string = "",
-                                    report:any[] = [],
+                                    report:[string, number, number],
                                     total:number  = 0;
                                 const diffview = require(`${relative + node.path.sep}test${node.path.sep}diffview.js`),
-                                    record = function taskrunner_coreunits_compare_diffFiles_record(data:data):record[] {
+                                    beautify = function taskrunner_coreunits_compare_beautify(item:recordList) {
+                                        const outputString:string[] = ["["],
+                                            len:number = item.length - 1;
                                         let x:number = 0;
-                                        const len:number = data.token.length,
-                                            rec = [],
-                                            dn  = function taskrunner_coreunits_compare_diffFiles_record_datanames(value) {
-                                                rec[x][value] = data[value][x];
-                                            };
-                                        do {
-                                            rec.push({});
-                                            parse.datanames.forEach(dn);
-                                            rec[x] = JSON.stringify(rec[x]);
-                                            x = x + 1;
-                                        } while (x < len);
-                                        return rec;
+                                        if (len > 0) {
+                                            do {
+                                                outputString.push(`${JSON.stringify(item[x])},`);
+                                                x = x + 1;
+                                            } while (x < len);
+                                        }
+                                        outputString.push(JSON.stringify(item[len]));
+                                        outputString.push("]");
+                                        return outputString.join(node.os.EOL);
                                     },
                                     diff_options = {
                                         context: 2,
-                                        diff: record(sampleDiff),
-                                        diffcli: true,
+                                        diff: beautify(sampleDiff),
+                                        diff_cli: true,
                                         language: "text",
                                         mode: "diff",
-                                        source: record(sampleSource)
+                                        source: beautify(sampleSource)
                                     };
                                 report          = diffview(diff_options);
-                                pdlen           = report[0].length;
                                 total           = report[1];
                                 if (total > 50) {
                                     plus = "+";
@@ -265,31 +271,15 @@ const taskrunner = function taskrunner_() {
                                 if (total !== 1) {
                                     plural = "s";
                                 }
-                                // report indexes from diffcli feature of diffview.js 0 - source line number 1 -
-                                // source code line 2 - diff line number 3 - diff code line 4 - change 5 - index
-                                // of diff_options.context (not parallel) 6 - total count of differences
-                                do {
-                                    if (report[0][aa] === undefined) {
-                                        errout(`report[0][aa] is undefined, aa = ${aa}`);
-                                    }
-                                    if (report[0][aa].indexOf("\u001b[36m") === 0) {
-                                        console.log(`\u001b[36m${sampleName}\u001b[39m`);
-                                    }
-                                    if (report[0][aa].indexOf("\u001b[36mLine: ") !== 0) {
-                                        if (report[0][aa].indexOf("\u001b[31m") === 0) {
-                                            report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[31m}\u001b[39m");
-                                            report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[31m").replace(/\u001b\[22m/g, "\u001b[39m");
-                                        } else if (report[0][aa].indexOf("\u001b[32m") === 0) {
-                                            report[0][aa] = report[0][aa].replace(/\{/, "{\u001b[39m").replace(/(\}\u001b\[39m)$/, "\u001b[32m}\u001b[39m");
-                                            report[0][aa] = report[0][aa].replace(/\u001b\[1m/g, "\u001b[32m").replace(/\u001b\[22m/g, "\u001b[39m");
-                                        }
-                                        console.log(report[0][aa]);
-                                    }
-                                    aa = aa + 1;
-                                } while (aa < pdlen);
+                                if (total < 1) {
+                                    comparePass();
+                                    return false;
+                                }
+                                console.log(report[0]);
                                 console.log("");
                                 console.log(`${total + plus} \u001b[32mdifference${plural} counted.\u001b[39m`);
                                 errout(`Pretty Diff \u001b[31mfailed\u001b[39m on file: \u001b[36m${sampleName}\u001b[39m`);
+                                return true;
                             };
                         files.code   = parse.safeSort(files.code, "ascend", false);
                         files.parsed = parse.safeSort(files.parsed, "ascend", false);
@@ -357,23 +347,16 @@ const taskrunner = function taskrunner_() {
                                     }
                                     parse_options.source = files.code[a][1];
                                     parse_options.lexer  = currentlex;
-                                    outputArrays         = framework.parserArrays(parse_options);
-                                    str                  = JSON.stringify(outputArrays);
+                                    outputObjects        = framework.parserObjects(parse_options);
+                                    str                  = JSON.stringify(outputObjects);
                                     if (framework.parseerror === "") {
                                         if (str === files.parsed[a][1]) {
-                                            filecount = filecount + 1;
-                                            console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[39m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
-                                            if (a === len - 1) {
-                                                if (fail === true) {
-                                                    errout("\u001b[31mUnit test failure!\u001b[39m");
-                                                    return;
-                                                }
-                                                console.log("\u001b[32mCore unit testing complete!\u001b[39m");
-                                                return next();
-                                            }
+                                            comparePass();
                                         } else {
-                                            fail = true;
-                                            diffFiles(files.parsed[a][0], outputArrays, JSON.parse(files.parsed[a][1]));
+                                            if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
+                                                errout("\u001b[31mUnit test failure!\u001b[39m");
+                                                return;
+                                            }
                                         }
                                     } else {
                                         console.log("");
@@ -471,7 +454,7 @@ const taskrunner = function taskrunner_() {
                     language       : "html",
                     lexer          : "markup",
                     lexerOptions   : {},
-                    outputFormat   : "arrays",
+                    outputFormat   : "objects",
                     source         : "",
                     wrap           : 0
                 });

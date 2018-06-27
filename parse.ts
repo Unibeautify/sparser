@@ -77,13 +77,6 @@ Parse Framework
                         token: [],
                         types: []
                     };
-                /*if (data.token[behind] === "," || data.types[behind] === "comment") {
-                    do {
-                        behind = behind - 1;
-                    } while (
-                        behind > 0 && (data.token[behind] === "," || data.types[behind] === "comment")
-                    );
-                }*/
                 cc = behind;
                 dd = data.begin[cc];
                 do {
@@ -630,9 +623,11 @@ Parse Framework
             return parse.data;
         },
         parserObjects = function parserObjects(parseOptions: parseOptions): record[] {
-            let a:number = 0;
+            let a:number = 0,
+                len:number = 0;
             const data:record[] = [];
             parser(parseOptions);
+            len = parse.count + 1;
             do {
                 data.push({
                     begin: parse.data.begin[a],
@@ -644,7 +639,7 @@ Parse Framework
                     types: parse.data.types[a]
                 });
                 a = a + 1;
-            } while (a < parse.count);
+            } while (a < len);
             return data;
         };
     global.parseFramework = (global.parseFramework || {
