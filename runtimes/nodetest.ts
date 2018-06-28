@@ -163,11 +163,11 @@ const nodetest = function nodetest_() {
                     }
                     if ((/_wrap-\d+(\.|_)/).test(sourcepath) === true) {
                         let wrap:string = sourcepath.slice(sourcepath.indexOf("_wrap-") + 6),
-                            notnumb:number = 0;
+                            numb:number = 0;
                         do {
-                            notnumb = notnumb + 1;
-                        } while ((/\D/).test(wrap.charAt(notnumb)) === true);
-                        wrap = wrap.slice(0, notnumb);
+                            numb = numb + 1;
+                        } while ((/\d/).test(wrap.charAt(numb)) === true);
+                        wrap = wrap.slice(0, numb);
                         if (isNaN(Number(wrap)) === false) {
                             options.wrap = Number(wrap);
                         }

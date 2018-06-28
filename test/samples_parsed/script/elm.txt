@@ -101,6 +101,6 @@
 {"begin":88,"lexer":"script","lines":1,"presv":false,"stack":"object","token":"postData","types":"reference"},
 {"begin":88,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"}","types":"end"},
 {"begin":87,"lexer":"script","lines":0,"presv":false,"stack":"method","token":")","types":"end"},
-{"begin":5,"lexer":"script","lines":2,"presv":false,"stack":"function","token":"x;","types":"separator"},
+{"begin":5,"lexer":"script","lines":0,"presv":false,"stack":"function","token":"x;","types":"separator"},
 {"begin":5,"lexer":"script","lines":2,"presv":false,"stack":"function","token":"}","types":"end"}
 ]

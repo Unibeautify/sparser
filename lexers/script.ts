@@ -707,12 +707,12 @@
                         } while (item.length > limit);
                     }
                     if (item === "") {
-                        parse.pop(data);
+                        ltoke = q + q;
                     } else {
                         ltoke = q + item + q;
-                        ltype = "string";
-                        recordPush("");
                     }
+                    ltype = "string";
+                    recordPush("");
                 },
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
@@ -721,6 +721,7 @@
                     let ee:number     = 0,
                         output:string = "",
                         escape:boolean = false,
+                        lineindex:number = 0,
                         ignorecom:string[] = [],
                         build:string[]  = (starting === "//" && options.wrap !== 0)
                             ? []
@@ -844,6 +845,7 @@
                                         if ((/\s/).test(c[ee + 1]) === true) {
                                             do {
                                                 if (c[ee] === "\n") {
+                                                    lineindex = ee;
                                                     line = true;
                                                 }
                                                 ee = ee + 1;
@@ -933,6 +935,9 @@
                         }
                     } else {
                         if (starting === "//") {
+                            if (lineindex > 0) {
+                                a = lineindex;
+                            }
                             if ((/^\s+$/).test(output) === true || output === "") {
                                 return "//";
                             }
@@ -1197,6 +1202,7 @@
                     }
                     ltype = "separator";
                     aa    = parse.linesSpace;
+                    parse.linesSpace = 0;
                     recordPush("");
                     parse.linesSpace = aa;
                     if (brace[brace.length - 1] === "x{" && next !== "}") {

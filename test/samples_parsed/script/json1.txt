@@ -596,7 +596,7 @@
 {"begin":591,"lexer":"script","lines":1,"presv":false,"stack":"object","token":"\"thn\"","types":"string"},
 {"begin":591,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"}","types":"end"},
 {"begin":534,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"}","types":"end"},
-{"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"x;","types":"separator"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"},
 {"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"var","types":"word"},
 {"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"x","types":"reference"},
 {"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"=","types":"operator"},
