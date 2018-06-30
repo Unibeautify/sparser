@@ -2559,7 +2559,7 @@
                     if (options.language === "json") {
                         ltype = "string";
                         recordPush("");
-                    } else if (ltoke.length > options.wrap) {
+                    } else if (ltoke.length > options.wrap && options.wrap > 0) {
                         wrapString(false, ltoke);
                     } else if (options.wrap !== 0 && nextchar(1, false) === "+") {
                         wrapString(true, ltoke);
