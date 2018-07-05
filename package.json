@@ -8,7 +8,7 @@
     },
     "description": "A parsing framework for parsing everything",
     "devDependencies": {
-        "ace-builds": "^1.3.3",
+        "ace-builds": "1.3.3",
         "ws": "^5.0.0"
     },
     "directories": {
