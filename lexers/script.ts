@@ -1,3 +1,5 @@
+import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
+
 /*global global*/
 (function script_init() {
     "use strict";
@@ -721,7 +723,6 @@
                     let ee:number     = 0,
                         output:string = "",
                         escape:boolean = false,
-                        lineindex:number = 0,
                         ignorecom:string[] = [],
                         build:string[]  = (starting === "//" && options.wrap !== 0)
                             ? []
@@ -733,9 +734,14 @@
                         wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
                             let xx:number = ee;
                             if ((/\/\/\s+\/\//).test(c.slice(a, xx).join("")) === true) {
+                                const ls:number = parse.linesSpace;
+                                if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
+                                    parse.linesSpace = 2;
+                                }
                                 ltoke = "//";
                                 ltype = "comment";
                                 recordPush("");
+                                parse.linesSpace = ls;
                                 a = a + 3;
                             }
                             do {
@@ -845,7 +851,6 @@
                                         if ((/\s/).test(c[ee + 1]) === true) {
                                             do {
                                                 if (c[ee] === "\n") {
-                                                    lineindex = ee;
                                                     line = true;
                                                 }
                                                 ee = ee + 1;
@@ -935,9 +940,16 @@
                         }
                     } else {
                         if (starting === "//") {
-                            if (lineindex > 0) {
-                                a = lineindex;
+                            // the value of parse.linesSpace is corrupted by comment wrapping, so this is a hacky fix
+                            if ((/\s/).test(c[a]) === true) {
+                                do {
+                                    if ((/\s/).test(c[a]) === false) {
+                                        break;
+                                    }
+                                    a = a - 1;
+                                } while (a > 0);
                             }
+
                             if ((/^\s+$/).test(output) === true || output === "") {
                                 return "//";
                             }
@@ -966,12 +978,14 @@
                                         ltoke = `// ${output.slice(0, ee)}`;
                                         ltype = "comment";
                                         output = output.slice(ee + 1);
-                                        if (data.token[parse.count].slice(0, 2) === "//" && parse.linesSpace < 3) {
+                                        if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
                                             parse.linesSpace = 2;
                                         }
                                         recordPush("");
                                     } while (output.length > options.wrap - 3);
-                                    parse.linesSpace = 2;
+                                    if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
+                                        parse.linesSpace = 2;
+                                    }
                                     output = `// ${output.replace(/^\s+/, "")}`;
                                 } else {
                                     output = output.replace(/\/\/\s+/, "// ");
@@ -2527,7 +2541,6 @@
                     } else if (ltoke !== "") {
                         recordPush("");
                     }
-                    a = parse.spacer({array: c, end: b, index: a});
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);
