@@ -354,7 +354,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             typel = data.types[d];
                             tokel = data.token[d];
                         }
-                        if (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var") {
+                        if (references.length > 0 && (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
                             ltype = "reference";
                             references[references.length - 1].push(output);
                             if (options.language === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
@@ -379,11 +379,11 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                 }
                                 d = d - 1;
                             } while (d > e);
-                            if (data.token[d] === "var" && options.language === "javascript") {
+                            if (references.length > 0 && data.token[d] === "var" && options.language === "javascript") {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                                 hoisting(d, output);
-                            } else if (data.token[d] === "let" || data.token[d] === "const") {
+                            } else if (references.length > 0 && data.token[d] === "let" || data.token[d] === "const") {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                             } else {
@@ -392,25 +392,27 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         } else {
                             let d:number = references.length,
                                 e:number = 0;
-                            do {
-                                d = d - 1;
-                                e = references[d].length;
-                                if (e > 0) {
-                                    do {
-                                        e = e - 1;
+                            if (d > 0) {
+                                do {
+                                    d = d - 1;
+                                    e = references[d].length;
+                                    if (e > 0) {
+                                        do {
+                                            e = e - 1;
+                                            if (output === references[d][e]) {
+                                                break;
+                                            }
+                                        } while (e > 0);
                                         if (output === references[d][e]) {
                                             break;
                                         }
-                                    } while (e > 0);
-                                    if (output === references[d][e]) {
-                                        break;
                                     }
+                                } while (d > 0);
+                                if (references[d][e] === output && tokel !== ".") {
+                                    ltype = "reference";
+                                } else {
+                                    ltype = "word";
                                 }
-                            } while (d > 0);
-                            if (references[d][e] === output && tokel !== ".") {
-                                ltype = "reference";
-                            } else {
-                                ltype = "word";
                             }
                         }
                         ltoke = output;
