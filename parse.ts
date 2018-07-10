@@ -78,7 +78,7 @@ Parse Framework
                         types: []
                     };
                 cc = behind;
-                dd = data.begin[cc];
+                dd = parse.structure[parse.structure.length - 1][1];
                 do {
                     if (data.begin[cc] === dd) {
                         if (data.types[cc].indexOf("template") > -1) {

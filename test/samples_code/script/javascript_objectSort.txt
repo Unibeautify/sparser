@@ -1,0 +1,42 @@
+/*prettydiff.com wrap:80 object_sort:true vertical:true*/
+/*global global*/
+(function options_init() {
+    "use strict";
+    const optionDef = {
+        vertical         : {
+            api       : "any",
+            mode      : "beautify",
+            lexer     : "any",
+            label     : "Vertical Alignment",
+            type      : "boolean",
+            definition: "If lists of assignments and properties should be vertically aligned. This option" +
+                    " is not used with the markup lexer.",
+            default   : false
+        },
+        brace_style      : {
+            api       : "any",
+            mode      : "beautify",
+            lexer     : "script",
+            label     : "Brace Style",
+            type      : "string",
+            definition: "Emulates JSBeautify's brace_style option using existing Pretty Diff options.",
+            values    : {
+                "collapse"                : "Sets options.formatObject to 'indent' and options.neverflatten to true.",
+                "collapse-preserve-inline": "Sets options.bracepadding to true and options.formatObject to 'inline'.",
+                "expand"                  : "Sets options.braces to true, options.formatObject to 'indent', and options.never" +
+                        "flatten to true.",
+                "none"                    : "Ignores this option"
+            },
+            default   : "none"
+        },
+        brace_padding    : {
+            api       : "any",
+            mode      : "beautify",
+            lexer     : "script",
+            type      : "boolean",
+            label     : "Brace Padding",
+            definition: "template strings.",
+            default   : false
+        }
+    };
+}());

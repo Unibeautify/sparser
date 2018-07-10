@@ -2093,7 +2093,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         }
                         if (parse.structure.length > 0 && parse.structure[parse.structure.length - 1][0] !== "object") {
                             asi(true);
-                        } else if (options.lexerOptions.script.objectSort === true) {
+                        }
+                        if (options.lexerOptions.script.objectSort === true && parse.structure[parse.structure.length - 1][0] === "object") {
                             parse.objectSort(data);
                         }
                         if (ltype === "comment") {

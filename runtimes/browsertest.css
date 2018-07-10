@@ -25,6 +25,14 @@ td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;paddin
 #input .ace-tm .ace_marker-layer .ace_selected-word{background:#ff9}
 #input .ace_gutter{background:#ddd;border-color:#999}
 #input .readonly .ace_scroller{background:#eee}
+#input .ace_variable{color:#247284}
+#input .ace_comment{color:#375}
+#input .ace-tm .ace_support.ace_type,
+#input .ace-tm .ace_support.ace_class{color:#56d}
+#input .ace_editor,
+#input .ace_editor div{font-family:'Courier New',Courier,'Lucida Console',monospace;}
+#input .ace_gutter{border-right-style:solid;border-right-width:0.1em}
+#input div.ace_cursor{border-style:solid;border-width:0 0 0 0.2em}
 
 li span{color:#070;font-weight:bold}
 #errors span{color: #c00}
