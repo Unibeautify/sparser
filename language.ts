@@ -82,9 +82,9 @@
         auto: function language_auto(sample:string, defaultLang:string):languageAuto {
             let b:string[]           = [],
                 c:number           = 0;
-            const vartest:boolean     = (
+            const vartest:boolean     = ((
                     /(((var)|(let)|(const)|(function)|(import))\s+(\w|\$)+[a-zA-Z0-9]*)/
-                ).test(sample),
+                ).test(sample) === true && (/@import/).test(sample) === false),
                 finalstatic:boolean = (/((((final)|(public)|(private))\s+static)|(static\s+void))/).test(
                     sample
                 ),
