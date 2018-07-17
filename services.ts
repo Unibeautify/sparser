@@ -66,6 +66,11 @@ const services = function services_() {
                 detail: "Starts a web server so that TypeScript builds will execute on file updates and the browser tool will automatically refresh upon build completion.  Two consecutive ports are required for this service to work.  The first port is for the webserver and the second port is for a web sockets channel.  A port may be specified as an additional argument.",
                 example: "server 3000"
             },
+            "testprep": {
+                brief: "Produces parsed output for validation test cases.",
+                detail: "Produces the object based format of the parsed table in a way that is easier for humans to read and is the format used for validation of stored test cases.",
+                example: "testprep test/sample_code/script/jsx_recurse.txt"
+            },
             "validation"  : {
                 brief: "Runs the validation build.",
                 detail: "Runs the validation build that checks for TypeScript build defects, framework schema violations, ESLint rule violations, and finally tests the lexer files against supplied test units.  This command accepts no options.",
@@ -581,6 +586,11 @@ const services = function services_() {
             server: function services_action_server():void {
                 process.argv.splice(0, 1);
                 require(`${js}runtimes${node.path.sep}httpserver`)();
+            },
+            testprep: function services_action_testprep():void {
+                process.argv.push("--testprep");
+                process.argv.splice(0, 1);
+                require(`${js}runtimes${node.path.sep}nodetest`)();
             },
             validation: function services_action_validation():void {
                 require(`${js}test${node.path.sep}validate`)();
