@@ -38,6 +38,9 @@
                     if (name.indexOf("(") > 0) {
                         name = name.slice(0, name.indexOf("("));
                     }
+                    if (name === "?xml?") {
+                        return "xml";
+                    }
                     return name;
                 },
 
@@ -438,7 +441,7 @@
                                             name = name.toLowerCase();
                                         }
                                         if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
-                                            if (ind === 0 && (ltype === "singleton" || ltype === "template")) {
+                                            if (ind === 0 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
                                                 parse.structure.push([
                                                     tagName(element).replace(/\/$/, ""),
                                                     parse.count
@@ -460,7 +463,7 @@
                                             parse.push(data, record, "");
                                             record.types = "attribute";
                                             parse.structure.pop();
-                                            if (ind === len - 1 && (ltype === "singleton" || ltype === "template")) {
+                                            if (ind === len - 1 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
                                                 parse.structure.pop();
                                             }
                                         } else {
@@ -530,6 +533,7 @@
                                 end = "?>";
                                 if (b[a + 2] === "x" && b[a + 3] === "m" && b[a + 4] === "l") {
                                     ltype = "xml";
+                                    simple = true;
                                 } else {
                                     preserve = true;
                                     ltype    = "template";
@@ -909,7 +913,7 @@
                                                 } else if (quote === "") {
                                                     if (b[a + 1] === lastchar) {
                                                         //if at end of tag
-                                                        if (attribute[attribute.length - 1] === "/") {
+                                                        if (attribute[attribute.length - 1] === "/" || (attribute[attribute.length - 1] === "?" && ltype === "xml")) {
                                                             attribute.pop();
                                                             if (preserve === true) {
                                                                 lex.pop();
@@ -1101,7 +1105,7 @@
                                         quote = b[a];
                                     } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[parse.count] !== "conditional") {
                                         quote = "-->";
-                                    } else if (lex[0] !== "{" && end !== "\n" && b[a] === "{" && end !== "%>" && end !== "%]" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                    } else if (b[a] === "{" && lex[0] !== "{" && end !== "\n" && end !== "%>" && end !== "%]" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                         //opening embedded template expression
                                         if (b[a + 1] === "{") {
                                             if (b[a + 2] === "{") {
@@ -1639,7 +1643,7 @@
                     }
 
                     //am I a singleton or a start type?
-                    if (simple === true && ignoreme === false) {
+                    if (simple === true && ignoreme === false && ltype !== "xml" && ltype !== "sgml") {
                         if (cheat === true || element.slice(element.length - 2) === "/>") {
                             ltype = "singleton";
                         } else {

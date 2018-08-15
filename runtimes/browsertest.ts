@@ -243,7 +243,7 @@
                 options.lexer = "script";
             }
             if (Object.keys(window).indexOf("localStorage") > -1) {
-                localStorage.parseCode = value;
+                localStorage.setItem("parseCode", value);
             }
             {
                 const params:string[] = (location.href.indexOf("?") > 0)
@@ -368,14 +368,14 @@
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
-    if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.parseCode !== undefined) {
+    if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.getItem("parseCode") !== undefined) {
         if (acetest === true) {
-            let lang:[string, string, string]   = framework.language.auto(localStorage.parseCode, "javascript");
-            editor.setValue(localStorage.parseCode);
+            let lang:[string, string, string]   = framework.language.auto(localStorage.getItem("parseCode"), "javascript");
+            editor.setValue(localStorage.getItem("parseCode"));
             editor.getSession().setMode(`ace/mode/${lang[0]}`);
             editor.clearSelection();
         } else {
-            input.value = localStorage.parseCode;
+            input.value = localStorage.getItem("parseCode");
         }
     }
     if (location.href.indexOf("//localhost:") > 0) {
