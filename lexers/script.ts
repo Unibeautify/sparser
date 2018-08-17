@@ -1118,7 +1118,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     }
                 },
                 // automatic semicolon insertion
-                asi            = function lexer_script_asi(isEnd:boolean):void {
+                asi            = function lexer_script_asi(isEnd:boolean):void {console.log("asdf");
                     let aa:number     = 0;
                     const next:string   = nextchar(1, false),
                         record:record = {

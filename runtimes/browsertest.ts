@@ -30,7 +30,6 @@
                     document.getElementsByTagName("input")[2]
                 ],
                 startTotal:number = Math.round(performance.now() * 1000),
-                lang:[string, string, string]   = framework.language.auto(value, "javascript"),
                 builder = function web_handler_builder():void {
                     let a:number         = 0,
                         body      = document.createElement("thead");
@@ -236,9 +235,7 @@
             options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
             options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
             options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
-            options.language                       = lang[0];
-            options.lexer                          = lang[1];
-            document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
+            lang = framework.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
@@ -252,33 +249,39 @@
                 if (params.length > 1) {
                     let aa:number = params.length,
                         name:string = "",
-                        value:string = "";
+                        values:string = "";
                     do {
                         aa = aa - 1;
                         name = params[aa].slice(0, params[aa].indexOf("="));
-                        value = (params[aa].indexOf("=") > 0)
+                        values = (params[aa].indexOf("=") > 0)
                             ? params[aa].slice(params[aa].indexOf("=") + 1)
                             : "";
                         if (options[params[aa]] !== undefined && typeof options[params[aa]] === "boolean") {
                             options[params[aa]] = true;
-                        } else if (options[name] !== undefined && value !== "") {
+                        } else if (options[name] !== undefined && values !== "") {
                             if (typeof options[name] === "boolean") {
-                                if (value === "true") {
+                                if (values === "true") {
                                     options[name] = true;
-                                } else if (value === "false") {
+                                } else if (values === "false") {
                                     options[name] = false;
                                 }
-                            } else if (typeof options[name] === "number" && isNaN(Number(value)) === false) {
-                                options[name] = Number(value);
+                            } else if (typeof options[name] === "number" && isNaN(Number(values)) === false) {
+                                options[name] = Number(values);
                             } else {
-                                options[name] = value;
+                                options[name] = values;
+                                if (name === "language") {
+                                    lang[0] = values;
+                                    lang[2] = values;
+                                } else if (name === "lexer") {
+                                    lang[1] = values;
+                                }
                             }
                         }
                         if (name === "objectSort") {
-                            if (value === "true") {
+                            if (values === "true") {
                                 options.lexerOptions.script.objectSort = true;
                                 options.lexerOptions.style.objectSort = true;
-                            } else if (value === "false") {
+                            } else if (values === "false") {
                                 options.lexerOptions.script.objectSort = false;
                                 options.lexerOptions.style.objectSort = false;
                             }
@@ -286,6 +289,9 @@
                     } while (aa > 0);
                 }
             }
+            options.language                       = lang[0];
+            options.lexer                          = lang[1];
+            document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
             if (options.outputFormat === "arrays") {
@@ -318,7 +324,8 @@
                 return false;
             }
         };
-    let editor:any;
+    let editor:any,
+        lang:[string, string, string];
     if (typeof ace === "object") {
         aceControl.onclick = function web_aceControl() {
             if (aceControl.checked === true) {
@@ -370,7 +377,9 @@
     };
     if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.getItem("parseCode") !== undefined) {
         if (acetest === true) {
-            let lang:[string, string, string]   = framework.language.auto(localStorage.getItem("parseCode"), "javascript");
+            lang   = (options.language === "auto" || options.language === "")
+                ? framework.language.auto(localStorage.getItem("parseCode"), "javascript")
+                : [options.language, options.lexer, ""];
             editor.setValue(localStorage.getItem("parseCode"));
             editor.getSession().setMode(`ace/mode/${lang[0]}`);
             editor.clearSelection();
