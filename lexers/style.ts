@@ -355,8 +355,8 @@
                             )) {
                                 if (b[aa + 1] === ")" && data.token[parse.count] === "(") {
                                     parse.pop(data);
-                                    out = ["("];
-                                    aa  = a - 1;
+                                    parse.structure.pop();
+                                    out.splice(0, 0, "(");
                                 } else {
                                     break;
                                 }
@@ -637,6 +637,9 @@
                     do {
                         x = x - 1;
                     } while (x > 0 && (data.types[x] === "comment"));
+                    if (data.token[x] === ";") {
+                        return;
+                    }
                     parse.splice({
                         data: data,
                         howmany: 0,
