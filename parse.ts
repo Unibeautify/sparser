@@ -471,6 +471,7 @@ Parse Framework
                 return args.index;
             },
             splice: function parse_splice(spliceData: splice) {
+                const finalItem:[number, string] = [parse.data.begin[parse.count], parse.data.token[parse.count]];
                 // * data    - The data object to alter
                 // * howmany - How many indexes to remove
                 // * index   - The index where to start
@@ -485,7 +486,9 @@ Parse Framework
                         });
                     if (spliceData.data === parse.data) {
                         parse.count      = (parse.count - spliceData.howmany) + 1;
-                        parse.linesSpace = 0;
+                        if (finalItem[0] !== parse.data.begin[parse.count] || finalItem[1] !== parse.data.token[parse.count]) {
+                            parse.linesSpace = 0;
+                        }
                     }
                     return;
                 }
