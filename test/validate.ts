@@ -275,6 +275,8 @@ const taskrunner = function taskrunner_() {
                                     comparePass();
                                     return false;
                                 }
+                                console.log(`${humantime(false)}\u001b[31mFail ${filecount + 1}:\u001b[0m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                console.log("");
                                 console.log("\u001b[31mRed\u001b[0m = Generated from raw code file");
                                 console.log("\u001b[32mGreen\u001b[0m = Control code from parsed file");
                                 console.log(report[0]);

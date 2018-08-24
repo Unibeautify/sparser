@@ -935,6 +935,7 @@
                         next:number        = 0,
                         leng:number      = 0;
                     const p:number[]           = [],
+                        lines:number = parse.linesSpace,
                         set:Array<number[]>         = [
                             []
                         ],
@@ -1142,6 +1143,7 @@
                         }
                     });
                     parse.concat(data, store);
+                    parse.linesSpace = lines;
                 };
             //token building loop
             do {
@@ -1215,13 +1217,13 @@
                         }
                         properties();
                         ltype = "end";
-                        if (options.lexerOptions.style.objectSort === true && nosort[nosort.length - 1] === false) {
-                            parse.objectSort(data);
-                        }
                         nosort.pop();
                         ltoke = b[a];
                         ltype = "end";
                         recordPush("");
+                    }
+                    if (options.lexerOptions.style.objectSort === true && data.token[a] === "}") {
+                        parse.objectSort(data);
                     }
                 } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                     item("semi");
