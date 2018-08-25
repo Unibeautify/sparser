@@ -2,6 +2,7 @@
 (function diffview_init() {
     "use strict";
     const diffview = function diffview_(options) {
+        options.diff_space_ignore = false;
         const tab = (function diffview__tab() {
             let a = 0;
             const output = [];

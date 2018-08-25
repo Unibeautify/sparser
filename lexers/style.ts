@@ -223,7 +223,20 @@
                                 colors.push(value);
                             }
                             return value;
-                        };
+                        },
+                        dotfix     = function lexer_style_item_value_dotfix(find:string):string {
+                            if (options.lexerOptions.style.no_lead_zero === true) {
+                                return find.replace(/0+\./, ".");
+                            }
+                            return find.replace(".", "0.");
+                        },
+                        commaspace  = function lexer_style_item_value_commaspace(find:string):string {
+                            return find.replace(",", ", ");
+                        },
+                        zerodotstart:RegExp    = (/^0+\.\d+[a-z]/),
+                        dotstart:RegExp        = (/^\.\d+[a-z]/),
+                        zerodot:RegExp         = (/(\s|\(|,)0+\.\d+([a-z]|\)|\s)/g),
+                        dot:RegExp             = (/(\s|\(|,)\.\d+([a-z]|\)|\s)/g);
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
@@ -270,7 +283,15 @@
                     cc   = 0;
                     if (cc < leng) {
                         do {
-                            if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
+                            if (options.lexerOptions.style.no_lead_zero === true && zerodotstart.test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(/0+\./, ".");
+                            } else if ((options.lexerOptions.style.no_lead_zero === false || options.lexerOptions.style.no_lead_zero === undefined) && dotstart.test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(".", "0.");
+                            } else if (options.lexerOptions.style.no_lead_zero === true && zerodot.test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(zerodot, dotfix);
+                            } else if ((options.lexerOptions.style.no_lead_zero === false || options.lexerOptions.style.no_lead_zero === undefined) && dot.test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(dot, dotfix);
+                            } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
                                 values[cc] = "0";
                             } else if ((/^(0+)/).test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(/0+/, "0");
@@ -284,6 +305,9 @@
                                         .replace(/url\(\s*('|")?/, "url(\"")
                                         .replace(/(('|")?\s*\))$/, "\")");
                                 }
+                            }
+                            if ((/^\w+\(/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
+                                values[cc] = values[cc].replace(/,\S/g, commaspace);
                             }
                             cc = cc + 1;
                         } while (cc < leng);
@@ -1220,10 +1244,10 @@
                         nosort.pop();
                         ltoke = b[a];
                         ltype = "end";
+                        if (options.lexerOptions.style.objectSort === true && data.token[parse.count] === "}" && data.stack[data.begin[parse.count]] !== "global") {
+                            parse.objectSort(data);
+                        }
                         recordPush("");
-                    }
-                    if (options.lexerOptions.style.objectSort === true && data.token[a] === "}") {
-                        parse.objectSort(data);
                     }
                 } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                     item("semi");
@@ -1245,6 +1269,9 @@
                 }
                 a = a + 1;
             } while (a < len);
+            if (options.lexerOptions.style.objectSort === true) {
+                parse.objectSort(data);
+            }
             if (endtest === false) {
                 properties();
             }

@@ -117,6 +117,9 @@ const taskrunner = function taskrunner_() {
                 },
                 plural       = function taskrunner_proctime_plural(x:number, y:string):string {
                     if (x !== 1) {
+                        if (y === " second") {
+                            return `${secondFix() + y}s `; 
+                        }
                         return `${x + y}s `;
                     }
                     return `${x + y} `;
@@ -134,21 +137,25 @@ const taskrunner = function taskrunner_() {
                             ? " 1 second "
                             : `${minutes.toFixed(3)} seconds `
                         : minutes.toFixed(3);
+                },
+                secondFix     = function taskrunner_proctime_secondFix():string {
+                    strSplit     = String(elapsed).split(".");
+                    if (strSplit[1].length < 9) {
+                        do {
+                            strSplit[1]  = strSplit[1] + 0;
+                        } while (strSplit[1].length < 9);
+                        return `${strSplit[0]}.${strSplit[1]}`;
+                    }
+                    if (strSplit[1].length > 9) {
+                        return `${strSplit[0]}.${strSplit[1].slice(0, 9)}`;
+                    }
+                    return String(elapsed);
                 };
             memory       = process.memoryUsage();
             finalMem     = prettybytes(memory.rss);
 
             //last line for additional instructions without bias to the timer
-            secondString = String(elapsed);
-            strSplit     = secondString.split(".");
-            if (strSplit[1].length < 9) {
-                do {
-                    strSplit[1]  = strSplit[1] + 0;
-                } while (strSplit[1].length < 9);
-                secondString = `${strSplit[0]}.${strSplit[1]}`;
-            } else if (strSplit[1].length > 9) {
-                secondString = `${strSplit[0]}.${strSplit[1].slice(0, 9)}`;
-            }
+            secondString = secondFix();
             if (elapsed >= 60 && elapsed < 3600) {
                 minute();
             } else if (elapsed >= 3600) {
@@ -358,7 +365,6 @@ const taskrunner = function taskrunner_() {
                                             comparePass();
                                         } else {
                                             if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
-                                                errout("\u001b[31mUnit test failure!\u001b[0m");
                                                 return;
                                             }
                                         }

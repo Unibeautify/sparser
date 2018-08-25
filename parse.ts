@@ -34,18 +34,23 @@ Parse Framework
             lineNumber: 1,
             linesSpace: 0,
             objectSort: function parse_objectSort(data: data):void {
-                let cc:number = 0,
-                    dd:number = 0,
+                let cc:number = parse.count,
+                    global:boolean = (data.lexer[cc] === "style" && (data.stack[parse.count] === "global" || data.stack[data.begin[parse.count]] === "global")),
+                    dd:number = parse.structure[parse.structure.length - 1][1],
                     ee:number = 0,
                     ff:number = 0,
-                    behind:number = parse.count,
+                    behind:number = 0,
                     commaTest:boolean = true,
                     front:number = 0,
                     keyend:number = 0,
                     keylen:number = 0;
                 const keys:Array<[number, number]> = [],
                     length:number = parse.count,
-                    style:boolean = (data.lexer[length] === "style"),
+                    begin:number = dd,
+                    stack:string = (global === true)
+                        ? "global"
+                        : parse.structure[parse.structure.length - 1][0],
+                    style:boolean = (data.lexer[cc] === "style"),
                     delim:[string, string] = (style === true)
                         ? [";", "semi"]
                         : [",", "separator"],
@@ -97,19 +102,18 @@ Parse Framework
                         token: [],
                         types: []
                     };
-                cc = behind;
-                dd = parse.structure[parse.structure.length - 1][1];
+                behind = cc;
                 do {
-                    if (data.begin[cc] === dd) {
+                    if (data.begin[cc] === dd || (global === true && cc < behind && data.token[cc] === "}" && data.begin[data.begin[cc]] === -1)) {
                         if (data.types[cc].indexOf("template") > -1) {
                             return;
                         }
-                        if (style === true && data.token[cc - 1] === "}" && data.token[cc] !== ";") {
+                        if (data.token[cc] === delim[0] || (style === true && data.token[cc] === "}" && data.token[cc + 1] !== ";")) {
+                            commaTest = true;
+                            front = cc + 1;
+                        } else if (global === true && data.token[cc - 1] === "}") {
                             commaTest = true;
                             front = cc;
-                        } else if (data.token[cc] === delim[0]) {
-                            commaTest = true;
-                            front     = cc + 1;
                         }
                         if (commaTest === true && (data.token[cc] === delim[0] || (style === true && data.token[cc - 1] === "}")) && front < behind) {
                             if (style === true && "};".indexOf(data.token[behind]) < 0) {
@@ -123,7 +127,7 @@ Parse Framework
                                 } while (behind > 0 && data.types[behind] === "comment");
                             }
                             keys.push([front, behind]);
-                            if (data.token[front] === "}") {
+                            if (style === true && data.token[front] === "}") {
                                 behind = front;
                             } else {
                                 behind = front - 1;
@@ -207,16 +211,15 @@ Parse Framework
                                         howmany: 0,
                                         index  : ee,
                                         record : {
-                                            begin: parse.structure[parse.structure.length - 1][1],
+                                            begin: begin,
                                             lexer: store.lexer[ee - 1],
                                             lines: 0,
                                             presv: false,
-                                            stack: parse.structure[parse.structure.length - 1][0],
+                                            stack: stack,
                                             token: delim[0],
                                             types: delim[1]
                                         }
                                     });
-                                    store.lines[ee - 1] = 0;
                                     ff                  = ff + 1;
                                 }
                                 dd = dd + 1;
@@ -241,7 +244,8 @@ Parse Framework
                             }
                         });
                         parse.linesSpace = lines;
-                        return parse.concat(data, store);
+                        parse.concat(data, store);
+                        return;
                     }
                 }
                 return;
