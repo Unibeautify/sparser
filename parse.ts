@@ -77,6 +77,11 @@ Parse Framework
 
                         if (style === true) {
                             if (data.token[xx].indexOf("@import") === 0 || data.token[yy].indexOf("@import") === 0) {
+                                // JavaScript's standard array sort is uses implementation specific algorithms.
+                                // This simple numeric trick forces conformance.
+                                if (xx < yy) {
+                                    return -1;
+                                }
                                 return 1;
                             }
                             if (data.types[xx] !== data.types[yy]) {
