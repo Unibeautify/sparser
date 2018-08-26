@@ -74,18 +74,24 @@ Parse Framework
                                 return 1;
                             }
                         }
-                        if (style === true && data.types[xx] !== data.types[yy]) {
-                            if (data.types[xx] === "variable") {
-                                return -1;
-                            }
-                            if (data.types[xx] === "selector") {
+
+                        if (style === true) {
+                            if (data.token[xx].indexOf("@import") === 0 || data.token[yy].indexOf("@import") === 0) {
                                 return 1;
                             }
-                            if (data.types[xx] === "property" && data.types[yy] !== "variable") {
-                                return -1;
-                            }
-                            if (data.types[xx] === "mixin" && data.types[yy] !== "property" && data.types[yy] !== "variable") {
-                                return -1;
+                            if (data.types[xx] !== data.types[yy]) {
+                                if (data.types[xx] === "variable") {
+                                    return -1;
+                                }
+                                if (data.types[xx] === "selector") {
+                                    return 1;
+                                }
+                                if (data.types[xx] === "property" && data.types[yy] !== "variable") {
+                                    return -1;
+                                }
+                                if (data.types[xx] === "mixin" && data.types[yy] !== "property" && data.types[yy] !== "variable") {
+                                    return -1;
+                                }
                             }
                         }
                         if (data.token[xx].toLowerCase() > data.token[yy].toLowerCase()) {
@@ -111,7 +117,7 @@ Parse Framework
                         if (data.token[cc] === delim[0] || (style === true && data.token[cc] === "}" && data.token[cc + 1] !== ";")) {
                             commaTest = true;
                             front = cc + 1;
-                        } else if (global === true && data.token[cc - 1] === "}") {
+                        } else if (style === true && data.token[cc - 1] === "}") {
                             commaTest = true;
                             front = cc;
                         }

@@ -1231,7 +1231,11 @@
                         }
                         item("end");
                         if (b[a] === "}" && data.token[parse.count] !== ";" && options.correct === true) {
-                            if (data.types[parse.count] === "value") {
+                            if (data.types[parse.count] === "value" || (
+                                data.types[parse.count] === "variable" && (
+                                    data.token[parse.count - 1] === ":" || data.token[parse.count - 1] === ";"
+                                )
+                            )) {
                                 ltoke = ";";
                                 ltype = "semi";
                                 recordPush("");
@@ -1244,7 +1248,7 @@
                         nosort.pop();
                         ltoke = b[a];
                         ltype = "end";
-                        if (options.lexerOptions.style.objectSort === true && data.token[parse.count] === "}" && data.stack[data.begin[parse.count]] !== "global") {
+                        if (options.lexerOptions.style.objectSort === true && b[a] === "}") {
                             parse.objectSort(data);
                         }
                         recordPush("");
