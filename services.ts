@@ -9,11 +9,13 @@ const services = function services_() {
     "use strict";
     let version:string = "",
         command:string = "";
-    const args:string[] = process.argv.slice(2),
+    const startTime:[number, number] = process.hrtime(),
+        args:string[] = process.argv.slice(2),
         node = {
             child: require("child_process").exec,
-            fs: require("fs"),
-            path: require("path")
+            fs   : require("fs"),
+            os   : require("os"),
+            path : require("path")
         },
         project:string = (function services_project() {
             const dirs:string[] = __dirname.split(node.path.sep);
@@ -124,70 +126,156 @@ const services = function services_() {
             }
             return input;
         },
-        time = function services_time(message:string):number {
-            const date:Date = new Date(),
-                datearr:string[] = [];
-            let hours:string = String(date.getHours()),
-                minutes:string = String(date.getMinutes()),
-                seconds:string = String(date.getSeconds()),
-                mseconds:string = String(date.getMilliseconds());
-            if (hours.length === 1) {
-                hours = `0${hours}`;
+        humantime  = function services_humantime(finished:boolean):string {
+            let minuteString:string = "",
+                hourString:string   = "",
+                secondString:string = "",
+                finalTime:string    = "",
+                finalMem:string     = "",
+                strSplit:string[]     = [],
+                minutes:number      = 0,
+                hours:number        = 0,
+                memory,
+                elapsed:number      = (function services_humantime_elapsed():number {
+                    const endtime:[number, number] = process.hrtime();
+                    let dtime:[number, number] = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
+                    if (dtime[1] === 0) {
+                        return dtime[0];
+                    }
+                    if (dtime[1] < 0) {
+                        dtime[1] = ((1000000000 + endtime[1]) - startTime[1]);
+                    }
+                    return dtime[0] + (dtime[1] / 1000000000);
+                }());
+            const prettybytes  = function services_humantime_prettybytes(an_integer:number):string {
+                    //find the string length of input and divide into triplets
+                    let output:string = "",
+                        length:number  = an_integer
+                            .toString()
+                            .length;
+                    const triples:number = (function services_humantime_prettybytes_triples():number {
+                            if (length < 22) {
+                                return Math.floor((length - 1) / 3);
+                            }
+                            //it seems the maximum supported length of integer is 22
+                            return 8;
+                        }()),
+                        //each triplet is worth an exponent of 1024 (2 ^ 10)
+                        power:number   = (function services_humantime_prettybytes_power():number {
+                            let a = triples - 1,
+                                b = 1024;
+                            if (triples === 0) {
+                                return 0;
+                            }
+                            if (triples === 1) {
+                                return 1024;
+                            }
+                            do {
+                                b = b * 1024;
+                                a = a - 1;
+                            } while (a > 0);
+                            return b;
+                        }()),
+                        //kilobytes, megabytes, and so forth...
+                        unit    = [
+                            "",
+                            "KB",
+                            "MB",
+                            "GB",
+                            "TB",
+                            "PB",
+                            "EB",
+                            "ZB",
+                            "YB"
+                        ];
+
+                    if (typeof an_integer !== "number" || Number.isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
+                        //input not a positive integer
+                        output = "0.00B";
+                    } else if (triples === 0) {
+                        //input less than 1000
+                        output = `${an_integer}B`;
+                    } else {
+                        //for input greater than 999
+                        length = Math.floor((an_integer / power) * 100) / 100;
+                        output = length.toFixed(2) + unit[triples];
+                    }
+                    return output;
+                },
+                plural       = function services_validate_proctime_plural(x:number, y:string):string {
+                    if (x !== 1) {
+                        if (y === " second") {
+                            return `${secondFix() + y}s `; 
+                        }
+                        return `${x + y}s `;
+                    }
+                    return `${x + y} `;
+                },
+                minute       = function services_validate_proctime_minute():void {
+                    minutes      = parseInt((elapsed / 60).toString(), 10);
+                    minuteString = (finished === true)
+                        ? plural(minutes, " minute")
+                        : (minutes < 10)
+                            ? `0${minutes}`
+                            : String(minutes);
+                    minutes      = elapsed - (minutes * 60);
+                    secondString = (finished === true)
+                        ? (minutes === 1)
+                            ? " 1 second "
+                            : `${minutes.toFixed(3)} seconds `
+                        : minutes.toFixed(3);
+                },
+                secondFix     = function services_validate_proctime_secondFix():string {
+                    strSplit     = String(elapsed).split(".");
+                    if (strSplit[1].length < 9) {
+                        do {
+                            strSplit[1]  = strSplit[1] + 0;
+                        } while (strSplit[1].length < 9);
+                        return `${strSplit[0]}.${strSplit[1]}`;
+                    }
+                    if (strSplit[1].length > 9) {
+                        return `${strSplit[0]}.${strSplit[1].slice(0, 9)}`;
+                    }
+                    return String(elapsed);
+                };
+            memory       = process.memoryUsage();
+            finalMem     = prettybytes(memory.rss);
+
+            //last line for additional instructions without bias to the timer
+            secondString = secondFix();
+            if (elapsed >= 60 && elapsed < 3600) {
+                minute();
+            } else if (elapsed >= 3600) {
+                hours      = parseInt((elapsed / 3600).toString(), 10);
+                elapsed    = elapsed - (hours * 3600);
+                hourString = (finished === true)
+                    ? plural(hours, " hour")
+                    : (hours < 10)
+                        ? `0${hours}`
+                        : String(hours);
+                minute();
+            } else {
+                secondString = (finished === true)
+                    ? plural(elapsed, " second")
+                    : secondString;
             }
-            if (minutes.length === 1) {
-                minutes = `0${minutes}`;
+            if (finished === true) {
+                finalTime = hourString + minuteString + secondString;
+                console.log(`${finalMem} of memory consumed`);
+                console.log(`${finalTime}total time`);
+                console.log("");
+            } else {
+                if (hourString === "") {
+                    hourString = "00";
+                }
+                if (minuteString === "") {
+                    minuteString = "00";
+                }
+                if ((/^([0-9]\.)/).test(secondString) === true) {
+                    secondString = `0${secondString}`;
+                }
+                return `\u001b[36m[${hourString}:${minuteString}:${secondString}]\u001b[0m `;
             }
-            if (seconds.length === 1) {
-                seconds = `0${seconds}`;
-            }
-            if (mseconds.length < 3) {
-                do {
-                    mseconds = `0${mseconds}`;
-                } while (mseconds.length < 3);
-            }
-            datearr.push(hours);
-            datearr.push(minutes);
-            datearr.push(seconds);
-            datearr.push(mseconds);
-            console.log(`[\u001b[36m${datearr.join(":")}\u001b[39m] ${message}`);
-            return date.valueOf();
-        },
-        duration = function services_duration(length:number, message:string):void {
-            let hours:number = 0,
-                minutes:number = 0,
-                seconds:number = 0,
-                list:string[] = [];
-            if (length > 3600000) {
-                hours = Math.floor(length / 3600000);
-                length = length - (hours * 3600000);
-            }
-            list.push(hours.toString());
-            if (list[0].length < 2) {
-                list[0] = `0${list[0]}`;
-            }
-            if (length > 60000) {
-                minutes = Math.floor(length / 60000);
-                length = length - (minutes * 60000);
-            }
-            list.push(minutes.toString());
-            if (list[1].length < 2) {
-                list[1] = `0${list[1]}`;
-            }
-            if (length > 1000) {
-                seconds = Math.floor(length / 1000);
-                length = length - (seconds * 1000);
-            }
-            list.push(seconds.toString());
-            if (list[2].length < 2) {
-                list[2] = `0${list[2]}`;
-            }
-            list.push(length.toString());
-            if (list[3].length < 3) {
-                do {
-                    list[3] = `0${list[3]}`;
-                } while (list[3].length < 3);
-            }
-            console.log(`[\u001b[36m${list.join(":")}\u001b[39m] ${message}`);
         },
         errout = function services_errout(message:string):void {
             let stack = new Error().stack;
@@ -206,6 +294,7 @@ const services = function services_() {
                 stack = stack.replace("Error", "\u001b[36mStack trace\u001b[39m\n-----------");
             }
             console.log(stack);
+            humantime(true);
             process.exit(1);
         },
         alias = function services_alias(comms:string):string {
@@ -244,10 +333,537 @@ const services = function services_() {
             }
             return "help";
         },
-        action = {
-            build: function services_action_build():void {
+        validate = function services_validate():void {
+            const validation = function services_validate_validation() {
+                let next       = function services_validate_validation_next() {
+                        let phase = order[0];
+                        const complete = function services_validate_validation_complete() {
+                                console.log("");
+                                console.log("All tasks complete... Exiting clean!");
+                                humantime(true);
+                                if (process.argv[1].indexOf("validate.js") > -1) {
+                                    process.exit(0);
+                                }
+                            };
+                        if (order.length < orderlen) {
+                            console.log("________________________________________________________________________");
+                            console.log("");
+                        }
+                        if (order.length < 1) {
+                            return complete();
+                        }
+                        order.splice(0, 1);
+                        phases[phase]();
+                    },
+                    parse:parse,
+                    parse_options:parseOptions = {
+                        correct        : false,
+                        crlf           : false,
+                        language       : "javascript",
+                        lexer          : "script",
+                        lexerOptions   : {},
+                        outputFormat   : "arrays",
+                        source         : "",
+                        wrap           : 0
+                    },
+                    framework:parseFramework;
+                const order      = [
+                        "lint", //       - run eslint on all unexcluded JS files in the repo
+                        "framework", //  - test the framework
+                        "codeunits" //   - test the lexers
+                    ],
+                    orderlen:number   = order.length,
+                    phases     = {
+                        codeunits: function services_validate_validation_coreunits():void {
+                            const files  = {
+                                    code  : [],
+                                    parsed: []
+                                },
+                                count  = {
+                                    code  : 0,
+                                    lexer : 0,
+                                    parsed: 0
+                                },
+                                total  = {
+                                    code  : 0,
+                                    lexer : 0,
+                                    parsed: 0
+                                },
+                                lexers:string[] = Object.keys(framework.lexer),
+                                compare = function services_validate_validation_coreunits_compare():void {
+                                    let len:number       = (files.code.length > files.parsed.length)
+                                            ? files.code.length
+                                            : files.parsed.length,
+                                        lang:languageAuto,
+                                        a:number         = 0,
+                                        str:string       = "",
+                                        outputObjects:recordList,
+                                        filecount:number = 0,
+                                        currentlex:string = "";
+                                    const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
+                                            const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
+                                            console.log("");
+                                            console.log(`Tests for lexer - \u001b[36m${lex}\u001b[0m`);
+                                            currentlex = lex;
+                                        },
+                                        comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
+                                            filecount = filecount + 1;
+                                            console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[0m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            if (a === len - 1) {
+                                                console.log("");
+                                                console.log("\u001b[32mTest units evaluated without failure!\u001b[0m");
+                                                return next();
+                                            }
+                                        },
+                                        diffFiles  = function services_validate_validation_coreunits_compare_diffFiles(sampleName:string, sampleSource:recordList, sampleDiff:recordList):boolean {
+                                            let plus:string   = "",
+                                                plural:string = "",
+                                                report:[string, number, number],
+                                                total:number  = 0;
+                                            const diffview = require(`${project}test${node.path.sep}diffview.js`),
+                                                beautify = function services_validate_validation_coreunits_compare_beautify(item:recordList) {
+                                                    const outputString:string[] = ["["],
+                                                        len:number = item.length - 1;
+                                                    let x:number = 0;
+                                                    if (len > 0) {
+                                                        do {
+                                                            outputString.push(`${JSON.stringify(item[x])},`);
+                                                            x = x + 1;
+                                                        } while (x < len);
+                                                    }
+                                                    outputString.push(JSON.stringify(item[len]));
+                                                    outputString.push("]");
+                                                    return outputString.join(node.os.EOL);
+                                                },
+                                                diff_options = {
+                                                    context: 2,
+                                                    diff: beautify(sampleDiff),
+                                                    diff_cli: true,
+                                                    language: "text",
+                                                    mode: "diff",
+                                                    source: beautify(sampleSource)
+                                                };
+                                            report          = diffview(diff_options);
+                                            total           = report[1];
+                                            if (total > 50) {
+                                                plus = "+";
+                                            }
+                                            if (total !== 1) {
+                                                plural = "s";
+                                            }
+                                            if (total < 1) {
+                                                comparePass();
+                                                return false;
+                                            }
+                                            console.log(`${humantime(false)}\u001b[31mFail ${filecount + 1}:\u001b[0m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            console.log("");
+                                            console.log("\u001b[31mRed\u001b[0m = Generated from raw code file");
+                                            console.log("\u001b[32mGreen\u001b[0m = Control code from parsed file");
+                                            console.log(report[0]);
+                                            console.log("");
+                                            console.log(`${total + plus} \u001b[32mdifference${plural} counted.\u001b[0m`);
+                                            errout(`Pretty Diff \u001b[31mfailed\u001b[0m on file: \u001b[36m${sampleName}\u001b[0m`);
+                                            return true;
+                                        };
+                                    files.code   = parse.safeSort(files.code, "ascend", false);
+                                    files.parsed = parse.safeSort(files.parsed, "ascend", false);
+                                    lexer();
+                                    do {
+                                        if (files.code[a][0].indexOf(currentlex) !== 0) {
+                                            lexer();
+                                        }
+                                        if (files.code[a] === undefined || files.parsed[a] === undefined) {
+                                            if (files.code[a] === undefined) {
+                                                console.log(`\u001b[33msamples_code directory is missing file:\u001b[0m${files.parsed[a][0]}`);
+                                                files.parsed.splice(a, 1);
+                                            } else {
+                                                console.log(`\u001b[33msamples_parse directory is missing file:\u001b[0m ${files.code[a][0]}`);
+                                                files.code.splice(a, 1);
+                                            }
+                                            len = (files.code.length > files.parsed.length)
+                                                ? files.code.length
+                                                : files.parsed.length;
+                                            a   = a - 1;
+                                        } else if (files.code[a][0] === files.parsed[a][0]) {
+                                            if (files.parsed[a][1] === "") {
+                                                console.log(`\u001b[33mParsed file is empty:\u001b[0m ${files.parsed[a][0]}`);
+                                            } else if (files.code[a][1] === "") {
+                                                console.log(`\u001b[33mCode file is empty:\u001b[0m ${files.code[a][0]}`);
+                                            } else {
+                                                if ((/_correct(\.|_)/).test(files.code[a][0]) === true) {
+                                                    parse_options.correct = true;
+                                                } else {
+                                                    parse_options.correct = false;
+                                                }
+                                                if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
+                                                    let wrap:string = files.code[a][0].slice(files.code[a][0].indexOf("_wrap-") + 6),
+                                                        numb:number = 0;
+                                                    do {
+                                                        numb = numb + 1;
+                                                    } while ((/\d/).test(wrap.charAt(numb)) === true);
+                                                    wrap = wrap.slice(0, numb);
+                                                    if (isNaN(Number(wrap)) === false) {
+                                                        parse_options.wrap = Number(wrap);
+                                                    }
+                                                }
+                                                if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
+                                                    parse_options.lexerOptions.script.objectSort = true;
+                                                    parse_options.lexerOptions.style.objectSort = true;
+                                                } else {
+                                                    parse_options.lexerOptions.script.objectSort = false;
+                                                    parse_options.lexerOptions.style.objectSort = false;
+                                                }
+                                                if ((/_tagSort(\.|_)/).test(files.code[a][0]) === true) {
+                                                    parse_options.lexerOptions.markup.tagSort = true;
+                                                } else {
+                                                    parse_options.lexerOptions.markup.tagSort = false;
+                                                }
+                                                lang = framework.language.auto(files.code[a][1], "javascript");
+                                                if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
+                                                    parse_options.language = files.code[a][0].split("_lang-")[1];
+                                                    if (parse_options.language.indexOf("_") > 0) {
+                                                        parse_options.language = parse_options.language.split("_")[0];
+                                                    } else {
+                                                        parse_options.language = parse_options.language.split(".")[0];
+                                                    }
+                                                } else {
+                                                    parse_options.language = lang[0];
+                                                }
+                                                parse_options.source = files.code[a][1];
+                                                parse_options.lexer  = currentlex;
+                                                outputObjects        = framework.parserObjects(parse_options);
+                                                str                  = JSON.stringify(outputObjects);
+                                                if (framework.parseerror === "") {
+                                                    if (str === files.parsed[a][1]) {
+                                                        comparePass();
+                                                    } else {
+                                                        if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
+                                                            return;
+                                                        }
+                                                    }
+                                                } else {
+                                                    console.log("");
+                                                    console.log("Quitting due to error:");
+                                                    console.log(files.code[a][0]);
+                                                    console.log(framework.parseerror);
+                                                    if (process.argv[1].indexOf("validate.js") > -1) {
+                                                        process.exit(1);
+                                                    }
+                                                }
+                                            }
+                                        } else {
+                                            if (files.code[a][0] < files.parsed[a][0]) {
+                                                console.log(`\u001b[33mParsed samples directory is missing file:\u001b[0m ${files.code[a][0]}`);
+                                                files.code.splice(a, 1);
+                                            } else {
+                                                console.log(`\u001b[33mCode samples directory is missing file:\u001b[0m ${files.parsed[a][0]}`);
+                                                files.parsed.splice(a, 1);
+                                            }
+                                            len = (files.code.length > files.parsed.length)
+                                                ? files.code.length
+                                                : files.parsed.length;
+                                            a   = a - 1;
+                                            if (a === len - 1) {
+                                                console.log("");
+                                                console.log("\u001b[32mTest units evaluated without failure!\u001b[0m");
+                                                return next();
+                                            }
+                                        }
+                                        a = a + 1;
+                                    } while (a < len);
+                                },
+                                readDir = function services_validate_validation_coreunits_readDir(type:string, lexer:string):void {
+                                    const dirpath:string = `${project}test${node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep}`;
+                                    node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
+                                        if (err !== null) {
+                                            if (err.toString().indexOf("no such file or directory") > 0) {
+                                                return errout(`The directory ${dirpath} \u001b[31mdoesn't exist\u001b[0m. Provide the necessary test samples for \u001b[36m${lexer}\u001b[0m.`);
+                                            }
+                                            console.log(`Error reading from directory ${dirpath}`);
+                                            return errout(err);
+                                        }
+                                        if (list === undefined) {
+                                            if (total[type] === 0) {
+                                                return errout(`No files of type ${type} for lexer ${lexer}.`);
+                                            }
+                                            return errout(`undefined returned when reading files from ${dirpath}`);
+                                        }
+                                        const pusher = function services_validate_validation_coreunits_readDir_callback_pusher(val) {
+                                            node.fs.readFile(
+                                                dirpath + val,
+                                                "utf8",
+                                                function services_validate_validation_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
+                                                    count[type] = count[type] + 1;
+                                                    if (erra !== null && erra !== undefined) {
+                                                        errout(`Error reading file: ${project}test${node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep + val}`);
+                                                    } else {
+                                                        files[type].push([lexer + node.path.sep + val, fileData]);
+                                                    }
+                                                    if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
+                                                        compare();
+                                                    }
+                                                }
+                                            );
+                                        };
+                                        total[type] = total[type] + list.length;
+                                        if (err !== null) {
+                                            errout(`Error reading from directory: ${dirpath}`);
+                                        }
+                                        if (list.length === 0 && count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
+                                            compare();
+                                        } else {
+                                            list.forEach(pusher);
+                                        }
+                                    });
+                                };
+                            console.log("\u001b[36mCore Unit Testing\u001b[0m");
+                            total.lexer = lexers.length;
+                            lexers.forEach(function services_validate_validation_coreunits_lexers(value:string) {
+                                count.lexer = count.lexer + 1;
+                                readDir("code", value);
+                                readDir("parsed", value);
+                            });
+                        },
+                        framework: function services_validate_validation_framework() {
+                            let keys    = [],
+                                keysort = "";
+                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure";
+                            console.log("\u001b[36mFramework Testing\u001b[0m");
+                            console.log("");
+                            framework.parserArrays({
+                                correct        : false,
+                                crlf           : false,
+                                language       : "html",
+                                lexer          : "markup",
+                                lexerOptions   : {},
+                                outputFormat   : "objects",
+                                source         : "",
+                                wrap           : 0
+                            });
+                            keys = Object.keys(parse);
+                            keysort = parse.safeSort(keys, "ascend", false).join();
+                            if (keysort !== keylist) {
+                                console.log("\u001b[36mExpected Keys\u001b[0m");
+                                console.log(keylist);
+                                console.log("\u001b[36mActual Keys\u001b[0m");
+                                console.log(keysort);
+                                return errout("\u001b[31mParse framework failure:\u001b[0m The \"parse\" object does not match the known list of required properties.");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mObject parse contains only the standard properties.\u001b[0m`);
+                            
+                            if (typeof parse.concat !== "function" || parse.concat.name !== "parse_concat") {
+                                return errout("\u001b[31mParse framework failure:\u001b[0m parse.concat does not point to the function named parse_concat.");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.concat points to function parse_concat.\u001b[0m`);
+                            
+                            if (parse.count !== -1) {
+                                return errout("\u001b[31mParse framework failure:\u001b[0m The default for parse.count isn't -1 or type number.");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.count has default value of -1 and type number.\u001b[0m`);
+                            
+                            if (
+                                typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"lexer\":[],\"lines\":[],\"presv\":[],\"stack\":[],\"token\":[],\"types\":[]}"
+                            ) {
+                                return errout("\u001b[31mParse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[0m`);
+                            
+                            if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
+                                return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.datanames contains only the data field names.\u001b[0m`);
+            
+                            if (parse.lineNumber !== 1) {
+                                return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 and type number.\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[0m`);
+                            
+                            // The correct default for linesSpace is 0
+                            // but the default is changed by the source of empty string.
+                            if (parse.linesSpace !== 1) {
+                                return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 0 and type number.\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[0m`);
+                            
+                            if (typeof parse.objectSort !== "function" || parse.objectSort.name !== "parse_objectSort") {
+                                return errout("\u001b[31mParse framework failure: parse.objectSort is not assigned to named function parse_objectSort\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.objectSort is assigned to named function parse_objectSort\u001b[0m`);
+                            
+                            if (typeof parse.pop !== "function" || parse.pop.name !== "parse_pop") {
+                                return errout("\u001b[31mParse framework failure: parse.pop is not assigned to named function parse_pop\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.pop is assigned to named function parse_pop\u001b[0m`);
+                            
+                            if (typeof parse.push !== "function" || parse.push.name !== "parse_push") {
+                                return errout("\u001b[31mParse framework failure: parse.push is not assigned to named function parse_push\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.push is assigned to named function parse_push\u001b[0m`);
+                            
+                            if (parse.push.toString().indexOf("parse.structure.push([structure, parse.count])") < 0 || parse.push.toString().indexOf("parse.structure.pop") < 0) {
+                                return errout("\u001b[31mParse framework failure: parse.push does not regulate parse.structure\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.push contains references to push and pop parse.structure\u001b[0m`);
+            
+                            if (typeof parse.safeSort !== "function" || parse.safeSort.name !== "parse_safeSort") {
+                                return errout("\u001b[31mParse framework failure: parse.safeSort is not assigned to named function parse_safeSort\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.safeSort is assigned to named function parse_safeSort\u001b[0m`);
+                            
+                            if (typeof parse.spacer !== "function" || parse.spacer.name !== "parse_spacer") {
+                                return errout("\u001b[31mParse framework failure: parse.spacer is not assigned to named function parse_spacer\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.spacer is assigned to named function parse_spacer\u001b[0m`);
+                            
+                            if (typeof parse.splice !== "function" || parse.splice.name !== "parse_splice") {
+                                return errout("\u001b[31mParse framework failure: parse.splice is not assigned to named function parse_splice\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.splice is assigned to named function parse_splice\u001b[0m`);
+            
+                            if (Array.isArray(parse.structure) === false || parse.structure.length !== 1 || Array.isArray(parse.structure[0]) === false || parse.structure[0][0] !== "global" || parse.structure[0][1] !== -1) {
+                                return errout("\u001b[31mParse framework failure: parse.structure is not assigned the default [[\"global\", -1]]\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.structure is assigned the default of [["global", -1]]\u001b[0m`);
+            
+                            if (parse.structure.pop.name !== "parse_structure_pop") {
+                                return errout("\u001b[31mParse framework failure: parse.structure does not have a custom 'pop' method.\u001b[0m ");
+                            }
+                            console.log(`${humantime(false)}\u001b[32mparse.structure does have a custom 'pop' method.\u001b[0m`);
+
+                            console.log("");
+                            console.log("\u001b[32mFramework testing complete!\u001b[0m");
+                            return next();
+                        },
+                        lint     : function services_validate_validation_lint() {
+                            const ignoreDirectory = [
+                                    ".git",
+                                    ".vscode",
+                                    "bin",
+                                    "coverage",
+                                    "guide",
+                                    "ignore",
+                                    "node_modules",
+                                    "test"
+                                ],
+                                files:string[]           = [],
+                                lintrun         = function services_validate_validation_lint_lintrun() {
+                                    let filesCount:number = 0;
+                                    const filesTotal = files.length,
+                                        lintit = function services_validate_validation_lint_lintrun_lintit(val:string):void {
+                                            node.child(`eslint ${val}`, {
+                                                cwd: project
+                                            }, function services_validate_validation_lint_lintrun_lintit_eslint(err, stdout, stderr) {
+                                                if (stdout === "" || stdout.indexOf("0:0  warning  File ignored because of a matching ignore pattern.") > -1) {
+                                                    if (err !== null) {
+                                                        errout(err);
+                                                        return;
+                                                    }
+                                                    if (stderr !== null && stderr !== "") {
+                                                        errout(stderr);
+                                                        return;
+                                                    }
+                                                    filesCount = filesCount + 1;
+                                                    console.log(`${humantime(false)}\u001b[32mLint passed:\u001b[0m ${val}`);
+                                                    if (filesCount === filesTotal) {
+                                                        console.log("");
+                                                        console.log("\u001b[32mLint complete!\u001b[0m");
+                                                        next();
+                                                        return;
+                                                    }
+                                                } else {
+                                                    console.log(stdout);
+                                                    errout("Lint failure.");
+                                                    return;
+                                                }
+                                            })
+                                        };
+                                    files.forEach(lintit);
+                                };
+                            console.log("\u001b[36mBeautifying and Linting\u001b[0m");
+                            console.log("");
+                            (function services_validate_validation_lint_getFiles():void {
+                                let total:number    = 1,
+                                    count:number    = 0;
+                                const idLen:number    = ignoreDirectory.length,
+                                    readDir  = function services_validate_validation_lint_getFiles_readDir(filepath:string):void {
+                                        node.fs.readdir(
+                                            filepath,
+                                            function services_validate_validation_lint_getFiles_readDir_callback(erra, list) {
+                                                const fileEval = function services_validate_validation_lint_getFiles_readDir_callback_fileEval(val:string):void {
+                                                    const filename:string = filepath + node.path.sep + val;
+                                                    node.fs.stat(
+                                                        filename,
+                                                        function services_validate_validation_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
+                                                            let a:number         = 0,
+                                                                ignoreDir:boolean = false;
+                                                            const dirtest:string   = `${filepath.replace(/\\/g, "/")}/${val}`;
+                                                            if (errb !== null) {
+                                                                return errout(errb);
+                                                            }
+                                                            count = count + 1;
+                                                            if (stat.isFile() === true && (/(\.js)$/).test(val) === true) {
+                                                                files.push(filename);
+                                                            }
+                                                            if (stat.isDirectory() === true) {
+                                                                do {
+                                                                    if (dirtest.indexOf(ignoreDirectory[a]) === dirtest.length - ignoreDirectory[a].length) {
+                                                                        ignoreDir = true;
+                                                                        break;
+                                                                    }
+                                                                    a = a + 1;
+                                                                } while (a < idLen);
+                                                                if (ignoreDir === true) {
+                                                                    if (count === total) {
+                                                                        lintrun();
+                                                                    }
+                                                                } else {
+                                                                    total = total + 1;
+                                                                    services_validate_validation_lint_getFiles_readDir(filename);
+                                                                }
+                                                            } else if (count === total) {
+                                                                lintrun();
+                                                            }
+                                                        }
+                                                    );
+                                                };
+                                                if (erra !== null) {
+                                                    return errout(`Error reading path: ${filepath}\n${erra}`);
+                                                }
+                                                total = total + list.length - 1;
+                                                list.forEach(fileEval);
+                                            }
+                                        );
+                                    };
+                                readDir(`${project}`);
+                            }());
+                        }
+                    };
+            
+                require(`${project}js${node.path.sep}parse.js`);
+                require(`${project}js${node.path.sep}language.js`);
+                framework = global.parseFramework;
+                framework.lexer      = {};
+                framework.parseerror = "";
+                parse             = framework.parse;
+                require(`${project}js${node.path.sep}lexers${node.path.sep}all.js`)(parse_options);
+                next();
+                return "";
+            };
+            console.log("");
+            console.log("Parse Framework - Validation Tasks");
+            console.log("");
+            console.log("\u001b[36mTypeScript Compilation\u001b[0m");
+            action.build(function services_validate_require():void {
+                console.log("\u001b[32mBuild complete!\u001b[0m");
+                console.log("________________________________________________________________________");
                 console.log("");
-                const start = time("Running TypeScript build");
+                validation();
+            });
+        },
+        action = {
+            build: function services_action_build(callback?:Function):void {
+                console.log("");
+                console.log(`${humantime(false)} Running TypeScript build`);
                 node.child("tsc --pretty", {
                     cwd: project.slice(0, project.length - 1)
                 }, function services_action_build_callback(err, stdout, stderr):void {
@@ -314,8 +930,11 @@ const services = function services_() {
                                                 if (erro !== null) {
                                                     return errout(erro);
                                                 }
-                                                duration(time("Build complete") - start, "Total compile time");
+                                                console.log(`${humantime(false)} Total compile time`);
                                                 console.log("");
+                                                if (typeof callback === "function") {
+                                                    callback();
+                                                }
                                             });
                                         });
                                     }
@@ -592,9 +1211,7 @@ const services = function services_() {
                 process.argv.splice(0, 1);
                 require(`${js}runtimes${node.path.sep}nodetest`)();
             },
-            validation: function services_action_validation():void {
-                require(`${js}test${node.path.sep}validate`)();
-            },
+            validation: validate,
             version: function services_action_version():void {
                 console.log(version);
             }

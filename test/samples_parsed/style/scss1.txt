@@ -84,7 +84,7 @@
 {"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":".mixin(@variable)","types":"selector"},
 {"begin":-1,"lexer":"style","lines":1,"presv":false,"stack":"global","token":"{","types":"start"},
 {"begin":83,"lexer":"style","lines":0,"presv":false,"stack":".mixin(@variable)","token":"}","types":"end"},
-{"begin":-1,"lexer":"style","lines":0,"presv":false,"stack":"global","token":"a:not(md-icon,.no-margin-bottom)","types":"selector"},
+{"begin":-1,"lexer":"style","lines":3,"presv":false,"stack":"global","token":"a:not(md-icon,.no-margin-bottom)","types":"selector"},
 {"begin":-1,"lexer":"style","lines":0,"presv":false,"stack":"global","token":"{","types":"start"},
 {"begin":86,"lexer":"style","lines":2,"presv":false,"stack":"a:not(md-icon,.no-margin-bottom)","token":"margin-bottom","types":"property"},
 {"begin":86,"lexer":"style","lines":0,"presv":false,"stack":"a:not(md-icon,.no-margin-bottom)","token":":","types":"colon"},

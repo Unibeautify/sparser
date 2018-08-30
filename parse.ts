@@ -35,10 +35,11 @@ Parse Framework
             linesSpace: 0,
             objectSort: function parse_objectSort(data: data):void {
                 let cc:number = parse.count,
-                    global:boolean = (data.lexer[cc] === "style" && (data.stack[parse.count] === "global" || data.stack[data.begin[parse.count]] === "global")),
+                    global:boolean = (data.lexer[cc] === "style" && parse.structure[parse.structure.length - 1][0] === "global"),
                     dd:number = parse.structure[parse.structure.length - 1][1],
                     ee:number = 0,
                     ff:number = 0,
+                    gg:number = 0,
                     behind:number = 0,
                     commaTest:boolean = true,
                     front:number = 0,
@@ -126,16 +127,20 @@ Parse Framework
                             commaTest = true;
                             front = cc;
                         }
-                        if (commaTest === true && (data.token[cc] === delim[0] || (style === true && data.token[cc - 1] === "}")) && front < behind) {
+                        if (front === 0 && data.types[0] === "comment") {
+                            // keep top comments at the top
+                            do {
+                                front = front + 1;
+                            } while (data.types[front] === "comment");
+                        } else if (data.types[front] === "comment" && data.lines[front] < 2) {
+                            // if a comment follows code on the same line then keep the comment next to the code it follows
+                            front = front + 1;
+                        }
+                        if (commaTest === true && (data.token[cc] === delim[0] || (style === true && data.token[cc - 1] === "}")) && front <= behind) {
                             if (style === true && "};".indexOf(data.token[behind]) < 0) {
                                 behind = behind + 1;
                             } else if (style === false && data.token[behind] !== ",") {
                                 behind = behind + 1;
-                            }
-                            if (data.types[behind] === "comment") {
-                                do {
-                                    behind = behind - 1;
-                                } while (behind > 0 && data.types[behind] === "comment");
                             }
                             keys.push([front, behind]);
                             if (style === true && data.token[front] === "}") {
@@ -149,11 +154,16 @@ Parse Framework
                 } while (cc > dd);
                 if (keys.length > 0 && keys[keys.length - 1][0] > cc + 1) {
                     ee = keys[keys.length - 1][0] - 1;
-                    if (data.types[ee] === "comment") {
+                    if (data.types[ee] === "comment" && data.lines[ee] > 1) {
                         do {
                             ee = ee - 1;
                         } while (ee > 0 && data.types[ee] === "comment");
                         keys[keys.length - 1][0] = ee + 1;
+                    }
+                    if (data.types[cc + 1] === "comment" && cc === -1) {
+                        do {
+                            cc = cc + 1;
+                        } while (data.types[cc + 1] === "comment");
                     }
                     keys.push([
                         cc + 1,
@@ -166,25 +176,36 @@ Parse Framework
                         keylen    = keys.length;
                         commaTest = false;
                         dd        = 0;
-                        if (dd < keylen) {
-                            do {
-                                keyend = keys[dd][1];
-                                if (style === true) {
-                                    if (data.token[keyend] === "}") {
-                                        keyend = keyend + 1;
-                                        delim[0] = "}";
-                                        delim[1] = "end";
+                        do {
+                            keyend = keys[dd][1];
+                            if (style === true) {
+                                gg = keyend;
+                                if (data.types[gg] === "comment") {
+                                    gg = gg - 1;
+                                }
+                                if (data.token[gg] === "}") {
+                                    keyend = keyend + 1;
+                                    delim[0] = "}";
+                                    delim[1] = "end";
+                                } else {
+                                    delim[0] = ";";
+                                    delim[1] = "semi"
+                                }
+                            }
+                            if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
+                                store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
+                            }
+                            ee = keys[dd][0];
+                            if (style === true && data.types[keyend] === "comment" && dd < keylen - 1) {
+                                // missing a terminal comment causes many problems
+                                keyend = keyend + 1;
+                            }
+                            if (ee < keyend) {
+                                do {
+                                    if (style === false && dd === keylen - 1 && ee === keyend - 2 && data.token[ee] === "," && data.types[ee + 1] === "comment") {
+                                        // do not include terminal commas that are followed by a comment
+                                        ff = ff + 1;
                                     } else {
-                                        delim[0] = ";";
-                                        delim[1] = "semi"
-                                    }
-                                }
-                                if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
-                                    store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
-                                }
-                                ee = keys[dd][0];
-                                if (ee < keyend) {
-                                    do {
                                         parse.push(store, {
                                             begin: data.begin[ee],
                                             lexer: data.lexer[ee],
@@ -195,51 +216,47 @@ Parse Framework
                                             types: data.types[ee]
                                         }, "");
                                         ff = ff + 1;
+                                    }
 
-                                        //remove extra commas
-                                        if (data.token[ee] === delim[0]) {
-                                            commaTest = true;
-                                        } else if (data.token[ee] !== delim[0] && data.types[ee] !== "comment") {
-                                            commaTest = false;
-                                        }
-                                        ee = ee + 1;
-                                    } while (ee < keyend);
-                                }
-
-                                // injecting the list delimiter
-                                if (commaTest === false && (style === true || dd < keylen - 1)) {
-                                    ee = store.types.length - 1;
-                                    if (store.types[ee] === "comment") {
-                                        do {
-                                            ee = ee - 1;
-                                        } while (
-                                            ee > 0 && (store.types[ee] === "comment")
-                                        );
+                                    //remove extra commas
+                                    if (data.token[ee] === delim[0] && (style === true || data.begin[ee] === data.begin[keys[dd][0]])) {
+                                        commaTest = true;
+                                    } else if (data.token[ee] !== delim[0] && data.types[ee] !== "comment") {
+                                        commaTest = false;
                                     }
                                     ee = ee + 1;
-                                    parse.splice({
-                                        data   : store,
-                                        howmany: 0,
-                                        index  : ee,
-                                        record : {
-                                            begin: begin,
-                                            lexer: store.lexer[ee - 1],
-                                            lines: 0,
-                                            presv: false,
-                                            stack: stack,
-                                            token: delim[0],
-                                            types: delim[1]
-                                        }
-                                    });
-                                    ff                  = ff + 1;
+                                } while (ee < keyend);
+                            }
+
+                            // injecting the list delimiter
+                            if (commaTest === false && (style === true || dd < keylen - 1)) {
+                                ee = store.types.length - 1;
+                                if (store.types[ee] === "comment") {
+                                    do {
+                                        ee = ee - 1;
+                                    } while (
+                                        ee > 0 && (store.types[ee] === "comment")
+                                    );
                                 }
-                                dd = dd + 1;
-                            } while (dd < keylen);
-                        }
-                        ee = store.types.length;
-                        do {
-                            ee = ee - 1;
-                        } while (ee > 0 && store.types[ee] === "comment");
+                                ee = ee + 1;
+                                parse.splice({
+                                    data   : store,
+                                    howmany: 0,
+                                    index  : ee,
+                                    record : {
+                                        begin: begin,
+                                        lexer: store.lexer[ee - 1],
+                                        lines: 0,
+                                        presv: false,
+                                        stack: stack,
+                                        token: delim[0],
+                                        types: delim[1]
+                                    }
+                                });
+                                ff                  = ff + 1;
+                            }
+                            dd = dd + 1;
+                        } while (dd < keylen);
                         parse.splice({
                             data   : data,
                             howmany: ff,

@@ -1,0 +1,17 @@
+.itemResultsCard() {
+    .fareFamily {
+        .display-inline-block();
+    }
+}
+
+// item-responsify mixin
+//   targetClass - the class of the module container
+.item-responsify(@targetClass) {
+    @lg : {
+        .itemResultsMod {
+            // space for intrastitial to live before results load
+            min-height: 450px;
+        }
+    };
+
+}

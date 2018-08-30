@@ -1,0 +1,39 @@
+/*prettydiff.com noleadzero:true*/
+    @carrier-logo-height: 33px;
+    @carrier-logo-width: 44px;
+
+    // item-responsify mixin
+    //   targetClass - the class of the module container
+    .item-responsify(@targetClass) {
+
+    	@xxs: {
+    		.@{targetClass} {
+    			.itemResultsCard {
+
+    				.sliceGroup {
+    					padding-right: 1px;
+
+    					&:last-child {
+    						padding-right: 0;
+    					}
+    				} // 4px
+    				
+    				
+    				font-size: @font-size-xs + 1px; // 13px
+    			}
+    		}
+    	};
+    	.responsify(@lg, @md, @sm, {}, @xxs);
+
+    	@sm: {
+    		.@{targetClass} {
+    			.soloLeg .timeline-group.last-child .timeline-item,
+    			.lastLeg .timeline-group.last-child .timeline-item {
+    				background: none;
+    			}
+    			.itemcost .i-baggage-x {
+    				display: none;
+    			}
+    		}
+    	};
+    }

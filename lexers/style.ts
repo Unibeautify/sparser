@@ -484,7 +484,8 @@
                         if (type === "start") {
                             if (data.types[aa - 1] !== "comment" && data.types[aa - 1] !== "ignore" && data.types[aa - 1] !== "end" && data.types[aa - 1] !== "start" && data.types[aa - 1] !== "semi" && data.types[aa - 1] !== undefined && data.lexer[aa - 1] === "style") {
                                 let cc:number    = aa,
-                                    dd:number    = 0;
+                                    dd:number    = 0,
+                                    lines:number = 0;
                                 const parts:string[] = [];
                                 do {
                                     parts.push(data.token[cc]);
@@ -500,6 +501,7 @@
                                 parts.reverse();
                                 cc             = cc + 1;
                                 dd             = aa - cc;
+                                lines = data.lines[cc];
                                 parse.splice(
                                     {data: data, howmany: dd, index: cc, record: {
                                         begin: 0,
@@ -516,6 +518,7 @@
                                     .join("")
                                     .replace(/:\u0020/g, ":")
                                     .replace(/(\s*,\s*)/g, ",");
+                                data.lines[aa] = lines;
                             } else {
                                 data.token[aa] = data
                                     .token[aa]
@@ -1225,6 +1228,7 @@
                                 "}";
                         parse.pop(data);
                         parse.pop(data);
+                        parse.structure.pop();
                     } else {
                         if (b[a] === ")") {
                             mapper.pop();
