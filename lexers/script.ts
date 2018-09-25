@@ -996,6 +996,11 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             if (output.indexOf("// ") !== 0) {
                                 output = `// ${output.replace(/^\/\//, "")}`;
                             }
+                            if ((/\s/).test(c[a]) === true) {
+                                do {
+                                    a = a - 1;
+                                } while (a > 0 && (/\s/).test(c[a]) === true);
+                            }
                         } else if (starting === "/*") {
                             build = output.split(lf);
                             ee    = build.length - 1;
