@@ -4,7 +4,7 @@
         "url": "https://github.com/Unibeautify/parse-framework/issues"
     },
     "dependencies": {
-        "@types/node": "^10.1.0"
+        "@types/node": "^10.11.4"
     },
     "description": "A parsing framework for parsing everything",
     "devDependencies": {
