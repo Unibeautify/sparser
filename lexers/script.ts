@@ -1138,13 +1138,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         clist:string  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
-                    if (data.lexer[parse.count - 1] !== "script" || options.language === "java" || options.language === "csharp") {
+                    if (options.language === "java" || options.language === "csharp") {
                         return;
                     }
                     if (options.language === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
                         return;
                     }
-                    if (((record.stack === "global" && record.types !== "end") || (record.types === "end" && data.stack[record.begin - 1] === "global")) && (next === "" || next === "}") && record.stack === data.stack[parse.count - 1] && options.language === "jsx") {
+                    if (((record.stack === "global" && record.types !== "end") || (record.types === "end" && data.stack[record.begin - 1] === "global" && data.token[record.begin - 1] !== "=")) && (next === "" || next === "}") && record.stack === data.stack[parse.count - 1]) {
                         return;
                     }
                     if (record.stack === "array" && record.token !== "]") {
@@ -1154,6 +1154,9 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         return;
                     }
                     if (next === ";" && isEnd === false) {
+                        return;
+                    }
+                    if (data.lexer[parse.count - 1] !== "script" && ((a < b && b === options.source.length - 1) || b < options.source.length - 1)) {
                         return;
                     }
                     if (options.language === "qml") {
@@ -2734,7 +2737,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
             if (wordTest > -1) {
                 word();
             }
-            if (options.correct === true && options.language !== "jsx" && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
+            if (options.correct === true && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
                 asi(false);
             }
             if (sourcemap[0] === parse.count) {
