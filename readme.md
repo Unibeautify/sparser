@@ -23,7 +23,7 @@ Play around with this application [in your browser](http://prettydiff.com/parse-
 A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything. **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
 ## Standard Format
-I call the standard output format the **Universal Parse Model**.  It is a simple means to describe any structured programming language.  Read about the format in the [techical docs](docs/tech-documentation.md#output).
+I call the standard output format the **[Universal Parse Model](docs/tech-documentation.md#universal-parse-model)**.  It is a simple means to describe any structured programming language.
 
 Before diving into this application it might help to have a quick background in [what parsers are and their related terminology](docs/parsers.md).
 
