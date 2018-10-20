@@ -175,7 +175,7 @@ Name | Type | Default | Lexers | Description
 **tagMerge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
 **tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
 
-## Output
+## Universal Parse Model
 The default format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.  An alternate output format is available if specifying an option named **outputFormat** with the value *objects*.  This alternate format will produce an array of objects where each object contains properties named and described as arrays below.  Essentially the alternate format simply inverts the object/array structure of the standard format.
  
 * begin
