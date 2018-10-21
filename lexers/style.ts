@@ -229,7 +229,7 @@
                                 const scrub = function lexer_style_item_value_zerofix_scrub(search:string) {
                                     return search.replace(/0+/, "");
                                 };
-                                return find.replace(/^\D0+(\.|\d)/, scrub);
+                                return find.replace(/^-?\D0+(\.|\d)/, scrub);
                             }
                             if ((/0*\./).test(find) === true) {
                                 return find.replace(/0*\./, "0.");
@@ -245,10 +245,10 @@
                         commaspace  = function lexer_style_item_value_commaspace(find:string):string {
                             return find.replace(",", ", ");
                         },
-                        zerodotstart:RegExp    = (/^0+\.\d+[a-z]/),
-                        dotstart:RegExp        = (/^\.\d+[a-z]/),
-                        zerodot:RegExp         = (/(\s|\(|,)0+\.?\d+([a-z]|\)|,|\s)/g),
-                        dot:RegExp             = (/(\s|\(|,)\.?\d+([a-z]|\)|,|\s)/g);
+                        zerodotstart:RegExp    = (/^-?0+\.\d+[a-z]/),
+                        dotstart:RegExp        = (/^-?\.\d+[a-z]/),
+                        zerodot:RegExp         = (/(\s|\(|,)-?0+\.?\d+([a-z]|\)|,|\s)/g),
+                        dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g);
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
