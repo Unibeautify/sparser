@@ -490,10 +490,61 @@ const services = function services_() {
                                             } else if (files.code[a][1] === "") {
                                                 console.log(`\u001b[33mCode file is empty:\u001b[0m ${files.code[a][0]}`);
                                             } else {
-                                                if ((/_correct(\.|_)/).test(files.code[a][0]) === true) {
-                                                    parse_options.correct = true;
+                                                if ((/_correct(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_correct-/).test(files.code[a][0]) === true) {
+                                                        if ((/_correct-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.correct = false;
+                                                        } else {
+                                                            parse_options.correct = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.correct = true;
+                                                    }
                                                 } else {
                                                     parse_options.correct = false;
+                                                }
+                                                if ((/_noleadzero(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_noleadzero-/).test(files.code[a][0]) === true) {
+                                                        if ((/_noleadzero-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.style.no_lead_zero = false;
+                                                        } else {
+                                                            parse_options.lexerOptions.style.no_lead_zero = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.style.no_lead_zero = true;
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.style.no_lead_zero = false;
+                                                }
+                                                if ((/_objectSort(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_objectSort-/).test(files.code[a][0]) === true) {
+                                                        if ((/_objectSort-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.style.objectSort = false;
+                                                            parse_options.lexerOptions.script.objectSort = false;
+                                                        } else {
+                                                            parse_options.lexerOptions.style.objectSort = true;
+                                                            parse_options.lexerOptions.script.objectSort = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.style.objectSort = true;
+                                                        parse_options.lexerOptions.script.objectSort = true;
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.style.objectSort = false;
+                                                    parse_options.lexerOptions.script.objectSort = false;
+                                                }
+                                                if ((/_tagSort(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_tagSort-/).test(files.code[a][0]) === true) {
+                                                        if ((/_tagSort-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.markup.tagSort = false;
+                                                        } else {
+                                                            parse_options.lexerOptions.markup.tagSort = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.markup.tagSort = true;
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.markup.tagSort = false;
                                                 }
                                                 if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
                                                     let wrap:string = files.code[a][0].slice(files.code[a][0].indexOf("_wrap-") + 6),
@@ -505,18 +556,6 @@ const services = function services_() {
                                                     if (isNaN(Number(wrap)) === false) {
                                                         parse_options.wrap = Number(wrap);
                                                     }
-                                                }
-                                                if ((/_objectSort(\.|_)/).test(files.code[a][0]) === true) {
-                                                    parse_options.lexerOptions.script.objectSort = true;
-                                                    parse_options.lexerOptions.style.objectSort = true;
-                                                } else {
-                                                    parse_options.lexerOptions.script.objectSort = false;
-                                                    parse_options.lexerOptions.style.objectSort = false;
-                                                }
-                                                if ((/_tagSort(\.|_)/).test(files.code[a][0]) === true) {
-                                                    parse_options.lexerOptions.markup.tagSort = true;
-                                                } else {
-                                                    parse_options.lexerOptions.markup.tagSort = false;
                                                 }
                                                 lang = framework.language.auto(files.code[a][1], "javascript");
                                                 if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {

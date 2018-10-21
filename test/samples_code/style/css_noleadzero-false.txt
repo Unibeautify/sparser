@@ -1,0 +1,10 @@
+a {border-width:0.3px; border-radius:0000.1em 0.1em 00000.1em rgb(123,045,003)}
+b {border-width:04004em;border-radius: 0.4em 0.4em 0.4em rgb(12600, 047, 008)}
+c {color:rgb(007000, 001, 000009)}
+.styleguide-format {
+    background: rgba(0,0, 0,0.5);
+    border    : 1px 2px 1px 2px solid #00FF00;
+    color     : #000;
+}
+d {border-width: @method(00.4em);}
+@methodtest(00.4em);

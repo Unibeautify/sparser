@@ -224,19 +224,31 @@
                             }
                             return value;
                         },
-                        dotfix     = function lexer_style_item_value_dotfix(find:string):string {
+                        zerofix     = function lexer_style_item_value_zerofix(find:string):string {
                             if (options.lexerOptions.style.no_lead_zero === true) {
-                                return find.replace(/0+\./, ".");
+                                const scrub = function lexer_style_item_value_zerofix_scrub(search:string) {
+                                    return search.replace(/0+/, "");
+                                };
+                                return find.replace(/^\D0+(\.|\d)/, scrub);
                             }
-                            return find.replace(".", "0.");
+                            if ((/0*\./).test(find) === true) {
+                                return find.replace(/0*\./, "0.");
+                            }
+                            if ((/0+/).test((/\d+/).exec(find)[0]) === true) {
+                                if ((/^\D*0+\D*$/).test(find) === true) {
+                                    return find.replace(/0+/, "0");
+                                }
+                                return find.replace((/\d+/).exec(find)[0], (/\d+/).exec(find)[0].replace(/^0+/, ""));
+                            }
+                            return find;
                         },
                         commaspace  = function lexer_style_item_value_commaspace(find:string):string {
                             return find.replace(",", ", ");
                         },
                         zerodotstart:RegExp    = (/^0+\.\d+[a-z]/),
                         dotstart:RegExp        = (/^\.\d+[a-z]/),
-                        zerodot:RegExp         = (/(\s|\(|,)0+\.\d+([a-z]|\)|\s)/g),
-                        dot:RegExp             = (/(\s|\(|,)\.\d+([a-z]|\)|\s)/g);
+                        zerodot:RegExp         = (/(\s|\(|,)0+\.?\d+([a-z]|\)|,|\s)/g),
+                        dot:RegExp             = (/(\s|\(|,)\.?\d+([a-z]|\)|,|\s)/g);
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
@@ -287,10 +299,8 @@
                                 values[cc] = values[cc].replace(/0+\./, ".");
                             } else if ((options.lexerOptions.style.no_lead_zero === false || options.lexerOptions.style.no_lead_zero === undefined) && dotstart.test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(".", "0.");
-                            } else if (options.lexerOptions.style.no_lead_zero === true && zerodot.test(values[cc]) === true) {
-                                values[cc] = values[cc].replace(zerodot, dotfix);
-                            } else if ((options.lexerOptions.style.no_lead_zero === false || options.lexerOptions.style.no_lead_zero === undefined) && dot.test(values[cc]) === true) {
-                                values[cc] = values[cc].replace(dot, dotfix);
+                            } else if (zerodot.test(values[cc]) === true || dot.test(values[cc]) === true) {
+                                values[cc] = values[cc].replace(zerodot, zerofix).replace(dot, zerofix);
                             } else if ((/^(0+([a-z]{2,3}|%))$/).test(values[cc]) === true && transition === false) {
                                 values[cc] = "0";
                             } else if ((/^(0+)/).test(values[cc]) === true) {
@@ -453,6 +463,7 @@
                         } else {
                             ltype = "variable";
                         }
+                        ltoke = value(ltoke);
                     } else {
                         ltype = "item";
                     }
@@ -617,6 +628,7 @@
                                     }
                                     data.types[aa] = "variable";
                                     ltype          = "variable";
+                                    data.token[aa] = value(data.token[aa]);
                                 }
                                 if (data.token[aa].indexOf("\"") > 0) {
                                     bb             = data
@@ -656,6 +668,7 @@
                         } else if (data.token[aa].charAt(0) === "@" && ((data.types[aa - 2] !== "variable" && data.types[aa - 2] !== "property") || data.types[aa - 1] === "semi")) {
                             data.types[aa] = "variable";
                             ltype          = "variable";
+                            data.token[aa] = value(data.token[aa]);
                         }
                     }
                 },

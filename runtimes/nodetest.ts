@@ -156,10 +156,61 @@ const nodetest = function nodetest_() {
                             return str.slice(0, str.indexOf("/"));
                         }());
                     }
-                    if ((/_correct(\.|_)/).test(sourcepath) === true) {
-                        options.correct = true;
+                    if ((/_correct(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_correct-/).test(sourcepath) === true) {
+                            if ((/_correct-false/).test(sourcepath) === true) {
+                                options.correct = false;
+                            } else {
+                                options.correct = true;
+                            }
+                        } else {
+                            options.correct = true;
+                        }
                     } else {
                         options.correct = false;
+                    }
+                    if ((/_noleadzero(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_noleadzero-/).test(sourcepath) === true) {
+                            if ((/_noleadzero-false/).test(sourcepath) === true) {
+                                options.lexerOptions.style.no_lead_zero = false;
+                            } else {
+                                options.lexerOptions.style.no_lead_zero = true;
+                            }
+                        } else {
+                            options.lexerOptions.style.no_lead_zero = true;
+                        }
+                    } else {
+                        options.lexerOptions.style.no_lead_zero = false;
+                    }
+                    if ((/_objectSort(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_objectSort-/).test(sourcepath) === true) {
+                            if ((/_objectSort-false/).test(sourcepath) === true) {
+                                options.lexerOptions.style.objectSort = false;
+                                options.lexerOptions.script.objectSort = false;
+                            } else {
+                                options.lexerOptions.style.objectSort = true;
+                                options.lexerOptions.script.objectSort = true;
+                            }
+                        } else {
+                            options.lexerOptions.style.objectSort = true;
+                            options.lexerOptions.script.objectSort = true;
+                        }
+                    } else {
+                        options.lexerOptions.style.objectSort = false;
+                        options.lexerOptions.script.objectSort = false;
+                    }
+                    if ((/_tagSort(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_tagSort-/).test(sourcepath) === true) {
+                            if ((/_tagSort-false/).test(sourcepath) === true) {
+                                options.lexerOptions.markup.tagSort = false;
+                            } else {
+                                options.lexerOptions.markup.tagSort = true;
+                            }
+                        } else {
+                            options.lexerOptions.markup.tagSort = true;
+                        }
+                    } else {
+                        options.lexerOptions.markup.tagSort = false;
                     }
                     if ((/_wrap-\d+(\.|_)/).test(sourcepath) === true) {
                         let wrap:string = sourcepath.slice(sourcepath.indexOf("_wrap-") + 6),
@@ -171,18 +222,6 @@ const nodetest = function nodetest_() {
                         if (isNaN(Number(wrap)) === false) {
                             options.wrap = Number(wrap);
                         }
-                    }
-                    if ((/_objectSort(\.|_)/).test(sourcepath) === true) {
-                        options.lexerOptions.style.objectSort = true;
-                        options.lexerOptions.script.objectSort = true;
-                    } else {
-                        options.lexerOptions.style.objectSort = false;
-                        options.lexerOptions.script.objectSort = false;
-                    }
-                    if ((/_tagSort(\.|_)/).test(sourcepath) === true) {
-                        options.lexerOptions.markup.tagSort = true;
-                    } else {
-                        options.lexerOptions.markup.tagSort = false;
                     }
                     if ((/_lang-\w+(\.|_)/).test(sourcepath) === true) {
                         options.language = sourcepath.split("_lang-")[1];
