@@ -493,165 +493,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     }
                     return false;
                 },
-                // parsing block comments and simultaneously applying word wrap
-                wrapCommentBlock = function lexer_script_wrapCommentBlock():void {
-                    let ee:number = a + 2,
-                        ff:number = 0,
-                        gg:number = 0,
-                        lastspace:number = 0,
-                        space:string[] = [],
-                        codeflag:boolean = false,
-                        slice:string = "";
-                    const build:string[] = ["/* "],
-                        spacegen = function lexer_script_wrapCommentBlock_spacegen():string[] {
-                            gg = ee;
-                            do {
-                                ee = ee + 1;
-                            } while (ee < b && (/\s/).test(c[ee]) === true);
-                            return c.slice(gg, ee).join("").split("\n");
-                        },
-                        fixStarEnd = function lexer_script_fixStarEnd(input:string):string {
-                            return lf + input.replace(/\s+/g, "");
-                        },
-                        insertSpace = function lexer_Script_wrapCommentBlock_insertSpace():void {
-                            if (build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
-                                build.push(" ");
-                                lastspace = build.length - 1;
-                                ff = ff + 1;
-                            }
-                        },
-                        code = function lexer_script_wrapCommentBlock_code():void {
-                            if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                                ff = 0;
-                                if (space.length > 2) {
-                                    build.push(lf);
-                                }
-                                build.push(lf);
-                                build.push(space[space.length - 1]);
-                                do {
-                                    if (c[ee + 1] === "*" && c[ee + 2] === "/") {
-                                        return;
-                                    }
-                                    build.push(c[ee]);
-                                    ee = ee + 1;
-                                } while (ee < b && c[ee] !== "\n");
-
-                                space = spacegen();
-                                if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                                    codeflag = true;
-                                    lexer_script_wrapCommentBlock_code();
-                                } else {
-                                    ee = ee - 1;
-                                    if (space.length > 2) {
-                                        build.push(lf);
-                                    }
-                                    build.push(lf);
-                                    build.push("   ");
-                                    codeflag = false;
-                                }
-                                return;
-                            }
-                            if (space.length > 2) {
-                                ff = 0;
-                                build.push(lf);
-                                build.push(lf);
-                                build.push("   ");
-                            }
-                            if (space.length > 1) {
-                                codeflag = false;
-                            }
-                            ee = ee - 1;
-                        };
-                    // bypass space at the start
-                    if ((/\s/).test(c[ee]) === true) {
-                        do {
-                            ee = ee + 1;
-                        } while ((/\s/).test(c[ee]) === true);
-                    }
-                    do {
-                        if (c[ee] === "*" && c[ee + 1] === "/") {
-                            break;
-                        }
-                        if ((/\s/).test(c[ee]) === true) {
-                            // check for blank lines and code sections
-                            if ((/\s/).test(c[ee + 1]) === true) {
-                                if ((/\s/).test(c[ee - 1]) === true) {
-                                    do {
-                                        ee = ee - 1;
-                                    } while (ee > b && (/\s/).test(c[ee - 1]) === true);
-                                }
-                                space = spacegen();
-                                code();
-                                if (ff > options.wrap - 3) {
-                                    ff = 0;
-                                    build.push(lf);
-                                    build.push("   ");
-                                } else {
-                                    insertSpace();
-                                }
-                            } else {
-                                // remove the word that crosses the wrap boundary and insert at newline
-                                if (ff > options.wrap - 3) {
-                                    gg = build.length;
-                                    space = [];
-                                    do {
-                                        space.push(build.pop());
-                                        gg = gg - 1;
-                                    } while (gg > 0 && build[gg - 1] !== " ");
-                                    build.pop();
-                                    ff = space.length + 1;
-                                    build.push(lf);
-                                    build.push("   ");
-                                    build.push(space.reverse().join(""));
-                                    build.push(" ");
-                                } else {
-                                    insertSpace();
-                                }
-                            }
-                        } else {
-                            build.push(c[ee]);
-                            if (ff > options.wrap - 3) {
-                                ff = 0;
-                                build[lastspace] = `${lf}   `;
-                            } else {
-                                ff = ff + 1;
-                            }
-                        }
-                        ee = ee + 1;
-                    } while (ee < b);
-                    slice = c.slice(a, ee + 1).join("");
-                    a = ee + 1;
-                    ee = build.length - 1;
-                    if ((/^(\s+)$/).test(build[ee]) === true) {
-                        do {
-                            build[ee] = "";
-                            ee = ee - 1;
-                        } while (ee > 0 && (/^(\s+)$/).test(build[ee]) === true);
-                    }
-                    if (codeflag === false && ff < options.wrap - 6 && ff > 0) {
-                        build.push(" ");
-                    } else {
-                        build.push(lf);
-                    }
-                    build.push("*/");
-                    ltoke = build.join("");
-                    if (slice.indexOf("\n") < 0 && (/\/\*\w/).test(slice.slice(0,3)) === true && data.types.indexOf("word") < 0) {
-                        // Sometimes block comments convey application directives and some applications are picky about the formatting of those comments. This section transforms comments into white space conservative units under the conditions:
-                        // * the original comment was on a single line of code
-                        // * the original comment did not contain any white space at the start of the comment
-                        // * the comment exists before any references or keywords
-                        ltoke = ltoke.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
-                    } else {
-                        if ((/^\/\u002a\u0020\*+\r?\n/).test(ltoke) === true) {
-                            ltoke = ltoke.replace(" ", "");
-                        }
-                        if ((/\n\u0020{3}\*+\s+\u002a\/$/).test(ltoke) === true) {
-                            ltoke = ltoke.replace(/\n\u0020{3}\*+\s+\u002a\/$/, fixStarEnd);
-                        }
-                    }
-                    ltype = "comment";
-                    recordPush("");
-                },
                 // convert long strings into string concat at options.wrap
                 wrapString = function lexer_script_wrapString(build:boolean, item:string) {
                     const limit:number = options.wrap,
@@ -2466,7 +2307,18 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                     // comment block
                     if (options.wrap > 0) {
-                        wrapCommentBlock();
+                        let comment:[string, number] = parse.wrapCommentBlock({
+                            chars: c,
+                            end: b,
+                            lineEnd: lf,
+                            start: a,
+                            topComment: data.types.indexOf("word") < 0,
+                            wrap: options.wrap
+                        });
+                        ltype = "comment";
+                        ltoke = comment[0];
+                        recordPush("");
+                        a = comment[1];
                     } else {
                         ltoke = generic("/*", "*\u002f");
                         if (ltoke.indexOf("# sourceMappingURL=") === 2) {

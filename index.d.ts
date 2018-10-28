@@ -1,4 +1,5 @@
 declare var ace: any;
+type languageAuto = [string, string, string];
 interface data {
     begin: number[];
     lexer: string[];
@@ -8,10 +9,12 @@ interface data {
     token: string[];
     types: string[];
 }
-interface recordList extends Array<record>{
-    [index:number]: record;
+interface htmlCellBuilder {
+    text:string;
+    type:string;
+    row:HTMLTableRowElement;
+    className:string;
 }
-type languageAuto = [string, string, string];
 interface language {
     auto(sample : string, defaultLang : string): languageAuto;
     nameproper(input : string)                 : string;
@@ -19,20 +22,6 @@ interface language {
 }
 interface lexer {
     [key:string]: (source: string) => data;
-}
-interface parseOptions {
-    correct        : boolean;
-    crlf           : boolean;
-    language       : string;
-    lexer          : string;
-    lexerOptions   : {
-        [key: string]: {
-            [key: string]: any;
-        };
-    };
-    outputFormat: "objects" | "arrays";
-    source      : string;
-    wrap        : number;
 }
 interface parse {
     concat(data : data, array : data)                               : void,
@@ -48,7 +37,8 @@ interface parse {
     safeSort(array : any[], operation : string, recursive : boolean): any[],
     spacer(args : spacer)                                           : number,
     splice(spliceData : splice)                                     : void,
-    structure                                                       : Array <[string, number]>
+    structure                                                       : Array <[string, number]>,
+    wrapCommentBlock(config: wrapConfig)                            : [string, number]
 }
 interface parseFramework {
     language?                   : language;
@@ -58,11 +48,19 @@ interface parseFramework {
     parserArrays(obj : parseOptions) : data;
     parserObjects(obj : parseOptions): record[];
 }
-interface htmlCellBuilder {
-    text:string;
-    type:string;
-    row:HTMLTableRowElement;
-    className:string;
+interface parseOptions {
+    correct        : boolean;
+    crlf           : boolean;
+    language       : string;
+    lexer          : string;
+    lexerOptions   : {
+        [key: string]: {
+            [key: string]: any;
+        };
+    };
+    outputFormat: "objects" | "arrays";
+    source      : string;
+    wrap        : number;
 }
 interface record {
     begin: number;
@@ -72,6 +70,9 @@ interface record {
     stack: string;
     token: string;
     types: string;
+}
+interface recordList extends Array<record>{
+    [index:number]: record;
 }
 interface spacer {
     array: string[];
@@ -83,6 +84,14 @@ interface splice {
     howmany: number;
     index  : number;
     record : record;
+}
+interface wrapConfig {
+    chars     : string[];
+    end       : number;
+    lineEnd   : string;
+    start     : number;
+    topComment: boolean;
+    wrap      : number;
 }
 declare module NodeJS {
     interface Global {

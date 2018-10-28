@@ -666,7 +666,7 @@ const services = function services_() {
                         framework: function services_validate_validation_framework() {
                             let keys    = [],
                                 keysort = "";
-                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure";
+                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure,wrapCommentBlock";
                             console.log("\u001b[36mFramework Testing\u001b[0m");
                             console.log("");
                             framework.parserArrays({
