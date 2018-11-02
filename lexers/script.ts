@@ -15,7 +15,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 paren:number          = -1,
                 funreferences:string[] = [],
                 tempstore:record,
-                pstack:[string, number];
+                pstack:[string, number],
+                comment:[string, number];
             const parse:parse          = framework.parse,
                 data:data           = parse.data,
                 options:parseOptions        = parse.parseOptions,
@@ -566,74 +567,10 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     let ee:number     = 0,
                         output:string = "",
                         escape:boolean = false,
-                        ignorecom:string[] = [],
-                        build:string[]  = (starting === "//" && options.wrap !== 0)
-                            ? []
-                            : [starting],
-                        ender:string[]  = ending.split(""),
-                        wrapignore:boolean = (starting === "//" && options.wrap !== 0 && (c[a + 2] === "\t" || c.slice(a + 2, a + 6).join("") === "    "));
+                        build:string[]  = [starting],
+                        ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
-                        base:number   = a + starting.length,
-                        wrapCommentLine = function lexer_script_generic_wrapCommentLine():boolean {
-                            let xx:number = ee;
-                            if ((/\/\/\s+\/\//).test(c.slice(a, xx).join("")) === true) {
-                                const ls:number = parse.linesSpace;
-                                if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
-                                    parse.linesSpace = 2;
-                                }
-                                ltoke = "//";
-                                ltype = "comment";
-                                recordPush("");
-                                parse.linesSpace = ls;
-                                a = a + 3;
-                            }
-                            do {
-                                if (c[xx] === "\n" && xx > ee) {
-                                    break;
-                                }
-                                xx = xx + 1;
-                            } while ((/\s/).test(c[xx]) === true && xx < b);
-                            if (c[xx] === "/" && c[xx + 1] === "/") {
-                                if (c[xx + 2] === "\t" || c.slice(xx + 2, xx + 6).join("") === "    ") {
-                                    return true;
-                                }
-                                ee = xx + 2;
-                                if ((/\s/).test(c[ee]) === true) {
-                                    do {
-                                        if (c[ee] === "\n") {
-                                            if ((/\n\s*\/\/\s*$/).test(c.slice(a, ee).join("")) === true) {
-                                                do {
-                                                    ee = ee - 1;
-                                                    if (c[ee + 1] === "/" && c[ee + 2] === "/") {
-                                                        break;
-                                                    }
-                                                } while (ee > 0);
-                                            }
-                                            return true;
-                                        }
-                                        ee = ee + 1;
-                                    } while ((/\s/).test(c[ee]) === true && ee < b);
-                                }
-                                if ((c[ee] === "-" || c[ee] === "*") && (/\s/).test(c[ee + 1]) ===  true) {
-                                    ee = xx;
-                                    return true;
-                                }
-                                if ((/\d/).test(c[ee]) === true) {
-                                    if ((/\d/).test(c[ee + 1]) === true) {
-                                        do {
-                                            ee = ee + 1;
-                                        } while ((/\d/).test(c[ee + 1]) === true && ee < b);
-                                    }
-                                    if (c[ee + 1] === "." && (/\s/).test(c[ee + 2]) ===  true) {
-                                        ee = xx;
-                                        return true;
-                                    }
-                                }
-                                ee = ee - 1;
-                                return false;
-                            }
-                            return true;
-                        };
+                        base:number   = a + starting.length;
                     if (wordTest > -1) {
                         word();
                     }
@@ -663,72 +600,43 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     if (ee < b) {
                         do {
                             if (ee > a + 1) {
-                                if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<?php", "?>"));
                                     ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<%", "%>"));
                                     ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("{%", "%}"));
                                     ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting && starting !== "//" && starting !== "/*") {
+                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("{{{", "}}}"));
                                     ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting && starting !== "//" && starting !== "/*") {
+                                } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("{{", "}}"));
                                     ee = ee + build[build.length - 1].length - 1;
-                                } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting && starting !== "//" && starting !== "/*") {
+                                } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<!--#", "-->"));
                                     ee = ee + build[build.length - 1].length - 1;
                                 } else {
-                                    if (starting === "//" && options.wrap !== 0 && (/\s/).test(c[ee]) === true && wrapignore === false) {
-                                        let line:boolean = false;
-                                        build.push(" ");
-                                        if ((/\s/).test(c[ee + 1]) === true) {
-                                            do {
-                                                if (c[ee] === "\n") {
-                                                    line = true;
-                                                }
-                                                ee = ee + 1;
-                                            } while (ee < b && (/\s/).test(c[ee + 1]) === true);
-                                            if (line === true && c[ee] + c[ee + 1] !== "//") {
-                                                break;
-                                            }
-                                        }
-                                    } else {
-                                        build.push(c[ee]);
-                                    }
+                                    build.push(c[ee]);
                                 }
                             } else {
                                 build.push(c[ee]);
-                            }
-                            if (wrapignore === true && c[ee] === "\n") {
-                                break;
                             }
                             if ((starting === "\"" || starting === "'") && options.language !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === b - 1)) {
                                 framework.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
-                            if (c[ee] === ender[endlen - 1] && wrapignore === false && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
+                            if (c[ee] === ender[endlen - 1] && (c[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
                                 if (endlen === 1) {
-                                    // comment wrapping
-                                    if (starting === "//" && options.wrap !== 0) {
-                                        if (c[a + 2] === "\t" || c.slice(a + 2, a + 6).join("") === "    ") {
-                                            break;
-                                        }
-                                        if (wrapCommentLine() === true) {
-                                            break;
-                                        }
-                                    } else {
-                                        break;
-                                    }
+                                    break;
                                 }
                                 // `ee - base` is a cheap means of computing length of build array the `ee -
                                 // base` and `endlen` are both length based values, so adding two (1 for each)
@@ -752,121 +660,114 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         build.pop();
                     }
                     output = build.join("");
-                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(output) === true && ee < b) {
-                        ender = [];
-                        do {
-                            if (ender[0] === undefined && (c[ee] === "/" || c[ee] === "*") && c[ee - 1] === "/") {
-                                ignorecom.push(c[ee - 1]);
-                                if (c[ee] === "*") {
-                                    ender = ["*", "/"];
-                                } else {
-                                    ender = ["\n"];
-                                }
-                            } else if ((c[ee] === ender[1] || ender[1] === undefined) && c[ee - 1] === ender[0]) {
-                                if ((/^(\/(\/|\*)\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                                    a = ee - 1;
-                                    output = build.join("");
-                                    break;
-                                }
-                                ignorecom = [];
-                                ender = [];
-                            }
-                            if (ender[0] !== undefined) {
-                                ignorecom.push(c[ee]);
-                            }
-                            build.push(c[ee]);
-                            ee = ee + 1;
-                        } while (ee < b);
-                        if (ee === b) {
-                            output = build.join("");
-                            a = ee;
+                    return output;
+                },
+                // block comments
+                blockComment   = function lexer_script_blockComment() {
+                    if (wordTest > -1) {
+                        word();
+                    }
+                    comment = parse.wrapCommentBlock({
+                        chars: c,
+                        end: b,
+                        lineEnd: lf,
+                        start: a,
+                        topComment: data.types.indexOf("word") < 0,
+                        wrap: options.wrap
+                    });
+                    ltoke = comment[0];
+                    if (ltoke.indexOf("# sourceMappingURL=") === 2) {
+                        sourcemap[0] = parse.count + 1;
+                        sourcemap[1] = ltoke;
+                    }
+                    ltype = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true)
+                        ? "ignore"
+                        : "comment";
+                    if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
+                        tempstore    = parse.pop(data);
+                        recordPush("");
+                        parse.push(data, tempstore, "");
+                        if (data.lines[parse.count - 2] === 0) {
+                            data.lines[parse.count - 2] = data.lines[parse.count];
                         }
+                        data.lines[parse.count] = 0;
                     } else {
-                        if (starting === "//") {
-                            // the value of parse.linesSpace is corrupted by comment wrapping, so this is a hacky fix
-                            if ((/\s/).test(c[a]) === true) {
-                                do {
-                                    if ((/\s/).test(c[a]) === false) {
-                                        break;
-                                    }
-                                    a = a - 1;
-                                } while (a > 0);
-                            }
-
-                            if ((/^\s+$/).test(output) === true || output === "") {
-                                return "//";
-                            }
-                            if (wrapignore === true) {
-                                return "//" + output;
-                            }
-                            output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
-                            if (output === "//" && data.token[parse.count] === "//") {
-                                return "";
-                            }
-                            if (
-                                options.wrap > 0 &&
-                                starting === "//" &&
-                                (/^\/\/(\t|\u0020{4})/).test(output) === false
-                            ) {
-                                if (output.length > options.wrap - 3) {
-                                    output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
-                                    do {
-                                        ee = options.wrap - 3;
-                                        do {
-                                            if ((/\s/).test(output.charAt(ee)) === true) {
-                                                break;
-                                            }
-                                            ee = ee - 1;
-                                        } while (ee > 0);
-                                        ltoke = `// ${output.slice(0, ee)}`;
-                                        ltype = "comment";
-                                        output = output.slice(ee + 1);
-                                        if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
-                                            parse.linesSpace = 2;
-                                        }
-                                        recordPush("");
-                                    } while (output.length > options.wrap - 3);
-                                    if (parse.linesSpace < 2 && data.token[parse.count].slice(0, 2) === "//") {
-                                        parse.linesSpace = 2;
-                                    }
-                                    output = `// ${output.replace(/^\s+/, "")}`;
-                                } else {
-                                    output = output.replace(/\/\/\s+/, "// ");
+                        if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                            let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
+                            parse.splice({
+                                data: data,
+                                howmany: 0,
+                                index: parse.count,
+                                record: {
+                                    begin: data.begin[parse.count],
+                                    lexer: "script",
+                                    lines: parse.linesSpace,
+                                    presv: (ignore === true),
+                                    stack: data.stack[parse.count],
+                                    token: ltoke,
+                                    types: (ignore === true)
+                                        ? "ignore"
+                                        : "comment"
                                 }
-                            }
-                            if (output.indexOf("// ") !== 0) {
-                                output = `// ${output.replace(/^\/\//, "")}`;
-                            }
-                            if ((/\s/).test(c[a]) === true) {
-                                do {
-                                    a = a - 1;
-                                } while (a > 0 && (/\s/).test(c[a]) === true);
-                            }
-                        } else if (starting === "/*") {
-                            build = output.split(lf);
-                            ee    = build.length - 1;
-                            do {
-                                build[ee] = build[ee].replace(/(\s+)$/, "");
-                                ee        = ee - 1;
-                            } while (ee > -1);
-                            output = build.join(lf);
-                        }
-                        if (starting === "{%") {
-                            if (output.indexOf("{%-") < 0) {
-                                output = output
-                                    .replace(/^(\{%\s*)/, "{% ")
-                                    .replace(/(\s*%\})$/, " %}");
-                            } else {
-                                output = output
-                                    .replace(/^(\{%-\s*)/, "{%- ")
-                                    .replace(/(\s*-%\})$/, " -%}");
-                            }
-                        }
-                        if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
-                            output = output.replace(/(\s+)$/, "");
+                            });
+                        } else {
+                            recordPush("");
                         }
                     }
-                    return output;
+                    a = comment[1];
+                    if ((/\/\*\s*global\s+/).test(data.token[parse.count]) === true && data.types.indexOf("word") < 0) {
+                        references[0] = data.token[parse.count].replace(/\/\*\s*global\s+/, "").replace("\u002a/", "").replace(/,\s+/g, ",").split(",");
+                    }
+                },
+                // line comments
+                lineComment    = function lexer_script_lineComment() {
+                    asi(false);
+                    if (wordTest > -1) {
+                        word();
+                    }
+                    comment = parse.wrapCommentLine({
+                        chars: c,
+                        end: b,
+                        lineEnd: lf,
+                        start: a,
+                        topComment: data.types.indexOf("word") < 0,
+                        wrap: options.wrap
+                    });
+                    ltoke = comment[0];
+                    ltype = "comment";
+                    a = comment[1];
+                    if (options.crlf === true) {
+                        if (ltoke.charAt(ltoke.length - 1) !== "\r") {
+                            ltoke = ltoke + "\r";
+                        }
+                    } else {
+                        ltoke = ltoke.replace(/\r$/, "");
+                    }
+                    if (ltoke.indexOf("# sourceMappingURL=") === 2) {
+                        sourcemap[0] = parse.count + 1;
+                        sourcemap[1] = ltoke;
+                    }
+                    if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
+                        let ignore = ((/^(\/\/\s*parse-ignore-start)/).test(ltoke) === true);
+                        parse.splice({
+                            data: data,
+                            howmany: 0,
+                            index: parse.count,
+                            record: {
+                                begin: data.begin[parse.count],
+                                lexer: "script",
+                                lines: parse.linesSpace,
+                                presv: (ignore === true),
+                                stack: data.stack[parse.count],
+                                token: ltoke,
+                                types: (ignore === true)
+                                    ? "ignore"
+                                    : "comment"
+                            }
+                        });
+                    } else if (ltoke !== "") {
+                        recordPush("");
+                    }
                 },
                 // inserts ending curly brace (where absent)
                 blockinsert    = function lexer_script_blockinsert():void {
@@ -2306,61 +2207,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     markup();
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "*")) {
                     // comment block
-                    if (options.wrap > 0) {
-                        let comment:[string, number] = parse.wrapCommentBlock({
-                            chars: c,
-                            end: b,
-                            lineEnd: lf,
-                            start: a,
-                            topComment: data.types.indexOf("word") < 0,
-                            wrap: options.wrap
-                        });
-                        ltype = "comment";
-                        ltoke = comment[0];
-                        recordPush("");
-                        a = comment[1];
-                    } else {
-                        ltoke = generic("/*", "*\u002f");
-                        if (ltoke.indexOf("# sourceMappingURL=") === 2) {
-                            sourcemap[0] = parse.count + 1;
-                            sourcemap[1] = ltoke;
-                        }
-                        ltype = "comment";
-                        if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
-                            tempstore    = parse.pop(data);
-                            recordPush("");
-                            parse.push(data, tempstore, "");
-                            if (data.lines[parse.count - 2] === 0) {
-                                data.lines[parse.count - 2] = data.lines[parse.count];
-                            }
-                            data.lines[parse.count] = 0;
-                        } else {
-                            if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                                let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
-                                parse.splice({
-                                    data: data,
-                                    howmany: 0,
-                                    index: parse.count,
-                                    record: {
-                                        begin: data.begin[parse.count],
-                                        lexer: "script",
-                                        lines: parse.linesSpace,
-                                        presv: (ignore === true),
-                                        stack: data.stack[parse.count],
-                                        token: ltoke,
-                                        types: (ignore === true)
-                                            ? "ignore"
-                                            : "comment"
-                                    }
-                                });
-                            } else {
-                                recordPush("");
-                            }
-                        }
-                    }
-                    if ((/\/\*\s*global\s+/).test(data.token[parse.count]) === true && data.types.indexOf("word") < 0) {
-                        references[0] = data.token[parse.count].replace(/\/\*\s*global\s+/, "").replace("\u002a/", "").replace(/,\s+/g, ",").split(",");
-                    }
+                    blockComment();
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     // shebang
                     ltoke      = generic("#!" + c[a + 2], "\n");
@@ -2370,41 +2217,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     recordPush("");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     // comment line
-                    asi(false);
-                    ltoke = generic("//", "\n");
-                    ltype = "comment";
-                    if (options.crlf === true) {
-                        if (ltoke.charAt(ltoke.length - 1) !== "\r") {
-                            ltoke = ltoke + "\r";
-                        }
-                    } else {
-                        ltoke = ltoke.replace(/\r$/, "");
-                    }
-                    if (ltoke.indexOf("# sourceMappingURL=") === 2) {
-                        sourcemap[0] = parse.count + 1;
-                        sourcemap[1] = ltoke;
-                    }
-                    if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                        let ignore = ((/^(\/\/\s*parse-ignore-start)/).test(ltoke) === true);
-                        parse.splice({
-                            data: data,
-                            howmany: 0,
-                            index: parse.count,
-                            record: {
-                                begin: data.begin[parse.count],
-                                lexer: "script",
-                                lines: parse.linesSpace,
-                                presv: (ignore === true),
-                                stack: data.stack[parse.count],
-                                token: ltoke,
-                                types: (ignore === true)
-                                    ? "ignore"
-                                    : "comment"
-                            }
-                        });
-                    } else if (ltoke !== "") {
-                        recordPush("");
-                    }
+                    lineComment();
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);

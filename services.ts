@@ -666,7 +666,7 @@ const services = function services_() {
                         framework: function services_validate_validation_framework() {
                             let keys    = [],
                                 keysort = "";
-                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure,wrapCommentBlock";
+                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
                             console.log("\u001b[36mFramework Testing\u001b[0m");
                             console.log("");
                             framework.parserArrays({
@@ -713,14 +713,14 @@ const services = function services_() {
                             console.log(`${humantime(false)}\u001b[32mparse.datanames contains only the data field names.\u001b[0m`);
             
                             if (parse.lineNumber !== 1) {
-                                return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 and type number.\u001b[0m ");
+                                return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 or type number.\u001b[0m ");
                             }
                             console.log(`${humantime(false)}\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[0m`);
                             
                             // The correct default for linesSpace is 0
                             // but the default is changed by the source of empty string.
                             if (parse.linesSpace !== 1) {
-                                return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 0 and type number.\u001b[0m ");
+                                return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 1 or type number.\u001b[0m ");
                             }
                             console.log(`${humantime(false)}\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[0m`);
                             
@@ -891,13 +891,7 @@ const services = function services_() {
             console.log("");
             console.log("Parse Framework - Validation Tasks");
             console.log("");
-            console.log("\u001b[36mTypeScript Compilation\u001b[0m");
-            action.build(function services_validate_require():void {
-                console.log("\u001b[32mBuild complete!\u001b[0m");
-                console.log("________________________________________________________________________");
-                console.log("");
-                validation();
-            });
+            validation();
         },
         action = {
             build: function services_action_build(callback?:Function):void {

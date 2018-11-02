@@ -38,7 +38,8 @@ interface parse {
     spacer(args : spacer)                                           : number,
     splice(spliceData : splice)                                     : void,
     structure                                                       : Array <[string, number]>,
-    wrapCommentBlock(config: wrapConfig)                            : [string, number]
+    wrapCommentBlock(config: wrapConfig)                            : [string, number],
+    wrapCommentLine(config: wrapConfig)                             : [string, number]
 }
 interface parseFramework {
     language?                   : language;
