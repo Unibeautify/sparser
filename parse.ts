@@ -278,435 +278,6 @@ Parse Framework
                 }
                 return;
             },
-            // parsing block comments and simultaneously applying word wrap
-            wrapCommentBlock: function parse_wrapCommentBlock(config: wrapConfig):[string, number] {
-                let ee:number = config.start,
-                    ff:number = 0,
-                    gg:number = 0,
-                    lastspace:number = 0,
-                    space:string[] = [],
-                    codeflag:boolean = false,
-                    slice:string = "",
-                    build:string[] = [];
-                const spacegen = function parse_wrapCommentBlock_spacegen():string[] {
-                        gg = ee;
-                        do {
-                            ee = ee + 1;
-                        } while (ee < config.end && (/\s/).test(config.chars[ee]) === true);
-                        return config.chars.slice(gg, ee).join("").split("\n");
-                    },
-                    fixStarEnd = function parse_fixStarEnd(input:string):string {
-                        return config.lineEnd + input.replace(/\s+/g, "");
-                    },
-                    insertSpace = function parse_wrapCommentBlock_insertSpace():void {
-                        if (build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
-                            build.push(" ");
-                            lastspace = build.length - 1;
-                            ff = ff + 1;
-                        }
-                    },
-                    code = function parse_wrapCommentBlock_code():void {
-                        if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                            ff = 0;
-                            if (space.length > 2) {
-                                build.push(config.lineEnd);
-                            }
-                            build.push(config.lineEnd);
-                            build.push(space[space.length - 1]);
-                            do {
-                                if (config.chars[ee + 1] === "*" && config.chars[ee + 2] === "/") {
-                                    return;
-                                }
-                                build.push(config.chars[ee]);
-                                ee = ee + 1;
-                            } while (ee < config.end && config.chars[ee] !== "\n");
-
-                            space = spacegen();
-                            if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                                codeflag = true;
-                                parse_wrapCommentBlock_code();
-                            } else {
-                                ee = ee - 1;
-                                if (space.length > 2) {
-                                    build.push(config.lineEnd);
-                                }
-                                build.push(config.lineEnd);
-                                build.push("   ");
-                                codeflag = false;
-                            }
-                            return;
-                        }
-                        if (space.length > 2) {
-                            ff = 0;
-                            build.push(config.lineEnd);
-                            build.push(config.lineEnd);
-                            build.push("   ");
-                        }
-                        if (space.length > 1) {
-                            codeflag = false;
-                        }
-                        ee = ee - 1;
-                    };
-                // bypass space at the start
-                if ((/\s/).test(config.chars[ee]) === true && config.wrap > 0) {
-                    do {
-                        ee = ee + 1;
-                    } while ((/\s/).test(config.chars[ee]) === true);
-                }
-                do {
-                    if (config.chars[ee] === "*" && config.chars[ee + 1] === "/") {
-                        break;
-                    }
-                    if ((/\s/).test(config.chars[ee]) === true && config.wrap > 0) {
-                        // check for blank lines and code sections
-                        if ((/\s/).test(config.chars[ee + 1]) === true) {
-                            if ((/\s/).test(config.chars[ee - 1]) === true) {
-                                do {
-                                    ee = ee - 1;
-                                } while (ee > config.end && (/\s/).test(config.chars[ee - 1]) === true);
-                            }
-                            space = spacegen();
-                            code();
-                            if (ff > config.wrap - 3) {
-                                ff = 0;
-                                build.push(config.lineEnd);
-                                build.push("   ");
-                            } else {
-                                insertSpace();
-                            }
-                        } else {
-                            // remove the word that crosses the wrap boundary and insert at newline
-                            if (ff > config.wrap - 3) {
-                                gg = build.length;
-                                space = [];
-                                do {
-                                    space.push(build.pop());
-                                    gg = gg - 1;
-                                } while (gg > 0 && build[gg - 1] !== " ");
-                                build.pop();
-                                ff = space.length + 1;
-                                build.push(config.lineEnd);
-                                build.push("   ");
-                                build.push(space.reverse().join(""));
-                                build.push(" ");
-                            } else {
-                                insertSpace();
-                            }
-                        }
-                    } else {
-                        build.push(config.chars[ee]);
-                        if (config.wrap > 0) {
-                            if (ff > config.wrap - 3) {
-                                ff = 0;
-                                build[lastspace] = `${config.lineEnd}   `;
-                            } else {
-                                ff = ff + 1;
-                            }
-                        }
-                    }
-                    ee = ee + 1;
-                } while (ee < config.end);
-                slice = config.chars.slice(config.start, ee + 1).join("");
-                gg = ee + 1;
-                ee = build.length - 1;
-                if (config.wrap > 0) {
-                    // trim off extra white space from the end
-                    if ((/^(\s+)$/).test(build[ee]) === true) {
-                        do {
-                            build[ee] = "";
-                            ee = ee - 1;
-                        } while (ee > 0 && (/^(\s+)$/).test(build[ee]) === true);
-                    }
-                    if (codeflag === false && ff < config.wrap - 6 && ff > 0) {
-                        build.push(" ");
-                    } else {
-                        build.push(config.lineEnd);
-                    }
-                }
-                build.push("*/");
-                slice = build.join("");
-                if (config.wrap < 1) {
-                    //slice = slice.replace(/^\s*/, "/* ").replace(/\s*\*\/$/, " */");
-                }
-                if (slice.indexOf("\n") < 0 && (/\/\*\w/).test(slice.slice(0,3)) === true && config.topComment === true) {
-                    // Sometimes block comments convey application directives and some applications are picky about the formatting of those comments. This section transforms comments into white space conservative units under the conditions:
-                    // * the original comment was on a single line of code
-                    // * the original comment did not contain any white space at the start of the comment
-                    // * the comment exists before any references or keywords
-                    slice = slice.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
-                } else {
-                    if ((/^\/\u002a\u0020\*+\r?\n/).test(slice) === true) {
-                        slice = slice.replace(" ", "");
-                    }
-                    if ((/\n\u0020{3}\*+\s+\u002a\/$/).test(slice) === true) {
-                        slice = slice.replace(/\n\u0020{3}\*+\s+\u002a\/$/, fixStarEnd);
-                    }
-                }
-                if ((/^(\/\*\s*parse-ignore-start)/).test(slice) === true && ee < config.end) {
-                    let ignorecom:string[] = [];
-                    do {
-                        if (config.chars[ee] === "*" && config.chars[ee - 1] === "/") {
-                            ignorecom.push(config.chars[ee - 1]);
-                        } else if (config.chars[ee] === "/" && config.chars[ee - 1] === "*") {
-                            if ((/^(\/\*\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                                gg = ee - 1;
-                                slice = build.join("");
-                                break;
-                            }
-                            ignorecom = [];
-                            space = [];
-                        }
-                        if (space[0] !== undefined) {
-                            ignorecom.push(config.chars[ee]);
-                        }
-                        build.push(config.chars[ee]);
-                        ee = ee + 1;
-                    } while (ee < config.end);
-                    if (ee === config.end) {
-                        slice = build.join("");
-                        gg = ee;
-                    }
-                } else {
-                    build = slice.split(config.lineEnd);
-                    ee    = build.length - 1;
-                    do {
-                        build[ee] = build[ee].replace(/(\s+)$/, "");
-                        ee        = ee - 1;
-                    } while (ee > -1);
-                    slice = build.join(config.lineEnd);
-                    if (slice.indexOf("#region") === 0 || slice.indexOf("#endregion") === 0) {
-                        slice = slice.replace(/(\s+)$/, "");
-                    }
-                }
-                return [slice, gg];
-            },
-            // parsing line comments and simultaneously applying word wrap
-            wrapCommentLine: function parse_wrapCommentLine(config: wrapConfig):[string, number] {
-                let ee:number     = 0,
-                    ff:number     = 0,
-                    output:string = "",
-                    ignorecom:string[] = [],
-                    line:boolean    = false,
-                    build:string[]  = (config.wrap !== 0)
-                        ? []
-                        : ["//"],
-                    wrapignore:boolean = (config.wrap !== 0 && (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    "));
-                const base:number   = config.start + 2,
-                    lineTest = function parse_wrapCommentLine_lineTest():boolean {
-                        let xx:number = ee;
-                        if ((/\/\/\s+\/\//).test(config.chars.slice(config.start, xx).join("")) === true) {
-                            const ls:number = parse.linesSpace;
-                            if (parse.linesSpace < 2 && parse.data.token[parse.count].slice(0, 2) === "//") {
-                                parse.linesSpace = 2;
-                            }
-                            parse.push(
-                                parse.data,
-                                {
-                                    begin: parse.data.begin[parse.count],
-                                    lexer: parse.data.lexer[parse.count],
-                                    lines: parse.data.lines[parse.linesSpace],
-                                    presv: parse.data.presv[parse.count],
-                                    stack: parse.data.stack[parse.count],
-                                    token: "//",
-                                    types: "comment"
-                                },
-                                parse.data.stack[parse.count]
-                            );
-                            parse.linesSpace = ls;
-                            config.start = config.start + 3;
-                        }
-                        do {
-                            if (config.chars[xx] === "\n" && xx > ee) {
-                                break;
-                            }
-                            xx = xx + 1;
-                        } while ((/\s/).test(config.start[xx]) === true && xx < config.end);
-                        if (config.start[xx] === "/" && config.start[xx + 1] === "/") {
-                            if (config.start[xx + 2] === "\t" || config.chars.slice(xx + 2, xx + 6).join("") === "    ") {
-                                return true;
-                            }
-                            ee = xx + 2;
-                            if ((/\s/).test(config.chars[ee]) === true) {
-                                do {
-                                    if (config.chars[ee] === "\n") {
-                                        if ((/\n\s*\/\/\s*$/).test(config.chars.slice(config.start, ee).join("")) === true) {
-                                            do {
-                                                ee = ee - 1;
-                                                if (config.chars[ee + 1] === "/" && config.chars[ee + 2] === "/") {
-                                                    break;
-                                                }
-                                            } while (ee > 0);
-                                        }
-                                        return true;
-                                    }
-                                    ee = ee + 1;
-                                } while ((/\s/).test(config.chars[ee]) === true && ee < config.end);
-                            }
-                            if ((config.chars[ee] === "-" || config.chars[ee] === "*") && (/\s/).test(config.chars[ee + 1]) ===  true) {
-                                ee = xx;
-                                return true;
-                            }
-                            if ((/\d/).test(config.chars[ee]) === true) {
-                                if ((/\d/).test(config.chars[ee + 1]) === true) {
-                                    do {
-                                        ee = ee + 1;
-                                    } while ((/\d/).test(config.chars[ee + 1]) === true && ee < config.end);
-                                }
-                                if (config.chars[ee + 1] === "." && (/\s/).test(config.chars[ee + 2]) ===  true) {
-                                    ee = xx;
-                                    return true;
-                                }
-                            }
-                            ee = ee - 1;
-                            return false;
-                        }
-                        return true;
-                    },
-                    slashes        = function parse_wrapCommentLine_slashes(index:number):boolean {
-                        let slashy:number = index;
-                        do {
-                            slashy = slashy - 1;
-                        } while (config.chars[slashy] === "\\" && slashy > 0);
-                        if ((index - slashy) % 2 === 1) {
-                            return true;
-                        }
-                        return false;
-                    };
-                ee = base;
-                if (ee < config.end) {
-                    do {
-                        if (wrapignore === true && config.chars[ee] === "\n") {
-                            break;
-                        }
-                        if (config.chars[ee] === "\n" && wrapignore === false && (config.chars[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
-                            if (config.wrap !== 0) {
-                                if (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    ") {
-                                    break;
-                                }
-                                if (lineTest() === true) {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
-                        }
-                        if (ee > config.start + 1) {
-                            if (config.wrap !== 0 && (/\s/).test(config.chars[ee]) === true && wrapignore === false) {
-                                build.push(" ");
-                                line = (config.chars[ee] === "\n" || config.chars[ee] === "\r");
-                                if ((/\s/).test(config.chars[ee + 1]) === true) {
-                                    do {
-                                        if (config.chars[ee] === "\n") {
-                                            line = true;
-                                        }
-                                        ee = ee + 1;
-                                    } while (ee < config.end && (/\s/).test(config.chars[ee + 1]) === true);
-                                    if (line === true && config.chars[ee] + config.chars[ee + 1] !== "//") {
-                                        break;
-                                    }
-                                }
-                            } else {
-                                build.push(config.chars[ee]);
-                            }
-                        } else {
-                            build.push(config.chars[ee]);
-                        }
-                        ee = ee + 1;
-                    } while (ee < config.end);
-                }
-                ee = ee - 1;
-                ff = ee;
-                output = build.join("");
-                if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true && ee < config.end - 1) {
-                    do {
-                        if (config.chars[ee] === "/" && config.chars[ee - 1] === "/") {
-                            ignorecom.push(config.chars[ee - 1]);
-                        } else if (config.chars[ee - 1] === "\n") {
-                            if ((/^(\/\/\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                                output = build.join("");
-                                break;
-                            }
-                            ignorecom = [];
-                        }
-                        ignorecom.push(config.chars[ee]);
-                        build.push(config.chars[ee]);
-                        ee = ee + 1;
-                    } while (ee < config.end);
-                    if (ee === config.end) {
-                        output = build.join("");
-                    }
-                } else {
-                    // the value of parse.linesSpace is corrupted by comment wrapping, so this is a hacky fix
-                    if ((/\s/).test(config.chars[ff]) === true) {
-                        do {
-                            if ((/\s/).test(config.chars[ff]) === false) {
-                                break;
-                            }
-                            ff = ff - 1;
-                        } while (ff > 0);
-                    }
-
-                    if ((/^\s+$/).test(output) === true || output === "") {
-                        return ["//", ee];
-                    }
-                    if (wrapignore === true) {
-                        return ["//" + output, ee];
-                    }
-                    output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
-                    if (output === "//" && parse.data.token[parse.count] === "//") {
-                        return ["", ee];
-                    }
-                    if (config.wrap > 0 && (/^\/\/(\t|\u0020{4})/).test(output) === false) {
-                        if (output.length > config.wrap - 3) {
-                            output = output.replace(/\/\/\s+/, "").replace(/\s+/g, " ");
-                            do {
-                                ee = config.wrap - 3;
-                                do {
-                                    if ((/\s/).test(output.charAt(ee)) === true) {
-                                        break;
-                                    }
-                                    ee = ee - 1;
-                                } while (ee > 0);
-                                output = output.slice(ee + 1);
-                                if (parse.linesSpace < 2 && parse.data.token[parse.count].slice(0, 2) === "//") {
-                                    parse.linesSpace = 2;
-                                }
-                                parse.push(
-                                    parse.data,
-                                    {
-                                        begin: parse.data.begin[parse.count],
-                                        lexer: parse.data.lexer[parse.count],
-                                        lines: parse.data.lines[parse.linesSpace],
-                                        presv: parse.data.presv[parse.count],
-                                        stack: parse.data.stack[parse.count],
-                                        token: `// ${output.slice(0, ee)}`,
-                                        types: "comment"
-                                    },
-                                    parse.data.stack[parse.count]
-                                );
-                            } while (output.length > config.wrap - 3);
-                            if (parse.linesSpace < 2 && parse.data.token[parse.count].slice(0, 2) === "//") {
-                                parse.linesSpace = 2;
-                            }
-                            output = `// ${output.replace(/^\s+/, "")}`;
-                        } else {
-                            output = output.replace(/\/\/\s+/, "// ");
-                        }
-                    }
-                    if (output.indexOf("// ") !== 0) {
-                        output = `// ${output.replace(/^\/\//, "")}`;
-                    }
-                    if ((/\s/).test(config.chars[ee]) === true) {
-                        do {
-                            ee = ee - 1;
-                        } while (ee > 0 && (/\s/).test(config.chars[ee]) === true);
-                    }
-                    if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
-                        output = output.replace(/(\s+)$/, "");
-                    }
-                }
-                return [output, ff];
-            },
             parseOptions: {
                 correct: false,
                 crlf: false,
@@ -993,7 +564,13 @@ Parse Framework
                     parse.linesSpace = 0;
                 }
             },
-            structure: [["global", -1]]
+            structure: [["global", -1]],
+            wrapCommentBlock: function parse_wrapCommentBlock_init():[string, number] {
+                return ["", 0];
+            },
+            wrapCommentLine: function parse_wrapCommentLine_init():[string, number] {
+                return ["", 0];
+            }
         },
         parser  = function parser_(parseOptions: parseOptions): void {
             parse.count      = -1;
@@ -1155,6 +732,442 @@ Parse Framework
                 a = a + 1;
             } while (a < len);
             return data;
+        };
+        // parsing block comments and simultaneously applying word wrap
+        parse.wrapCommentBlock = function parse_wrapCommentBlock(config: wrapConfig):[string, number] {
+            let ee:number = config.start,
+                ff:number = 0,
+                gg:number = 0,
+                lastspace:number = 0,
+                space:string[] = [],
+                codeflag:boolean = false,
+                slice:string = "",
+                build:string[] = [];
+            const wrap:number = parse.parseOptions.wrap,
+                lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
+                    ? "\r\n"
+                    : "\n",
+                spacegen = function parse_wrapCommentBlock_spacegen():string[] {
+                    gg = ee;
+                    do {
+                        ee = ee + 1;
+                    } while (ee < config.end && (/\s/).test(config.chars[ee]) === true);
+                    return config.chars.slice(gg, ee).join("").split("\n");
+                },
+                fixStarEnd = function parse_fixStarEnd(input:string):string {
+                    return parse.parseOptions.crlf + input.replace(/\s+/g, "");
+                },
+                insertSpace = function parse_wrapCommentBlock_insertSpace():void {
+                    if (build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
+                        build.push(" ");
+                        lastspace = build.length - 1;
+                        ff = ff + 1;
+                    }
+                },
+                code = function parse_wrapCommentBlock_code():void {
+                    if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
+                        ff = 0;
+                        if (space.length > 2) {
+                            build.push(lf);
+                        }
+                        build.push(lf);
+                        build.push(space[space.length - 1]);
+                        do {
+                            if (config.chars[ee + 1] === "*" && config.chars[ee + 2] === "/") {
+                                return;
+                            }
+                            build.push(config.chars[ee]);
+                            ee = ee + 1;
+                        } while (ee < config.end && config.chars[ee] !== "\n");
+
+                        space = spacegen();
+                        if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
+                            codeflag = true;
+                            parse_wrapCommentBlock_code();
+                        } else {
+                            ee = ee - 1;
+                            if (space.length > 2) {
+                                build.push(lf);
+                            }
+                            build.push(lf);
+                            build.push("   ");
+                            codeflag = false;
+                        }
+                        return;
+                    }
+                    if (space.length > 2) {
+                        ff = 0;
+                        build.push(lf);
+                        build.push(lf);
+                        build.push("   ");
+                    }
+                    if (space.length > 1) {
+                        codeflag = false;
+                    }
+                    ee = ee - 1;
+                };
+            // bypass space at the start
+            if ((/\s/).test(config.chars[ee]) === true && wrap > 0) {
+                do {
+                    ee = ee + 1;
+                } while ((/\s/).test(config.chars[ee]) === true);
+            }
+            do {
+                if (config.chars[ee] === "*" && config.chars[ee + 1] === "/") {
+                    break;
+                }
+                if ((/\s/).test(config.chars[ee]) === true && wrap > 0) {
+                    // check for blank lines and code sections
+                    if ((/\s/).test(config.chars[ee + 1]) === true) {
+                        if ((/\s/).test(config.chars[ee - 1]) === true) {
+                            do {
+                                ee = ee - 1;
+                            } while (ee > config.end && (/\s/).test(config.chars[ee - 1]) === true);
+                        }
+                        space = spacegen();
+                        code();
+                        if (ff > wrap - 3) {
+                            ff = 0;
+                            build.push(lf);
+                            build.push("   ");
+                        } else {
+                            insertSpace();
+                        }
+                    } else {
+                        // remove the word that crosses the wrap boundary and insert at newline
+                        if (ff > wrap - 3) {
+                            gg = build.length;
+                            space = [];
+                            do {
+                                space.push(build.pop());
+                                gg = gg - 1;
+                            } while (gg > 0 && build[gg - 1] !== " ");
+                            build.pop();
+                            ff = space.length + 1;
+                            build.push(lf);
+                            build.push("   ");
+                            build.push(space.reverse().join(""));
+                            build.push(" ");
+                        } else {
+                            insertSpace();
+                        }
+                    }
+                } else {
+                    build.push(config.chars[ee]);
+                    if (wrap > 0) {
+                        if (ff > wrap - 3) {
+                            ff = 0;
+                            build[lastspace] = `${lf}   `;
+                        } else {
+                            ff = ff + 1;
+                        }
+                    }
+                }
+                ee = ee + 1;
+            } while (ee < config.end);
+            slice = config.chars.slice(config.start, ee + 1).join("");
+            gg = ee + 1;
+            ee = build.length - 1;
+            if (wrap > 0) {
+                // trim off extra white space from the end
+                if ((/^(\s+)$/).test(build[ee]) === true) {
+                    do {
+                        build[ee] = "";
+                        ee = ee - 1;
+                    } while (ee > 0 && (/^(\s+)$/).test(build[ee]) === true);
+                }
+                if (codeflag === false && ff <wrap - 6 && ff > 0) {
+                    build.push(" ");
+                } else {
+                    build.push(lf);
+                }
+            }
+            build.push("*/");
+            slice = build.join("");
+            if (wrap < 1) {
+                //slice = slice.replace(/^\s*/, "/* ").replace(/\s*\*\/$/, " */");
+            }
+            if (slice.indexOf("\n") < 0 && (/\/\*\w/).test(slice.slice(0,3)) === true && parse.data.types.indexOf("word") < 0) {
+                // Sometimes block comments convey application directives and some applications are picky about the formatting of those comments. This section transforms comments into white space conservative units under the conditions:
+                // * the original comment was on a single line of code
+                // * the original comment did not contain any white space at the start of the comment
+                // * the comment exists before any references or keywords
+                slice = slice.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
+            } else {
+                if ((/^\/\u002a\u0020\*+\r?\n/).test(slice) === true) {
+                    slice = slice.replace(" ", "");
+                }
+                if ((/\n\u0020{3}\*+\s+\u002a\/$/).test(slice) === true) {
+                    slice = slice.replace(/\n\u0020{3}\*+\s+\u002a\/$/, fixStarEnd);
+                }
+            }
+            if ((/^(\/\*\s*parse-ignore-start)/).test(slice) === true && ee < config.end) {
+                let ignorecom:string[] = [];
+                do {
+                    if (config.chars[ee] === "*" && config.chars[ee - 1] === "/") {
+                        ignorecom.push(config.chars[ee - 1]);
+                    } else if (config.chars[ee] === "/" && config.chars[ee - 1] === "*") {
+                        if ((/^(\/\*\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
+                            gg = ee - 1;
+                            slice = build.join("");
+                            break;
+                        }
+                        ignorecom = [];
+                        space = [];
+                    }
+                    if (space[0] !== undefined) {
+                        ignorecom.push(config.chars[ee]);
+                    }
+                    build.push(config.chars[ee]);
+                    ee = ee + 1;
+                } while (ee < config.end);
+                if (ee === config.end) {
+                    slice = build.join("");
+                    gg = ee;
+                }
+            } else {
+                build = slice.split(lf);
+                ee    = build.length - 1;
+                do {
+                    build[ee] = build[ee].replace(/(\s+)$/, "");
+                    ee        = ee - 1;
+                } while (ee > -1);
+                slice = build.join(lf);
+                if (slice.indexOf("#region") === 0 || slice.indexOf("#endregion") === 0) {
+                    slice = slice.replace(/(\s+)$/, "");
+                }
+            }
+            return [slice, gg];
+        },
+        // parsing line comments and simultaneously applying word wrap
+        parse.wrapCommentLine = function parse_wrapCommentLine(config: wrapConfig):[string, number] {
+            let ee:number     = 0,
+                ff:number     = 0,
+                output:string = "",
+                ignorecom:string[] = [],
+                line:boolean    = false,
+                ltoke:string = "",
+                build:string[]  = (parse.parseOptions.wrap !== 0)
+                    ? []
+                    : ["//"],
+                wrapignore:boolean = (parse.parseOptions.wrap !== 0 && (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    "));
+            const base:number   = config.start + 2,
+                wrap:number = parse.parseOptions.wrap,
+                lineTest = function parse_wrapCommentLine_lineTest():boolean {
+                    let xx:number = ee;
+                    if ((/\/\/\s+\/\//).test(config.chars.slice(config.start, xx).join("")) === true) {
+                        const ls:number = parse.linesSpace;
+                        if (parse.linesSpace < 2 && parse.data.token[parse.count].slice(0, 2) === "//") {
+                            parse.linesSpace = 2;
+                        }
+                        parse.push(
+                            parse.data,
+                            {
+                                begin: parse.data.begin[parse.count],
+                                lexer: parse.data.lexer[parse.count],
+                                lines: parse.data.lines[parse.linesSpace],
+                                presv: parse.data.presv[parse.count],
+                                stack: parse.data.stack[parse.count],
+                                token: "//",
+                                types: "comment"
+                            },
+                            parse.data.stack[parse.count]
+                        );
+                        parse.linesSpace = ls;
+                        config.start = config.start + 3;
+                    }
+                    do {
+                        if (config.chars[xx] === "\n" && xx > ee) {
+                            break;
+                        }
+                        xx = xx + 1;
+                    } while ((/\s/).test(config.start[xx]) === true && xx < config.end);
+                    if (config.start[xx] === "/" && config.start[xx + 1] === "/") {
+                        if (config.start[xx + 2] === "\t" || config.chars.slice(xx + 2, xx + 6).join("") === "    ") {
+                            return true;
+                        }
+                        ee = xx + 2;
+                        if ((/\s/).test(config.chars[ee]) === true) {
+                            do {
+                                if (config.chars[ee] === "\n") {
+                                    if ((/\n\s*\/\/\s*$/).test(config.chars.slice(config.start, ee).join("")) === true) {
+                                        do {
+                                            ee = ee - 1;
+                                            if (config.chars[ee + 1] === "/" && config.chars[ee + 2] === "/") {
+                                                break;
+                                            }
+                                        } while (ee > 0);
+                                    }
+                                    return true;
+                                }
+                                ee = ee + 1;
+                            } while ((/\s/).test(config.chars[ee]) === true && ee < config.end);
+                        }
+                        if ((config.chars[ee] === "-" || config.chars[ee] === "*") && (/\s/).test(config.chars[ee + 1]) ===  true) {
+                            ee = xx;
+                            return true;
+                        }
+                        if ((/\d/).test(config.chars[ee]) === true) {
+                            if ((/\d/).test(config.chars[ee + 1]) === true) {
+                                do {
+                                    ee = ee + 1;
+                                } while ((/\d/).test(config.chars[ee + 1]) === true && ee < config.end);
+                            }
+                            if (config.chars[ee + 1] === "." && (/\s/).test(config.chars[ee + 2]) ===  true) {
+                                ee = xx;
+                                return true;
+                            }
+                        }
+                        ee = ee - 1;
+                        return false;
+                    }
+                    return true;
+                },
+                slashes        = function parse_wrapCommentLine_slashes(index:number):boolean {
+                    let slashy:number = index;
+                    do {
+                        slashy = slashy - 1;
+                    } while (config.chars[slashy] === "\\" && slashy > 0);
+                    if ((index - slashy) % 2 === 1) {
+                        return true;
+                    }
+                    return false;
+                };
+            ee = base;
+            if (ee < config.end) {
+                do {
+                    if (wrapignore === true && config.chars[ee] === "\n") {
+                        break;
+                    }
+                    if (config.chars[ee] === "\n" && wrapignore === false && (config.chars[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
+                        if (wrap !== 0) {
+                            if (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    ") {
+                                break;
+                            }
+                            if (lineTest() === true) {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    if (ee > config.start + 1) {
+                        if (wrap !== 0 && (/\s/).test(config.chars[ee]) === true && wrapignore === false) {
+                            build.push(" ");
+                            line = (config.chars[ee] === "\n" || config.chars[ee] === "\r");
+                            if ((/\s/).test(config.chars[ee + 1]) === true) {
+                                do {
+                                    if (config.chars[ee] === "\n") {
+                                        line = true;
+                                    }
+                                    ee = ee + 1;
+                                } while (ee < config.end && (/\s/).test(config.chars[ee + 1]) === true);
+                                if (line === true && config.chars[ee] + config.chars[ee + 1] !== "//") {
+                                    break;
+                                }
+                            }
+                        } else {
+                            build.push(config.chars[ee]);
+                        }
+                    } else {
+                        build.push(config.chars[ee]);
+                    }
+                    ee = ee + 1;
+                } while (ee < config.end);
+            }
+            ff = ee;
+            output = build.join("");
+            if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true && ee < config.end - 1) {
+                do {
+                    if (config.chars[ee] === "/" && config.chars[ee - 1] === "/") {
+                        ignorecom.push(config.chars[ee - 1]);
+                    } else if (config.chars[ee - 1] === "\n") {
+                        if ((/^(\/\/\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
+                            output = build.join("");
+                            break;
+                        }
+                        ignorecom = [];
+                    }
+                    ignorecom.push(config.chars[ee]);
+                    build.push(config.chars[ee]);
+                    ee = ee + 1;
+                } while (ee < config.end);
+                if (ee === config.end) {
+                    output = build.join("");
+                }
+            } else {
+                // the value of parse.linesSpace is corrupted by comment wrapping, so this is a hacky fix
+                if ((/\s/).test(config.chars[ff]) === true) {
+                    do {
+                        if ((/\s/).test(config.chars[ff]) === false) {
+                            break;
+                        }
+                        ff = ff - 1;
+                    } while (ff > 0);
+                }
+
+                if ((/^\s+$/).test(output) === true || output === "") {
+                    return ["//", ee];
+                }
+                if (wrapignore === true) {
+                    return ["//" + output, ee];
+                }
+                output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
+                if (output === "//" && parse.data.token[parse.count] === "//") {
+                    return ["", ee];
+                }
+                if (parse.data.token[parse.count].indexOf("//") === 0 && parse.linesSpace < 2) {
+                    parse.linesSpace = 2;
+                }
+                if (wrap > 0 && (/^\/\/(\t|\u0020{4})/).test(output) === false) {
+                    output = output.replace(/(^\/\/\s*)/, "").replace(/\s+/g, " ");
+                    if (output.length > wrap - 3) {
+                        do {
+                            ee = wrap - 3;
+                            do {
+                                if ((/\s/).test(output.charAt(ee)) === true) {
+                                    break;
+                                }
+                                ee = ee - 1;
+                            } while (ee > 0);
+                            ltoke =  `// ${output.slice(0, ee)}`;
+                            parse.push(
+                                parse.data,
+                                {
+                                    begin: parse.data.begin[parse.count],
+                                    lexer: parse.data.lexer[parse.count],
+                                    lines: parse.linesSpace,
+                                    presv: parse.data.presv[parse.count],
+                                    stack: parse.data.stack[parse.count],
+                                    token: ltoke,
+                                    types: "comment"
+                                },
+                                parse.data.stack[parse.count]
+                            );
+                            output = output.slice(ee + 1);
+                            parse.linesSpace = 2;
+                        } while (output.length > wrap - 3);
+                        output = `// ${output.replace(/^\s+/, "")}`;
+                        if (parse.linesSpace < 2 && ltoke.slice(0, 2) === "//") {
+                            parse.linesSpace = 2;
+                        }
+                    } else {
+                        output = output.replace(/\/\/\s+/, "// ");
+                    }
+                }
+                if (output.indexOf("// ") !== 0) {
+                    output = `// ${output.replace(/^\/\//, "")}`;
+                }
+                if ((/\s/).test(config.chars[ee]) === true) {
+                    do {
+                        ee = ee - 1;
+                    } while (ee > 0 && (/\s/).test(config.chars[ee]) === true);
+                }
+                if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
+                    output = output.replace(/(\s+)$/, "");
+                }
+            }
+            return [output, ff];
         };
     global.parseFramework = (global.parseFramework || {
         lexer: {},

@@ -89,10 +89,7 @@ interface splice {
 interface wrapConfig {
     chars     : string[];
     end       : number;
-    lineEnd   : string;
     start     : number;
-    topComment: boolean;
-    wrap      : number;
 }
 declare module NodeJS {
     interface Global {

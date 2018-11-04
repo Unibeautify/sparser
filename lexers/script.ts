@@ -20,9 +20,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
             const parse:parse          = framework.parse,
                 data:data           = parse.data,
                 options:parseOptions        = parse.parseOptions,
-                lf:string = (options.crlf === true)
-                    ? "\r\n"
-                    : "\n",
                 sourcemap:[number, string]      = [
                     0, ""
                 ],
@@ -670,10 +667,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     comment = parse.wrapCommentBlock({
                         chars: c,
                         end: b,
-                        lineEnd: lf,
-                        start: a,
-                        topComment: data.types.indexOf("word") < 0,
-                        wrap: options.wrap
+                        start: a
                     });
                     ltoke = comment[0];
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
@@ -728,10 +722,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     comment = parse.wrapCommentLine({
                         chars: c,
                         end: b,
-                        lineEnd: lf,
-                        start: a,
-                        topComment: data.types.indexOf("word") < 0,
-                        wrap: options.wrap
+                        start: a
                     });
                     ltoke = comment[0];
                     ltype = "comment";
