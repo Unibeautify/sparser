@@ -1162,13 +1162,17 @@
                             mapper.pop();
                         }
                         item("end");
-                        if (b[a] === "}" && data.token[parse.count] !== ";" && options.correct === true) {
+                        if (b[a] === "}" && data.token[parse.count] !== ";") {
                             if (data.types[parse.count] === "value" || (
                                 data.types[parse.count] === "variable" && (
                                     data.token[parse.count - 1] === ":" || data.token[parse.count - 1] === ";"
                                 )
                             )) {
-                                ltoke = ";";
+                                if (options.correct === true) {
+                                    ltoke = ";";
+                                } else {
+                                    ltoke = "x;";
+                                }
                                 ltype = "semi";
                                 recordPush("");
                             } else if (data.types[parse.count] === "comment") {

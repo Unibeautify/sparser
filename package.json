@@ -4,7 +4,7 @@
         "url": "https://github.com/Unibeautify/parse-framework/issues"
     },
     "dependencies": {
-        "@types/node": "^10.12.3"
+        "@types/node": "^10.12.4"
     },
     "description": "A parsing framework for parsing everything",
     "devDependencies": {
@@ -39,5 +39,5 @@
         "start": "node js/services build --browser",
         "test": "node js/services validation"
     },
-    "version": "2.1.25"
+    "version": "2.1.26"
 }
