@@ -743,6 +743,8 @@ Parse Framework
                 space:string = "",
                 spaceLine:RegExp,
                 emptyLine:boolean = false,
+                bulletLine:boolean = false,
+                numberLine:boolean = false,
                 output:string  = "";
             const build:string[] = [],
                 second:string[]  = [],
@@ -768,7 +770,7 @@ Parse Framework
                 a = a + 1;
             } while (a < config.end);
             output = build.join("");
-            if ((/^(\/\*\s*parse-ignore-start)/).test(output) === true || wrap < 1 || output.length <= wrap) {
+            if ((/^(\/\*\s*parse-ignore-start)/).test(output) === true || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0)) {
                 return [output, a];
             }
             b = config.start;
@@ -790,15 +792,30 @@ Parse Framework
                 } else if (lines[b].slice(0, 4) === "    ") {
                     second.push(lines[b]);
                 } else {
-                    lines[b] = `   ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
+                    if (bulletLine === true) {
+                        lines[b] = `     ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
+                        bulletLine = false;
+                    } else if (numberLine === true) {
+                        lines[b] = `      ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
+                        numberLine = false;
+                    } else {
+                        lines[b] = `   ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
+                    }
                     c = lines[b].length;
                     if (c > wrap) {
+                        c = wrap;
                         do {
                             c = c - 1;
                             if ((/\s/).test(lines[b].charAt(c)) === true && c <= wrap) {
                                 break;
                             }
                         } while (c > 0);
+                        if (lines[b].slice(0, 4) !== "    " && (/^\s*(\*|-)\s/).test(lines[b]) === true && (/^\s*(\*|-)\s/).test(lines[b + 1]) === false) {
+                            lines.splice(b + 1, 0, "* ");
+                        }
+                        if (lines[b].slice(0, 4) !== "    " && (/^\s*\d+\.\s/).test(lines[b]) === true && (/^\s*\d+\.\s/).test(lines[b + 1]) === false) {
+                            lines.splice(b + 1, 0, "1. ");
+                        }
                         if (b === len - 1) {
                             lines.push(lines[b].slice(c + 1));
                             len = len + 1;
@@ -807,228 +824,41 @@ Parse Framework
                             lines[b] = lines[b].slice(c + 1);
                             emptyLine = true;
                             b = b - 1;
+                        } else if (lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-)\s/).test(lines[b + 1]) === true) {
+                            second.push(lines[b].slice(0, c));
+                            lines[b] = lines[b].slice(c + 1);
+                            bulletLine = true;
+                            b = b - 1;
+                        } else if (lines[b + 1].slice(0, 4) !== "    " && (/^\s*\d+\.\s/).test(lines[b + 1]) === true) {
+                            second.push(lines[b].slice(0, c));
+                            lines[b] = lines[b].slice(c + 1);
+                            numberLine = true;
+                            b = b - 1;
                         } else if (lines[b + 1].slice(0, 4) === "    ") {
                             lines.splice(b, 0, lines[b].slice(c + 1));
                             len = len + 1;
                         } else {
                             lines[b + 1] = `${lines[b].slice(c + 1)} ${lines[b + 1]}`;
                         }
-                        if (emptyLine === false) {
+                        if (emptyLine === false && bulletLine === false && numberLine === false) {
                             lines[b] = lines[b].slice(0, c);
                         }
+                    } else if ((/^\s+$/).test(lines[b + 1]) === false && lines[b + 1] !== "" && lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-|(\d+\.))\s/).test(lines[b + 1]) === false) {
+                        lines[b + 1] = `${lines[b]} ${lines[b + 1]}`;
+                        emptyLine = true;
                     }
-                    if (emptyLine === true) {
-                        emptyLine = false;
-                    } else {
-                        second.push(lines[b]);
+                    if (bulletLine === false && numberLine === false) {
+                        if (emptyLine === true) {
+                            emptyLine = false;
+                        } else if ((/^\s*(\*|-|(\d+\.))\s*$/).test(lines[b]) === false) {
+                            second.push(lines[b]);
+                        }
                     }
                 }
                 b = b + 1;
             } while (b < len);
             output = `${second.join(lf).replace("  ", "/*")} \u002a/`;
             return [output, a];
-            /*let ee:number = config.start,
-                ff:number = 0,
-                gg:number = 0,
-                lastspace:number = 0,
-                space:string[] = [],
-                codeflag:boolean = false,
-                slice:string = "",
-                build:string[] = [];
-            const wrap:number = parse.parseOptions.wrap,
-                lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
-                    ? "\r\n"
-                    : "\n",
-                spacegen = function parse_wrapCommentBlock_spacegen():string[] {
-                    gg = ee;
-                    do {
-                        ee = ee + 1;
-                    } while (ee < config.end && (/\s/).test(config.chars[ee]) === true);
-                    return config.chars.slice(gg, ee).join("").split("\n");
-                },
-                fixStarEnd = function parse_fixStarEnd(input:string):string {
-                    return parse.parseOptions.crlf + input.replace(/\s+/g, "");
-                },
-                insertSpace = function parse_wrapCommentBlock_insertSpace():void {
-                    if (build.length > 0 && build[build.length - 1].indexOf("\n") < 0 && (/\s/).test(build[build.length - 1]) === false) {
-                        build.push(" ");
-                        lastspace = build.length - 1;
-                        ff = ff + 1;
-                    }
-                },
-                code = function parse_wrapCommentBlock_code():void {
-                    if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                        ff = 0;
-                        if (space.length > 2) {
-                            build.push(lf);
-                        }
-                        build.push(lf);
-                        build.push(space[space.length - 1]);
-                        do {
-                            if (config.chars[ee + 1] === "*" && config.chars[ee + 2] === "/") {
-                                return;
-                            }
-                            build.push(config.chars[ee]);
-                            ee = ee + 1;
-                        } while (ee < config.end && config.chars[ee] !== "\n");
-
-                        space = spacegen();
-                        if ((/^(\u0020{4}|\t)/).test(space[space.length - 1]) === true) {
-                            codeflag = true;
-                            parse_wrapCommentBlock_code();
-                        } else {
-                            ee = ee - 1;
-                            if (space.length > 2) {
-                                build.push(lf);
-                            }
-                            build.push(lf);
-                            build.push("   ");
-                            codeflag = false;
-                        }
-                        return;
-                    }
-                    if (space.length > 2) {
-                        ff = 0;
-                        build.push(lf);
-                        build.push(lf);
-                        build.push("   ");
-                    }
-                    if (space.length > 1) {
-                        codeflag = false;
-                    }
-                    ee = ee - 1;
-                };
-            // bypass space at the start
-            if ((/\s/).test(config.chars[ee]) === true && wrap > 0) {
-                do {
-                    ee = ee + 1;
-                } while ((/\s/).test(config.chars[ee]) === true);
-            }
-            do {
-                if (config.chars[ee] === "*" && config.chars[ee + 1] === "/") {
-                    break;
-                }
-                if ((/\s/).test(config.chars[ee]) === true && wrap > 0) {
-                    // check for blank lines and code sections
-                    if ((/\s/).test(config.chars[ee + 1]) === true) {
-                        if ((/\s/).test(config.chars[ee - 1]) === true) {
-                            do {
-                                ee = ee - 1;
-                            } while (ee > config.end && (/\s/).test(config.chars[ee - 1]) === true);
-                        }
-                        space = spacegen();
-                        code();
-                        if (ff > wrap - 3) {
-                            ff = 0;
-                            build.push(lf);
-                            build.push("   ");
-                        } else {
-                            insertSpace();
-                        }
-                    } else {
-                        // remove the word that crosses the wrap boundary and insert at newline
-                        gg = build.length;
-                        if ((gg > wrap && ff >= wrap - 3) || (gg <= wrap && ff > wrap)) {
-                            space = [];
-                            do {
-                                space.push(build.pop());
-                                gg = gg - 1;
-                            } while (gg > 0 && build[gg - 1] !== " ");
-                            build.pop();
-                            ff = space.length + 1;
-                            build.push(`${lf}   `);
-                            build.push(space.reverse().join(""));
-                            build.push(" ");
-                        } else {
-                            insertSpace();
-                        }
-                    }
-                } else {
-                    build.push(config.chars[ee]);
-                    if (wrap > 0) {
-                        if (ff > wrap - 3) {
-                            ff = 0;
-                            build[lastspace] = `${lf}   `;
-                        } else {
-                            ff = ff + 1;
-                        }
-                    }
-                }
-                ee = ee + 1;
-            } while (ee < config.end);
-            slice = config.chars.slice(config.start, ee + 1).join("");
-            gg = ee + 1;
-            ee = build.length - 1;
-            if (wrap > 0) {
-                // trim off extra white space from the end
-                if ((/^(\s+)$/).test(build[ee]) === true) {
-                    do {
-                        build[ee] = "";
-                        ee = ee - 1;
-                    } while (ee > 0 && (/^(\s+)$/).test(build[ee]) === true);
-                }
-                if (codeflag === false && ff < wrap - 6 && ff > 0) {
-                    build.push(" ");
-                } else if ((build.indexOf(lf) < 0 && build.length > wrap) || (build.indexOf(lf) > 0 && build.slice(build.lastIndexOf("\n")).length > wrap - 3)) {
-                    build.push(lf);
-                }
-            }
-            build.push("\u002a/");
-            slice = build.join("");
-            if (wrap < 1) {
-                //slice = slice.replace(/(^\s*)/, "/* ").replace(/\s*\*\/$/, " \u002a/");
-            }
-            if (slice.indexOf("\n") < 0 && (/\/\*\w/).test(slice.slice(0,3)) === true && parse.data.types.indexOf("word") < 0) {
-                // Sometimes block comments convey application directives and some applications are picky about the formatting of those comments. This section transforms comments into white space conservative units under the conditions:
-                // * the original comment was on a single line of code
-                // * the original comment did not contain any white space at the start of the comment
-                // * the comment exists before any references or keywords
-                slice = slice.replace(/\s+/g, " ").replace("/\u002a ", "/\u002a").replace(" \u002a/", "\u002a/");
-            } else {
-                if ((/^\/\u002a\u0020\*+\r?\n/).test(slice) === true) {
-                    slice = slice.replace(" ", "");
-                }
-                if ((/\n\u0020{3}\*+\s+\u002a\/$/).test(slice) === true) {
-                    slice = slice.replace(/\n\u0020{3}\*+\s+\u002a\/$/, fixStarEnd);
-                }
-            }
-            if ((/^(\/\*\s*parse-ignore-start)/).test(slice) === true && ee < config.end) {
-                let ignorecom:string[] = [];
-                do {
-                    if (config.chars[ee] === "*" && config.chars[ee - 1] === "/") {
-                        ignorecom.push(config.chars[ee - 1]);
-                    } else if (config.chars[ee] === "/" && config.chars[ee - 1] === "*") {
-                        if ((/^(\/\*\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                            gg = ee - 1;
-                            slice = build.join("");
-                            break;
-                        }
-                        ignorecom = [];
-                        space = [];
-                    }
-                    if (space[0] !== undefined) {
-                        ignorecom.push(config.chars[ee]);
-                    }
-                    build.push(config.chars[ee]);
-                    ee = ee + 1;
-                } while (ee < config.end);
-                if (ee === config.end) {
-                    slice = build.join("");
-                    gg = ee;
-                }
-            } else {
-                build = slice.split(lf);
-                ee    = build.length - 1;
-                do {
-                    build[ee] = build[ee].replace(/(\s+)$/, "");
-                    ee        = ee - 1;
-                } while (ee > -1);
-                slice = build.join(lf);
-                if (slice.indexOf("#region") === 0 || slice.indexOf("#endregion") === 0) {
-                    slice = slice.replace(/(\s+)$/, "");
-                }
-            }
-            return [slice, gg];*/
         },
         // parsing line comments and simultaneously applying word wrap
         parse.wrapCommentLine = function parse_wrapCommentLine(config: wrapConfig):[string, number] {

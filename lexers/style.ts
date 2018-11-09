@@ -862,109 +862,24 @@
                     }
                 },
                 //finds comments including those JS looking '//' comments
-                comment     = function lexer_style_comment(inline:boolean):void {
-                    let aa:number          = a + 1,
-                        bb:number          = 0,
-                        ender:string[]     = [],
-                        ignorecom:string[] = [],
-                        extra:string       = "";
-                    const out:string[] = [b[a]],
-                        store:record[] = [];
-                    if (aa < len) {
-                        do {
-                            out.push(b[aa]);
-                            if ((inline === false && b[aa - 1] === "*" && b[aa] === "/") || (inline === true && (b[aa + 1] === "\n" || b[aa + 1] === "\r"))) {
-                                break;
-                            }
-                            aa = aa + 1;
-                        } while (aa < len);
-                    }
-                    if (ltype === "item") {
-                        bb = aa;
-                        do {
-                            bb = bb + 1;
-                            if (b[bb] === "/") {
-                                if (b[bb + 1] === "*" || b[bb + 1] === "/") {
-                                    extra = b[bb + 1];
-                                } else if (b[bb - 1] === "*" && extra === "*") {
-                                    extra = "";
-                                    bb    = bb + 1;
-                                }
-                            } else if ((b[bb] === "\n" || b[bb] === "\r") && extra === "/") {
-                                extra = "";
-                                bb    = bb + 1;
-                            }
-                        } while (
-                            bb < len && ((extra === "" && (/\s/).test(b[bb]) === true) || extra !== "")
-                        );
-                        if (b[bb] === "{") {
-                            item("start");
-                        } else if (b[bb] === "}") {
-                            item("end");
-                        } else if (b[bb] === ";") {
-                            item("semi");
-                        } else if (b[bb] === ":") {
-                            item("colon");
-                        } else {
-                            item("");
-                        }
-                    }
-                    a = aa;
-                    ltype = "comment";
-                    ltoke = out.join("");
-                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(ltoke) === true) {
-                        do {
-                            if (ender[0] === undefined && (b[bb] === "/" || b[bb] === "*") && b[bb - 1] === "/") {
-                                ignorecom.push(b[bb - 1]);
-                                if (b[bb] === "*") {
-                                    ender = ["*", "/"];
-                                } else {
-                                    ender = ["\n"];
-                                }
-                            } else if ((b[bb] === ender[1] || ender[1] === undefined) && b[bb - 1] === ender[0]) {
-                                if ((/^(\/(\/|\*)\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                                    a = bb - 1;
-                                    ltoke = out.join("");
-                                    ltype = "ignore";
-                                    break;
-                                }
-                                ignorecom = [];
-                                ender = [];
-                            }
-                            if (ender[0] !== undefined) {
-                                ignorecom.push(b[bb]);
-                            }
-                            out.push(b[bb]);
-                            bb = bb + 1;
-                        } while (bb < len);
-                        if (bb === len) {
-                            ltoke = out.join("");
-                            ltype = "ignore";
-                            a = bb;
-                        }
-                    }
-                    if (parse.count > -1 && store.length > 0 && (ltype === "selector" || ltype === "variable") && data.types[parse.count] !== "comment" && data.types[parse.count] !== "ignore") {
-                        parse.pop(data);
-                        recordPush("");
-                        ltoke = store[0].token;
-                        ltype = (ltype === "variable")
-                            ? "variable"
-                            : "selector";
-                        recordPush("");
-                    } else if (ltype === "colon" || ltype === "property" || ltype === "value") {
-                        do {
-                            store.push(recordStore(parse.count));
-                            parse.pop(data);
-                        } while (
-                            parse.count > 0 && data.types[parse.count] !== "semi" && data.types[parse.count] !== "start"
-                        );
-                        recordPush("");
-                        do {
-                            parse.push(data, store.pop(), "");
-                        } while (store.length > 0);
-                    } else {
-                        recordPush("");
-                    }
+                comment     = function lexer_style_comment(line:boolean):void {
+                    let comm:[string, number] = (line === true)
+                        ? parse.wrapCommentLine({
+                            chars: b,
+                            end: len,
+                            start: a
+                        })
+                        : parse.wrapCommentBlock({
+                            chars: b,
+                            end: len,
+                            start: a
+                        });
+                    ltoke = comm[0];
+                    ltype = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true)
+                        ? "ignore"
+                        : "comment";
+                    recordPush("");
+                    a = comm[1];
                 },
                 //do fancy things to property types like: sorting, consolidating, and padding
                 properties  = function lexer_style_properties():void {
@@ -1293,7 +1208,7 @@
             if (options.lexerOptions.style.objectSort === true) {
                 parse.objectSort(data);
             }
-            if (endtest === false) {
+            if (endtest === false && data.types.indexOf("end") > -1) {
                 properties();
             }
 

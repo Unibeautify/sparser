@@ -556,6 +556,8 @@ const services = function services_() {
                                                     if (isNaN(Number(wrap)) === false) {
                                                         parse_options.wrap = Number(wrap);
                                                     }
+                                                } else {
+                                                    parse_options.wrap = 0;
                                                 }
                                                 lang = framework.language.auto(files.code[a][1], "javascript");
                                                 if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {

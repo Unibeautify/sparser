@@ -52,7 +52,7 @@
 {"begin":45,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input","token":"line-height","types":"property"},
 {"begin":45,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input","token":":","types":"colon"},
 {"begin":45,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input","token":"red","types":"value"},
-{"begin":45,"lexer":"style","lines":1,"presv":false,"stack":"#extras-ingredients input","token":"//asdfasdf asdfa asdf","types":"comment"},
+{"begin":45,"lexer":"style","lines":1,"presv":false,"stack":"#extras-ingredients input","token":"// asdfasdf asdfa asdf","types":"comment"},
 {"begin":45,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input","token":"/*qwer*/","types":"comment"},
 {"begin":45,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input","token":"}","types":"end"},
 {"begin":23,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients select","token":"color","types":"property"},
