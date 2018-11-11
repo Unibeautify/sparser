@@ -843,7 +843,7 @@ Parse Framework
                         if (emptyLine === false && bulletLine === false && numberLine === false) {
                             lines[b] = lines[b].slice(0, c);
                         }
-                    } else if ((/^\s+$/).test(lines[b + 1]) === false && lines[b + 1] !== "" && lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-|(\d+\.))\s/).test(lines[b + 1]) === false) {
+                    } else if (lines[b + 1] !== undefined && (/^\s+$/).test(lines[b + 1]) === false && lines[b + 1] !== "" && lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-|(\d+\.))\s/).test(lines[b + 1]) === false) {
                         lines[b + 1] = `${lines[b]} ${lines[b + 1]}`;
                         emptyLine = true;
                     }
