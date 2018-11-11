@@ -867,9 +867,6 @@ Parse Framework
                 output:string = "",
                 build:string[] = [];
             const wrap:number = parse.parseOptions.wrap,
-                lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
-                    ? "\r\n"
-                    : "\n",
                 recurse = function parse_wrapCommentLine_recurse():void {
                     let line:string = "";
                     do {
@@ -884,11 +881,10 @@ Parse Framework
                             build.push(config.chars[b]);
                             b = b + 1;
                         } while (b < config.end && config.chars[b] !== "\n");
-                        b = b - 1;
                         line = build.join("");
-                        if ((/^\/\/ (\*|-|(\d+\.))/).test(line) === false && line.slice(0, 6) !== "//    " && line !== `//${lf}`) {
+                        if ((/^\/\/ (\*|-|(\d+\.))/).test(line) === false && line.slice(0, 6) !== "//    " && (/^\/\/\s*$/).test(line) === false) {
                             output = `${output} ${line.replace(/^\/\/\s*/, "").replace(/\s+$/, "")}`;
-                            a = b;
+                            a = b - 1;
                             parse_wrapCommentLine_recurse();
                         }
                     }
@@ -954,7 +950,7 @@ Parse Framework
             } while (a < config.end && config.chars[a] !== "\n");
             a = a - 1;
             output = build.join("");
-            if ((/^\/\/\s*$/).test(output) === true) {
+            if ((/^\/\/\s+$/).test(output) === true) {
                 output = "//";
             }
             if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true || output === "//" || output.slice(0, 6) === "//    ") {
@@ -964,7 +960,7 @@ Parse Framework
             if (wrap < 1 || (a === config.end - 1 && parse.data.begin[parse.count] < 1)) {
                 return [output, a];
             }
-            b = a;
+            b = a + 1;
             recurse();
             wordWrap();
             return [output, a];
