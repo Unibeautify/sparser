@@ -9,7 +9,7 @@
 {"begin":-1,"lexer":"style","lines":1,"presv":false,"stack":"global","token":"44px","types":"value"},
 {"begin":-1,"lexer":"style","lines":0,"presv":false,"stack":"global","token":";","types":"semi"},
 {"begin":-1,"lexer":"style","lines":3,"presv":false,"stack":"global","token":"// item-responsify mixin","types":"comment"},
-{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"//   targetClass - the class of the module container","types":"comment"},
+{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"// targetClass - the class of the module container","types":"comment"},
 {"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":".item-responsify(@targetClass)","types":"selector"},
 {"begin":-1,"lexer":"style","lines":1,"presv":false,"stack":"global","token":"{","types":"start"},
 {"begin":12,"lexer":"style","lines":2,"presv":false,"stack":".item-responsify(@targetClass)","token":".responsify(@lg, @md, @sm, {}, @xxs)","types":"variable"},

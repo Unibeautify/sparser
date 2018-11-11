@@ -1,6 +1,6 @@
 [
 {"begin":-1,"lexer":"style","lines":3,"presv":false,"stack":"global","token":"// item-responsify mixin","types":"comment"},
-{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"//   targetClass - the class of the module container","types":"comment"},
+{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"// targetClass - the class of the module container","types":"comment"},
 {"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":".item-responsify(@targetClass)","types":"selector"},
 {"begin":-1,"lexer":"style","lines":1,"presv":false,"stack":"global","token":"{","types":"start"},
 {"begin":3,"lexer":"style","lines":2,"presv":false,"stack":".item-responsify(@targetClass)","token":"@lg","types":"variable"},

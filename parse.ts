@@ -862,233 +862,112 @@ Parse Framework
         },
         // parsing line comments and simultaneously applying word wrap
         parse.wrapCommentLine = function parse_wrapCommentLine(config: wrapConfig):[string, number] {
-            let ee:number     = 0,
-                ff:number     = 0,
+            let a:number = config.start,
+                b:number = 0,
                 output:string = "",
-                ignorecom:string[] = [],
-                line:boolean    = false,
-                ltoke:string = "",
-                build:string[]  = (parse.parseOptions.wrap !== 0)
-                    ? []
-                    : ["//"],
-                wrapignore:boolean = (parse.parseOptions.wrap !== 0 && (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    "));
-            const base:number   = config.start + 2,
-                wrap:number = parse.parseOptions.wrap,
-                lineTest = function parse_wrapCommentLine_lineTest():boolean {
-                    let xx:number = ee;
-                    if ((/\/\/\s+\/\//).test(config.chars.slice(config.start, xx).join("")) === true) {
-                        const ls:number = parse.linesSpace;
-                        if (parse.linesSpace < 2 && parse.data.token[parse.count].slice(0, 2) === "//") {
-                            parse.linesSpace = 2;
+                build:string[] = [];
+            const wrap:number = parse.parseOptions.wrap,
+                lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
+                    ? "\r\n"
+                    : "\n",
+                recurse = function parse_wrapCommentLine_recurse():void {
+                    let line:string = "";
+                    do {
+                        b = b + 1;
+                        if (config.chars[b] === "\n") {
+                            return;
                         }
-                        parse.push(
-                            parse.data,
-                            {
+                    } while (b < config.end && (/\s/).test(config.chars[b]) === true);
+                    if (config.chars[b] + config.chars[b + 1] === "//") {
+                        build = [];
+                        do {
+                            build.push(config.chars[b]);
+                            b = b + 1;
+                        } while (b < config.end && config.chars[b] !== "\n");
+                        b = b - 1;
+                        line = build.join("");
+                        if ((/^\/\/ (\*|-|(\d+\.))/).test(line) === false && line.slice(0, 6) !== "//    " && line !== `//${lf}`) {
+                            output = `${output} ${line.replace(/^\/\/\s*/, "").replace(/\s+$/, "")}`;
+                            a = b;
+                            parse_wrapCommentLine_recurse();
+                        }
+                    }
+                },
+                wordWrap = function parse_wrapCommentLine_wordWrap():void {
+                    let c:number = 0,
+                        d:number = 0;
+                    const lines:string[] = [],
+                        record:record = (parse.count > -1)
+                            ? {
                                 begin: parse.data.begin[parse.count],
                                 lexer: parse.data.lexer[parse.count],
-                                lines: parse.data.lines[parse.linesSpace],
+                                lines: parse.linesSpace,
                                 presv: parse.data.presv[parse.count],
                                 stack: parse.data.stack[parse.count],
-                                token: "//",
+                                token: parse.data.token[parse.count],
                                 types: "comment"
-                            },
-                            parse.data.stack[parse.count]
-                        );
-                        parse.linesSpace = ls;
-                        config.start = config.start + 3;
+                            }
+                            : {
+                                begin: -1,
+                                lexer: parse.parseOptions.lexer,
+                                lines: parse.linesSpace,
+                                presv: false,
+                                stack: "global",
+                                token: "",
+                                types: "comment"
+                            };
+                    output = output.replace(/\s+/g, " ").replace(/\s+$/, "");
+                    d = output.length;
+                    if (wrap > d) {
+                        return;
                     }
                     do {
-                        if (config.chars[xx] === "\n" && xx > ee) {
-                            break;
-                        }
-                        xx = xx + 1;
-                    } while ((/\s/).test(config.start[xx]) === true && xx < config.end);
-                    if (config.start[xx] === "/" && config.start[xx + 1] === "/") {
-                        if (config.start[xx + 2] === "\t" || config.chars.slice(xx + 2, xx + 6).join("") === "    ") {
-                            return true;
-                        }
-                        ee = xx + 2;
-                        if ((/\s/).test(config.chars[ee]) === true) {
+                        c = wrap;
+                        if (output.charAt(c) !== " ") {
                             do {
-                                if (config.chars[ee] === "\n") {
-                                    if ((/\n\s*\/\/\s*$/).test(config.chars.slice(config.start, ee).join("")) === true) {
-                                        do {
-                                            ee = ee - 1;
-                                            if (config.chars[ee + 1] === "/" && config.chars[ee + 2] === "/") {
-                                                break;
-                                            }
-                                        } while (ee > 0);
-                                    }
-                                    return true;
-                                }
-                                ee = ee + 1;
-                            } while ((/\s/).test(config.chars[ee]) === true && ee < config.end);
-                        }
-                        if ((config.chars[ee] === "-" || config.chars[ee] === "*") && (/\s/).test(config.chars[ee + 1]) ===  true) {
-                            ee = xx;
-                            return true;
-                        }
-                        if ((/\d/).test(config.chars[ee]) === true) {
-                            if ((/\d/).test(config.chars[ee + 1]) === true) {
+                                c = c - 1;
+                            } while (c > 0 && output.charAt(c) !== " ");
+                            if (c < 1) {
+                                c = wrap;
                                 do {
-                                    ee = ee + 1;
-                                } while ((/\d/).test(config.chars[ee + 1]) === true && ee < config.end);
-                            }
-                            if (config.chars[ee + 1] === "." && (/\s/).test(config.chars[ee + 2]) ===  true) {
-                                ee = xx;
-                                return true;
+                                    c = c + 1;
+                                } while (c < d - 1 && output.charAt(c) !== " ");
                             }
                         }
-                        ee = ee - 1;
-                        return false;
-                    }
-                    return true;
-                },
-                slashes        = function parse_wrapCommentLine_slashes(index:number):boolean {
-                    let slashy:number = index;
+                        lines.push(output.slice(0, c));
+                        output = `// ${output.slice(c).replace(/^\s+/, "")}`;
+                        d = output.length;
+                    } while (wrap < d);
+                    c = 0;
+                    d = lines.length;
                     do {
-                        slashy = slashy - 1;
-                    } while (config.chars[slashy] === "\\" && slashy > 0);
-                    if ((index - slashy) % 2 === 1) {
-                        return true;
-                    }
-                    return false;
+                        record.token = lines[c];
+                        parse.push(parse.data, record, "");
+                        record.lines = 2;
+                        parse.linesSpace = 2;
+                        c = c + 1;
+                    } while (c < d);
                 };
-            ee = base;
-            if (ee < config.end) {
-                do {
-                    if (wrapignore === true && config.chars[ee] === "\n") {
-                        break;
-                    }
-                    if (config.chars[ee] === "\n" && wrapignore === false && (config.chars[ee - 1] !== "\\" || slashes(ee - 1) === false)) {
-                        if (wrap !== 0) {
-                            if (config.chars[config.start + 2] === "\t" || config.chars.slice(config.start + 2, config.start + 6).join("") === "    ") {
-                                break;
-                            }
-                            if (lineTest() === true) {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                    if (ee > config.start + 1) {
-                        if (wrap !== 0 && (/\s/).test(config.chars[ee]) === true && wrapignore === false) {
-                            build.push(" ");
-                            line = (config.chars[ee] === "\n" || config.chars[ee] === "\r");
-                            if ((/\s/).test(config.chars[ee + 1]) === true) {
-                                do {
-                                    if (config.chars[ee] === "\n") {
-                                        line = true;
-                                    }
-                                    ee = ee + 1;
-                                } while (ee < config.end && (/\s/).test(config.chars[ee + 1]) === true);
-                                if (line === true && config.chars[ee] + config.chars[ee + 1] !== "//") {
-                                    break;
-                                }
-                            }
-                        } else {
-                            build.push(config.chars[ee]);
-                        }
-                    } else {
-                        build.push(config.chars[ee]);
-                    }
-                    ee = ee + 1;
-                } while (ee < config.end);
-            }
-            ff = ee;
+            do {
+                build.push(config.chars[a]);
+                a = a + 1;
+            } while (a < config.end && config.chars[a] !== "\n");
+            a = a - 1;
             output = build.join("");
-            if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true && ee < config.end - 1) {
-                do {
-                    if (config.chars[ee] === "/" && config.chars[ee - 1] === "/") {
-                        ignorecom.push(config.chars[ee - 1]);
-                    } else if (config.chars[ee - 1] === "\n") {
-                        if ((/^(\/\/\s*parse-ignore-end)/).test(ignorecom.join("")) === true) {
-                            output = build.join("");
-                            break;
-                        }
-                        ignorecom = [];
-                    }
-                    ignorecom.push(config.chars[ee]);
-                    build.push(config.chars[ee]);
-                    ee = ee + 1;
-                } while (ee < config.end);
-                if (ee === config.end) {
-                    output = build.join("");
-                }
-            } else {
-                // the value of parse.linesSpace is corrupted by comment wrapping, so this is a hacky fix
-                if ((/\s/).test(config.chars[ff]) === true) {
-                    do {
-                        if ((/\s/).test(config.chars[ff]) === false) {
-                            break;
-                        }
-                        ff = ff - 1;
-                    } while (ff > 0);
-                }
-
-                if ((/^\s+$/).test(output) === true || output === "") {
-                    return ["//", ee];
-                }
-                if (wrapignore === true) {
-                    return ["//" + output, ee];
-                }
-                output = output.replace(/(\s+)$/, "").replace(/^(\s+)/, "");
-                if (output === "//" && parse.data.token[parse.count] === "//") {
-                    return ["", ee];
-                }
-                if (parse.data.token[parse.count].indexOf("//") === 0 && parse.linesSpace < 2) {
-                    parse.linesSpace = 2;
-                }
-                if (wrap > 0 && (/^\/\/(\t|\u0020{4})/).test(output) === false) {
-                    output = output.replace(/(^\/\/\s*)/, "").replace(/\s+/g, " ");
-                    if (output.length > wrap - 3) {
-                        do {
-                            ee = wrap - 3;
-                            do {
-                                if ((/\s/).test(output.charAt(ee)) === true) {
-                                    break;
-                                }
-                                ee = ee - 1;
-                            } while (ee > 0);
-                            ltoke =  `// ${output.slice(0, ee)}`;
-                            parse.push(
-                                parse.data,
-                                {
-                                    begin: parse.data.begin[parse.count],
-                                    lexer: parse.data.lexer[parse.count],
-                                    lines: parse.linesSpace,
-                                    presv: parse.data.presv[parse.count],
-                                    stack: parse.data.stack[parse.count],
-                                    token: ltoke,
-                                    types: "comment"
-                                },
-                                parse.data.stack[parse.count]
-                            );
-                            output = output.slice(ee + 1);
-                            parse.linesSpace = 2;
-                        } while (output.length > wrap - 3);
-                        output = `// ${output.replace(/^\s+/, "")}`;
-                        if (parse.linesSpace < 2 && ltoke.slice(0, 2) === "//") {
-                            parse.linesSpace = 2;
-                        }
-                    } else {
-                        output = output.replace(/\/\/\s+/, "// ");
-                    }
-                }
-                if (output.indexOf("// ") !== 0) {
-                    output = `// ${output.replace(/^\/\//, "")}`;
-                }
-                if ((/\s/).test(config.chars[ee]) === true) {
-                    do {
-                        ee = ee - 1;
-                    } while (ee > 0 && (/\s/).test(config.chars[ee]) === true);
-                }
-                if (output.indexOf("#region") === 0 || output.indexOf("#endregion") === 0) {
-                    output = output.replace(/(\s+)$/, "");
-                }
+            if ((/^\/\/\s*$/).test(output) === true) {
+                output = "//";
             }
-            return [output, ff];
+            if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true || output === "//" || output.slice(0, 6) === "//    ") {
+                return [output, a];
+            }
+            output = output.replace(/\/\/\s*/, "// ").replace(/\s+$/, "");
+            if (wrap < 1 || (a === config.end - 1 && parse.data.begin[parse.count] < 1)) {
+                return [output, a];
+            }
+            b = a;
+            recurse();
+            wordWrap();
+            return [output, a];
         };
     global.parseFramework = (global.parseFramework || {
         lexer: {},
