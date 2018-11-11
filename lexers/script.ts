@@ -1623,7 +1623,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                     if (e === 0 && f === 0) {
                                         if ((/\s/).test(c[d - 1]) === true) {
                                             ltype = "operator";
-                                            operator();
+                                            ltoke = operator();
+                                            recordPush("");
                                             return;
                                         }
                                         ltype = "generic";
@@ -1636,7 +1637,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                 }
                                 if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
                                     ltype = "operator";
-                                    operator();
+                                    ltoke = operator();
+                                    recordPush("");
                                     return;
                                 }
                                 d = d + 1;
@@ -1646,7 +1648,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     } else {
                         ltype = "operator";
                         ltoke = operator();
-                        return recordPush("");
+                        recordPush("");
+                        return;
                     }
                     do {
                         output.push(c[a]);
