@@ -22,6 +22,7 @@
                 less      : "style",
                 markup    : "markup",
                 php       : "script",
+                phphtml   : "markup",
                 qml       : "style",
                 scss      : "style",
                 swig      : "markup",
@@ -62,6 +63,7 @@
                 jsx       : "React JSX",
                 liquid    : "Liquid Template",
                 markup    : "markup",
+                phphtml   : "HTML/PHP",
                 scss      : "SCSS",
                 text      : "Plain Text",
                 titanium  : "Titanium Stylesheets",
@@ -97,6 +99,9 @@
                     }
                     if (langname === "tss") {
                         return ["tss", language.setlangmode("tss"), "Titanium Stylesheets"];
+                    }
+                    if (langname === "phphtml") {
+                        return ["php", language.setlangmode(langname), language.nameproper(langname)];
                     }
                     return [langname, language.setlangmode(langname), language.nameproper(langname)];
                 },
@@ -234,7 +239,10 @@
                             return output("twig");
                         }
                         if ((/<\?/).test(sample) === true) {
-                            return output("php");
+                            if ((/^\s*<\?/).test(sample) === true && (/\?>\s*$/).test(sample) === true) {
+                                return output("php");
+                            }
+                            return output("phphtml");
                         }
                         if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                             return output("jsp");
@@ -271,7 +279,10 @@
                         return output("twig");
                     }
                     if ((/<\?(?!(xml))/).test(sample) === true) {
-                        return output("php");
+                        if ((/^\s*<\?/).test(sample) === true && (/\?>\s*$/).test(sample) === true) {
+                            return output("php");
+                        }
+                        return output("phphtml");
                     }
                     if ((/\{(#|\?|\^|@|<|\+|~)/).test(sample) === true && (/\{\//).test(sample) === true) {
                         return output("dustjs");
@@ -300,7 +311,7 @@
             if (((/^([\s\w-]*<)/).test(sample) === false && (/(>[\s\w-]*)$/).test(sample) === false) || finalstatic === true) {
                 return notmarkup();
             }
-            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:\-[]+/).test(sample) === true || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
+            if ((((/(>[\w\s:]*)?<(\/|!|#)?[\w\s:\-[]+/).test(sample) === true || ((/^\s*</).test(sample) === true && (/<\/\w+(\w|\d)+>\s*$/).test(sample) === true) || (/^(\s*<\?xml)/).test(sample) === true) && ((/^([\s\w]*<)/).test(sample) === true || (/(>[\s\w]*)$/).test(sample) === true)) || ((/^(\s*<s((cript)|(tyle)))/i).test(sample) === true && (/(<\/s((cript)|(tyle))>\s*)$/i).test(sample) === true)) {
                 if ((/^([\s\w]*<)/).test(sample) === false || (/(>[\s\w]*)$/).test(sample) === false) {
                     return notmarkup();
                 }
