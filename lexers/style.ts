@@ -210,7 +210,7 @@
                 // * color values are set to lowercase and    reduced from 6 to 3 digits if
                 // appropriate
                 value       = function lexer_style_item_value(val:string):string {
-                    const x:string[]          = val.split(""),
+                    const x:string[]          = val.replace(/\s*!important/, " !important").split(""),
                         values:string[]     = [],
                         transition:boolean = (data.token[parse.count - 2] === "transition"),
                         colorPush  = function lexer_style_item_value_colorPush(value:string):string {
@@ -576,9 +576,6 @@
                         } else if (type === "end") {
                             data.types[aa] = "value";
                             ltype          = "value";
-                            data.token[aa] = data
-                                .token[aa]
-                                .replace(/\s*!\s+important/, " !important");
                             data.token[aa] = value(data.token[aa]);
                             //take comments out until the 'item' is found and then put the comments back
                             if (data.token[parse.count - 1] === "{") {
@@ -610,9 +607,6 @@
                             if (data.types[aa - 1] === "colon") {
                                 data.types[aa] = "value";
                                 ltype          = "value";
-                                data.token[aa] = data
-                                    .token[aa]
-                                    .replace(/\s*!\s+important/, " !important");
                                 data.token[aa] = value(data.token[aa]);
                             } else {
                                 //properties without values are considered variables
@@ -1005,11 +999,6 @@
                                                 }
                                             }
                                             data.token[set[start][2]] = val.join(" ");
-                                            if (data.token[set[start][2]].indexOf("!important") > 0) {
-                                                data.token[set[start][2]] = data
-                                                    .token[set[start][2]]
-                                                    .replace(/\s!important/g, "") + " !important";
-                                            }
                                         }
                                         break;
                                     }
