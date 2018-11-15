@@ -1,0 +1,47 @@
+a {
+  -webkit-transition: left 400ms ease-in-out 0ms;
+  -moz-transition: left 400ms ease-in-out 0ms;
+  -o-transition: left 400ms ease-in-out 0ms;
+  transition: left 400ms ease-in-out 0ms;
+}
+b {
+  -webkit-transition: left 400s ease-in-out 0s;
+  -moz-transition: left 400s ease-in-out 0s;
+  -o-transition: left 400s ease-in-out 0s;
+  transition: left 400s ease-in-out 0s;
+}
+c {
+  -webkit-transition: left 400mS ease-in-out 0mS;
+  -moz-transition: left 400mS ease-in-out 0mS;
+  -o-transition: left 400mS ease-in-out 0mS;
+  transition: left 400mS ease-in-out 0mS;
+}
+d {
+  -webkit-transition: left 400Hz ease-in-out 0Hz;
+  -moz-transition: left 400Hz ease-in-out 0Hz;
+  -o-transition: left 400Hz ease-in-out 0Hz;
+  transition: left 400Hz ease-in-out 0Hz;
+}
+e {
+  -webkit-transition: left 400kHz ease-in-out 0kHz;
+  -moz-transition: left 400kHz ease-in-out 0kHz;
+  -o-transition: left 400kHz ease-in-out 0kHz;
+  transition: left 400kHz ease-in-out 0kHz;
+}
+f {
+  -webkit-transition: left 400XYz ease-in-out 0XYz;
+  -moz-transition: left 400XYz ease-in-out 0XYz;
+  -o-transition: left 400XYz ease-in-out 0XYz;
+  transition: left 400XYz ease-in-out 0XYz;
+}
+aa {
+  height:0px;
+  width: 400em;
+  padding-left:12.12in;
+  padding-top:+12.12em;
+  padding-bottom:-12.12ex;
+  border-width: 11XYz;
+  margin-left:13.13ADf;
+  margin-top:+3ADf;
+  margin-bottom:-3ADf;
+}

@@ -4,10 +4,15 @@
 
 (function web() {
     "use strict";
+    let editor:any,
+        lang:[string, string, string] = ["", "", ""];
     const framework:parseFramework = global.parseFramework,
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
-        input   = document.getElementsByTagName("textarea")[0],
+        input:HTMLTextAreaElement   = document.getElementsByTagName("textarea")[0],
+        parseCode:string = (Object.keys(window).indexOf("localStorage") > -1)
+            ? window.localStorage.getItem("parseCode")
+            : "",
         options:parseOptions = {
             correct        : false,
             crlf           : false,
@@ -229,7 +234,7 @@
             Object.keys(framework.lexer).forEach(function web_handler_lexers(value):void {
                 options.lexerOptions[value] = {};
             });
-            if (acetest === true) {
+            if (acetest === true || lang[0] !== "") {
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
             options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
@@ -330,8 +335,6 @@
                 return false;
             }
         };
-    let editor:any,
-        lang:[string, string, string];
     if (typeof ace === "object") {
         aceControl.onclick = function web_aceControl() {
             if (aceControl.checked === true) {
@@ -381,16 +384,16 @@
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
-    if (Object.keys(window).indexOf("localStorage") > -1 && window.localStorage.getItem("parseCode") !== undefined) {
+    if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
         if (acetest === true) {
             lang   = (options.language === "auto" || options.language === "")
-                ? framework.language.auto(localStorage.getItem("parseCode"), "javascript")
+                ? framework.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
-            editor.setValue(localStorage.getItem("parseCode"));
+            editor.setValue(parseCode);
             editor.getSession().setMode(`ace/mode/${lang[0]}`);
             editor.clearSelection();
         } else {
-            input.value = localStorage.getItem("parseCode");
+            input.value = parseCode;
         }
     }
     if (location.href.indexOf("//localhost:") > 0) {

@@ -212,7 +212,7 @@
                 value       = function lexer_style_item_value(val:string):string {
                     const x:string[]          = val.replace(/\s*!important/, " !important").split(""),
                         values:string[]     = [],
-                        transition:boolean = (data.token[parse.count - 2] === "transition"),
+                        transition:boolean = (/-?transition$/).test(data.token[parse.count - 2]),
                         colorPush  = function lexer_style_item_value_colorPush(value:string):string {
                             const vl = value.toLowerCase();
                             if ((/^(#[0-9a-f]{3,6})$/).test(vl) === true) {
@@ -245,10 +245,14 @@
                         commaspace  = function lexer_style_item_value_commaspace(find:string):string {
                             return find.replace(",", ", ");
                         },
+                        diFix = function lexer_style_item_value_diFix(di:string):string {
+                            return `${di} `;
+                        },
                         zerodotstart:RegExp    = (/^-?0+\.\d+[a-z]/),
                         dotstart:RegExp        = (/^-?\.\d+[a-z]/),
                         zerodot:RegExp         = (/(\s|\(|,)-?0+\.?\d+([a-z]|\)|,|\s)/g),
-                        dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g);
+                        dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g),
+                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw";
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
@@ -314,6 +318,11 @@
                                     values[cc] = values[cc]
                                         .replace(/url\(\s*('|")?/, "url(\"")
                                         .replace(/(('|")?\s*\))$/, "\")");
+                                }
+                            }
+                            if ((/^(\+|-)?\d+(\.\d+)?(e-?\d+)?\D+$/).test(values[cc]) === true) {
+                                if (dimensions.indexOf(values[cc].replace(/(\+|-)?\d+(\.\d+)?(e-?\d+)?/, "")) < 0) {
+                                    values[cc] = values[cc].replace(/(\+|-)?\d+(\.\d+)?(e-?\d+)?/, diFix);
                                 }
                             }
                             if ((/^\w+\(/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
