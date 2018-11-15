@@ -182,6 +182,21 @@ const nodetest = function nodetest_() {
                     } else {
                         options.lexerOptions.style.no_lead_zero = false;
                     }
+                    if ((/_quoteConvert-/).test(sourcepath) === true) {
+                        if ((/_quoteConvert-double/).test(sourcepath) === true) {
+                            options.lexerOptions.style.quote_convert = "double";
+                            options.lexerOptions.script.quote_convert = "double";
+                        } else if ((/_quoteConvert-single/).test(sourcepath) === true) {
+                            options.lexerOptions.style.quote_convert = "single";
+                            options.lexerOptions.script.quote_convert = "single";
+                        } else {
+                            options.lexerOptions.style.quote_convert = "none";
+                            options.lexerOptions.script.quote_convert = "none";
+                        }
+                    } else {
+                        options.lexerOptions.style.quote_convert = "none";
+                        options.lexerOptions.script.quote_convert = "none";
+                    }
                     if ((/_objectSort(\.|_|-)/).test(sourcepath) === true) {
                         if ((/_objectSort-/).test(sourcepath) === true) {
                             if ((/_objectSort-false/).test(sourcepath) === true) {

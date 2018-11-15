@@ -1,3 +1,5 @@
+import { resolveTxt } from "dns";
+
 /*jslint node:true */
 /*eslint-env node*/
 /*eslint no-console: 0*/
@@ -16,6 +18,21 @@ const services = function services_() {
             fs   : require("fs"),
             os   : require("os"),
             path : require("path")
+        },
+        text:any     = {
+            angry    : "\u001b[1m\u001b[31m",
+            blue     : "\u001b[34m",
+            bold     : "\u001b[1m",
+            clear    : "\u001b[24m\u001b[22m",
+            cyan     : "\u001b[36m",
+            diffchar : "\u001b[1m\u001b[4m",
+            green    : "\u001b[32m",
+            nocolor  : "\u001b[39m",
+            none     : "\u001b[0m",
+            purple   : "\u001b[35m",
+            red      : "\u001b[31m",
+            underline: "\u001b[4m",
+            yellow   : "\u001b[33m"
         },
         project:string = (function services_project() {
             const dirs:string[] = __dirname.split(node.path.sep);
@@ -274,24 +291,24 @@ const services = function services_() {
                 if ((/^([0-9]\.)/).test(secondString) === true) {
                     secondString = `0${secondString}`;
                 }
-                return `\u001b[36m[${hourString}:${minuteString}:${secondString}]\u001b[0m `;
+                return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
             }
         },
         errout = function services_errout(message:string):void {
             let stack = new Error().stack;
             console.log("");
-            console.log("\u001b[31mScript error\u001b[39m");
+            console.log(`${text.angry}Script error${text.none}`);
             console.log("------------");
             if (message === "") {
-                console.log("\u001b[33mNo error message supplied\u001b[39m");
+                console.log(`${text.yellow}No error message supplied${text.none}`);
             } else {
                 console.log(message);
             }
             console.log("");
             if (process.platform.toLowerCase() === "win32") {
-                stack = stack.replace("Error", "\u001b[36mStack trace\u001b[39m\r\n-----------");
+                stack = stack.replace("Error", `${text.cyan}Stack trace${text.none}\r\n-----------`);
             } else {
-                stack = stack.replace("Error", "\u001b[36mStack trace\u001b[39m\n-----------");
+                stack = stack.replace("Error", `${text.cyan}Stack trace${text.none}\n-----------`);
             }
             console.log(stack);
             humantime(true);
@@ -403,15 +420,15 @@ const services = function services_() {
                                     const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
                                             const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
                                             console.log("");
-                                            console.log(`Tests for lexer - \u001b[36m${lex}\u001b[0m`);
+                                            console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
                                             currentlex = lex;
                                         },
                                         comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
                                             filecount = filecount + 1;
-                                            console.log(`${humantime(false)}\u001b[32mPass ${filecount}:\u001b[0m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            console.log(`${humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
                                             if (a === len - 1) {
                                                 console.log("");
-                                                console.log("\u001b[32mTest units evaluated without failure!\u001b[0m");
+                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
                                                 return next();
                                             }
                                         },
@@ -455,14 +472,14 @@ const services = function services_() {
                                                 comparePass();
                                                 return false;
                                             }
-                                            console.log(`${humantime(false)}\u001b[31mFail ${filecount + 1}:\u001b[0m ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
                                             console.log("");
-                                            console.log("\u001b[31mRed\u001b[0m = Generated from raw code file");
-                                            console.log("\u001b[32mGreen\u001b[0m = Control code from parsed file");
+                                            console.log(`${text.red}Red${text.none} = Generated from raw code file`);
+                                            console.log(`${text.green}Green${text.none} = Control code from parsed file`);
                                             console.log(report[0]);
                                             console.log("");
-                                            console.log(`${total + plus} \u001b[32mdifference${plural} counted.\u001b[0m`);
-                                            errout(`Pretty Diff \u001b[31mfailed\u001b[0m on file: \u001b[36m${sampleName}\u001b[0m`);
+                                            console.log(`${total + plus} ${text.green}difference${plural} counted.${text.none}`);
+                                            errout(`Pretty Diff ${text.angry}failed${text.none} on file: ${text.cyan + sampleName + text.none}`);
                                             return true;
                                         };
                                     files.code   = parse.safeSort(files.code, "ascend", false);
@@ -474,10 +491,10 @@ const services = function services_() {
                                         }
                                         if (files.code[a] === undefined || files.parsed[a] === undefined) {
                                             if (files.code[a] === undefined) {
-                                                console.log(`\u001b[33msamples_code directory is missing file:\u001b[0m${files.parsed[a][0]}`);
+                                                console.log(`${text.yellow}samples_code directory is missing file:${text.none} ${files.parsed[a][0]}`);
                                                 files.parsed.splice(a, 1);
                                             } else {
-                                                console.log(`\u001b[33msamples_parse directory is missing file:\u001b[0m ${files.code[a][0]}`);
+                                                console.log(`${text.yellow}samples_parse directory is missing file:${text.none} ${files.code[a][0]}`);
                                                 files.code.splice(a, 1);
                                             }
                                             len = (files.code.length > files.parsed.length)
@@ -486,9 +503,9 @@ const services = function services_() {
                                             a   = a - 1;
                                         } else if (files.code[a][0] === files.parsed[a][0]) {
                                             if (files.parsed[a][1] === "") {
-                                                console.log(`\u001b[33mParsed file is empty:\u001b[0m ${files.parsed[a][0]}`);
+                                                console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
                                             } else if (files.code[a][1] === "") {
-                                                console.log(`\u001b[33mCode file is empty:\u001b[0m ${files.code[a][0]}`);
+                                                console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
                                             } else {
                                                 if ((/_correct(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_correct-/).test(files.code[a][0]) === true) {
@@ -515,6 +532,21 @@ const services = function services_() {
                                                     }
                                                 } else {
                                                     parse_options.lexerOptions.style.no_lead_zero = false;
+                                                }
+                                                if ((/_quoteConvert-/).test(files.code[a][0]) === true) {
+                                                    if ((/_quoteConvert-double/).test(files.code[a][0]) === true) {
+                                                        parse_options.lexerOptions.style.quote_convert = "double";
+                                                        parse_options.lexerOptions.script.quote_convert = "double";
+                                                    } else if ((/_quoteConvert-single/).test(files.code[a][0]) === true) {
+                                                        parse_options.lexerOptions.style.quote_convert = "single";
+                                                        parse_options.lexerOptions.script.quote_convert = "single";
+                                                    } else {
+                                                        parse_options.lexerOptions.style.quote_convert = "none";
+                                                        parse_options.lexerOptions.script.quote_convert = "none";
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.style.quote_convert = "none";
+                                                    parse_options.lexerOptions.script.quote_convert = "none";
                                                 }
                                                 if ((/_objectSort(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_objectSort-/).test(files.code[a][0]) === true) {
@@ -594,10 +626,10 @@ const services = function services_() {
                                             }
                                         } else {
                                             if (files.code[a][0] < files.parsed[a][0]) {
-                                                console.log(`\u001b[33mParsed samples directory is missing file:\u001b[0m ${files.code[a][0]}`);
+                                                console.log(`${text.yellow}Parsed samples directory is missing file:${text.none} ${files.code[a][0]}`);
                                                 files.code.splice(a, 1);
                                             } else {
-                                                console.log(`\u001b[33mCode samples directory is missing file:\u001b[0m ${files.parsed[a][0]}`);
+                                                console.log(`${text.yellow}Code samples directory is missing file:${text.none} ${files.parsed[a][0]}`);
                                                 files.parsed.splice(a, 1);
                                             }
                                             len = (files.code.length > files.parsed.length)
@@ -606,7 +638,7 @@ const services = function services_() {
                                             a   = a - 1;
                                             if (a === len - 1) {
                                                 console.log("");
-                                                console.log("\u001b[32mTest units evaluated without failure!\u001b[0m");
+                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
                                                 return next();
                                             }
                                         }
@@ -618,7 +650,7 @@ const services = function services_() {
                                     node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
                                         if (err !== null) {
                                             if (err.toString().indexOf("no such file or directory") > 0) {
-                                                return errout(`The directory ${dirpath} \u001b[31mdoesn't exist\u001b[0m. Provide the necessary test samples for \u001b[36m${lexer}\u001b[0m.`);
+                                                return errout(`The directory ${dirpath} ${text.angry}doesn't exist${text.none}. Provide the necessary test samples for ${text.cyan + lexer + text.none}.`);
                                             }
                                             console.log(`Error reading from directory ${dirpath}`);
                                             return errout(err);
@@ -657,7 +689,7 @@ const services = function services_() {
                                         }
                                     });
                                 };
-                            console.log("\u001b[36mCore Unit Testing\u001b[0m");
+                            console.log(`${text.cyan}Core Unit Testing${text.none}`);
                             total.lexer = lexers.length;
                             lexers.forEach(function services_validate_validation_coreunits_lexers(value:string) {
                                 count.lexer = count.lexer + 1;
@@ -669,7 +701,7 @@ const services = function services_() {
                             let keys    = [],
                                 keysort = "";
                             const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
-                            console.log("\u001b[36mFramework Testing\u001b[0m");
+                            console.log(`${text.cyan}Framework Testing${text.none}`);
                             console.log("");
                             framework.parserArrays({
                                 correct        : false,
@@ -684,95 +716,95 @@ const services = function services_() {
                             keys = Object.keys(parse);
                             keysort = parse.safeSort(keys, "ascend", false).join();
                             if (keysort !== keylist) {
-                                console.log("\u001b[36mExpected Keys\u001b[0m");
+                                console.log(`${text.cyan}Expected Keys${text.none}`);
                                 console.log(keylist);
-                                console.log("\u001b[36mActual Keys\u001b[0m");
+                                console.log(`${text.cyan}Actual Keys${text.none}`);
                                 console.log(keysort);
-                                return errout("\u001b[31mParse framework failure:\u001b[0m The \"parse\" object does not match the known list of required properties.");
+                                return errout(`${text.angry}Parse framework failure:${text.none} The "parse" object does not match the known list of required properties.`);
                             }
-                            console.log(`${humantime(false)}\u001b[32mObject parse contains only the standard properties.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}Object parse contains only the standard properties.${text.none}`);
                             
                             if (typeof parse.concat !== "function" || parse.concat.name !== "parse_concat") {
-                                return errout("\u001b[31mParse framework failure:\u001b[0m parse.concat does not point to the function named parse_concat.");
+                                return errout(`${text.angry}Parse framework failure:${text.none} parse.concat does not point to the function named parse_concat.`);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.concat points to function parse_concat.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.concat points to function parse_concat.${text.none}`);
                             
                             if (parse.count !== -1) {
-                                return errout("\u001b[31mParse framework failure:\u001b[0m The default for parse.count isn't -1 or type number.");
+                                return errout(`${text.angry}Parse framework failure:${text.none} The default for parse.count isn't -1 or type number.`);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.count has default value of -1 and type number.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.count has default value of -1 and type number.${text.none}`);
                             
                             if (
                                 typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"lexer\":[],\"lines\":[],\"presv\":[],\"stack\":[],\"token\":[],\"types\":[]}"
                             ) {
-                                return errout("\u001b[31mParse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.data contains properties as defined by parse.datanames and each is an empty array.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.data contains properties as defined by parse.datanames and each is an empty array.${text.none}`);
                             
                             if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
-                                return errout("\u001b[31mParse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.datanames contains only the data field names.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.datanames contains only the data field names.${text.none}`);
             
                             if (parse.lineNumber !== 1) {
-                                return errout("\u001b[31mParse framework failure: parse.lineNumber does not have a default value of 1 or type number.\u001b[0m ");
+                                return errout("${text.angry}Parse framework failure: parse.lineNumber does not have a default value of 1 or type number.${text.none} ");
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.lineNumber has a default value of 1 and type number.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.lineNumber has a default value of 1 and type number.${text.none}`);
                             
                             // The correct default for linesSpace is 0
                             // but the default is changed by the source of empty string.
                             if (parse.linesSpace !== 1) {
-                                return errout("\u001b[31mParse framework failure: parse.linesSpace does not have a default value of 1 or type number.\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.linesSpace does not have a default value of 1 or type number.${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.linesSpace has a default value of 0 and type number.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.linesSpace has a default value of 0 and type number.${text.none}`);
                             
                             if (typeof parse.objectSort !== "function" || parse.objectSort.name !== "parse_objectSort") {
-                                return errout("\u001b[31mParse framework failure: parse.objectSort is not assigned to named function parse_objectSort\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.objectSort is not assigned to named function parse_objectSort${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.objectSort is assigned to named function parse_objectSort\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.objectSort is assigned to named function parse_objectSort${text.none}`);
                             
                             if (typeof parse.pop !== "function" || parse.pop.name !== "parse_pop") {
-                                return errout("\u001b[31mParse framework failure: parse.pop is not assigned to named function parse_pop\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.pop is not assigned to named function parse_pop${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.pop is assigned to named function parse_pop\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.pop is assigned to named function parse_pop${text.none}`);
                             
                             if (typeof parse.push !== "function" || parse.push.name !== "parse_push") {
-                                return errout("\u001b[31mParse framework failure: parse.push is not assigned to named function parse_push\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.push is not assigned to named function parse_push${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.push is assigned to named function parse_push\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.push is assigned to named function parse_push${text.none}`);
                             
                             if (parse.push.toString().indexOf("parse.structure.push([structure, parse.count])") < 0 || parse.push.toString().indexOf("parse.structure.pop") < 0) {
-                                return errout("\u001b[31mParse framework failure: parse.push does not regulate parse.structure\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.push does not regulate parse.structure${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.push contains references to push and pop parse.structure\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.push contains references to push and pop parse.structure${text.none}`);
             
                             if (typeof parse.safeSort !== "function" || parse.safeSort.name !== "parse_safeSort") {
-                                return errout("\u001b[31mParse framework failure: parse.safeSort is not assigned to named function parse_safeSort\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.safeSort is not assigned to named function parse_safeSort${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.safeSort is assigned to named function parse_safeSort\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.safeSort is assigned to named function parse_safeSort${text.none}`);
                             
                             if (typeof parse.spacer !== "function" || parse.spacer.name !== "parse_spacer") {
-                                return errout("\u001b[31mParse framework failure: parse.spacer is not assigned to named function parse_spacer\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.spacer is not assigned to named function parse_spacer${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.spacer is assigned to named function parse_spacer\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.spacer is assigned to named function parse_spacer${text.none}`);
                             
                             if (typeof parse.splice !== "function" || parse.splice.name !== "parse_splice") {
-                                return errout("\u001b[31mParse framework failure: parse.splice is not assigned to named function parse_splice\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.splice is not assigned to named function parse_splice${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.splice is assigned to named function parse_splice\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.splice is assigned to named function parse_splice${text.none}`);
             
                             if (Array.isArray(parse.structure) === false || parse.structure.length !== 1 || Array.isArray(parse.structure[0]) === false || parse.structure[0][0] !== "global" || parse.structure[0][1] !== -1) {
-                                return errout("\u001b[31mParse framework failure: parse.structure is not assigned the default [[\"global\", -1]]\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.structure is not assigned the default [["global", -1]]${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.structure is assigned the default of [["global", -1]]\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.structure is assigned the default of [["global", -1]]${text.none}`);
             
                             if (parse.structure.pop.name !== "parse_structure_pop") {
-                                return errout("\u001b[31mParse framework failure: parse.structure does not have a custom 'pop' method.\u001b[0m ");
+                                return errout(`${text.angry}Parse framework failure: parse.structure does not have a custom 'pop' method.${text.none} `);
                             }
-                            console.log(`${humantime(false)}\u001b[32mparse.structure does have a custom 'pop' method.\u001b[0m`);
+                            console.log(`${humantime(false) + text.green}parse.structure does have a custom 'pop' method.${text.none}`);
 
                             console.log("");
-                            console.log("\u001b[32mFramework testing complete!\u001b[0m");
+                            console.log(`${text.green}Framework testing complete!${text.none}`);
                             return next();
                         },
                         lint     : function services_validate_validation_lint() {
@@ -804,10 +836,10 @@ const services = function services_() {
                                                         return;
                                                     }
                                                     filesCount = filesCount + 1;
-                                                    console.log(`${humantime(false)}\u001b[32mLint passed:\u001b[0m ${val}`);
+                                                    console.log(`${humantime(false) + text.green}Lint passed:${text.none} ${val}`);
                                                     if (filesCount === filesTotal) {
                                                         console.log("");
-                                                        console.log("\u001b[32mLint complete!\u001b[0m");
+                                                        console.log(`${text.green}Lint complete!${text.none}`);
                                                         next();
                                                         return;
                                                     }
@@ -820,7 +852,7 @@ const services = function services_() {
                                         };
                                     files.forEach(lintit);
                                 };
-                            console.log("\u001b[36mBeautifying and Linting\u001b[0m");
+                            console.log(`${text.cyan}Beautifying and Linting${text.none}`);
                             console.log("");
                             (function services_validate_validation_lint_getFiles():void {
                                 let total:number    = 1,
@@ -994,10 +1026,10 @@ const services = function services_() {
                         }
                     });
                     keys.forEach(function services_action_commands_output(value):void {
-                        const output:string[] = ["\u001b[31m*\u001b[39m \u001b[32m"];
+                        const output:string[] = [`${text.angry}*${text.none} ${text.green}`];
                         let length:number = value.length;
                         output.push(value);
-                        output.push("\u001b[39m");
+                        output.push(text.none);
                         if (length < longest) {
                             do {
                                 output.push(" ");
@@ -1012,46 +1044,46 @@ const services = function services_() {
                     });
                     console.log("");
                     console.log("Examples:");
-                    console.log(`\u001b[36mnode js${node.path.sep}services commands server\u001b[39m`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services version\u001b[39m`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services parse-table js/parse.js\u001b[39m`);
-                    console.log(`\u001b[36mnode js${node.path.sep}services server 3000\u001b[39m`);
+                    console.log(`${text.cyan}node js${node.path.sep}services commands server${text.none}`);
+                    console.log(`${text.cyan}node js${node.path.sep}services version${text.none}`);
+                    console.log(`${text.cyan}node js${node.path.sep}services parse-table js/parse.js${text.none}`);
+                    console.log(`${text.cyan}node js${node.path.sep}services server 3000${text.none}`);
                 } else {
-                    console.log(`\u001b[4m${args[1]}\u001b[0m`);
+                    console.log(`${text.underline + args[1] + text.none}`);
                     console.log("");
                     console.log(wrap(commandList[args[1]].detail, longest));
                     console.log("");
                     console.log("Example");
-                    console.log(`\u001b[36mnode js${node.path.sep}services ${commandList[args[1]].example}\u001b[39m`);
+                    console.log(`${text.cyan}node js${node.path.sep}services ${commandList[args[1]].example + text.none}`);
                 }
                 console.log("");
             },
             help: function services_action_help():void {
                 console.log("");
                 console.log("");
-                console.log(`Thank you for experimenting with the \u001b[4mUnibeautify Parse-Framework\u001b[0m \u001b[32m${version}\u001b[39m in Node.js`);
+                console.log(`Thank you for experimenting with the ${text.underline}Unibeautify Parse-Framework${text.none} ${text.green + version + text.none} in Node.js`);
                 console.log("");
-                console.log("\u001b[31m*\u001b[39m For a list of commands please try: \u001b[36mnode js/service commands\u001b[39m");
-                console.log("\u001b[31m*\u001b[39m For a description of the project please read the readme.md document.");
-                console.log("\u001b[31m*\u001b[39m For project status please visit https://github.com/Unibeautify/parse-framework");
-                console.log("\u001b[31m*\u001b[39m For standard output of parse data please try: \u001b[36mnode js/service parse-table path/to/file\u001b[39m");
-                console.log("    or \u001b[36mnode js/service parse-table code\u001b[39m");
-                console.log("\u001b[31m*\u001b[39m For raw unformatted parser output try: \u001b[36mnode js/service parse-array path/to/file\u001b[39m");
-                console.log("    or \u001b[36mnode js/service parse-array code\u001b[39m");
-                console.log("    or \u001b[36mnode js/service parse-object path/to/file\u001b[39m");
-                console.log("    or \u001b[36mnode js/service parse-object code\u001b[39m");
+                console.log(`${text.angry}*${text.none} For a list of commands please try: ${text.cyan}node js/service commands${text.none}`);
+                console.log(`${text.angry}*${text.none} For a description of the project please read the readme.md document.`);
+                console.log(`${text.angry}*${text.none} For project status please visit https://github.com/Unibeautify/parse-framework`);
+                console.log(`${text.angry}*${text.none} For standard output of parse data please try: ${text.cyan}node js/service parse-table path/to/file${text.none}`);
+                console.log(`    or ${text.cyan}node js/service parse-table code${text.none}`);
+                console.log(`${text.angry}*${text.none} For raw unformatted parser output try: ${text.cyan}node js/service parse-array path/to/file${text.none}`);
+                console.log(`    or ${text.cyan}node js/service parse-array code${text.none}`);
+                console.log(`    or ${text.cyan}node js/service parse-object path/to/file${text.none}`);
+                console.log(`    or ${text.cyan}node js/service parse-object code${text.none}`);
                 console.log("");
-                console.log("\u001b[4mAbout\u001b[0m");
+                console.log(`${text.underline}About${text.none}`);
                 console.log("The goal is to provide a framework for plug-and-play rules that parse");
                 console.log("various languages with output in the same universal format for use by");
                 console.log("any application.  To examine the supplied language rules browse the");
                 console.log("code in the 'lexers' directory.");
                 console.log("");
-                console.log("\u001b[31mhttps://github.com/Unibeautify/parse-framework\u001b[39m");
+                console.log(`${text.angry}https://github.com/Unibeautify/parse-framework${text.none}`);
                 console.log("");
             },
             inventory: function services_action_inventory():void {
-                console.log("\u001b[4mInventory of mentioned languages\u001b[0m");
+                console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
                 console.log("");
                 console.log(wrap("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.", 0));
                 node.fs.readdir(`${project}lexers`, function services_action_inventory_readdir(err, files) {
@@ -1095,11 +1127,11 @@ const services = function services_() {
                                 const keys = Object.keys(langs).sort();
                                 console.log("");
                                 keys.forEach(function services_action_inventory_readdir_each_readfile_output(value) {
-                                    console.log(`\u001b[31m*\u001b[39m \u001b[32m${value}\u001b[39m`);
+                                    console.log(`${text.angry}*${text.none} ${text.green + value + text.none}`);
                                     if (langs[value].keys.length > 0) {
                                         langs[value].keys.sort();
                                         langs[value].keys.forEach(function services_action_inventory_readdir_each_readfile_output_dedicated(dedval) {
-                                            console.log(`   \u001b[31m-\u001b[39m ${dedval}`);
+                                            console.log(`   ${text.angry}-${text.none} ${dedval}`);
                                         });
                                     }
                                 });
@@ -1113,7 +1145,7 @@ const services = function services_() {
                 const nodetest = require(`${js}runtimes${node.path.sep}nodetest`);
                 process.argv.splice(0, 1);
                 if (process.argv[2] === undefined) {
-                    return errout(`No code sample or file path. The \u001b[31m${command}\u001b[39m command requires an additional argument.`);
+                    return errout(`No code sample or file path. The ${text.angry + command + text.none} command requires an additional argument.`);
                 }
                 if (command === "parse-table") {
                     return nodetest();
@@ -1126,7 +1158,7 @@ const services = function services_() {
             },
             performance: function services_action_performance():void {
                 if (args[1] === undefined) {
-                    return errout("The \u001b[31mperformance\u001b[39m command requires a relative path to a file");
+                    return errout(`The ${text.angry}performance${text.none} command requires a relative path to a file`);
                 }
                 const optionValue = function services_action_performance_optionValue(name:string, defaultValue:string|number|boolean, ):any {
                         if (args.join("").indexOf(`${name}:`) > -1) {
@@ -1214,7 +1246,7 @@ const services = function services_() {
                                     console.log("");
                                     store.forEach(function services_action_performance_readFile_readdir_total(value:number, index:number) {
                                         if (index > 0) {
-                                            console.log(`\u001b[33m${index}:\u001b[0m ${value}`);
+                                            console.log(`${text.yellow + index + text.none}: ${value}`);
                                             total = total + value;
                                             if (value > high) {
                                                 high = value;
@@ -1222,14 +1254,14 @@ const services = function services_() {
                                                 low = value;
                                             }
                                         } else {
-                                            console.log(`\u001b[33m0:\u001b[0m ${value} \u001b[31m(first run is ignored)\u001b[0m`);
+                                            console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
                                         }
                                     });
                                     console.log("");
-                                    console.log(`[\u001b[1m\u001b[32m${(total / 1e7)}\u001b[0m] Milliseconds, \u00b1\u001b[36m${((((high - low) / total) / 2) * 100).toFixed(2)}\u001b[39m%`);
-                                    console.log(`[\u001b[36m${comma(filedata.length)}\u001b[39m] Character size`);
-                                    console.log(`[\u001b[36m${comma(output.token.length)}\u001b[39m] Token length`);
-                                    console.log(`Parsed as \u001b[36m${lang[2]}\u001b[0m with lexer \u001b[36m${lang[1]}\u001b[0m.`);
+                                    console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
+                                    console.log(`[${text.cyan + comma(filedata.length) + text.none}] Character size`);
+                                    console.log(`[${text.cyan + comma(output.token.length) + text.none}] Token length`);
+                                    console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
                                     console.log("");
                                 }
                             };

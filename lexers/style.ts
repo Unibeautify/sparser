@@ -1,3 +1,5 @@
+import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
+
 /*global global*/
 (function style_init() {
     "use strict";
@@ -224,6 +226,13 @@
                             }
                             return value;
                         },
+                        // convert the quotes around strings using the quote_convert option
+                        quoteConvert = function beautify_script_output_quoteConvert(quote:string):string {
+                            if (quote.length === 1) {
+                                return `\\${quote}`;
+                            }
+                            return quote;
+                        },
                         zerofix     = function lexer_style_item_value_zerofix(find:string):string {
                             if (options.lexerOptions.style.no_lead_zero === true) {
                                 const scrub = function lexer_style_item_value_zerofix_scrub(search:string) {
@@ -248,11 +257,28 @@
                         diFix = function lexer_style_item_value_diFix(di:string):string {
                             return `${di} `;
                         },
+                        slash = function lexer_style_item_value_slash():boolean {
+                            const start:number = cc - 1;
+                            let xx:number = start;
+                            if (start < 1) {
+                                return true;
+                            }
+                            do {
+                                xx = xx - 1;
+                            } while (xx > 0 && x[xx] === "\\");
+
+                            // report true for odd numbers (escaped)
+                            if ((start - xx) % 2 === 1) {
+                                return true;
+                            }
+                            return false;
+                        },
                         zerodotstart:RegExp    = (/^-?0+\.\d+[a-z]/),
                         dotstart:RegExp        = (/^-?\.\d+[a-z]/),
                         zerodot:RegExp         = (/(\s|\(|,)-?0+\.?\d+([a-z]|\)|,|\s)/g),
                         dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g),
-                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw";
+                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw",
+                        stringSlice:[string, string, string] = ["", "", ""];
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
@@ -263,26 +289,28 @@
                     if (cc < leng) {
                         do {
                             items.push(x[cc]);
-                            if (block === "") {
-                                if (x[cc] === "\"") {
-                                    block = "\"";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "'") {
-                                    block = "'";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "(") {
-                                    block = ")";
-                                    dd    = dd + 1;
-                                } else if (x[cc] === "[") {
-                                    block = "]";
-                                    dd    = dd + 1;
-                                }
-                            } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
-                                dd = dd + 1;
-                            } else if (x[cc] === block) {
-                                dd = dd - 1;
-                                if (dd === 0) {
-                                    block = "";
+                            if (x[cc - 1] !== "\\" || slash() === false) {
+                                if (block === "") {
+                                    if (x[cc] === "\"") {
+                                        block = "\"";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "'") {
+                                        block = "'";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "(") {
+                                        block = ")";
+                                        dd    = dd + 1;
+                                    } else if (x[cc] === "[") {
+                                        block = "]";
+                                        dd    = dd + 1;
+                                    }
+                                } else if ((x[cc] === "(" && block === ")") || (x[cc] === "[" && block === "]")) {
+                                    dd = dd + 1;
+                                } else if (x[cc] === block) {
+                                    dd = dd - 1;
+                                    if (dd === 0) {
+                                        block = "";
+                                    }
                                 }
                             }
                             if (block === "" && x[cc] === " ") {
@@ -315,10 +343,34 @@
                             } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
                                 block = values[cc].charAt(values[cc].indexOf("url(") + 4);
                                 if (block !== "@" && block !== "{" && block !== "<") {
-                                    values[cc] = values[cc]
-                                        .replace(/url\(\s*('|")?/, "url(\"")
-                                        .replace(/(('|")?\s*\))$/, "\")");
+                                    if (options.lexerOptions.style.quote_convert === "double") {
+                                        values[cc] = values[cc]
+                                            .replace(/url\(('|")?/, "url(")
+                                            .replace(/('|")?\)$/, ")")
+                                            .replace(/\\?"/g, quoteConvert)
+                                            .replace(/url\(/, "url(\"")
+                                            .replace(/\)$/, "\")");
+                                    } else {
+                                        values[cc] = values[cc]
+                                            .replace(/url\(('|")?/, "url(")
+                                            .replace(/('|")?\)$/, ")")
+                                            .replace(/\\?'/g, quoteConvert)
+                                            .replace(/url\(/, "url('")
+                                            .replace(/\)$/, "')");
+                                    }
                                 }
+                            } else if (values[cc].indexOf("'") < values[cc].lastIndexOf("'") && options.lexerOptions.style.quote_convert === "double") {
+                                stringSlice[0] = values[cc].slice(0, values[cc].indexOf("'"));
+                                stringSlice[1] = values[cc].slice(values[cc].indexOf("'") + 1, values[cc].lastIndexOf("'"));
+                                stringSlice[2] = values[cc].slice(values[cc].lastIndexOf("'") + 1);
+                                stringSlice[1] = `"${stringSlice[1].replace(/\\?"/g, quoteConvert)}"`;
+                                values[cc] = stringSlice.join("");
+                            } else if (values[cc].indexOf("\"") < values[cc].lastIndexOf("\"") && options.lexerOptions.style.quote_convert === "single") {
+                                stringSlice[0] = values[cc].slice(0, values[cc].indexOf("\""));
+                                stringSlice[1] = values[cc].slice(values[cc].indexOf("\"") + 1, values[cc].lastIndexOf("\""));
+                                stringSlice[2] = values[cc].slice(values[cc].lastIndexOf("\"") + 1);
+                                stringSlice[1] = `'${stringSlice[1].replace(/\\?'/g, quoteConvert)}'`;
+                                values[cc] = stringSlice.join("");
                             }
                             if ((/^(\+|-)?\d+(\.\d+)?(e-?\d+)?\D+$/).test(values[cc]) === true) {
                                 if (dimensions.indexOf(values[cc].replace(/(\+|-)?\d+(\.\d+)?(e-?\d+)?/, "")) < 0) {

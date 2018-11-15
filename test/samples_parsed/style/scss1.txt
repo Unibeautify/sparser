@@ -9,7 +9,7 @@
 {"begin":3,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":";","types":"semi"},
 {"begin":3,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":"background","types":"property"},
 {"begin":3,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":":","types":"colon"},
-{"begin":3,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":"url(\"http://asdf.com/\")","types":"value"},
+{"begin":3,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":"url('http://asdf.com/')","types":"value"},
 {"begin":3,"lexer":"style","lines":0,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":";","types":"semi"},
 {"begin":3,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":"/*asdf*/","types":"comment"},
 {"begin":3,"lexer":"style","lines":2,"presv":false,"stack":"#extras-ingredients input,#extras-ingredients select","token":"$var","types":"variable"},

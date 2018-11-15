@@ -1542,6 +1542,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     a = ee - 1;
                     return build.join("");
                 },
+                // convert the quotes around strings using the quote_convert option
+                quoteConvert = function beautify_script_output_quoteConvert(quote:string):string {
+                    if (quote.length === 1) {
+                        return `\\${quote}`;
+                    }
+                    return quote;
+                },
                 // Identifies blocks of markup embedded within JavaScript for language supersets
                 // like React JSX.
                 markup         = function lexer_script_markup():void {
@@ -2240,6 +2247,11 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);
+                    if (options.lexerOptions.script.quote_convert === "double") {
+                        ltoke = `"${ltoke.slice(1, ltoke.length - 1).replace(/\\?"/g, quoteConvert)}"`;
+                    } else if (options.lexerOptions.script.quote_convert === "single") {
+                        ltoke = `'${ltoke.slice(1, ltoke.length - 1).replace(/\\?'/g, quoteConvert)}'`;
+                    }
                     if (options.language === "json") {
                         ltype = "string";
                         recordPush("");

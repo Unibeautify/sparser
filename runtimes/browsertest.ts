@@ -257,7 +257,7 @@
                         values:string = "";
                     do {
                         aa = aa - 1;
-                        name = params[aa].slice(0, params[aa].indexOf("="));
+                        name = params[aa].slice(0, params[aa].indexOf("=")).toLowerCase();
                         values = (params[aa].indexOf("=") > 0)
                             ? params[aa].slice(params[aa].indexOf("=") + 1)
                             : "";
@@ -281,8 +281,12 @@
                                     lang[1] = values;
                                 }
                             }
-                        }
-                        if (name === "objectSort") {
+                        } else if (name === "quote_convert" || name === "quoteconvert") {
+                            if (values === "single" || values === "double") {
+                                options.lexerOptions.script.quote_convert = values;
+                                options.lexerOptions.style.quote_convert = values;
+                            }
+                        } else if (name === "objectsort") {
                             if (values === "true") {
                                 options.lexerOptions.script.objectSort = true;
                                 options.lexerOptions.style.objectSort = true;

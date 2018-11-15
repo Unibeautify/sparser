@@ -1,0 +1,4 @@
+var a = 1;
+console.log("hel\'lo");
+console.log("hel\"lo");
+console.log("hel'l0");
