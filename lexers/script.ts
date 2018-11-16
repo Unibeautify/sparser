@@ -567,6 +567,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         build:string[]  = [starting],
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
+                        qc:"none"|"double"|"single" = options.lexerOptions.script.quote_convert,
                         base:number   = a + starting.length;
                     if (wordTest > -1) {
                         word();
@@ -596,7 +597,28 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     ee = base;
                     if (ee < b) {
                         do {
-                            if (ee > a + 1) {
+                            if (data.token[0] !== "{" && data.token[0] !== "[" && qc !== "none" && (c[ee] === "\"" || c[ee] === "'")) {
+                                if (c[ee - 1] !== "\\" || slashes(ee - 1) === false) {
+                                    if (qc === "double") {
+                                        if (c[ee] === "\"") {
+                                            c[ee] = "\\\"";
+                                        } else if (c[ee - 1] === "\\") {
+                                            build.pop();
+                                        }
+                                    } else {
+                                        if (c[ee] === "'") {
+                                            c[ee] = "\\'";
+                                        } else if (c[ee - 1] === "\\") {
+                                            build.pop();
+                                        }
+                                    }
+                                } else if (qc === "double" && c[ee] === "'") {
+                                    build.pop();
+                                } else if (qc === "single" && c[ee] === "\"") {
+                                    build.pop();
+                                }
+                                build.push(c[ee]);
+                            } else if (ee > a + 1) {
                                 if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<?php", "?>"));
@@ -645,7 +667,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             ee = ee + 1;
                         } while (ee < b);
                     }
-                    if (escape === true) {
+                    if (starting === "\"" && qc === "single") {
+                        build[0] = "'";
+                        build[build.length - 1] = "'";
+                    } else if (starting === "'" && qc === "double") {
+                        build[0] = "\"";
+                        build[build.length - 1] = "\"";
+                    } else if (escape === true) {
                         output = build[build.length - 1];
                         build.pop();
                         build.pop();
@@ -1542,13 +1570,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     a = ee - 1;
                     return build.join("");
                 },
-                // convert the quotes around strings using the quote_convert option
-                quoteConvert = function beautify_script_output_quoteConvert(quote:string):string {
-                    if (quote.length === 1) {
-                        return `\\${quote}`;
-                    }
-                    return quote;
-                },
                 // Identifies blocks of markup embedded within JavaScript for language supersets
                 // like React JSX.
                 markup         = function lexer_script_markup():void {
@@ -2247,11 +2268,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);
-                    if (options.lexerOptions.script.quote_convert === "double") {
-                        ltoke = `"${ltoke.slice(1, ltoke.length - 1).replace(/\\?"/g, quoteConvert)}"`;
-                    } else if (options.lexerOptions.script.quote_convert === "single") {
-                        ltoke = `'${ltoke.slice(1, ltoke.length - 1).replace(/\\?'/g, quoteConvert)}'`;
-                    }
                     if (options.language === "json") {
                         ltype = "string";
                         recordPush("");

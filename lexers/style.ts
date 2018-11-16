@@ -226,13 +226,6 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                             }
                             return value;
                         },
-                        // convert the quotes around strings using the quote_convert option
-                        quoteConvert = function beautify_script_output_quoteConvert(quote:string):string {
-                            if (quote.length === 1) {
-                                return `\\${quote}`;
-                            }
-                            return quote;
-                        },
                         zerofix     = function lexer_style_item_value_zerofix(find:string):string {
                             if (options.lexerOptions.style.no_lead_zero === true) {
                                 const scrub = function lexer_style_item_value_zerofix_scrub(search:string) {
@@ -277,8 +270,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         dotstart:RegExp        = (/^-?\.\d+[a-z]/),
                         zerodot:RegExp         = (/(\s|\(|,)-?0+\.?\d+([a-z]|\)|,|\s)/g),
                         dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g),
-                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw",
-                        stringSlice:[string, string, string] = ["", "", ""];
+                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw";
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",
@@ -340,37 +332,19 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 if ((/\d/).test(values[cc].charAt(1)) === true) {
                                     values[cc] = values[cc].substr(1);
                                 }
-                            } else if ((/^url\((?!\$)/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
+                            } else if ((/^url\((?!('|"))/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
                                 block = values[cc].charAt(values[cc].indexOf("url(") + 4);
                                 if (block !== "@" && block !== "{" && block !== "<") {
                                     if (options.lexerOptions.style.quote_convert === "double") {
                                         values[cc] = values[cc]
-                                            .replace(/url\(('|")?/, "url(")
-                                            .replace(/('|")?\)$/, ")")
-                                            .replace(/\\?"/g, quoteConvert)
                                             .replace(/url\(/, "url(\"")
                                             .replace(/\)$/, "\")");
                                     } else {
                                         values[cc] = values[cc]
-                                            .replace(/url\(('|")?/, "url(")
-                                            .replace(/('|")?\)$/, ")")
-                                            .replace(/\\?'/g, quoteConvert)
                                             .replace(/url\(/, "url('")
                                             .replace(/\)$/, "')");
                                     }
                                 }
-                            } else if (values[cc].indexOf("'") < values[cc].lastIndexOf("'") && options.lexerOptions.style.quote_convert === "double") {
-                                stringSlice[0] = values[cc].slice(0, values[cc].indexOf("'"));
-                                stringSlice[1] = values[cc].slice(values[cc].indexOf("'") + 1, values[cc].lastIndexOf("'"));
-                                stringSlice[2] = values[cc].slice(values[cc].lastIndexOf("'") + 1);
-                                stringSlice[1] = `"${stringSlice[1].replace(/\\?"/g, quoteConvert)}"`;
-                                values[cc] = stringSlice.join("");
-                            } else if (values[cc].indexOf("\"") < values[cc].lastIndexOf("\"") && options.lexerOptions.style.quote_convert === "single") {
-                                stringSlice[0] = values[cc].slice(0, values[cc].indexOf("\""));
-                                stringSlice[1] = values[cc].slice(values[cc].indexOf("\"") + 1, values[cc].lastIndexOf("\""));
-                                stringSlice[2] = values[cc].slice(values[cc].lastIndexOf("\"") + 1);
-                                stringSlice[1] = `'${stringSlice[1].replace(/\\?'/g, quoteConvert)}'`;
-                                values[cc] = stringSlice.join("");
                             }
                             if ((/^(\+|-)?\d+(\.\d+)?(e-?\d+)?\D+$/).test(values[cc]) === true) {
                                 if (dimensions.indexOf(values[cc].replace(/(\+|-)?\d+(\.\d+)?(e-?\d+)?/, "")) < 0) {
@@ -393,6 +367,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         outy:string       = "",
                         mappy:number      = 0;
                     const block:string[]      = [],
+                        qc:string = options.lexerOptions.style.quote_convert,
                         comma:boolean      = (
                             parse.count > -1 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === ","
                         ),
@@ -408,6 +383,27 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         do {
                             out.push(b[aa]);
                             if (b[aa - 1] !== "\\" || esctest(aa) === false) {
+                                if (qc === "double") {
+                                    if (b[aa] === "\"") {
+                                        out[out.length - 1] = "\\\"";
+                                    } else if (b[aa] === "'" && b[aa - 1] === "\\") {
+                                        out.pop();
+                                        out.pop();
+                                        out.push("'");
+                                    } else if (b[aa] === "'") {
+                                        out[out.length - 1] = "\"";
+                                    }
+                                } else if (qc === "single") {
+                                    if (b[aa] === "'") {
+                                        out[out.length - 1] = "\\'";
+                                    } else if (b[aa] === "\"" && b[aa - 1] === "\\") {
+                                        out.pop();
+                                        out.pop();
+                                        out.push("\"");
+                                    } else if (b[aa] === "\"") {
+                                        out[out.length - 1] = "'";
+                                    }
+                                }
                                 if (b[aa] === "\"" && block[block.length - 1] !== "'") {
                                     if (block[block.length - 1] === "\"") {
                                         block.pop();
@@ -444,6 +440,14 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                         }
                                     }
                                 }
+                            } else if (qc === "double" && b[aa] === "'") {
+                                out.pop();
+                                out.pop();
+                                out.push("'");
+                            } else if (qc === "single" && b[aa] === "\"") {
+                                out.pop();
+                                out.pop();
+                                out.push("\"");
                             }
                             if (parse.structure[parse.structure.length - 1][0] === "map" && block.length === 0 && (
                                 b[aa + 1] === "," || b[aa + 1] === ")"

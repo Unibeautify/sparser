@@ -142,72 +142,74 @@ const server = function server_() {
                 timeStore = date.valueOf();
                 return timeStore;
             };
-        if (extension === "ts" && timeStore < Date.now() - 2000) {
-            let start:number,
-                compile:number,
-                duration = function nodemon_duration(length:number):void {
-                    let hours:number = 0,
-                        minutes:number = 0,
-                        seconds:number = 0,
-                        list:string[] = [];
-                    if (length > 3600000) {
-                        hours = Math.floor(length / 3600000);
-                        length = length - (hours * 3600000);
+        if (timeStore < Date.now() - 2000) {
+            if (extension === "ts") {
+                let start:number,
+                    compile:number,
+                    duration = function nodemon_duration(length:number):void {
+                        let hours:number = 0,
+                            minutes:number = 0,
+                            seconds:number = 0,
+                            list:string[] = [];
+                        if (length > 3600000) {
+                            hours = Math.floor(length / 3600000);
+                            length = length - (hours * 3600000);
+                        }
+                        list.push(hours.toString());
+                        if (list[0].length < 2) {
+                            list[0] = `0${list[0]}`;
+                        }
+                        if (length > 60000) {
+                            minutes = Math.floor(length / 60000);
+                            length = length - (minutes * 60000);
+                        }
+                        list.push(minutes.toString());
+                        if (list[1].length < 2) {
+                            list[1] = `0${list[1]}`;
+                        }
+                        if (length > 1000) {
+                            seconds = Math.floor(length / 1000);
+                            length = length - (seconds * 1000);
+                        }
+                        list.push(seconds.toString());
+                        if (list[2].length < 2) {
+                            list[2] = `0${list[2]}`;
+                        }
+                        list.push(length.toString());
+                        if (list[3].length < 3) {
+                            do {
+                                list[3] = `0${list[3]}`;
+                            } while (list[3].length < 3);
+                        }
+                        console.log(`[\u001b[36m${list.join(":")}\u001b[39m] Total compile time.\u0007`);
+                    };
+                console.log("");
+                start = time(`Compiling TypeScript for \u001b[32m${filename}\u001b[39m`);
+                child(`node js${path.sep}services build`, {
+                    cwd: project
+                }, function nodemon_restart_child(err:Error, stdout:string, stderr:string):void {
+                    if (err !== null) {
+                        console.log(err.toString());
+                        return;
                     }
-                    list.push(hours.toString());
-                    if (list[0].length < 2) {
-                        list[0] = `0${list[0]}`;
+                    if (stderr !== "") {
+                        console.log(stderr);
+                        return;
                     }
-                    if (length > 60000) {
-                        minutes = Math.floor(length / 60000);
-                        length = length - (minutes * 60000);
-                    }
-                    list.push(minutes.toString());
-                    if (list[1].length < 2) {
-                        list[1] = `0${list[1]}`;
-                    }
-                    if (length > 1000) {
-                        seconds = Math.floor(length / 1000);
-                        length = length - (seconds * 1000);
-                    }
-                    list.push(seconds.toString());
-                    if (list[2].length < 2) {
-                        list[2] = `0${list[2]}`;
-                    }
-                    list.push(length.toString());
-                    if (list[3].length < 3) {
-                        do {
-                            list[3] = `0${list[3]}`;
-                        } while (list[3].length < 3);
-                    }
-                    console.log(`[\u001b[36m${list.join(":")}\u001b[39m] Total compile time.\u0007`);
-                };
-            console.log("");
-            start = time(`Compiling TypeScript for \u001b[32m${filename}\u001b[39m`);
-            child(`node js${path.sep}services build`, {
-                cwd: project
-            }, function nodemon_restart_child(err:Error, stdout:string, stderr:string):void {
-                if (err !== null) {
-                    console.log(err.toString());
+                    compile = time("TypeScript Compiled") - start;
+                    duration(compile);
+                    ws.broadcast("reload");
                     return;
-                }
-                if (stderr !== "") {
-                    console.log(stderr);
-                    return;
-                }
-                compile = time("TypeScript Compiled") - start;
-                duration(compile);
+                });
+            } else if (extension === "css" || extension === "xhtml" || extension === "js") {
+                console.log("");
+                time(`Refreshing browser tab(s) - \u001b[32m${filename}\u001b[39m`);
                 ws.broadcast("reload");
-                return;
-            });
-        } else if (extension === "css" || extension === "xhtml" || extension === "js") {
-            console.log("");
-            time(`Refreshing browser tab(s) - \u001b[32m${filename}\u001b[39m`);
-            ws.broadcast("reload");
-        } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
-            console.log("");
-            time("Running validation build");
-            validate();
+            } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
+                console.log("");
+                time("Running validation build");
+                validate();
+            }
         }
     });
     server.on("error", serverError);
