@@ -71,7 +71,7 @@
 {"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":".","types":"separator"},
 {"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"log","types":"word"},
 {"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"(","types":"start"},
-{"begin":71,"lexer":"script","lines":0,"presv":false,"stack":"method","token":"\"hel\\'lo\"","types":"string"},
+{"begin":71,"lexer":"script","lines":0,"presv":false,"stack":"method","token":"\"hel\\\\'lo\"","types":"string"},
 {"begin":71,"lexer":"script","lines":0,"presv":false,"stack":"method","token":")","types":"end"},
 {"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":";","types":"separator"},
 {"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"console","types":"word"},

@@ -603,13 +603,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                         if (qc === "double") {
                                             if (c[ee] === "\"") {
                                                 c[ee] = "\\\"";
-                                            } else if (c[ee - 1] === "\\") {
+                                            } else if (c[ee - 1] === "\\" && c[ee] === "\"") {
                                                 build.pop();
                                             }
                                         } else {
                                             if (c[ee] === "'") {
                                                 c[ee] = "\\'";
-                                            } else if (c[ee - 1] === "\\") {
+                                            } else if (c[ee - 1] === "\\" && c[ee] === "'") {
                                                 build.pop();
                                             }
                                         }
