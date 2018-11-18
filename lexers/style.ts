@@ -191,12 +191,12 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                     };
                     parse.push(data, record, structure);
                 },
-                esctest     = function lexer_style_esctest(xx:number):boolean {
-                    let yy = xx;
+                esctest     = function lexer_style_esctest(index:number):boolean {
+                    const slashy:number = index;
                     do {
-                        xx = xx - 1;
-                    } while (xx > 0 && b[xx] === "\\");
-                    if ((yy - xx) % 2 === 0) {
+                        index = index - 1;
+                    } while (b[index] === "\\" && index > 0);
+                    if ((slashy - index) % 2 === 1) {
                         return true;
                     }
                     return false;
@@ -367,7 +367,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         outy:string       = "",
                         mappy:number      = 0;
                     const block:string[]      = [],
-                        qc:string = options.lexerOptions.style.quote_convert,
+                        qc:"none"|"double"|"single" = options.lexerOptions.style.quote_convert,
                         comma:boolean      = (
                             parse.count > -1 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === ","
                         ),
@@ -375,80 +375,73 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                             if ((/\s/).test(b[aa + 1]) === true) {
                                 do {
                                     aa = aa + 1;
-                                } while ((/\s/).test(b[aa + 1]) === true);
+                                } while (aa < len && (/\s/).test(b[aa + 1]) === true);
                             }
                         };
                     //this loop accounts for grouping mechanisms
                     if (aa < len) {
                         do {
-                            out.push(b[aa]);
-                            if (b[aa - 1] !== "\\" || esctest(aa) === false) {
-                                if (qc === "double") {
-                                    if (b[aa] === "\"") {
-                                        out[out.length - 1] = "\\\"";
-                                    } else if (b[aa] === "'" && b[aa - 1] === "\\") {
-                                        out.pop();
-                                        out.pop();
-                                        out.push("'");
-                                    } else if (b[aa] === "'") {
-                                        out[out.length - 1] = "\"";
+                            if (b[aa] === "\"" || b[aa] === "'") {
+                                if (block[block.length - 1] === b[aa] && (b[aa - 1] !== "\\" || esctest(aa - 1) === false)) {
+                                    block.pop();
+                                    if (qc === "double") {
+                                        b[aa] = "\"";
+                                    } else if (qc === "single") {
+                                        b[aa] = "'";
                                     }
-                                } else if (qc === "single") {
-                                    if (b[aa] === "'") {
-                                        out[out.length - 1] = "\\'";
-                                    } else if (b[aa] === "\"" && b[aa - 1] === "\\") {
-                                        out.pop();
-                                        out.pop();
-                                        out.push("\"");
-                                    } else if (b[aa] === "\"") {
-                                        out[out.length - 1] = "'";
+                                } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'" && (b[aa - 1] !== "\\" || esctest(aa - 1) === false)) {
+                                    block.push(b[aa]);
+                                    if (qc === "double") {
+                                        b[aa] = "\"";
+                                    } else if (qc === "single") {
+                                        b[aa] = "'";
                                     }
-                                }
-                                if (b[aa] === "\"" && block[block.length - 1] !== "'") {
-                                    if (block[block.length - 1] === "\"") {
-                                        block.pop();
-                                    } else {
-                                        block.push("\"");
-                                    }
-                                } else if (b[aa] === "'" && block[block.length - 1] !== "\"") {
-                                    if (block[block.length - 1] === "'") {
-                                        block.pop();
-                                    } else {
-                                        block.push("'");
-                                    }
-                                } else if (block[block.length - 1] !== "\"" && block[block.length - 1] !== "'") {
-                                    if (b[aa] === "(") {
-                                        mappy = mappy + 1;
-                                        block.push(")");
-                                        spacestart();
-                                    } else if (b[aa] === "[") {
-                                        block.push("]");
-                                        spacestart();
-                                    } else if (b[aa] === "#" && b[aa + 1] === "{") {
-                                        out.push("{");
-                                        aa = aa + 1;
-                                        block.push("}");
-                                        spacestart();
-                                    } else if (b[aa] === block[block.length - 1]) {
-                                        block.pop();
-                                        if ((/\s/).test(out[out.length - 2]) === true) {
-                                            out.pop();
-                                            do {
+                                } else if (b[aa - 1] === "\\" && qc !== "none") {
+                                    if (esctest(aa - 1) === false) {
+                                        if (qc === "double") {
+                                            if (b[aa] === "\"") {
+                                                b[aa] = "\\\"";
+                                            } else if (b[aa - 1] === "\\" && b[aa] === "\"") {
                                                 out.pop();
-                                            } while ((/\s/).test(out[out.length - 1]) === true);
-                                            out.push(b[aa]);
+                                            }
+                                        } else {
+                                            if (b[aa] === "'") {
+                                                b[aa] = "\\'";
+                                            } else if (b[aa - 1] === "\\" && b[aa] === "'") {
+                                                out.pop();
+                                            }
+                                        }
+                                    } else {
+                                        if (qc === "double" && b[aa] === "'") {
+                                            out.pop();
+                                        } else if (qc === "single" && b[aa] === "\"") {
+                                            out.pop();
                                         }
                                     }
+                                } else if (qc === "double" && b[aa] === "\"") {
+                                    b[aa] = "\\\"";
+                                } else if (qc === "single" && b[aa] === "'") {
+                                    b[aa] = "\\'";
                                 }
-                            } else if (qc === "double" && b[aa] === "'") {
-                                out.pop();
-                                out.pop();
-                                out.push("'");
-                            } else if (qc === "single" && b[aa] === "\"") {
-                                out.pop();
-                                out.pop();
-                                out.push("\"");
+                            } else if (b[aa - 1] !== "\\" || esctest(aa - 1) === false) {
+                                if (b[aa] === "(") {
+                                    mappy = mappy + 1;
+                                    block.push(")");
+                                    spacestart();
+                                } else if (b[aa] === "[") {
+                                    block.push("]");
+                                    spacestart();
+                                } else if (b[aa] === "#" && b[aa + 1] === "{") {
+                                    out.push("#");
+                                    aa = aa + 1;
+                                    block.push("}");
+                                    spacestart();
+                                } else if (b[aa] === block[block.length - 1]) {
+                                    block.pop();
+                                    //spacestart();
+                                }
                             }
+                            out.push(b[aa]);
                             if (parse.structure[parse.structure.length - 1][0] === "map" && block.length === 0 && (
                                 b[aa + 1] === "," || b[aa + 1] === ")"
                             )) {
@@ -474,7 +467,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                     outy = "filter";
                                 }
                             }
-                            if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === false) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
+                            if (block.length === 0 && ((b[aa + 1] === ";" && esctest(aa + 1) === true) || (b[aa + 1] === ":" && b[aa] !== ":" && b[aa + 2] !== ":" && outy !== "filter" && outy !== "progid") || b[aa + 1] === "}" || b[aa + 1] === "{" || (b[aa + 1] === "/" && (b[aa + 2] === "*" || b[aa + 2] === "/")))) {
                                 bb = out.length - 1;
                                 if ((/\s/).test(out[bb]) === true) {
                                     do {
@@ -1245,7 +1238,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                     }
                 } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                     item("semi");
-                    if (data.types[parse.count] !== "semi" && data.types[parse.count] !== "start" && esctest(a) === false) {
+                    if (data.types[parse.count] !== "semi" && data.types[parse.count] !== "start" && esctest(a) === true) {
                         ltoke = b[a];
                         ltype = "semi";
                         recordPush("");

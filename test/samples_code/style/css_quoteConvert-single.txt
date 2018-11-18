@@ -1,4 +1,17 @@
 a {
+    background: url('http://something');
+    background: url('http://some"thing');
+    background: url('http://some\'thing');
+    background: url('http://some\"thing');
+    background: url('http://some\\"thing');
+    background: url('http://some\\\'thing');
+    content: counters(section_counter, '.');
+    content: 'prefix';
+    font-family: 'some \"convoluted font name';
+    font-family: 'asdf \'convoluted font name';
+    font-family: 'asdf "convoluted font name';
+    font-family: 'asdf \\"convoluted font name';
+    font-family: 'asdf \\\'convoluted font name';
     background: url("http://something");
     background: url("http://some'thing");
     background: url("http://some\"thing");

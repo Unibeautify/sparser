@@ -482,11 +482,11 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 },
                 // determines if a slash comprises a valid escape or if it is escaped itself
                 slashes        = function lexer_script_slashes(index:number):boolean {
-                    let slashy:number = index;
+                    const slashy:number = index;
                     do {
-                        slashy = slashy - 1;
-                    } while (c[slashy] === "\\" && slashy > 0);
-                    if ((index - slashy) % 2 === 1) {
+                        index = index - 1;
+                    } while (c[index] === "\\" && index > 0);
+                    if ((slashy - index) % 2 === 1) {
                         return true;
                     }
                     return false;
@@ -598,24 +598,32 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     if (ee < b) {
                         do {
                             if (data.token[0] !== "{" && data.token[0] !== "[" && qc !== "none" && (c[ee] === "\"" || c[ee] === "'")) {
-                                if (c[ee - 1] !== "\\" || slashes(ee - 1) === false) {
-                                    if (qc === "double") {
-                                        if (c[ee] === "\"") {
-                                            c[ee] = "\\\"";
-                                        } else if (c[ee - 1] === "\\") {
-                                            build.pop();
+                                if (c[ee - 1] === "\\") {
+                                    if (slashes(ee - 1) === false) {
+                                        if (qc === "double") {
+                                            if (c[ee] === "\"") {
+                                                c[ee] = "\\\"";
+                                            } else if (c[ee - 1] === "\\") {
+                                                build.pop();
+                                            }
+                                        } else {
+                                            if (c[ee] === "'") {
+                                                c[ee] = "\\'";
+                                            } else if (c[ee - 1] === "\\") {
+                                                build.pop();
+                                            }
                                         }
                                     } else {
-                                        if (c[ee] === "'") {
-                                            c[ee] = "\\'";
-                                        } else if (c[ee - 1] === "\\") {
+                                        if (qc === "double" && c[ee] === "'") {
+                                            build.pop();
+                                        } else if (qc === "single" && c[ee] === "\"") {
                                             build.pop();
                                         }
                                     }
-                                } else if (qc === "double" && c[ee] === "'") {
-                                    build.pop();
-                                } else if (qc === "single" && c[ee] === "\"") {
-                                    build.pop();
+                                } else if (qc === "double" && c[ee] === "\"" && c[a] === "'") {
+                                    c[ee] = "\\\"";
+                                } else if (qc === "single" && c[ee] === "'" && c[a] === "\"") {
+                                    c[ee] = "\\'";
                                 }
                                 build.push(c[ee]);
                             } else if (ee > a + 1) {

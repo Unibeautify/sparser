@@ -1,6 +1,13 @@
 var a = 1;
+console.log('hello');
 console.log('hel"l0');
 console.log('hel\"lo');
 console.log('hel\\"lo');
 console.log('hel\'lo');
 console.log('hel\\\'lo');
+console.log("hello");
+console.log("hel'l0");
+console.log("hel\'lo");
+console.log("hel\\'lo");
+console.log("hel\"lo");
+console.log("hel\\\"lo");
