@@ -431,14 +431,13 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 } else if (b[aa] === "[") {
                                     block.push("]");
                                     spacestart();
-                                } else if (b[aa] === "#" && b[aa + 1] === "{") {
-                                    out.push("#");
+                                } else if ((b[aa] === "#" || b[aa] === "@") && b[aa + 1] === "{") {
+                                    out.push(b[aa]);
                                     aa = aa + 1;
                                     block.push("}");
                                     spacestart();
                                 } else if (b[aa] === block[block.length - 1]) {
                                     block.pop();
-                                    //spacestart();
                                 }
                             }
                             out.push(b[aa]);

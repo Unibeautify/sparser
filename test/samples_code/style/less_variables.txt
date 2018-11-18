@@ -1,0 +1,8 @@
+.n4v-apos-spotlight-widgets.wrapper.spotlight {
+
+  &.style@{stylenr}:before,
+  &.style@{stylenr}:after {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpolygon points='0,100 100,0 100,100' style='fill:%232d3a69%3B;fill-opacity:0.5' /%3E%3C/svg%3E");
+    box-shadow: inset 0 -1px 0 0 @sl-color-shadow-var, 0 1px 0 0 @sl-color-shadow-var;
+  }
+}
