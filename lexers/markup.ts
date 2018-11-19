@@ -1335,7 +1335,7 @@
                                 return false;
                             };
 
-                        //determine if the current tag is an HTML singleton and exit
+                        //determine if the current end tag is actually part of an HTML singleton
                         if (data.types[parse.count] === "end" && tname.slice(0, 3) !== "/cf") {
                             const lastToken:string = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && lastToken.charAt(lastToken.length - 2) !== "/" && "/" + tagName(lastToken) === tname) {
