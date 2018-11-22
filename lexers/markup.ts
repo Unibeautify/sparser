@@ -455,7 +455,7 @@
                                         if (options.language === "html" && cft === undefined) {
                                             name = name.toLowerCase();
                                         }
-                                        if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
+                                        if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true && slice.indexOf("{{") !== 0) {
                                             if (ind === 0 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
                                                 parse.structure.push([
                                                     tagName(element).replace(/\/$/, ""),
@@ -940,12 +940,20 @@
                                                         }
                                                         break;
                                                     }
-                                                    if ((/("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2]) === true) {
+                                                    if ((/^=("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2] + b[a + 3]) === true) {
                                                         attribute.pop();
                                                         do {
                                                             attribute.push(b[a]);
                                                             if (b[a] === dustatt[dustatt.length - 1]) {
                                                                 dustatt.pop();
+                                                                if (b[a] === "}" && b[a + 1] === "}") {
+                                                                    attribute.push("}");
+                                                                    a = a + 1;
+                                                                    if (b[a + 1] === "}") {
+                                                                        attribute.push("}");
+                                                                        a = a + 1;
+                                                                    }
+                                                                }
                                                                 if (dustatt.length < 1) {
                                                                     attstore.push(attribute.join(""));
                                                                     attribute = [];
@@ -954,8 +962,12 @@
                                                                 }
                                                             } else if ((b[a] === "\"" || b[a] === "'") && dustatt[dustatt.length - 1] !== "\"" && dustatt[dustatt.length - 1] !== "'") {
                                                                 dustatt.push(b[a]);
-                                                            } else if (b[a] === "{" && dustatt[dustatt.length - 1] !== "}") {
+                                                            } else if (b[a] === "{" && "{%#@:/?^<+~=".indexOf(b[a + 1]) && dustatt[dustatt.length - 1] !== "}") {
                                                                 dustatt.push("}");
+                                                            } else if (b[a] === "<" && dustatt[dustatt.length - 1] !== ">") {
+                                                                dustatt.push(">");
+                                                            } else if (b[a] === "[" && b[a + 1] === ":" && dustatt[dustatt.length - 1] !== "]") {
+                                                                dustatt.push("]");
                                                             }
                                                             a = a + 1;
                                                         } while (a < c);
