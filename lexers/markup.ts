@@ -435,14 +435,12 @@
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
-                                        name = attstore[ind];
                                         if (options.language === "html") {
-                                            name = name.toLowerCase();
-                                        }
-                                        if (options.language === "jsx") {
-                                            record.token = name;
+                                            record.token = attstore[ind].toLowerCase();
+                                        } else if (options.language === "xml" || options.language === "coldfusion") {
+                                            record.token = attstore[ind] + "=\"" + attstore[ind] + "\"";
                                         } else {
-                                            record.token = name + "=\"" + attstore[ind] + "\"";
+                                            record.token = attstore[ind];
                                         }
                                         parse.push(data, record, "");
                                     } else {
@@ -940,8 +938,14 @@
                                                         }
                                                         break;
                                                     }
-                                                    if ((/^=("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2] + b[a + 3]) === true) {
+                                                    if ((/^=?("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2] + b[a + 3]) === true) {
                                                         attribute.pop();
+                                                        quote = attribute.join("");
+                                                        if (b[a] !== "=" && attribute.length > 0) {
+                                                            attstore.push(quote);
+                                                            attribute = [];
+                                                        }
+                                                        quote = "";
                                                         do {
                                                             attribute.push(b[a]);
                                                             if (b[a] === dustatt[dustatt.length - 1]) {
@@ -1827,19 +1831,17 @@
                                 record.types = "template_else";
                             } else {
                                 let namelen:number = names.length - 1;
-                                if (namelen > -1) {
-                                    do {
-                                        if (tname === names[namelen]) {
-                                            record.types = "template_start";
-                                            break;
-                                        }
-                                        if (tname === "end" + names[namelen]) {
-                                            record.types = "template_end";
-                                            break;
-                                        }
-                                        namelen = namelen - 1;
-                                    } while (namelen > -1);
-                                }
+                                do {
+                                    if (tname === names[namelen]) {
+                                        record.types = "template_start";
+                                        break;
+                                    }
+                                    if (tname === "end" + names[namelen]) {
+                                        record.types = "template_end";
+                                        break;
+                                    }
+                                    namelen = namelen - 1;
+                                } while (namelen > -1);
                             }
                         } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
                             if ((/^(\{\{\s*-?\s*end\s*-?\s*\}\})$/).test(element) === true) {
