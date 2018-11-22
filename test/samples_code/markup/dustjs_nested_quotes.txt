@@ -1,0 +1,4 @@
+<ul>
+<li{% unless current_tags %} class="active-filter"{% endunless %}></li>
+<li class="{@eq key="myKey" value="{url}"}active expanded{:else}inactive{/eq}"></li>
+</ul>

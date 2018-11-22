@@ -732,6 +732,7 @@
                             jsxquote:string  = "",
                             stest:boolean     = false,
                             quotetest:boolean = false,
+                            dustatt:string[]  = [],
                             attribute:string[] = [];
                         const lex:string[] = [],
 
@@ -818,7 +819,7 @@
                                 }
                                 parse.lineNumber = parse.lineNumber + 1;
                             }
-                            if (preserve === true || (/\s/).test(b[a]) === false) {
+                            if (preserve === true || (((/\s/).test(b[a]) === false && quote !== "}") || quote === "}")) {
                                 lex.push(b[a]);
                             }
                             if (comment === true) {
@@ -925,6 +926,27 @@
                                                         }
                                                         break;
                                                     }
+                                                    if (options.language === "dustjs") {
+                                                        attribute.pop();
+                                                        do {
+                                                            attribute.push(b[a]);
+                                                            if (b[a] === dustatt[dustatt.length - 1]) {
+                                                                dustatt.pop();
+                                                                if (dustatt.length < 1) {
+                                                                    //attributeLexer(true);
+                                                                    attstore.push(attribute.join(""));
+                                                                    attribute = [];
+                                                                    b[a] = " ";
+                                                                    break;
+                                                                }
+                                                            } else if ((b[a] === "\"" || b[a] === "'") && dustatt[dustatt.length - 1] !== "\"" && dustatt[dustatt.length - 1] !== "'") {
+                                                                dustatt.push(b[a]);
+                                                            } else if (b[a] === "{" && dustatt[dustatt.length - 1] !== "}") {
+                                                                dustatt.push("}");
+                                                            }
+                                                            a = a + 1;
+                                                        } while (a < c);
+                                                    } else
                                                     if (b[a] === "{" && b[a - 1] === "=" && options.language !== "jsx") {
                                                         quote = "}";
                                                     } else if (b[a] === "\"" || b[a] === "'") {
@@ -955,7 +977,7 @@
                                                                 quote = "\n";
                                                             }
                                                         }
-                                                    } else if (lex[0] !== "{" && b[a] === "{" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
+                                                    } else if (lex[0] !== "{" && b[a] === "{" && (b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                                         //opening embedded template expression
                                                         if (b[a + 1] === "{") {
                                                             if (b[a + 2] === "{") {
@@ -963,8 +985,6 @@
                                                             } else {
                                                                 quote = "}}";
                                                             }
-                                                        } else if (options.language === "dustjs") {
-                                                            quote = "}";
                                                         } else {
                                                             quote = b[a + 1] + "}";
                                                         }
@@ -1114,9 +1134,31 @@
                                                 quote = "}}";
                                             }
                                         } else if (options.language === "dustjs") {
-                                            quote = "}";
+                                            if (attribute.length < 1 && (attstore.length < 1 || (/\s/).test(b[a - 1]) === true)) {
+                                                lex.pop();
+                                                do {
+                                                    attribute.push(b[a]);
+                                                    a = a + 1;
+                                                } while (a < c && b[a] !== "}");
+                                                attribute.push("}");
+                                                attstore.push(attribute.join(""));
+                                                attribute = [];
+                                            } else {
+                                                quote = "}";
+                                            }
                                         } else {
                                             quote = b[a + 1] + "}";
+                                            if (attribute.length < 1 && (attstore.length < 1 || (/\s/).test(b[a - 1]) === true)) {
+                                                lex.pop();
+                                                do {
+                                                    attribute.push(b[a]);
+                                                    a = a + 1;
+                                                } while (a < c && b[a - 1] + b[a] !== quote);
+                                                attribute.push("}");
+                                                attstore.push(attribute.join(""));
+                                                attribute = [];
+                                                quote = "";
+                                            }
                                         }
                                         if (quote === end) {
                                             quote = "";

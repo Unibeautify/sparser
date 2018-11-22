@@ -1,0 +1,12 @@
+[
+{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<ul>","types":"start"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"ul","token":"<li>","types":"start"},
+{"begin":1,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"{% unless current_tags %}","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"class=\"active-filter\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"{% endunless %}","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"</li>","types":"end"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"ul","token":"<li>","types":"start"},
+{"begin":6,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"class=\"{@eq key=\"myKey\" value=\"{url}\"}active expanded{:else}inactive{/eq}\"","types":"attribute"},
+{"begin":6,"lexer":"markup","lines":0,"presv":false,"stack":"li","token":"</li>","types":"end"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"ul","token":"</ul>","types":"end"}
+]
