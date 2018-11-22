@@ -80,7 +80,7 @@
 {"begin":76,"lexer":"markup","lines":2,"presv":true,"stack":"div","token":"<% flash.each do | key, value | -%>","types":"template"},
 {"begin":76,"lexer":"markup","lines":2,"presv":false,"stack":"div","token":"<div>","types":"start"},
 {"begin":79,"lexer":"markup","lines":0,"presv":false,"stack":"div","token":"class=\"alert alert-\"","types":"attribute"},
-{"begin":79,"lexer":"markup","lines":0,"presv":false,"stack":"div","token":"<%= key %>","types":"attribute"},
+{"begin":79,"lexer":"markup","lines":0,"presv":false,"stack":"div","token":"<%= key %>","types":"template_attribute"},
 {"begin":79,"lexer":"markup","lines":2,"presv":false,"stack":"div","token":"<%=value%>","types":"template"},
 {"begin":79,"lexer":"markup","lines":2,"presv":false,"stack":"div","token":"</div>","types":"end"},
 {"begin":76,"lexer":"markup","lines":2,"presv":true,"stack":"div","token":"<% end -%>","types":"template"},

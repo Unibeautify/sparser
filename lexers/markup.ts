@@ -342,6 +342,22 @@
                                         record.lines = 0;
                                     }
                                     return "";
+                                },
+                                templateAtt = function lexer_markup_tag_attributeRecord_templateAtt(sample:string, token:string):void {
+                                    if (sample.charAt(0) === "{" && "{%#@:/?^<+~=".indexOf(sample.charAt(1)) > -1) {
+                                        record.types = "template_attribute";
+                                    } else if (sample.charAt(0) === "<") {
+                                        record.types = "template_attribute";
+                                    } else if (sample === "[%") {
+                                        record.types = "template_attribute";
+                                    } else {
+                                        record.token = token;
+                                        parse.push(data, record, "");
+                                        return;
+                                    }
+                                    record.token = token;
+                                    parse.push(data, record, "");
+                                    record.types = "attribute";
                                 };
 
                             if (attstore.length < 1) {
@@ -415,8 +431,7 @@
                                         store.push(attstore[ind]);
                                     } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
                                         // tags stored as attributes of other tags
-                                        record.token = attstore[ind].replace(/\s$/, "");
-                                        parse.push(data, record, "");
+                                        templateAtt(attstore[ind].replace(/^("|')/, "").slice(0, 2), attstore[ind].replace(/\s$/, ""));
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
@@ -468,8 +483,7 @@
                                             }
                                         } else {
                                             name = name + "=" + slice;
-                                            record.token = name.replace(/(\s+)$/, "");
-                                            parse.push(data, record, "");
+                                            templateAtt(slice.replace(/^("|')/, "").slice(0, 2), name.replace(/(\s+)$/, ""));
                                         }
                                     }
                                     ind = ind + 1;
@@ -926,14 +940,13 @@
                                                         }
                                                         break;
                                                     }
-                                                    if (options.language === "dustjs") {
+                                                    if ((/("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2]) === true) {
                                                         attribute.pop();
                                                         do {
                                                             attribute.push(b[a]);
                                                             if (b[a] === dustatt[dustatt.length - 1]) {
                                                                 dustatt.pop();
                                                                 if (dustatt.length < 1) {
-                                                                    //attributeLexer(true);
                                                                     attstore.push(attribute.join(""));
                                                                     attribute = [];
                                                                     b[a] = " ";
@@ -946,8 +959,7 @@
                                                             }
                                                             a = a + 1;
                                                         } while (a < c);
-                                                    } else
-                                                    if (b[a] === "{" && b[a - 1] === "=" && options.language !== "jsx") {
+                                                    } else if (b[a] === "{" && b[a - 1] === "=" && options.language !== "jsx") {
                                                         quote = "}";
                                                     } else if (b[a] === "\"" || b[a] === "'") {
                                                         quote = b[a];
@@ -1783,7 +1795,6 @@
                                 "autoescape",
                                 "block",
                                 "capture",
-                                "case",
                                 "comment",
                                 "embed",
                                 "filter",
@@ -1795,6 +1806,7 @@
                                 "raw",
                                 "sandbox",
                                 "spaceless",
+                                "switch",
                                 "tablerow",
                                 "unless",
                                 "verbatim"
