@@ -950,14 +950,11 @@ Parse Framework
                 a = a + 1;
             } while (a < config.end && config.chars[a] !== "\n");
             a = a - 1;
-            output = build.join("").replace(/\r$/, "");
-            if ((/^\/\/\s+$/).test(output) === true) {
-                output = "//";
-            }
+            output = build.join("").replace(/\s+$/, "");
             if ((/^(\/\/\s*parse-ignore-start)/).test(output) === true || output === "//" || output.slice(0, 6) === "//    ") {
                 return [output, a];
             }
-            output = output.replace(/\/\/\s*/, "// ").replace(/\s+$/, "");
+            output = output.replace(/\/\/\s*/, "// ");
             if (wrap < 1 || (a === config.end - 1 && parse.data.begin[parse.count] < 1)) {
                 return [output, a];
             }

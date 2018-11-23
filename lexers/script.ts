@@ -763,13 +763,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     ltoke = comment[0];
                     ltype = "comment";
                     a = comment[1];
-                    if (options.crlf === true) {
-                        if (ltoke.charAt(ltoke.length - 1) !== "\r") {
-                            ltoke = ltoke + "\r";
-                        }
-                    } else {
-                        ltoke = ltoke.replace(/\r$/, "");
-                    }
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;
@@ -2247,7 +2240,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     recordPush("");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     // comment line
-                    lineComment();
+                    lineComment();console.log(data.token[parse.count].split(""));
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);
