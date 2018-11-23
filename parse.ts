@@ -867,7 +867,6 @@ Parse Framework
                 output:string = "",
                 build:string[] = [];
             const wrap:number = parse.parseOptions.wrap,
-                crlf:boolean = parse.parseOptions.crlf,
                 recurse = function parse_wrapCommentLine_recurse():void {
                     let line:string = "";
                     do {

@@ -2240,7 +2240,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     recordPush("");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     // comment line
-                    lineComment();console.log(data.token[parse.count].split(""));
+                    lineComment();
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);
