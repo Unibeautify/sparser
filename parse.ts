@@ -872,7 +872,7 @@ Parse Framework
                     let line:string = "";
                     do {
                         b = b + 1;
-                        if ((crlf === false && config.chars[b] === "\n") || (crlf === true && config.chars[b] === "\r" && config.chars[b + 1] === "\n")) {
+                        if (config.chars[b + 1] === "\n") {
                             return;
                         }
                     } while (b < config.end && (/\s/).test(config.chars[b]) === true);
@@ -881,14 +881,7 @@ Parse Framework
                         do {
                             build.push(config.chars[b]);
                             b = b + 1;
-                        } while (b < config.end && (
-                            (crlf === false && config.chars[b] !== "\n") ||
-                            (crlf === true &&
-                                (config.chars[b] !== "\r"  ||
-                                    (config.chars[b] === "\r" && config.chars[b + 1] !== "\n")
-                                )
-                            )
-                        ));
+                        } while (b < config.end && config.chars[b] !== "\n");
                         line = build.join("");
                         if ((/^\/\/ (\*|-|(\d+\.))/).test(line) === false && line.slice(0, 6) !== "//    " && (/^\/\/\s*$/).test(line) === false) {
                             output = `${output} ${line.replace(/^\/\/\s*/, "").replace(/\s+$/, "")}`;
@@ -955,16 +948,9 @@ Parse Framework
             do {
                 build.push(config.chars[a]);
                 a = a + 1;
-            } while (a < config.end && (
-                (crlf === false && config.chars[a] !== "\n") ||
-                (crlf === true &&
-                    (config.chars[a] !== "\r"  ||
-                        (config.chars[a] === "\r" && config.chars[a + 1] !== "\n")
-                    )
-                )
-            ));
+            } while (a < config.end && config.chars[a] !== "\n");
             a = a - 1;
-            output = build.join("");
+            output = build.join("").replace(/\r$/, "");
             if ((/^\/\/\s+$/).test(output) === true) {
                 output = "//";
             }
