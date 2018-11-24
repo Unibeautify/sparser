@@ -1,0 +1,11 @@
+<?xml version="1.0" standalone="yes" ?>
+<!DOCTYPE parent [
+  <!ELEMENT fool (#PCDATA)>
+  <!ELEMENT toto (#PCDATA)>
+]>
+<foo>Hello World.</foo>
+<!DOCTYPE too [
+<!--define the internal DTD-->
+  <!ELEMENT didi (#PCDATA)>
+]>
+<foo>Hello World.</foo>

@@ -605,22 +605,14 @@ const services = function services_() {
                                                 parse_options.source = files.code[a][1];
                                                 parse_options.lexer  = currentlex;
                                                 outputObjects        = framework.parserObjects(parse_options);
-                                                str                  = JSON.stringify(outputObjects);
-                                                if (framework.parseerror === "") {
-                                                    if (str === files.parsed[a][1]) {
-                                                        comparePass();
-                                                    } else {
-                                                        if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
-                                                            return;
-                                                        }
-                                                    }
+                                                str                  = (framework.parseerror === "")
+                                                    ? JSON.stringify(outputObjects)
+                                                    : framework.parseerror;
+                                                if (str === files.parsed[a][1]) {
+                                                    comparePass();
                                                 } else {
-                                                    console.log("");
-                                                    console.log("Quitting due to error:");
-                                                    console.log(files.code[a][0]);
-                                                    console.log(framework.parseerror);
-                                                    if (process.argv[1].indexOf("validate.js") > -1) {
-                                                        process.exit(1);
+                                                    if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
+                                                        return;
                                                     }
                                                 }
                                             }

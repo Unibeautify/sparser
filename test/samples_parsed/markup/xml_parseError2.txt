@@ -1,0 +1,1 @@
+CDATA tag <![CDATA[<sender>John Smith</sender>]> is not properly terminated with ]]>

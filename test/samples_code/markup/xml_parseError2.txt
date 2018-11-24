@@ -1,0 +1,4 @@
+<xml>
+    <![CDATA[<sender>John Smith</sender>]>     
+<ns1> </ns1>
+</xml>

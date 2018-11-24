@@ -503,7 +503,7 @@
                         if (end === "]>") {
                             end      = ">";
                             sgmlflag = sgmlflag - 1;
-                            ltype    = "template_end";
+                            ltype    = "end";
                         } else if (end === "---") {
                             preserve = true;
                             ltype    = "comment";
@@ -834,6 +834,10 @@
                             if (preserve === true || (((/\s/).test(b[a]) === false && quote !== "}") || quote === "}")) {
                                 lex.push(b[a]);
                             }
+                            if (ltype === "cdata" && b[a] === ">" && b[a - 1] === "]" && b[a - 2] !== "]") {
+                                framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
+                                break;
+                            }
                             if (comment === true) {
                                 quote = "";
                                 //comments must ignore fancy encapsulations and attribute parsing
@@ -869,6 +873,27 @@
                                 }
                             } else {
                                 if (quote === "") {
+                                    if (lex[0] + lex[1] === "<!") {
+                                        if (b[a] === "[") {
+                                            if (b[a + 1] === "<") {
+                                                ltype = "start";
+                                                break;
+                                            }
+                                            if ((/\s/).test(b[a + 1]) === true) {
+                                                do {
+                                                    a = a + 1;
+                                                } while (a < c - 1 && (/\s/).test(b[a + 1]) === true);
+                                            }
+                                            if (b[a + 1] === "<") {
+                                                ltype = "start";
+                                                break;
+                                            }
+                                        }
+                                        if (b[a] !== ">" && b[a + 1] === "<") {
+                                            framework.parseerror = `SGML tag ${lex.join("")} is missing termination with '[' or '>'.`
+                                            break;
+                                        }
+                                    }
                                     if (options.language === "jsx") {
                                         if (b[a] === "{") {
                                             jsxcount = jsxcount + 1;

@@ -1,0 +1,19 @@
+[
+{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<?xml?>","types":"xml"},
+{"begin":0,"lexer":"markup","lines":0,"presv":false,"stack":"xml","token":"version=\"1.0\"","types":"attribute"},
+{"begin":0,"lexer":"markup","lines":0,"presv":false,"stack":"xml","token":"standalone=\"yes\"","types":"attribute"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!DOCTYPE parent [","types":"start"},
+{"begin":3,"lexer":"markup","lines":0,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT fool (#PCDATA)>","types":"sgml"},
+{"begin":3,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT toto (#PCDATA)>","types":"sgml"},
+{"begin":3,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"]>","types":"end"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<foo>","types":"start"},
+{"begin":7,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"Hello World.","types":"content"},
+{"begin":7,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"</foo>","types":"end"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!DOCTYPE too [","types":"start"},
+{"begin":10,"lexer":"markup","lines":0,"presv":true,"stack":"!DOCTYPE","token":"<!--define the internal DTD-->","types":"comment"},
+{"begin":10,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT didi (#PCDATA)>","types":"sgml"},
+{"begin":10,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"]>","types":"end"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<foo>","types":"start"},
+{"begin":14,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"Hello World.","types":"content"},
+{"begin":14,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"</foo>","types":"end"}
+]
