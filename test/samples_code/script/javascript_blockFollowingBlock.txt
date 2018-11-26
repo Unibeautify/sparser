@@ -1,0 +1,11 @@
+// Wait till the browser is ready to render the game (avoids glitches)
+window.requestAnimationFrame(function () {
+  let resize = function () {
+          if (width > height) {
+              con.style.width = `${height - 100 }px`;
+          }
+          {
+              let a = 1;
+          }
+      };
+});

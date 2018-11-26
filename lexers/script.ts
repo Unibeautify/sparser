@@ -2141,6 +2141,9 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         } else if (data.types[aa] === "word" && ltoke === "{" && data.token[aa] !== "return" && data.token[aa] !== "in" && data.token[aa] !== "import" && data.token[aa] !== "const" && data.token[aa] !== "let" && data.token[aa] !== "") {
                             // ES6 block
                             stack = "block";
+                        } else if (ltoke === "{" && (data.token[aa] === "x}" || data.token[aa] === "}") && "if|else|for|while|function|class|switch|catch|finally".indexOf(data.stack[aa]) > -1) {
+                            // ES6 block
+                            stack = "block";
                         } else {
                             stack = "object";
                         }
@@ -2167,7 +2170,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             stack = "method";
                         } else if (data.token[aa] === "}" && data.stack[aa] === "function") {
                             stack = "method";
-                        } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "switch" || wordx === "with") {
+                        } else if (wordx === "if" || wordx === "for" || wordx === "class" || wordx === "while" || wordx === "catch" || wordx === "finally" || wordx === "switch" || wordx === "with") {
                             stack = "expression";
                         } else if (data.types[aa] === "word" || data.types[aa] === "reference") {
                             stack = "method";
