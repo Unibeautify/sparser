@@ -1,0 +1,42 @@
+start          = function lexer_script_start(x:string):void {
+                    let aa:number    = parse.count,
+                        wordx:string = "",
+                        wordy:string = "",
+                        stack:string = "";
+                    brace.push(x);
+                    ltoke = x;
+                    ltype = "start";
+                    /* parse-ignore-start */
+                    if (ltoke === "{" || ltoke === "x{") {
+                        if (wordx === "else" || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
+                            stack = wordx;
+                        } else if (ltoke === "{" && (data.token[aa] === "x}" || data.token[aa] === "}") && "if|else|for|while|function|class|switch|catch|finally".indexOf(data.stack[aa]) > -1) {
+                            // ES6 block
+                            stack = "block";
+                        } else {
+                            stack = "object";
+                        }
+                        if (stack !== "object") {
+                            if (stack === "function") {
+                                references.push(funreferences);
+                                funreferences = [];
+                            } else {
+                                references.push([]);
+                            }
+                        }
+                    } else if (ltoke === "[") {
+                        if ((/\s/).test(c[a - 1]) === true && (data.types[aa] === "word" || data.types[aa] === "reference") && wordx !== "return" && options.language !== "twig") {
+                            stack = "notation";
+                        } else {
+                            stack = "array";
+                        }
+                    } else if (ltoke === "(" || ltoke === "x(") {
+                        if (wordx === "function" || data.token[aa - 1] === "function") {
+                            stack = "arguments";
+                        } else {
+                            stack = "paren";
+                        }
+                    }
+                    // parse-ignore-end 
+                    recordPush(stack);
+                };

@@ -1318,6 +1318,28 @@
 
                         igcount      = 0;
                         element      = lex.join("");
+                        if ((/<!--\s*parse-ignore-start/).test(element) === true) {
+                            a = a + 1;
+                            do {
+                                lex.push(b[a]);
+                                if (b[a] === "d" && lex.slice(lex.length - 16).join("") === "parse-ignore-end") {
+                                    break;
+                                }
+                                a = a + 1;
+                            } while (a < c);
+                            do {
+                                lex.push(b[a]);
+                                if (b[a] === ">" && b[a - 1] === "-" && b[a - 2] === "-") {
+                                    break;
+                                }
+                                a = a + 1;
+                            } while (a < c);
+                            record.token = lex.join("");
+                            record.types = "ignore";
+                            record.presv = true;
+                            parse.push(data, record, "");
+                            return;
+                        }
                     }
 
                     record.presv = preserve;

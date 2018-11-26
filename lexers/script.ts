@@ -118,7 +118,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         token: ltoke,
                         types: ltype
                     };
-                    if ((/^(\/(\/|\*)\s*parse-ignore-start)/).test(ltoke) === true) {
+                    if ((/^(\/(\/|\*)\s*parse-ignore\u002dstart)/).test(ltoke) === true) {
                         record.presv = true;
                         record.types = "ignore";
                     }
@@ -900,6 +900,9 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         clist:string  = (parse.structure.length === 0)
                             ? ""
                             : parse.structure[parse.structure.length - 1][0];
+                    if ((/^(\/(\/|\*)\s*parse-ignore\u002dstart)/).test(ltoke) === true) {
+                        return;
+                    }
                     if (options.language === "java" || options.language === "csharp") {
                         return;
                     }

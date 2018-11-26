@@ -19,10 +19,10 @@ Once this application is downloaded and TypeScript is installed execute these st
 
 1. `npm install` - get the development dependencies
 1. `tsc` - run the TypeScript compiler
-1. `node js/runtimes/httpserver.js` - turn on the local service
+1. `node js/services server` - turn on the local service
 1. In the browser go to: *http://localhost:9999*
 
-The default port for the application is *9999*.  The port can be specified in the command line instruction, for example: `node js/runtimes/httpserver.js 8080`.  Please keep in mind this application uses two ports.  First port is for the HTTP service on the specified port or port 9999.  The Web Socket connection will run on the next higher port, which is 10000 by default.
+The default port for the application is *9999*.  The port can be specified in the command line instruction, for example: `node js/services server 8080`.  Please keep in mind this application uses two ports.  First port is for the HTTP service on the specified port or port 9999.  The Web Socket connection will run on the next higher port, which is 10000 by default.
 
 ### Parameters
 The xhtml file accepts a few helpful address parameters:

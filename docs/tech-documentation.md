@@ -154,6 +154,31 @@ Simply executing the other lexer does everything you need and the framework appr
 ## Input
 The *js/parse.js* file receives input from an options object.  The api is as follows:
 
+## Ignore Code
+Parts of code can be ignored from parsing by sandwhiching that code between two comments.  The first comment must start with `parse-ignore-start` and the second comment must contain `parse-ignore-end`.  For example:
+
+```xml
+<!-- parse-ignore-start --> some code to ignore <!-- parse-ignore-end -->
+```
+
+```javascript
+// parse-ignore-start
+ignore some code
+// parse-ignore-end
+
+/* parse-ignore-start */
+ignore some code
+// parse-ignore-end
+
+// parse-ignore-start
+ignore some code
+/* parse-ignore-end */
+
+/* parse-ignore-start */
+ignore some code
+/* parse-ignore-end */
+```
+
 ### Standard Options
 These options exist directly within the options object and exist universally to assist the framework.
 
@@ -318,4 +343,3 @@ The *types* array contains a string that describes the token value according to 
 * nodetest.ts - An interface to quickly run the parser from a command line terminal using Node.js.
 * browsertest.xhtml - An interface to quickly run the parser in a browser with formatted output.
 * language.ts - A library used in nodetest.ts and browsertest.xhtml to conveniently guess at the submitted language.
-* httpserver.ts - In some browsers working with files from the file scheme is a pain in the ass, so let's use Node to fake it.

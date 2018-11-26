@@ -16,9 +16,11 @@ const services = function services_() {
         node = {
             child: require("child_process").exec,
             fs   : require("fs"),
+            http : require("http"),
             os   : require("os"),
             path : require("path")
         },
+        sep:string = node.path.sep,
         text:any     = {
             angry    : "\u001b[1m\u001b[31m",
             blue     : "\u001b[34m",
@@ -35,10 +37,10 @@ const services = function services_() {
             yellow   : "\u001b[33m"
         },
         project:string = (function services_project() {
-            const dirs:string[] = __dirname.split(node.path.sep);
-            return dirs.slice(0, dirs.length - 1).join(node.path.sep) + node.path.sep;
+            const dirs:string[] = __dirname.split(sep);
+            return dirs.slice(0, dirs.length - 1).join(sep) + sep;
         }()),
-        js = `${project}js${node.path.sep}`,
+        js = `${project}js${sep}`,
         commandList = {
             "build"       : {
                 brief: "Run the project's TypeScript build.",
@@ -63,22 +65,22 @@ const services = function services_() {
             "parse-array" : {
                 brief: "Prints to standard output the parsed data as an object of parallel arrays.",
                 detail: "Prints to standard output the parsed data as an object of parallel arrays.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-array js${node.path.sep}example${node.path.sep}file.js`
+                example: `parse-array js${sep}example${sep}file.js`
             },
             "parse-object": {
                 brief: "Prints to standard output the parsed data as an array of objects.",
                 detail: "Prints to standard output the parsed data as an array of objects.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-object js${node.path.sep}example${node.path.sep}file.js`
+                example: `parse-object js${sep}example${sep}file.js`
             },
             "parse-table" : {
                 brief: "Prints to standard output the parsed data formatted into a grid with ANSI colors.",
                 detail: "Prints to standard output the parsed data formatted into a grid with ANSI colors.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-table js${node.path.sep}example${node.path.sep}file.js`
+                example: `parse-table js${sep}example${sep}file.js`
             },
             "performance" : {
                 brief: "Test a parse operation with nanosecond precision.",
                 detail: "Prints to screen a time duration in nanoseconds for a parse operation.  The raw data is acquired by running an initial operation that is discard and then averaging from 10 additional operations.  The time duration is only a measure of the actual parse operation and the timer code.  All other operations, including those related to Node.js aren't included in the timer.  A relative address to a file is required.",
-                example: `performance js${node.path.sep}example${node.path.sep}file.js`
+                example: `performance js${sep}example${sep}file.js`
             },
             "server"      : {
                 brief: "Starts a web server and opens a web socket channel.",
@@ -355,7 +357,7 @@ const services = function services_() {
                 let next       = function services_validate_validation_next() {
                         let phase = order[0];
                         const complete = function services_validate_validation_complete() {
-                                console.log("");
+                                console.log("\u0007");
                                 console.log("All tasks complete... Exiting clean!");
                                 humantime(true);
                                 if (process.argv[1].indexOf("validate.js") > -1) {
@@ -418,14 +420,14 @@ const services = function services_() {
                                         filecount:number = 0,
                                         currentlex:string = "";
                                     const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
-                                            const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(node.path.sep));
+                                            const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
                                             console.log("");
                                             console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
                                             currentlex = lex;
                                         },
                                         comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
                                             filecount = filecount + 1;
-                                            console.log(`${humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            console.log(`${humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
                                             if (a === len - 1) {
                                                 console.log("");
                                                 console.log(`${text.green}Test units evaluated without failure!${text.none}`);
@@ -437,7 +439,7 @@ const services = function services_() {
                                                 plural:string = "",
                                                 report:[string, number, number],
                                                 total:number  = 0;
-                                            const diffview = require(`${project}test${node.path.sep}diffview.js`),
+                                            const diffview = require(`${project}test${sep}diffview.js`),
                                                 beautify = function services_validate_validation_coreunits_compare_beautify(item:recordList) {
                                                     const outputString:string[] = ["["],
                                                         len:number = item.length - 1;
@@ -472,7 +474,7 @@ const services = function services_() {
                                                 comparePass();
                                                 return false;
                                             }
-                                            console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + node.path.sep, "")}`);
+                                            console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
                                             console.log("");
                                             console.log(`${text.red}Red${text.none} = Generated from raw code file`);
                                             console.log(`${text.green}Green${text.none} = Control code from parsed file`);
@@ -638,7 +640,7 @@ const services = function services_() {
                                     } while (a < len);
                                 },
                                 readDir = function services_validate_validation_coreunits_readDir(type:string, lexer:string):void {
-                                    const dirpath:string = `${project}test${node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep}`;
+                                    const dirpath:string = `${project}test${sep}samples_${type + sep + lexer + sep}`;
                                     node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
                                         if (err !== null) {
                                             if (err.toString().indexOf("no such file or directory") > 0) {
@@ -660,9 +662,9 @@ const services = function services_() {
                                                 function services_validate_validation_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
                                                     count[type] = count[type] + 1;
                                                     if (erra !== null && erra !== undefined) {
-                                                        errout(`Error reading file: ${project}test${node.path.sep}samples_${type + node.path.sep + lexer + node.path.sep + val}`);
+                                                        errout(`Error reading file: ${project}test${sep}samples_${type + sep + lexer + sep + val}`);
                                                     } else {
-                                                        files[type].push([lexer + node.path.sep + val, fileData]);
+                                                        files[type].push([lexer + sep + val, fileData]);
                                                     }
                                                     if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
                                                         compare();
@@ -855,7 +857,7 @@ const services = function services_() {
                                             filepath,
                                             function services_validate_validation_lint_getFiles_readDir_callback(erra, list) {
                                                 const fileEval = function services_validate_validation_lint_getFiles_readDir_callback_fileEval(val:string):void {
-                                                    const filename:string = filepath + node.path.sep + val;
+                                                    const filename:string = filepath + sep + val;
                                                     node.fs.stat(
                                                         filename,
                                                         function services_validate_validation_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
@@ -904,13 +906,13 @@ const services = function services_() {
                         }
                     };
             
-                require(`${project}js${node.path.sep}parse.js`);
-                require(`${project}js${node.path.sep}language.js`);
+                require(`${project}js${sep}parse.js`);
+                require(`${project}js${sep}language.js`);
                 framework = global.parseFramework;
                 framework.lexer      = {};
                 framework.parseerror = "";
                 parse             = framework.parse;
-                require(`${project}js${node.path.sep}lexers${node.path.sep}all.js`)(parse_options);
+                require(`${project}js${sep}lexers${sep}all.js`)(parse_options);
                 next();
                 return "";
             };
@@ -918,6 +920,123 @@ const services = function services_() {
             console.log("Parse Framework - Validation Tasks");
             console.log("");
             validation();
+        },
+        server = function services_server():void {
+            let ws:any,
+                timeStore:number = 0;
+            const socket   = require("ws"),
+                cwd      = process.cwd(),
+                port:number = (process.argv[2] === undefined)
+                    ? 9999
+                    : Number(process.argv[2]),
+                serverError = function services_server_serverError(error) {
+                    if (error.code === "EADDRINUSE") {
+                        if (error.port === port + 1) {
+                            console.log(`${text.angry}Error:${text.none} Web socket channel port, ${text.cyan + port + text.none}, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.`);
+                        } else {
+                            console.log(`${text.angry}Error:${text.none} Specified port, ${text.cyan + port + text.none}, is in use!`);
+                        }
+                    } else {
+                        console.log(`${text.angry}Error:${text.none} ${error.Error}`);
+                    }
+                    return process.exit(1);
+                },
+                server   = node.http.createServer(function services_server_create(request, response):void {
+                    let quest:number = request.url.indexOf("?"),
+                        uri:string = (quest > 0)
+                            ? request.url.slice(0, quest)
+                            : request.url,
+                        file:string = project + sep + uri.slice(1);
+                    if (uri === "/") {
+                        file = `${project + sep}runtimes${sep}browsertest.xhtml`;
+                    }
+                    if (request.url.indexOf("favicon.ico") < 0) {
+                        node.fs.readFile(file, "utf8", function services_server_create_readFile(err, data):void {
+                            if (err !== undefined && err !== null) {
+                                if (err.toString().indexOf("no such file or directory") > 0) {
+                                    response.writeHead(404, {"Content-Type": "text/plain"});
+                                    if (file.indexOf("apple-touch") < 0 && file.indexOf("favicon") < 0) {
+                                        console.log(`${text.angry}404${text.none} for ${file.replace(/\/|\\/g, sep)}`);
+                                    }
+                                    return;
+                                }
+                                response.write(JSON.stringify(err));
+                                console.log(err);
+                                return;
+                            }
+                            if (file.indexOf(".js") === file.length - 3) {
+                                response.writeHead(200, {"Content-Type": "application/javascript"});
+                            } else if (file.indexOf(".css") === file.length - 4) {
+                                response.writeHead(200, {"Content-Type": "text/css"});
+                            } else if (file.indexOf(".xhtml") === file.length - 6) {
+                                response.writeHead(200, {"Content-Type": "application/xhtml+xml"});
+                            }
+                            response.write(data);
+                            response.end();
+                            //console.log(`Responded with ${file}`);
+                        });
+                    } else {
+                        response.end();
+                    }
+                });
+            if (isNaN(port) === true) {
+                console.log(`${text.angry}Error:${text.none} Specified port is, ${port}, which not a number!`);
+                return process.exit(1);
+            }
+            if (cwd.indexOf("parse-framework") < cwd.length - 15) {
+                process.chdir(cwd.slice(0, cwd.indexOf("parse-framework") + 15));
+            }
+            ws = new socket.Server({port: port + 1});
+            ws.broadcast = function socket_broadcast(data:string):void {
+                ws.clients.forEach(function socket_broadcast_clients(client):void {
+                    if (client.readyState === socket.OPEN) {
+                        client.send(data);
+                    }
+                });
+            };
+            console.log(`HTTP server is up at: ${text.cyan}http://localhost:${port + text.none}`);
+            console.log(`${text.green}Starting web server and file system watcher!${text.none}`);
+            node.fs.watch(project, {
+                recursive: true
+            }, function services_server_watch(type, filename:string):void {
+                if (filename.indexOf(".git") === 0) {
+                    return;
+                }
+                if (filename.indexOf("node_modules") === 0) {
+                    return;
+                }
+                if (filename.indexOf("js") === 0) {
+                    return;
+                }
+                if (filename.indexOf(`test${sep}samples_code`) === 0) {
+                    return;
+                }
+                const extension:string = (function services_server_watch_extension() {
+                        const list = filename.split(".");
+                        return list[list.length - 1];
+                    }());
+                if (timeStore < Date.now() - 2000) {
+                    let st:[number, number] = process.hrtime();
+                    timeStore = Date.now();
+                    startTime[0] = st[0];
+                    startTime[1] = st[1];
+                    if (extension === "ts") {
+                        console.log(`${humantime(false)}Compiling TypeScript for ${text.green + filename + text.none}`);
+                        action.build(function services_server_watch_reload():void {
+                            ws.broadcast("reload");
+                        });
+                    } else if (extension === "css" || extension === "xhtml" || extension === "js") {
+                        console.log(`${humantime(false)}Refreshing browser tab(s) - ${text.green + filename + text.none}`);
+                        ws.broadcast("reload");
+                        console.log("\u0007");
+                    } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
+                        console.log(`${humantime(false)}Running validation build`);
+                        validate();
+                    }
+                }
+            });
+            server.on("error", serverError);
+            server.listen(port);
         },
         action = {
             build: function services_action_build(callback?:Function):void {
@@ -952,7 +1071,7 @@ const services = function services_() {
                             }
                             files.splice(files.indexOf("all.js"), 1);
                             files.forEach(function services_action_build_callback_parse_lexers_each(value, index, array) {
-                                array[index] = `${js}lexers${node.path.sep + value}`;
+                                array[index] = `${js}lexers${sep + value}`;
                             });
                             files.push(`${js}language.js`);
                             let a = files.length,
@@ -977,7 +1096,7 @@ const services = function services_() {
                                                 }
                                             }
                                         );
-                                        node.fs.readFile(`${js}runtimes${node.path.sep}browsertest.js`, {
+                                        node.fs.readFile(`${js}runtimes${sep}browsertest.js`, {
                                             encoding: "utf8"
                                         }, function services_action_build_callback_parse_lexers_each_files_web(errw, filew) {
                                             if (errw !== null) {
@@ -990,7 +1109,7 @@ const services = function services_() {
                                                     return errout(erro);
                                                 }
                                                 console.log(`${humantime(false)} Total compile time`);
-                                                console.log("");
+                                                console.log("\u0007");
                                                 if (typeof callback === "function") {
                                                     callback();
                                                 }
@@ -999,7 +1118,7 @@ const services = function services_() {
                                     }
                                 });
                                 if (files[b].indexOf("lexers") > 0) {
-                                    outputa = `${outputa}window.parseFramework.parse.parseOptions.lexerOptions.${files[b].replace(`${js}lexers${node.path.sep}`, "").replace(".js", "")}={};`
+                                    outputa = `${outputa}window.parseFramework.parse.parseOptions.lexerOptions.${files[b].replace(`${js}lexers${sep}`, "").replace(".js", "")}={};`
                                 }
                                 b = b + 1;
                             } while (b < a);
@@ -1036,17 +1155,17 @@ const services = function services_() {
                     });
                     console.log("");
                     console.log("Examples:");
-                    console.log(`${text.cyan}node js${node.path.sep}services commands server${text.none}`);
-                    console.log(`${text.cyan}node js${node.path.sep}services version${text.none}`);
-                    console.log(`${text.cyan}node js${node.path.sep}services parse-table js/parse.js${text.none}`);
-                    console.log(`${text.cyan}node js${node.path.sep}services server 3000${text.none}`);
+                    console.log(`${text.cyan}node js${sep}services commands server${text.none}`);
+                    console.log(`${text.cyan}node js${sep}services version${text.none}`);
+                    console.log(`${text.cyan}node js${sep}services parse-table js/parse.js${text.none}`);
+                    console.log(`${text.cyan}node js${sep}services server 3000${text.none}`);
                 } else {
                     console.log(`${text.underline + args[1] + text.none}`);
                     console.log("");
                     console.log(wrap(commandList[args[1]].detail, longest));
                     console.log("");
                     console.log("Example");
-                    console.log(`${text.cyan}node js${node.path.sep}services ${commandList[args[1]].example + text.none}`);
+                    console.log(`${text.cyan}node js${sep}services ${commandList[args[1]].example + text.none}`);
                 }
                 console.log("");
             },
@@ -1092,7 +1211,7 @@ const services = function services_() {
                         }
                     } while (index > 0);
                     files.forEach(function services_action_inventory_readdir_each(filename) {
-                        node.fs.readFile(`${project}lexers${node.path.sep + filename}`, {
+                        node.fs.readFile(`${project}lexers${sep + filename}`, {
                             encoding: "utf8"
                         }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
                             if (errf !== null) {
@@ -1134,7 +1253,7 @@ const services = function services_() {
                 });
             },
             parse: function services_action_parse():void {
-                const nodetest = require(`${js}runtimes${node.path.sep}nodetest`);
+                const nodetest = require(`${js}runtimes${sep}nodetest`);
                 process.argv.splice(0, 1);
                 if (process.argv[2] === undefined) {
                     return errout(`No code sample or file path. The ${text.angry + command + text.none} command requires an additional argument.`);
@@ -1202,7 +1321,7 @@ const services = function services_() {
                             source: filedata,
                             wrap: optionValue("wrap", 0)
                         };
-                    require(`${js}lexers${node.path.sep}all`)(options, function services_action_performance_readFile_lexers() {
+                    require(`${js}lexers${sep}all`)(options, function services_action_performance_readFile_lexers() {
                         let index:number = 11,
                             total:number = 0,
                             low:number = 0,
@@ -1263,12 +1382,12 @@ const services = function services_() {
             },
             server: function services_action_server():void {
                 process.argv.splice(0, 1);
-                require(`${js}runtimes${node.path.sep}httpserver`)();
+                server();
             },
             testprep: function services_action_testprep():void {
                 process.argv.push("--testprep");
                 process.argv.splice(0, 1);
-                require(`${js}runtimes${node.path.sep}nodetest`)();
+                require(`${js}runtimes${sep}nodetest`)();
             },
             validation: validate,
             version: function services_action_version():void {
@@ -1295,7 +1414,7 @@ const services = function services_() {
         }
         const versionFiles = [
             "readme.md",
-            `runtimes${node.path.sep}browsertest.xhtml`
+            `runtimes${sep}browsertest.xhtml`
         ];
         version = JSON.parse(file).version;
         versionFiles.forEach(function service_version_each(filePath) {

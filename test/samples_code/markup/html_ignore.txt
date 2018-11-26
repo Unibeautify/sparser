@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>parse framework browser tool</title>
+        <meta content="application/xhtml+xml;charset=UTF-8" http-equiv="Content-Type"/>
+        <meta content="blendTrans(Duration=0)" http-equiv="Page-Enter"/>
+        <meta content="blendTrans(Duration=0)" http-equiv="Page-Exit"/>
+        <meta content="text/css" http-equiv="content-style-type"/>
+        <meta content="application/javascript" http-equiv="content-script-type"/>
+        <link href="../runtimes/browsertest.css" media="all" rel="stylesheet" type="text/css"/>
+    </head>
+    <body>
+        <h1>parse-framework experimentation, <span class="version">2.3.7</span></h1>
+        <!-- parse-ignore-start -->
+        <div>
+            <ul>
+                <li id="timeparse">Parsing time: <span></span></li>
+                <li id="timetotal">Browser time: <span></span></li>
+                <li id="language">Lang guessed: <span></span></li>
+                <li id="errors">Parse errors: <span></span></li>
+            </ul>
+        </div>
+        <div class="input">
+            <p><input type="checkbox" id="aceControl" checked="checked"/> <label for="aceControl">Use Ace code editor</label></p>
+            <p><label for="input">Input</label>
+                <textarea id="input"></textarea></p>
+        </div>
+        <div>
+            <h2>Options</h2>
+            <div>
+                <ul>
+                    <li><input type="checkbox" id="tagSort"/> <label for="tagSort">tagSort</label></li>
+                    <li><input type="checkbox" id="objectSort"/> <label for="objectSort">objectSort</label></li>
+                </ul>
+            </div>
+        </div>
+        <div class="output">
+            <h2>Output</h2>
+            <p>A colorful visual hint is added to help identify which lexer processed which records:</p>
+            <ul class="key">
+                <li class="markdown">White for markdown lexer</li>
+                <li class="markup">Red for markup lexer:   (XML/HTML like syntax)</li>
+                <li class="script">Green for script lexer: (C-like syntax)</li>
+                <li class="style">Blue for style lexer:   (CSS/SCSS/LESS like syntax)</li>
+            </ul>
+            <div id="data"></div>
+        </div>
+        <script src="../node_modules/ace-builds/src-min-noconflict/ace.js" type="application/javascript"></script>
+        <script type="application/javascript" src="../js/browsertest.js"></script>
+        <!-- parse-ignore-end -->
+    </body>
+</html>
