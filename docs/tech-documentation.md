@@ -16,6 +16,7 @@
    1. [parse Data Properties](#parse-data-properties)
    1. [parse Methods](#parse-methods)
    1. [Lexers](#lexers)
+1. [Ignore Code](#ignore-code)
 1. [Input](#input)
 1. [Output](#output)
    1. [begin](#begin)
