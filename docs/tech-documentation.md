@@ -151,9 +151,6 @@ Executing a different lexer from the starting lexer is simply a matter of callin
 
 Simply executing the other lexer does everything you need and the framework appropriately manages all concerns of populating data and accounting for structure and nesting conditions.  This simplicity is necessary to ensure consistency in the *standard format* without corruption to the data in the parse object even when bouncing between the lexers recursively.  The framework easily addresses all these concerns by keeping all management centralized and far removed from the logic in the lexer files.
 
-## Input
-The *js/parse.js* file receives input from an options object.  The api is as follows:
-
 ## Ignore Code
 Parts of code can be ignored from parsing by sandwhiching that code between two comments.  The first comment must start with `parse-ignore-start` and the second comment must contain `parse-ignore-end`.  For example:
 
@@ -178,6 +175,9 @@ ignore some code
 ignore some code
 /* parse-ignore-end */
 ```
+
+## Input
+The *js/parse.js* file receives input from an options object.  The api is as follows:
 
 ### Standard Options
 These options exist directly within the options object and exist universally to assist the framework.
