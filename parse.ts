@@ -664,9 +664,9 @@ Parse Framework
                     b:number         = data.begin.length,
                     structure: number[] = [-1],
                     struct = function parser_struct() {
-                        if (data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
+                        if ((data.token[a] === "{" && data.types[a] === "script") || data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
                             structure.push(a);
-                        } else if (structure.length > 1 && (data.types[a] === "end" || data.types[a] === "template_end")) {
+                        } else if (structure.length > 1 && ((data.token[a] === "}" && data.types[a] === "script") || data.types[a] === "end" || data.types[a] === "template_end")) {
                             structure.pop();
                         } else if (data.types[a] === "template_else") {
                             structure[structure.length - 1] = a;

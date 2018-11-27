@@ -996,6 +996,7 @@ const services = function services_() {
             };
             console.log(`HTTP server is up at: ${text.cyan}http://localhost:${port + text.none}`);
             console.log(`${text.green}Starting web server and file system watcher!${text.none}`);
+            console.log("");
             node.fs.watch(project, {
                 recursive: true
             }, function services_server_watch(type, filename:string):void {
@@ -1040,8 +1041,10 @@ const services = function services_() {
         },
         action = {
             build: function services_action_build(callback?:Function):void {
-                console.log("");
-                console.log(`${humantime(false)} Running TypeScript build`);
+                if (command !== "server") {
+                    console.log("");
+                }
+                console.log(`${humantime(false)}Running TypeScript build`);
                 node.child("tsc --pretty", {
                     cwd: project.slice(0, project.length - 1)
                 }, function services_action_build_callback(err, stdout, stderr):void {
@@ -1108,7 +1111,7 @@ const services = function services_() {
                                                 if (erro !== null) {
                                                     return errout(erro);
                                                 }
-                                                console.log(`${humantime(false)} Total compile time`);
+                                                console.log(`${humantime(false)}Total compile time`);
                                                 console.log("\u0007");
                                                 if (typeof callback === "function") {
                                                     callback();
