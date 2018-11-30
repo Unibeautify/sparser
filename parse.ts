@@ -281,8 +281,8 @@ Parse Framework
             parseOptions: {
                 correct: false,
                 crlf: false,
-                language: "javascript",
-                lexer: "script",
+                language: "auto",
+                lexer: "auto",
                 lexerOptions: {
                     script: {}
                 },
@@ -656,6 +656,7 @@ Parse Framework
                 parse.parseOptions.lexerOptions.markup = {};
             }
             
+            // fix begin and stack value must be reconsidered after reordering from object sort
             if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true) {
                 let a:number = 0,
                     jsx:number = 0,
@@ -694,7 +695,7 @@ Parse Framework
                                         data.begin[a] = structure[structure.length - 1];
                                     }
                                     struct();
-                                    if (data.lexer[a + 1] === "script" && data.begin[a + 1] === jsx) {
+                                    if (data.lexer[a + 1] === "script" && data.begin[a + 1] < jsx + 1) {
                                         break;
                                     }
                                     a = a + 1;
