@@ -215,10 +215,13 @@
 {"begin":212,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"i","types":"word"},
 {"begin":212,"lexer":"script","lines":1,"presv":false,"stack":"script","token":"/","types":"operator"},
 {"begin":212,"lexer":"script","lines":1,"presv":false,"stack":"script","token":"2","types":"number"},
+{"begin":212,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"x;","types":"separator"},
 {"begin":212,"lexer":"markup","lines":0,"presv":false,"stack":"script","token":"}","types":"script"},
 {"begin":211,"lexer":"markup","lines":0,"presv":false,"stack":"span","token":"</span>","types":"end"},
 {"begin":209,"lexer":"script","lines":1,"presv":false,"stack":"function","token":"}","types":"end"},
 {"begin":204,"lexer":"script","lines":0,"presv":false,"stack":"method","token":")","types":"end"},
+{"begin":196,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"x;","types":"separator"},
 {"begin":196,"lexer":"markup","lines":0,"presv":false,"stack":"script","token":"}","types":"script"},
-{"begin":195,"lexer":"markup","lines":2,"presv":false,"stack":"div","token":"</div>","types":"end"}
+{"begin":195,"lexer":"markup","lines":2,"presv":false,"stack":"div","token":"</div>","types":"end"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"}
 ]

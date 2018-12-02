@@ -656,7 +656,7 @@ Parse Framework
                 parse.parseOptions.lexerOptions.markup = {};
             }
             
-            // fix begin and stack value must be reconsidered after reordering from object sort
+            // fix begin values.  They must be reconsidered after reordering from object sort
             if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true) {
                 let a:number = 0,
                     jsx:number = 0,
@@ -665,9 +665,9 @@ Parse Framework
                     b:number         = data.begin.length,
                     structure: number[] = [-1],
                     struct = function parser_struct() {
-                        if ((data.token[a] === "{" && data.types[a] === "script") || data.types[a] === "start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
+                        if ((data.token[a] === "{" && data.types[a] === "script") || data.types[a] === "start" || data.types[a] === "jsx_attribute_start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
                             structure.push(a);
-                        } else if (structure.length > 1 && ((data.token[a] === "}" && data.types[a] === "script") || data.types[a] === "end" || data.types[a] === "template_end")) {
+                        } else if (structure.length > 1 && ((data.token[a] === "}" && data.types[a] === "script") || data.types[a] === "end" || data.types[a] === "jsx_attribute_end" || data.types[a] === "template_end")) {
                             structure.pop();
                         } else if (data.types[a] === "template_else") {
                             structure[structure.length - 1] = a;
@@ -684,6 +684,9 @@ Parse Framework
                     if (data.begin[a] !== structure[structure.length - 1]) {
                         if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true) {
                             if (data.stack[a] !== "jsx_attribute" && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
+                                if (data.types[a - 1] === "jsx_attribute_end") {
+                                    structure.pop();
+                                }
                                 data.begin[a] = structure[structure.length - 1];
                             } else if (data.lexer[a] === "markup" && data.lexer[a - 1] === "script") {
                                 jsx = data.begin[a - 1];
@@ -700,6 +703,8 @@ Parse Framework
                                     }
                                     a = a + 1;
                                 } while(a < b);
+                            } else {
+                                data.begin[a] = structure[structure.length - 1];
                             }
                         } else if (parse.parseOptions.lexerOptions.markup.tagSort === true && data.lexer[a] === "markup") {
                             data.begin[a] = structure[structure.length - 1];

@@ -29,6 +29,7 @@
 {"begin":22,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"user","types":"word"},
 {"begin":22,"lexer":"script","lines":0,"presv":false,"stack":"script","token":".","types":"separator"},
 {"begin":22,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"displayname","types":"word"},
+{"begin":22,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"x;","types":"separator"},
 {"begin":22,"lexer":"markup","lines":2,"presv":false,"stack":"script","token":"}","types":"script"},
 {"begin":21,"lexer":"markup","lines":1,"presv":false,"stack":"span","token":"</span>","types":"end"},
 {"begin":14,"lexer":"markup","lines":2,"presv":false,"stack":"script","token":"}","types":"script"},

@@ -9,5 +9,6 @@
 {"begin":5,"lexer":"markup","lines":0,"presv":false,"stack":"SubComp","token":"</SubComp>","types":"end"},
 {"begin":4,"lexer":"markup","lines":0,"presv":false,"stack":"Comp","token":"}","types":"jsx_attribute_end"},
 {"begin":3,"lexer":"markup","lines":2,"presv":false,"stack":"Comp","token":"XXX","types":"content"},
-{"begin":3,"lexer":"markup","lines":0,"presv":false,"stack":"Comp","token":"</Comp>","types":"end"}
+{"begin":3,"lexer":"markup","lines":0,"presv":false,"stack":"Comp","token":"</Comp>","types":"end"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"}
 ]

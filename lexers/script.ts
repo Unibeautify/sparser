@@ -118,10 +118,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         token: ltoke,
                         types: ltype
                     };
-                    if ((/^(\/(\/|\*)\s*parse-ignore\u002dstart)/).test(ltoke) === true) {
-                        record.presv = true;
-                        record.types = "ignore";
-                    }
                     parse.push(data, record, structure);
                 },
                 // remove "vart" object data
@@ -697,6 +693,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 },
                 // block comments
                 blockComment   = function lexer_script_blockComment() {
+                    let ignore:boolean = false;
                     if (wordTest > -1) {
                         word();
                     }
@@ -706,11 +703,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         start: a
                     });
                     ltoke = comment[0];
+                    a = comment[1];
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;
                     }
-                    ltype = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true)
+                    ignore = (/^\/\*\s*parse-ignore-start/).test(ltoke);
+                    ltype = (ignore === true)
                         ? "ignore"
                         : "comment";
                     if (data.token[parse.count] === "var" || data.token[parse.count] === "let" || data.token[parse.count] === "const") {
@@ -723,7 +722,6 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         data.lines[parse.count] = 0;
                     } else {
                         if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                            let ignore = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true);
                             parse.splice({
                                 data: data,
                                 howmany: 0,
@@ -732,16 +730,23 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                     begin: data.begin[parse.count],
                                     lexer: "script",
                                     lines: parse.linesSpace,
-                                    presv: (ignore === true),
+                                    presv: ignore,
                                     stack: data.stack[parse.count],
                                     token: ltoke,
-                                    types: (ignore === true)
-                                        ? "ignore"
-                                        : "comment"
+                                    types: ltype
                                 }
                             });
                         } else {
-                            recordPush("");
+                            const record = {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                lexer: "script",
+                                lines: parse.linesSpace,
+                                presv: ignore,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: ltoke,
+                                types: ltype
+                            };
+                            parse.push(data, record, "");
                         }
                     }
                     a = comment[1];
@@ -751,6 +756,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 },
                 // line comments
                 lineComment    = function lexer_script_lineComment() {
+                    let ignore:boolean = false;
                     asi(false);
                     if (wordTest > -1) {
                         word();
@@ -761,14 +767,17 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         start: a
                     });
                     ltoke = comment[0];
-                    ltype = "comment";
+                    ignore = (/^(\/\/\s*parse-ignore-start)/).test(ltoke);
+                    ltype = (ignore === true)
+                        ? "ignore"
+                        : "comment";
                     a = comment[1];
                     if (ltoke.indexOf("# sourceMappingURL=") === 2) {
                         sourcemap[0] = parse.count + 1;
                         sourcemap[1] = ltoke;
                     }
                     if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                        let ignore = ((/^(\/\/\s*parse-ignore-start)/).test(ltoke) === true);
+                        
                         parse.splice({
                             data: data,
                             howmany: 0,
@@ -777,16 +786,23 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                 begin: data.begin[parse.count],
                                 lexer: "script",
                                 lines: parse.linesSpace,
-                                presv: (ignore === true),
+                                presv: ignore,
                                 stack: data.stack[parse.count],
                                 token: ltoke,
-                                types: (ignore === true)
-                                    ? "ignore"
-                                    : "comment"
+                                types: ltype
                             }
                         });
                     } else if (ltoke !== "") {
-                        recordPush("");
+                        const record = {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            lexer: "script",
+                            lines: parse.linesSpace,
+                            presv: ignore,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: ltoke,
+                            types: ltype
+                        };
+                        parse.push(data, record, "");
                     }
                 },
                 // inserts ending curly brace (where absent)
@@ -903,7 +919,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     if ((/^(\/(\/|\*)\s*parse-ignore\u002dstart)/).test(ltoke) === true) {
                         return;
                     }
-                    if (options.language === "java" || options.language === "csharp") {
+                    if (options.language === "json" || options.language === "java" || options.language === "csharp") {
                         return;
                     }
                     if (options.language === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
@@ -2431,7 +2447,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
             if (wordTest > -1) {
                 word();
             }
-            if (options.correct === true && ((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
+            if (((data.token[parse.count] !== "}" && data.token[0] === "{") || data.token[0] !== "{") && ((data.token[parse.count] !== "]" && data.token[0] === "[") || data.token[0] !== "[")) {
                 asi(false);
             }
             if (sourcemap[0] === parse.count) {

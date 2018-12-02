@@ -1,0 +1,24 @@
+/*prettydiff.com spaceclose:false, variable_list:list*/
+var ListItem = React.createClass({
+    render: function () {
+        return (
+            <li className="ListItem">
+                <a href={ "/items/" + this.id }>
+                    this.props.item.name
+                </a>
+            </li>
+        );
+    }
+});
+var List = React.createClass({
+    renderList: function () {
+        return map(function (item) {
+            return <ListItem item={item.x} key={item.id} />;
+        });
+    },
+    render: function () {
+        return <ul className="List">
+                this.renderList()
+            </ul>
+    }
+});

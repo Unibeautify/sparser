@@ -77,5 +77,6 @@
 {"begin":69,"lexer":"script","lines":0,"presv":false,"stack":"object","token":":","types":"operator"},
 {"begin":69,"lexer":"script","lines":1,"presv":false,"stack":"object","token":"\"\"","types":"string"},
 {"begin":69,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"},
-{"begin":46,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"}
+{"begin":46,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"}
 ]

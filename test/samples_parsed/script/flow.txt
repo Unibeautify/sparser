@@ -780,5 +780,6 @@
 {"begin":773,"lexer":"script","lines":1,"presv":false,"stack":"array","token":"1","types":"number"},
 {"begin":773,"lexer":"script","lines":0,"presv":false,"stack":"array","token":"]","types":"end"},
 {"begin":760,"lexer":"script","lines":0,"presv":false,"stack":"object","token":";","types":"separator"},
-{"begin":760,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"}","types":"end"}
+{"begin":760,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"}","types":"end"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"}
 ]

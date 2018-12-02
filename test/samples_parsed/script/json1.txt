@@ -660,5 +660,6 @@
 {"begin":656,"lexer":"script","lines":0,"presv":false,"stack":"object","token":":","types":"operator"},
 {"begin":656,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"thn","types":"word"},
 {"begin":656,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"},
-{"begin":601,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"}
+{"begin":601,"lexer":"script","lines":0,"presv":false,"stack":"object","token":"}","types":"end"},
+{"begin":-1,"lexer":"script","lines":0,"presv":false,"stack":"global","token":"x;","types":"separator"}
 ]
