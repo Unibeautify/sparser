@@ -658,59 +658,26 @@ Parse Framework
             
             // fix begin values.  They must be reconsidered after reordering from object sort
             if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true) {
-                let a:number = 0,
-                    jsx:number = 0,
-                    jsx_offset:number = 0;
+                let a:number = 0;
                 const data:data    = parse.data,
                     b:number         = data.begin.length,
-                    structure: number[] = [-1],
-                    struct = function parser_struct() {
-                        if ((data.token[a] === "{" && data.types[a] === "script") || data.types[a] === "start" || data.types[a] === "jsx_attribute_start" || data.types[a] === "template_start" || (data.types[a] === "cdata" && data.token[data.begin[a - 1]].toLowerCase().indexOf("<script") === 0)) {
-                            structure.push(a);
-                        } else if (structure.length > 1 && ((data.token[a] === "}" && data.types[a] === "script") || data.types[a] === "end" || data.types[a] === "jsx_attribute_end" || data.types[a] === "template_end")) {
-                            structure.pop();
-                        } else if (data.types[a] === "template_else") {
-                            structure[structure.length - 1] = a;
-                        } else if (data.types[a] === "attribute" && data.lexer[a] === "markup" && (data.types[a - 1] === "start" || data.types[a - 1] === "singleton")) {
-                            structure.push(a - 1);
-                        } else if (data.lexer[a] === "markup" && data.types[a] !== "attribute" && data.types[structure[structure.length - 1] + 1] === "attribute") {
-                            structure.pop();
-                        }
-                    };
+                    structure: number[] = [-1];
                 do {
-                    if ((data.types[a - 1] === "attribute" || data.types[a - 1] === "jsx_attribute_end") && data.types[a] !== "attribute" && data.types[a] !== "jsx_attribute_start" && data.lexer[a - 1] === "markup" && data.types[data.begin[a - 1]] === "singleton") {
+                    if (data.types[a].indexOf("attribute") > -1 && data.types[a - 1] === "singleton" && data.lexer[a] === "markup") {
+                        structure.push(a - 1);
+                    }
+                    if (a > 0 && data.lexer[structure[structure.length - 1]] === "markup" && data.lexer[a] !== "markup" && data.types[structure[structure.length - 1]] === "singleton") {
                         structure.pop();
                     }
                     if (data.begin[a] !== structure[structure.length - 1]) {
-                        if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true) {
-                            if (data.stack[a] !== "jsx_attribute" && (data.lexer[a] === "script" || data.lexer[a] === "style")) {
-                                if (data.types[a - 1] === "jsx_attribute_end") {
-                                    structure.pop();
-                                }
-                                data.begin[a] = structure[structure.length - 1];
-                            } else if (data.lexer[a] === "markup" && data.lexer[a - 1] === "script") {
-                                jsx = data.begin[a - 1];
-                                jsx_offset = jsx - data.begin[a];
-                                do {
-                                    if (data.begin[a] + jsx_offset > 0) {
-                                        data.begin[a] = data.begin[a] + jsx_offset;
-                                    } else {
-                                        data.begin[a] = structure[structure.length - 1];
-                                    }
-                                    struct();
-                                    if (data.lexer[a + 1] === "script" && data.begin[a + 1] < jsx + 1) {
-                                        break;
-                                    }
-                                    a = a + 1;
-                                } while(a < b);
-                            } else {
-                                data.begin[a] = structure[structure.length - 1];
-                            }
-                        } else if (parse.parseOptions.lexerOptions.markup.tagSort === true && data.lexer[a] === "markup") {
-                            data.begin[a] = structure[structure.length - 1];
-                        }
+                        data.begin[a] = structure[structure.length - 1];
                     }
-                    struct();
+                    if (data.types[a].indexOf("end") > -1 || (data.lexer[a] === "markup" && data.token[a] === "}" && data.types[a] === "script")) {
+                        structure.pop();
+                    }
+                    if (data.types[a].indexOf("start") > -1 || (data.lexer[a] === "markup" && data.token[a] === "{" && data.types[a] === "script")) {
+                        structure.push(a);
+                    }
                     a = a + 1;
                 } while (a < b);
             }

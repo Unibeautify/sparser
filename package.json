@@ -36,8 +36,9 @@
         "url": "git+https://github.com/Unibeautify/parse-framework.git"
     },
     "scripts": {
+        "prepublish": "node js/services validation",
         "start": "node js/services build --browser",
         "test": "node js/services validation"
     },
-    "version": "2.3.13"
+    "version": "2.3.14"
 }
