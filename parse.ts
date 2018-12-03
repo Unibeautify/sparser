@@ -666,7 +666,7 @@ Parse Framework
                     if (data.types[a].indexOf("attribute") > -1 && data.types[a - 1] === "singleton" && data.lexer[a] === "markup") {
                         structure.push(a - 1);
                     }
-                    if (a > 0 && data.lexer[structure[structure.length - 1]] === "markup" && data.lexer[a] !== "markup" && data.types[structure[structure.length - 1]] === "singleton") {
+                    if (a > 0 && data.types[a].indexOf("attribute") < 0 && data.lexer[structure[structure.length - 1]] === "markup" && data.types[structure[structure.length - 1]] === "singleton") {
                         structure.pop();
                     }
                     if (data.begin[a] !== structure[structure.length - 1]) {
