@@ -2147,7 +2147,14 @@
                                             framework.lexer.script(
                                                 lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                             );
-                                            parse.structure[parse.structure.length - 1][1] + 1
+                                            parse.structure[parse.structure.length - 1][1] + 1;
+                                            if (data.types[parse.count] === "end" && data.lexer[data.begin[parse.count] - 1] === "script") {
+                                                record.lexer = "script";
+                                                record.token = (options.correct === true) ? ";" : "x;";
+                                                record.types = "separator";
+                                                parse.push(data, record, "");
+                                                record.lexer = "markup";
+                                            }
                                             record.token = "}";
                                             record.types = "script";
                                             parse.push(data, record, "");

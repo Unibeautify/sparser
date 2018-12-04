@@ -32,6 +32,7 @@
 {"begin":22,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"x;","types":"separator"},
 {"begin":22,"lexer":"markup","lines":2,"presv":false,"stack":"script","token":"}","types":"script"},
 {"begin":21,"lexer":"markup","lines":1,"presv":false,"stack":"span","token":"</span>","types":"end"},
+{"begin":14,"lexer":"script","lines":2,"presv":false,"stack":"script","token":"x;","types":"separator"},
 {"begin":14,"lexer":"markup","lines":2,"presv":false,"stack":"script","token":"}","types":"script"},
 {"begin":13,"lexer":"markup","lines":1,"presv":false,"stack":"div","token":"</div>","types":"end"},
 {"begin":12,"lexer":"script","lines":2,"presv":false,"stack":"paren","token":")","types":"end"},
