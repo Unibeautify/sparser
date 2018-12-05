@@ -9,7 +9,7 @@
     "description": "A parsing framework for parsing everything",
     "devDependencies": {
         "ace-builds": "1.4.2",
-        "ws": "6.1.0"
+        "ws": "6.1.2"
     },
     "directories": {
         "test": "test"
