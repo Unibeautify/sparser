@@ -4,6 +4,7 @@
 * **attribute** - A tag attribute from a regular *start* or *singular* tag type.
 * **cdata** - An XML/SGML CDATA block.  Typically used to allow extraneous string content in an XML document that might otherwise break the XML syntax rules.
 * **comment** - An XML comment.
+* **comment_attribute** - JSX allows JavaScript style comments as tag attributes.
 * **conditional** - Comments used in IE to hack references to CSS by IE version.  Follows a SGML square brace convention.
 * **content** - Regular text nodes, but white space is removed from the front and end of the node as an approximate value is accounted for in the *lines* data field.
 * **content_preserve** - Allows parsing of an element but identifies the element as preserved so that its *presv* value is *true*.

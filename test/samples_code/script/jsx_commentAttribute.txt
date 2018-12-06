@@ -1,0 +1,13 @@
+var content = (
+        <Nav>
+            {/* child comment, put {} around */}
+            <Person donkey="ass"
+                /* multi
+         line
+         comment */
+         //attr="test"
+                name={window.isLoggedIn ? window.name : ''} // end of line comment
+                cat={{   something:"meow" }}
+            />
+        </Nav>
+    );

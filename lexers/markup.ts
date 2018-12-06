@@ -333,16 +333,6 @@
                                 store:string[]        = [];
                             const len:number          = attstore.length,
                                 syntax:string       = "<{\"'=/",
-                                jsxAttribute = function lexer_markup_tag_attributeRecord_jsxAttribute(str:string):string {
-                                    if ((/\s/).test(str) === true) {
-                                        record.lines = str
-                                            .split("\n")
-                                            .length + 1;
-                                    } else {
-                                        record.lines = 0;
-                                    }
-                                    return "";
-                                },
                                 templateAtt = function lexer_markup_tag_attributeRecord_templateAtt(sample:string, token:string):void {
                                     if (sample.charAt(0) === "{" && "{%#@:/?^<+~=".indexOf(sample.charAt(1)) > -1) {
                                         record.types = "template_attribute";
@@ -408,12 +398,17 @@
                                     if (attstore[ind] === undefined) {
                                         break;
                                     }
+                                    attstore[ind][0] = attstore[ind][0].replace(/\s+$/, "");
                                     record.lines = attstore[ind][1];
                                     eq = attstore[ind][0].indexOf("=");
                                     dq = attstore[ind][0].indexOf("\"");
                                     sq = attstore[ind][0].indexOf("'");
 
-                                    if (eq > -1 && store.length > 0) {
+                                    if ((/^\/(\/|\*)/).test(attstore[ind][0]) === true && options.language === "jsx") {
+                                        record.types = "comment_attribute";
+                                        record.token = attstore[ind][0];
+                                        parse.push(data, record, "");
+                                    } else if (eq > -1 && store.length > 0) {
                                         // put certain attributes together for coldfusion
                                         record.token = store.join(" ");
                                         parse.push(data, record, "");
@@ -457,7 +452,7 @@
                                         if (options.language === "html" && cft === undefined) {
                                             name = name.toLowerCase();
                                         }
-                                        if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true && slice.indexOf("{{") !== 0) {
+                                        if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
                                             if (ind === 0 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
                                                 parse.structure.push([
                                                     tagName(element).replace(/\/$/, ""),
@@ -470,11 +465,19 @@
                                             record.types = "jsx_attribute_start";
                                             parse.push(data, record, "");
                                             parse.structure.push(["jsx_attribute", parse.count]);
-                                            name         = slice
-                                                .replace(/^(\s*\{)/, "")
-                                                .replace(/(\}\s*)$/, jsxAttribute);
-                                            framework.lexer.script(name);
+                                            framework.lexer.script(slice.slice(1, slice.length - 1));
                                             record.begin = parse.structure[parse.structure.length - 1][1];
+                                            if ((/\s\}$/).test(slice) === true) {
+                                                slice = slice.slice(0, slice.length - 1);
+                                                slice = (/\s+$/).exec(slice)[0];
+                                                if (slice.indexOf("\n") < 0) {
+                                                    record.lines = 1;
+                                                } else {
+                                                    record.lines = slice.split("\n").length;
+                                                }
+                                            } else {
+                                                record.lines = 0;
+                                            }
                                             record.token = "}";
                                             record.types = "jsx_attribute_end";
                                             parse.push(data, record, "");
@@ -781,8 +784,10 @@
                                     quote = "";
                                 } else {
                                     atty = attribute
-                                        .join("")
-                                        .replace(/\s+/g, " ");
+                                        .join("");
+                                    if (options.language !== "jsx" || (options.language === "jsx" && atty.charAt(atty.length - 1) !== "}")) {
+                                        atty = atty.replace(/\s+/g, " ");
+                                    }
                                     name = arname(atty);
                                     if (name[0] === "data-parse-ignore" || name[0] === "data-prettydiff-ignore") {
                                         ignoreme = true;
