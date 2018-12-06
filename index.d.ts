@@ -1,5 +1,8 @@
 declare var ace: any;
 type languageAuto = [string, string, string];
+interface attStore extends Array<[string, number]>{
+    [index:number]: [string, number]
+}
 interface data {
     begin: number[];
     lexer: string[];

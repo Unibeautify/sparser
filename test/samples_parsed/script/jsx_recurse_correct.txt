@@ -3,7 +3,7 @@
 {"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"x","types":"reference"},
 {"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"=","types":"operator"},
 {"begin":-1,"lexer":"markup","lines":1,"presv":false,"stack":"global","token":"<Comp>","types":"start"},
-{"begin":3,"lexer":"markup","lines":0,"presv":false,"stack":"Comp","token":"par={","types":"jsx_attribute_start"},
+{"begin":3,"lexer":"markup","lines":2,"presv":false,"stack":"Comp","token":"par={","types":"jsx_attribute_start"},
 {"begin":4,"lexer":"markup","lines":0,"presv":false,"stack":"jsx_attribute","token":"<SubComp>","types":"start"},
 {"begin":5,"lexer":"markup","lines":0,"presv":false,"stack":"SubComp","token":"aasdfasdf","types":"content"},
 {"begin":5,"lexer":"markup","lines":0,"presv":false,"stack":"SubComp","token":"</SubComp>","types":"end"},

@@ -1,7 +1,7 @@
 [
 {"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<?xml?>","types":"xml"},
-{"begin":0,"lexer":"markup","lines":0,"presv":false,"stack":"xml","token":"version=\"1.0\"","types":"attribute"},
-{"begin":0,"lexer":"markup","lines":0,"presv":false,"stack":"xml","token":"standalone=\"yes\"","types":"attribute"},
+{"begin":0,"lexer":"markup","lines":1,"presv":false,"stack":"xml","token":"version=\"1.0\"","types":"attribute"},
+{"begin":0,"lexer":"markup","lines":1,"presv":false,"stack":"xml","token":"standalone=\"yes\"","types":"attribute"},
 {"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!DOCTYPE parent [","types":"start"},
 {"begin":3,"lexer":"markup","lines":0,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT fool (#PCDATA)>","types":"sgml"},
 {"begin":3,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT toto (#PCDATA)>","types":"sgml"},

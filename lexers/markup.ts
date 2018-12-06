@@ -118,7 +118,7 @@
                         preserve:boolean        = false,
                         simple:boolean          = false,
                         singleton:boolean       = false,
-                        attstore:string[]        = [];
+                        attstore:attStore        = [];
                     const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
@@ -365,7 +365,7 @@
                             }
 
                             // fix for singleton tags, since "/" at the end of the tag is not an attribute
-                            if (attstore[attstore.length - 1] === "/") {
+                            if (attstore[attstore.length - 1][0] === "/") {
                                 attstore.pop();
                                 element = element.replace(/>$/, "/>");
                             }
@@ -375,9 +375,9 @@
                             dq = 1;
                             if (dq < eq) {
                                 do {
-                                    name = attstore[dq - 1];
-                                    if (name.charAt(name.length - 1) === "=" && attstore[dq].indexOf("=") < 0) {
-                                        attstore[dq - 1] = name + attstore[dq];
+                                    name = attstore[dq - 1][0];
+                                    if (name.charAt(name.length - 1) === "=" && attstore[dq][0].indexOf("=") < 0) {
+                                        attstore[dq - 1][0] = name + attstore[dq][0];
                                         attstore.splice(dq, 1);
                                         eq = eq - 1;
                                         dq = dq - 1;
@@ -400,7 +400,6 @@
                             }
 
                             record.begin = parse.count;
-                            record.lines = 0;
                             record.stack = tname.replace(/\/$/, "");
                             record.types = "attribute";
 
@@ -409,47 +408,52 @@
                                     if (attstore[ind] === undefined) {
                                         break;
                                     }
-                                    eq = attstore[ind].indexOf("=");
-                                    dq = attstore[ind].indexOf("\"");
-                                    sq = attstore[ind].indexOf("'");
+                                    record.lines = attstore[ind][1];
+                                    eq = attstore[ind][0].indexOf("=");
+                                    dq = attstore[ind][0].indexOf("\"");
+                                    sq = attstore[ind][0].indexOf("'");
 
                                     if (eq > -1 && store.length > 0) {
                                         // put certain attributes together for coldfusion
                                         record.token = store.join(" ");
                                         parse.push(data, record, "");
-                                        if (attstore[ind].indexOf("=") > 0 && attstore[ind].indexOf("//") < 0 && attstore[ind].charAt(0) !== ";") {
-                                            record.token = attstore[ind].replace(/\s$/, "");
+                                        if (attstore[ind][0].indexOf("=") > 0 && attstore[ind][0].indexOf("//") < 0 && attstore[ind][0].charAt(0) !== ";") {
+                                            record.token = attstore[ind][0].replace(/\s$/, "");
                                         } else {
-                                            record.token = attstore[ind];
+                                            record.token = attstore[ind][0];
                                         }
                                         parse.push(data, record, "");
                                         store        = [];
                                     } else if (ltype === "sgml") {
-                                        store.push(attstore[ind]);
-                                    } else if (cft !== undefined && eq < 0 && attstore[ind].indexOf("=") < 0) {
+                                        store.push(attstore[ind][0]);
+                                    } else if (cft !== undefined && eq < 0 && attstore[ind][0].indexOf("=") < 0) {
                                         // put certain attributes together for coldfusion
-                                        store.push(attstore[ind]);
-                                    } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind].charAt(0)) > -1) {
+                                        store.push(attstore[ind][0]);
+                                    } else if ((cft !== undefined && eq < 0) || (dq > 0 && dq < eq) || (sq > 0 && sq < eq) || syntax.indexOf(attstore[ind][0].charAt(0)) > -1) {
                                         // tags stored as attributes of other tags
-                                        templateAtt(attstore[ind].replace(/^("|')/, "").slice(0, 2), attstore[ind].replace(/\s$/, ""));
+                                        templateAtt(attstore[ind][0].replace(/^("|')/, "").slice(0, 2), attstore[ind][0].replace(/\s$/, ""));
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
                                         if (options.language === "html") {
-                                            record.token = attstore[ind].toLowerCase();
+                                            record.token = attstore[ind][0].toLowerCase();
                                         } else if (options.language === "xml" || options.language === "coldfusion") {
-                                            record.token = attstore[ind] + "=\"" + attstore[ind] + "\"";
+                                            if (options.lexerOptions.markup.quote_convert === "single") {
+                                                record.token = `${attstore[ind][0]}='${attstore[ind][0]}'`;
+                                            } else {
+                                                record.token = `${attstore[ind][0]}="${attstore[ind][0]}"`;
+                                            }
                                         } else {
-                                            record.token = attstore[ind];
+                                            record.token = attstore[ind][0];
                                         }
                                         parse.push(data, record, "");
                                     } else {
                                         // separates out the attribute name from its value
-                                        slice = attstore[ind].slice(eq + 1);
+                                        slice = attstore[ind][0].slice(eq + 1);
                                         if (syntax.indexOf(slice.charAt(0)) < 0 && cft === undefined) {
                                             slice = "\"" + slice + "\"";
                                         }
-                                        name = attstore[ind].slice(0, eq);
+                                        name = attstore[ind][0].slice(0, eq);
                                         if (options.language === "html" && cft === undefined) {
                                             name = name.toLowerCase();
                                         }
@@ -740,6 +744,7 @@
                             e:number         = 0,
                             f:number         = 0,
                             parncount:number = 0,
+                            lines:number     = 1,
                             quote:string     = "",
                             jsxquote:string  = "",
                             stest:boolean     = false,
@@ -805,26 +810,30 @@
                                 if (options.crlf === true) {
                                     atty = attribute.join("\r\n");
                                 } else {
-                                    atty = attribute.join("\r\n");
+                                    atty = attribute.join("\n");
                                 }
                                 if (atty === "=") {
-                                    attstore[attstore.length - 1] = attstore[attstore.length - 1] + "=";
-                                } else if (atty.charAt(0) === "=" && attstore.length > 0 && attstore[attstore.length - 1].indexOf("=") < 0) {
+                                    attstore[attstore.length - 1][0] = `${attstore[attstore.length - 1][0]}=`;
+                                } else if (atty.charAt(0) === "=" && attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=") < 0) {
                                     //if an attribute starts with a `=` then adjoin it to the last attribute
-                                    attstore[attstore.length - 1] = attstore[attstore.length - 1] + atty;
-                                } else if (atty.charAt(0) !== "=" && attstore.length > 0 && attstore[attstore.length - 1].indexOf("=") === attstore[attstore.length - 1].length - 1) {
+                                    attstore[attstore.length - 1][0] = attstore[attstore.length - 1][0] + atty;
+                                } else if (atty.charAt(0) !== "=" && attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=") === attstore[attstore.length - 1][0].length - 1) {
                                     // if an attribute follows an attribute ending with `=` then adjoin it to the
                                     // last attribute
-                                    attstore[attstore.length - 1] = attstore[attstore.length - 1] + atty;
-                                } else if (options.language === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1].charAt(attstore[attstore.length - 1].length - 1)) > -1)) {
-                                    attstore[attstore.length - 1] = attstore[attstore.length - 1] + " " + atty;
+                                    attstore[attstore.length - 1][0] = attstore[attstore.length - 1][0] + atty;
+                                } else if (options.language === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1][0].charAt(attstore[attstore.length - 1][0].length - 1)) > -1)) {
+                                    attstore[attstore.length - 1][0] = `${attstore[attstore.length - 1][0]} ${atty}`;
                                 } else if (atty !== "" && atty !== " ") {
-                                    attstore.push(atty);
+                                    attstore.push([atty, lines]);
                                 }
                                 attribute = [];
+                                lines = (b[a] === "\n")
+                                    ? 2
+                                    : 1;
                             };
                         do {
                             if (b[a] === "\n") {
+                                lines = lines + 1;
                                 if (options.language === "apacheVelocity" && lex[0] === "#") {
                                     a = a - 1;
                                     break;
@@ -882,6 +891,9 @@
                                             if ((/\s/).test(b[a + 1]) === true) {
                                                 do {
                                                     a = a + 1;
+                                                    if (b[a] === "\n") {
+                                                        lines = lines + 1;
+                                                    }
                                                 } while (a < c - 1 && (/\s/).test(b[a + 1]) === true);
                                             }
                                             if (b[a + 1] === "<") {
@@ -906,7 +918,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        framework.parseerror = "Parse error on line " + parse.lineNumber + " on element: " + data.token[parse.count];
+                                        framework.parseerror = `Parse error on line ${parse.lineNumber} on element: ${data.token[parse.count]}`;
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -965,13 +977,14 @@
                                                     }
                                                     if ((/^=?("|')?((\{(\{|%|#|@|:|\/|\?|\^|<|\+|~|=))|(\[%)|<)/).test(b[a] + b[a + 1] + b[a + 2] + b[a + 3]) === true) {
                                                         attribute.pop();
-                                                        quote = attribute.join("");
                                                         if (b[a] !== "=" && attribute.length > 0) {
-                                                            attstore.push(quote);
-                                                            attribute = [];
+                                                            attributeLexer(false);
                                                         }
                                                         quote = "";
                                                         do {
+                                                            if (b[a] === "\n") {
+                                                                lines = lines + 1;
+                                                            }
                                                             attribute.push(b[a]);
                                                             if (b[a] === dustatt[dustatt.length - 1]) {
                                                                 dustatt.pop();
@@ -984,8 +997,7 @@
                                                                     }
                                                                 }
                                                                 if (dustatt.length < 1) {
-                                                                    attstore.push(attribute.join(""));
-                                                                    attribute = [];
+                                                                    attributeLexer(false);
                                                                     b[a] = " ";
                                                                     break;
                                                                 }
@@ -1096,33 +1108,34 @@
                                                                 if (options.lexerOptions.markup.unformatted === false) {
                                                                     if (options.language === "jsx") {
                                                                         if ((/^(\s*)$/).test(element) === false) {
-                                                                            attstore.push(element);
+                                                                            attstore.push([element, lines]);
                                                                         }
                                                                     } else {
                                                                         element = element.replace(/\s+/g, " ");
                                                                         if (element !== " ") {
-                                                                            attstore.push(element);
+                                                                            attstore.push([element, lines]);
                                                                         }
                                                                     }
                                                                 } else if ((/^(\s+)$/).test(element) === false) {
-                                                                    attstore.push(element);
+                                                                    attstore.push([element, lines]);
                                                                 }
                                                                 attribute = [];
+                                                                lines = 1;
                                                                 break;
                                                             }
                                                         }
                                                     } else {
-                                                        quote    = "";
                                                         jsxquote = "";
                                                         jscom    = true;
                                                         element  = attribute.join("");
-                                                        if (element.charAt(1) === "*") {
-                                                            element = element + "\n";
+                                                        if (element !== " ") {
+                                                            attstore.push([element, lines]);
                                                         }
                                                         attribute = [];
-                                                        if (element !== " ") {
-                                                            attstore.push(element);
-                                                        }
+                                                        lines = (quote === "\n")
+                                                            ? 2
+                                                            : 1;
+                                                        quote    = "";
                                                         break;
                                                     }
                                                 } else if (b[a] === "{" && b[a + 1] === "%" && b[igcount - 1] === "=" && (quote === "\"" || quote === "'")) {
@@ -1190,12 +1203,16 @@
                                             if (attribute.length < 1 && (attstore.length < 1 || (/\s/).test(b[a - 1]) === true)) {
                                                 lex.pop();
                                                 do {
+                                                    if (b[a] === "\n") {
+                                                        lines = lines + 1;
+                                                    }
                                                     attribute.push(b[a]);
                                                     a = a + 1;
                                                 } while (a < c && b[a] !== "}");
                                                 attribute.push("}");
-                                                attstore.push(attribute.join(""));
+                                                attstore.push([attribute.join(""), lines]);
                                                 attribute = [];
+                                                lines = 1;
                                             } else {
                                                 quote = "}";
                                             }
@@ -1204,12 +1221,16 @@
                                             if (attribute.length < 1 && (attstore.length < 1 || (/\s/).test(b[a - 1]) === true)) {
                                                 lex.pop();
                                                 do {
+                                                    if (b[a] === "\n") {
+                                                        lines = lines + 1;
+                                                    }
                                                     attribute.push(b[a]);
                                                     a = a + 1;
                                                 } while (a < c && b[a - 1] + b[a] !== quote);
                                                 attribute.push("}");
-                                                attstore.push(attribute.join(""));
+                                                attstore.push([attribute.join(""), lines]);
                                                 attribute = [];
+                                                lines = 1;
                                                 quote = "";
                                             }
                                         }
@@ -1707,7 +1728,7 @@
                             attr:string[]     = [];
                         if (len > -1) {
                             do {
-                                attr = arname(attstore[len]);
+                                attr = arname(attstore[len][0]);
                                 if (attr[0] === "type") {
                                     attValue = attr[1];
                                     if (attValue.charAt(0) === "\"" || attValue.charAt(0) === "'") {
@@ -1772,10 +1793,14 @@
                     // additional logic is required to find the end of a tag with the attribute
                     // data-parse-ignore
                     if (simple === true && preserve === false && ignoreme && end === ">" && element.slice(element.length - 2) !== "/>") {
-                        let tags:string[] = [];
+                        let tags:string[] = [],
+                            atstring:string[] = [];
                         if (cheat === true) {
                             ltype = "singleton";
                         } else {
+                            attstore.forEach(function lexer_markup_tag_atstore(value:[string, number]):void {
+                                atstring.push(value[0]);
+                            });
                             preserve                = true;
                             data.presv[parse.count] = true;
                             ltype                   = "ignore";
@@ -1844,7 +1869,7 @@
                             }
                         }
                         element = element + tags.join("");
-                        element = element.replace(">", " " + attstore.join(" ") + ">");
+                        element = element.replace(">", ` ${atstring.join(" ")}>`);
                         record.token = element;
                         record.types = "content-ignore";
                         attstore = [];

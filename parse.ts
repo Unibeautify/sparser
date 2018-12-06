@@ -657,7 +657,7 @@ Parse Framework
             }
             
             // fix begin values.  They must be reconsidered after reordering from object sort
-            if (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true) {
+            if (parse.data.begin.length > 0 && (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true)) {
                 let a:number = 0;
                 const data:data    = parse.data,
                     b:number         = data.begin.length,

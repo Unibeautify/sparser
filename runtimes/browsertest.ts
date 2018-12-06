@@ -390,7 +390,7 @@
     };
     if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
         if (acetest === true) {
-            lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto")
+            lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto" || options.lexer === "")
                 ? framework.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
             editor.setValue(parseCode);
