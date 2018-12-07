@@ -294,6 +294,12 @@
                                 options.lexerOptions.script.objectSort = false;
                                 options.lexerOptions.style.objectSort = false;
                             }
+                        } else if (name === "tagsort") {
+                            if (values === "true") {
+                                options.lexerOptions.markup.tagSort = true;
+                            } else if (values === "false") {
+                                options.lexerOptions.markup.tagSort = false;
+                            }
                         } else if (name === "noleadzero" || name === "no_lead_zero") {
                             if (values === "true") {
                                 options.lexerOptions.style.no_lead_zero = true;
