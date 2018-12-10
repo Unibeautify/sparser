@@ -987,9 +987,6 @@
                                                         }
                                                         quote = "";
                                                         do {
-                                                            if (b[a] === "\n") {
-                                                                lines = lines + 1;
-                                                            }
                                                             attribute.push(b[a]);
                                                             if (b[a] === dustatt[dustatt.length - 1]) {
                                                                 dustatt.pop();

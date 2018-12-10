@@ -44,7 +44,7 @@
 {"begin":41,"lexer":"script","lines":2,"presv":false,"stack":"function","token":"return","types":"word"},
 {"begin":41,"lexer":"script","lines":1,"presv":false,"stack":"function","token":"(","types":"start"},
 {"begin":43,"lexer":"markup","lines":2,"presv":false,"stack":"paren","token":"<h1>","types":"start"},
-{"begin":44,"lexer":"markup","lines":3,"presv":false,"stack":"h1","token":"style={","types":"jsx_attribute_start"},
+{"begin":44,"lexer":"markup","lines":1,"presv":false,"stack":"h1","token":"style={","types":"jsx_attribute_start"},
 {"begin":45,"lexer":"script","lines":0,"presv":false,"stack":"jsx_attribute","token":"{","types":"start"},
 {"begin":46,"lexer":"script","lines":2,"presv":false,"stack":"object","token":"margin","types":"word"},
 {"begin":46,"lexer":"script","lines":0,"presv":false,"stack":"object","token":":","types":"operator"},
