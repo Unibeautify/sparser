@@ -332,6 +332,8 @@
                                 ],
                                 store:string[]        = [];
                             const len:number          = attstore.length,
+                                begin:number = parse.count,
+                                stack:string = tname.replace(/\/$/, ""),
                                 syntax:string       = "<{\"'=/",
                                 templateAtt = function lexer_markup_tag_attributeRecord_templateAtt(sample:string, token:string):void {
                                     if (sample.charAt(0) === "{" && "{%#@:/?^<+~=".indexOf(sample.charAt(1)) > -1) {
@@ -389,8 +391,8 @@
                                 cft = "required";
                             }
 
-                            record.begin = parse.count;
-                            record.stack = tname.replace(/\/$/, "");
+                            record.begin = begin;
+                            record.stack = stack;
                             record.types = "attribute";
 
                             if (ind < len) {
@@ -453,20 +455,11 @@
                                             name = name.toLowerCase();
                                         }
                                         if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
-                                            if (ind === 0 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
-                                                parse.structure.push([
-                                                    tagName(element).replace(/\/$/, ""),
-                                                    parse.count
-                                                ]);
-                                            } else if (ltype !== "start") {
-                                                record.begin = record.begin - 1;
-                                            }
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
-                                            parse.push(data, record, "");
-                                            parse.structure.push(["jsx_attribute", parse.count]);
+                                            parse.push(data, record, "jsx_attribute");
                                             framework.lexer.script(slice.slice(1, slice.length - 1));
-                                            record.begin = parse.structure[parse.structure.length - 1][1];
+                                            record.begin = parse.count;
                                             if ((/\s\}$/).test(slice) === true) {
                                                 slice = slice.slice(0, slice.length - 1);
                                                 slice = (/\s+$/).exec(slice)[0];
@@ -478,14 +471,14 @@
                                             } else {
                                                 record.lines = 0;
                                             }
+                                            record.begin = parse.structure[parse.structure.length - 1][1];
+                                            record.stack = parse.structure[parse.structure.length - 1][0];
                                             record.token = "}";
                                             record.types = "jsx_attribute_end";
                                             parse.push(data, record, "");
                                             record.types = "attribute";
-                                            parse.structure.pop();
-                                            if (ind === len - 1 && (ltype === "singleton" || ltype === "template" || ltype === "xml")) {
-                                                parse.structure.pop();
-                                            }
+                                            record.begin = begin;
+                                            record.stack = stack;
                                         } else {
                                             name = name + "=" + slice;
                                             templateAtt(slice.replace(/^("|')/, "").slice(0, 2), name.replace(/(\s+)$/, ""));
