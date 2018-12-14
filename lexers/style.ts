@@ -397,21 +397,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                         b[aa] = "'";
                                     }
                                 } else if (b[aa - 1] === "\\" && qc !== "none") {
-                                    if (esctest(aa - 1) === false) {
-                                        if (qc === "double") {
-                                            if (b[aa] === "\"") {
-                                                b[aa] = "\\\"";
-                                            } else if (b[aa - 1] === "\\" && b[aa] === "\"") {
-                                                out.pop();
-                                            }
-                                        } else {
-                                            if (b[aa] === "'") {
-                                                b[aa] = "\\'";
-                                            } else if (b[aa - 1] === "\\" && b[aa] === "'") {
-                                                out.pop();
-                                            }
-                                        }
-                                    } else {
+                                    if (esctest(aa - 1) === true) {
                                         if (qc === "double" && b[aa] === "'") {
                                             out.pop();
                                         } else if (qc === "single" && b[aa] === "\"") {

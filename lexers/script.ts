@@ -595,21 +595,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         do {
                             if (data.token[0] !== "{" && data.token[0] !== "[" && qc !== "none" && (c[ee] === "\"" || c[ee] === "'")) {
                                 if (c[ee - 1] === "\\") {
-                                    if (slashes(ee - 1) === false) {
-                                        if (qc === "double") {
-                                            if (c[ee] === "\"") {
-                                                c[ee] = "\\\"";
-                                            } else if (c[ee - 1] === "\\" && c[ee] === "\"") {
-                                                build.pop();
-                                            }
-                                        } else {
-                                            if (c[ee] === "'") {
-                                                c[ee] = "\\'";
-                                            } else if (c[ee - 1] === "\\" && c[ee] === "'") {
-                                                build.pop();
-                                            }
-                                        }
-                                    } else {
+                                    if (slashes(ee - 1) === true) {
                                         if (qc === "double" && c[ee] === "'") {
                                             build.pop();
                                         } else if (qc === "single" && c[ee] === "\"") {
