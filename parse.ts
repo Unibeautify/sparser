@@ -323,6 +323,7 @@ Parse Framework
                     }
                 }
             },
+            references: [[]],
             safeSort: function parse_safeSort(array: any[], operation:"ascend" | "descend" | "normal", recursive:boolean): any[] {
                 let extref  = function parse_safeSort_extref(item: any):any {
                     //worthless function for backwards compatibility with older versions of V8 node.
@@ -614,6 +615,8 @@ Parse Framework
             }
             if (typeof framework.lexer[parseOptions.lexer] === "function") {
                 framework.parseerror = "";
+                // reset references data if framework is used on multiple files
+                parse.references = [[]];
                 parseOptions.lexerOptions = (parseOptions.lexerOptions || {});
                 Object.keys(framework.lexer).forEach(function parse_lexers(value) {
                     parseOptions.lexerOptions[value] = (parseOptions.lexerOptions[value] || {});
@@ -1012,8 +1015,8 @@ Parse Framework
         parserObjects: parserObjects
     });
     framework = global.parseFramework;
-    framework.parse        = parse;
-    framework.parserArrays = parserArrays;
+    framework.parse         = parse;
+    framework.parserArrays  = parserArrays;
     framework.parserObjects = parserObjects;
     
     if (

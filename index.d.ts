@@ -27,28 +27,29 @@ interface lexer {
     [key:string]: (source: string) => data;
 }
 interface parse {
-    concat(data : data, array : data)                               : void,
-    count                                                           : number,
-    data                                                            : data,
-    datanames                                                       : string[],
-    lineNumber                                                      : number,
-    linesSpace                                                      : number,
-    objectSort(data : data)                                         : void,
-    parseOptions                                                    : parseOptions,
-    pop(data : data)                                                : record,
-    push(data : data, record : record, structure : string)          : void,
-    safeSort(array : any[], operation : string, recursive : boolean): any[],
-    spacer(args : spacer)                                           : number,
-    splice(spliceData : splice)                                     : void,
-    structure                                                       : Array <[string, number]>,
-    wrapCommentBlock(config: wrapConfig)                            : [string, number],
-    wrapCommentLine(config: wrapConfig)                             : [string, number]
+    concat(data : data, array : data)                               : void;
+    count                                                           : number;
+    data                                                            : data;
+    datanames                                                       : string[];
+    lineNumber                                                      : number;
+    linesSpace                                                      : number;
+    objectSort(data : data)                                         : void;
+    parseOptions                                                    : parseOptions;
+    pop(data : data)                                                : record;
+    push(data : data, record : record, structure : string)          : void;
+    references                                                      : string[][];
+    safeSort(array : any[], operation : string, recursive : boolean): any[];
+    spacer(args : spacer)                                           : number;
+    splice(spliceData : splice)                                     : void;
+    structure                                                       : Array <[string, number]>;
+    wrapCommentBlock(config: wrapConfig)                            : [string, number];
+    wrapCommentLine(config: wrapConfig)                             : [string, number];
 }
 interface parseFramework {
-    language?                   : language;
-    lexer                       : lexer;
-    parse                       : parse;
-    parseerror                  : string;
+    language?                        : language;
+    lexer                            : lexer;
+    parse                            : parse;
+    parseerror                       : string;
     parserArrays(obj : parseOptions) : data;
     parserObjects(obj : parseOptions): record[];
 }

@@ -1,5 +1,3 @@
-import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
-
 /*global global*/
 (function script_init() {
     "use strict";
@@ -23,7 +21,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                 sourcemap:[number, string]      = [
                     0, ""
                 ],
-                references:string[][] = [[]],
+                references:string[][] = parse.references,
                 b:number              = source.length,
                 c:string[]              = source.split(""),
                 brace:string[]          = [],
@@ -351,13 +349,13 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         if (references.length > 0 && (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
                             ltype = "reference";
                             references[references.length - 1].push(output);
-                            if (options.language === "javascript" && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
+                            if ((options.language === "javascript" || options.language === "jsx" || options.language === "typescript") && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
                                 hoisting(parse.count, output);
                             }
                         } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && ltype !== "operator") {
                             ltype = "reference";
                             funreferences.push(output);
-                        } else if (tokel === ",") {
+                        } else if (tokel === "," && data.stack[parse.count] !== "method" &&  (data.stack[parse.count] !== "expression" || data.token[data.begin[parse.count] - 1] === "for")) {
                             let d:number = parse.count;
                             const e:number = parse.structure[parse.structure.length - 1][1];
                             do {
@@ -373,7 +371,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                 }
                                 d = d - 1;
                             } while (d > e);
-                            if (references.length > 0 && data.token[d] === "var" && options.language === "javascript") {
+                            if (references.length > 0 && data.token[d] === "var" && (options.language === "javascript" || options.language === "jsx" || options.language === "typescript")) {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                                 hoisting(d, output);
@@ -383,7 +381,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             } else {
                                 ltype = "word";
                             }
-                        } else {
+                        } else if (parse.structure[parse.structure.length - 1][0] !== "object" || (parse.structure[parse.structure.length - 1][0] === "object" && ltoke !== "," && ltoke !== "{")) {
                             let d:number = references.length,
                                 e:number = 0;
                             if (d > 0) {
@@ -407,7 +405,11 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                                 } else {
                                     ltype = "word";
                                 }
+                            } else {
+                                ltype = "word";
                             }
+                        } else {
+                            ltype = "word";
                         }
                         ltoke = output;
                         if (output === "from" && data.token[parse.count] === "}") {
@@ -1901,7 +1903,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         brace.pop();
                     }
                     recordPush("");
-                    if (ltoke === "}" && data.stack[parse.count] !== "object") {
+                    if (ltoke === "}" && data.stack[parse.count] !== "object" && data.stack[parse.count] !== "class") {
                         references.pop();
                     }
                     if (insert === true) {
@@ -2049,7 +2051,26 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             }
                             return data.token[data.begin[bb] - 1];
                         }());
-                    if (ltoke === "{" || ltoke === "x{") {
+                    if (ltoke === "{" && (data.types[aa] === "word" || data.token[aa] === "]")) {
+                        let bb:number = aa;
+                        if (data.token[bb] === "]") {
+                            do {
+                                bb = data.begin[bb] - 1;
+                            } while (data.token[bb] === "]");
+                        }
+                        do {
+                            if (data.types[bb] === "start" || data.types[bb] === "end" || data.types[bb] === "operator") {
+                                break;
+                            }
+                            bb = bb - 1;
+                        } while (bb > 0);
+                        if (data.token[bb] === ":" && data.stack[bb - 1] === "arguments") {
+                            stack = "function";
+                            references.push(funreferences);
+                            funreferences = [];
+                        }
+                    }
+                    if (stack === "" && (ltoke === "{" || ltoke === "x{")) {
                         if (wordx === "else" || wordx === "do" || wordx === "try" || wordx === "finally" || wordx === "switch") {
                             stack = wordx;
                         } else if (classy[classy.length - 1] === 0 && wordx !== "return") {
@@ -2149,10 +2170,12 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                         } else if (ltoke === "{" && (data.token[aa] === "x}" || data.token[aa] === "}") && "if|else|for|while|function|class|switch|catch|finally".indexOf(data.stack[aa]) > -1) {
                             // ES6 block
                             stack = "block";
+                        } else if (data.types[aa] === "generic") {
+                            stack = "function";
                         } else {
                             stack = "object";
                         }
-                        if (stack !== "object") {
+                        if (stack !== "object" && stack !== "class") {
                             if (stack === "function") {
                                 references.push(funreferences);
                                 funreferences = [];
@@ -2167,7 +2190,7 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                             stack = "array";
                         }
                     } else if (ltoke === "(" || ltoke === "x(") {
-                        if (wordx === "function" || data.token[aa - 1] === "function") {
+                        if (wordx === "function" || data.token[aa - 1] === "function" || data.token[aa - 1] === "function*") {
                             stack = "arguments";
                         } else if (data.token[aa - 1] === "." || data.token[data.begin[aa] - 2] === ".") {
                             stack = "method";
@@ -2415,6 +2438,8 @@ import { SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS } from "constants";
                     ltoke = operator();
                     if (ltoke === "regex") {
                         ltoke = data.token[parse.count];
+                    } else if (ltoke === "*" && data.token[parse.count] === "function") {
+                        data.token[parse.count] = "function*";
                     } else {
                         ltype = "operator";
                         if (ltoke !== "!" && ltoke !== "++" && ltoke !== "--") {

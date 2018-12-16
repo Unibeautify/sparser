@@ -212,7 +212,7 @@
 {"begin":209,"lexer":"script","lines":1,"presv":false,"stack":"function","token":"return","types":"word"},
 {"begin":209,"lexer":"markup","lines":1,"presv":false,"stack":"function","token":"<span>","types":"start"},
 {"begin":211,"lexer":"markup","lines":0,"presv":false,"stack":"span","token":"{","types":"script"},
-{"begin":212,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"i","types":"word"},
+{"begin":212,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"i","types":"reference"},
 {"begin":212,"lexer":"script","lines":1,"presv":false,"stack":"script","token":"/","types":"operator"},
 {"begin":212,"lexer":"script","lines":1,"presv":false,"stack":"script","token":"2","types":"number"},
 {"begin":212,"lexer":"script","lines":0,"presv":false,"stack":"script","token":"x;","types":"separator"},

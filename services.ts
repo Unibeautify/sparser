@@ -694,7 +694,7 @@ const services = function services_() {
                         framework: function services_validate_validation_framework() {
                             let keys    = [],
                                 keysort = "";
-                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,safeSort,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
+                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,references,safeSort,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
                             console.log(`${text.cyan}Framework Testing${text.none}`);
                             console.log("");
                             framework.parserArrays({
@@ -912,8 +912,7 @@ const services = function services_() {
                 framework.lexer      = {};
                 framework.parseerror = "";
                 parse             = framework.parse;
-                require(`${project}js${sep}lexers${sep}all.js`)(parse_options);
-                next();
+                require(`${project}js${sep}lexers${sep}all.js`)(parse_options, next);
                 return "";
             };
             console.log("");
