@@ -1,13 +1,13 @@
 
-body{background:#fff;font-family:monospace;margin:1em;font-size:10px}
+body{background:linear-gradient(to top, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);font-family:monospace;margin:1em;font-size:10px}
 li,
-.output,
 p{font-size:1.2em}
-div#input{border:0.1em solid #000;font-size:1.4em}
-h1{margin:0}
-.version{color:#070}
-textarea{font-family:monospace}
-table{border-collapse:collapse;box-shadow:0.1em 0.1em 0.5em #999;display:table}
+h1,
+h2{color:#26c;margin:0}
+h1 span{display:block}
+.version{color:#070;float:right}
+textarea#input{display:block;font-family:monospace;overflow:scroll;overflow-wrap:normal;white-space:pre}
+table{border-collapse:collapse;display:table}
 thead{display:table-header-group}
 tbody{display:table-row-group}
 thead th{background:#ddc}
@@ -15,7 +15,31 @@ tbody td[class="numb"]{text-align:right}
 tbody tr:hover{background:#ffa}
 tr{display:table-row}
 th,
-td{border-width:0.1em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
+td{border-width:0.0833em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
+
+.input{float:left;margin-right:1%;width:40%}
+.output{float:left;width:59%}
+.input p{margin:0}
+.input h2{font-size:1em}
+.input label,
+.output h2{display:block;font-size:1.8em;font-weight:bold;margin:0 0 0.5em}
+.output p,
+.output ul,
+.output table{font-size:1.2em}
+.keybox,
+.title{background:#fff;padding:0.5em 0.5em 0;position:relative}
+.title{float:left;margin:0 0 0.5em}
+.keybox{float:right}
+.keybox ul{padding:0}
+.clear{clear:both;display:block;float:none;height:0.01em}
+.ace-control{display:inline-block;margin:0 0 0.5em}
+#data{overflow:scroll;width:100%}
+#data table{min-width:100%}
+
+.title,
+.keybox{background:#fff;border:0.1em solid #000;box-shadow:0.21em 0.21em 0.42em #bbb}
+#data{background:#fff;border:0.1em solid #000;box-shadow:0.21em 0.21em 0.42em #555}
+#input{border:0.0715em solid #000;box-shadow:0.15em 0.15em 0.3em 0 #555;font-size:1.4em}
 
 #input .ace_editor{background:#fff;border-color:#999}
 #input .ace-tm .ace_marker-layer .ace_selection,
@@ -53,7 +77,7 @@ tr[class="style"] td,
 tr[class="style"] th{border-color: #66f;color:#009}
 tr[class="style odd"]{background: #eef8ff}
 tr[class="style even"]{background: #ddeeff}
-ul[class="key"] li{white-space:pre}
+ul[class="key"] li{list-style:none;white-space:pre}
 ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
 ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}

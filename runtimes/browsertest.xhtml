@@ -11,21 +11,35 @@
         <link href="../runtimes/browsertest.css" media="all" rel="stylesheet" type="text/css"/>
     </head>
     <body>
-        <h1>parse-framework experimentation, <span class="version">2.3.22</span></h1>
         <div>
-            <ul>
-                <li id="timeparse">Parsing time: <span></span></li>
-                <li id="timetotal">Browser time: <span></span></li>
-                <li id="language">Lang guessed: <span></span></li>
-                <li id="errors">Parse errors: <span></span></li>
-            </ul>
+            <div class="title">
+                <h1>
+				<span>parse-framework experimentation</span>
+				<span class="version">2.3.24</span>
+                </h1>
+                <div>
+                    <ul>
+                        <li id="timeparse">Parsing time: <span></span></li>
+                        <li id="timetotal">Browser time: <span></span></li>
+                        <li id="language">Lang guessed: <span></span></li>
+                        <li id="errors">Parse errors: <span></span></li>
+                    </ul>
+                </div>
+                <p class="ace-control"><input type="checkbox" id="aceControl" checked="checked"/> <label for="aceControl">Use Ace code editor</label></p>
+            </div>
+            <div class="keybox">
+                <h2>Output Key</h2>
+                <p>A colorful visual hint by lexer type:</p>
+                <ul class="key">
+                    <li class="markdown">White for markdown lexer</li>
+                    <li class="markup">Red for markup lexer:   (XML/HTML like syntax)</li>
+                    <li class="script">Green for script lexer: (C-like syntax)</li>
+                    <li class="style">Blue for style lexer:   (CSS/SCSS/LESS like syntax)</li>
+                </ul>
+            </div>
+            <span class="clear"></span>
         </div>
-        <div class="input">
-            <p><input type="checkbox" id="aceControl" checked="checked"/> <label for="aceControl">Use Ace code editor</label></p>
-            <p><label for="input">Input</label>
-                <textarea id="input"></textarea></p>
-        </div>
-        <div>
+        <!--div>
             <h2>Options</h2>
             <div>
                 <ul>
@@ -33,17 +47,17 @@
                     <li><input type="checkbox" id="objectSort"/> <label for="objectSort">objectSort</label></li>
                 </ul>
             </div>
-        </div>
-        <div class="output">
-            <h2>Output</h2>
-            <p>A colorful visual hint is added to help identify which lexer processed which records:</p>
-            <ul class="key">
-                <li class="markdown">White for markdown lexer</li>
-                <li class="markup">Red for markup lexer:   (XML/HTML like syntax)</li>
-                <li class="script">Green for script lexer: (C-like syntax)</li>
-                <li class="style">Blue for style lexer:   (CSS/SCSS/LESS like syntax)</li>
-            </ul>
-            <div id="data"></div>
+        </div-->
+        <div>
+            <div class="input">
+                <h2><label for="input">Input</label></h2>
+                <p><textarea id="input" wrap="off"></textarea></p>
+            </div>
+            <div class="output">
+                <h2>Output</h2>
+                <div id="data"></div>
+            </div>
+            <span class="clear"></span>
         </div>
         <script src="../node_modules/ace-builds/src-min-noconflict/ace.js" type="application/javascript"></script>
         <script type="application/javascript" src="../js/browsertest.js"></script>

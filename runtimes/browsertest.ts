@@ -10,9 +10,13 @@
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input:HTMLTextAreaElement   = document.getElementsByTagName("textarea")[0],
+        dataarea:HTMLElement        = document.getElementById("data"),
         parseCode:string = (Object.keys(window).indexOf("localStorage") > -1)
             ? window.localStorage.getItem("parseCode")
             : "",
+        textsize = (navigator.userAgent.indexOf("like Gecko") < 0 && navigator.userAgent.indexOf("Gecko") > 0 && navigator.userAgent.indexOf("Firefox") > 0)
+            ? 13
+            : 13.33,
         options:parseOptions = {
             correct        : false,
             crlf           : false,
@@ -227,19 +231,23 @@
                         row();
                         a = a + 1;
                     } while (a < len);
-                    document.getElementById("data").innerHTML = "";
-                    document.getElementById("data").appendChild(table);
+                    dataarea.innerHTML = "";
+                    dataarea.appendChild(table);
                 };
             options.lexerOptions = {};
             Object.keys(framework.lexer).forEach(function web_handler_lexers(value):void {
                 options.lexerOptions[value] = {};
             });
-            if (acetest === true || lang[0] !== "") {
+            if (editor !== undefined && (acetest === true || lang[0] !== "")) {
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
-            options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
-            options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
-            options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
+            if (checkboxes[1] !== undefined) {
+                options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
+                options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
+            }
+            if (checkboxes[0] !== undefined) {
+                options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
+            }
             lang = framework.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
@@ -344,58 +352,86 @@
                 e.preventDefault();
                 return false;
             }
-        };
-    if (typeof ace === "object") {
-        aceControl.onclick = function web_aceControl() {
-            if (aceControl.checked === true) {
-                location.replace(location.href.replace(/ace=false&?/, "").replace(/\?$/, ""));
-            } else {
-                if (location.href.indexOf("?") > 0) {
-                    location.replace(location.href.replace("?", "?ace=false&"));
-                } else {
-                    location.replace(`${location.href}?ace=false`);
-                }
+        },
+        height = function web_inputHeight(scale:number, offset:number, text:number):string {
+            let height:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
+            if (height > window.innerHeight) {
+                height = window.innerHeight;
             }
+            height = (height / scale) - (13.75 + text + offset);
+            return `${height}em`;
         };
-        if (location.href.indexOf("ace=false") > 0) {
+        if (typeof ace === "object") {
+            aceControl.onclick = function web_aceControl() {
+                if (aceControl.checked === true) {
+                    location.replace(location.href.replace(/ace=false&?/, "").replace(/\?$/, ""));
+                } else {
+                    if (location.href.indexOf("?") > 0) {
+                        location.replace(location.href.replace("?", "?ace=false&"));
+                    } else {
+                        location.replace(`${location.href}?ace=false`);
+                    }
+                }
+            };
+            if (location.href.indexOf("ace=false") > 0) {
+                aceControl.checked = false;
+                input.onkeyup = handler;
+                input.style.height = height(textsize, 0, 1);
+                dataarea.style.height = height(10, 4, 1);
+            } else {
+                const div:HTMLDivElement        = document.createElement("div"),
+                    parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
+                    attributes:NamedNodeMap = input.attributes,
+                    dollar:string     = "$",
+                    len:number        = attributes.length;
+                let a:number          = 0,
+                    edit:any       = {},
+                    textarea:HTMLTextAreaElement;
+                do {
+                    if (attributes[a].name !== "rows" && attributes[a].name !== "cols" && attributes[a].name !== "wrap") {
+                        div.setAttribute(attributes[a].name, attributes[a].value);
+                    }
+                    a = a + 1;
+                } while (a < len);
+                parent.removeChild(input.parentNode);
+                parent.appendChild(div);
+                edit = ace.edit(div);
+                textarea = div.getElementsByTagName("textarea")[0];
+                textarea.onkeyup = handler;
+                edit.setTheme("ace/theme/textmate");
+                edit.focus();
+                edit[`${dollar}blockScrolling`] = Infinity;
+                dataarea.style.height = height(10, 5.55, 0);
+                document.getElementById("input").style.height = height(14, 0, 0);
+                edit.setStyle(`height:${height(14, 0, 0)}`);
+                edit.resize();
+                editor = edit;
+            }
+        } else {
             aceControl.checked = false;
             input.onkeyup = handler;
-        } else {
-            const div:HTMLDivElement        = document.createElement("div"),
-                parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
-                attributes:NamedNodeMap = input.attributes,
-                dollar:string     = "$",
-                len:number        = attributes.length;
-            let a:number          = 0,
-                edit:any       = {},
-                textarea:HTMLTextAreaElement;
-            do {
-                if (attributes[a].name !== "rows" && attributes[a].name !== "cols" && attributes[a].name !== "wrap") {
-                    div.setAttribute(attributes[a].name, attributes[a].value);
-                }
-                a = a + 1;
-            } while (a < len);
-            parent.removeChild(input.parentNode);
-            parent.appendChild(div);
-            edit                            = ace.edit(div);
-            textarea = div.getElementsByTagName("textarea")[0];
-            textarea.onkeyup = handler;
-            edit.setTheme("ace/theme/textmate");
-            edit.focus();
-            edit[`${dollar}blockScrolling`] = Infinity;
-            editor = edit;
+            input.style.height = height(textsize, 0, 1);
+            dataarea.style.height = height(10, 4, 1);
         }
-    } else {
-        aceControl.checked = false;
-        input.onkeyup = handler;
-    }
+        window.onresize = function web_fixHeight():void {
+            if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
+                dataarea.style.height = height(10, 5.55, 0);
+                document.getElementById("input").style.height = height(14, 0, 0);
+                editor.setStyle(`height:${height(14, 0, 0)}`);
+                editor.resize();
+            } else {
+                input.style.height = height(textsize, 0, 1);
+                dataarea.style.height = height(10, 4, 1);
+            }
+    
+        };
     document.onkeypress = backspace;
     document.onkeydown = backspace;
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
     if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
-        if (acetest === true) {
+        if (acetest === true && editor !== undefined) {
             lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto" || options.lexer === "")
                 ? framework.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
