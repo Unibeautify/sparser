@@ -21,7 +21,7 @@ interface htmlCellBuilder {
 interface language {
     auto(sample : string, defaultLang : string): languageAuto;
     nameproper(input : string)                 : string;
-    setlangmode(input : string)                : string;
+    setlexer(input : string)                : string;
 }
 interface lexer {
     [key:string]: (source: string) => data;

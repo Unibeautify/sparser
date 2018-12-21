@@ -1,7 +1,7 @@
 (function language_init():void {
     "use strict";
     const language:language = {
-        setlangmode: function language_setlangmode(input:string):string {
+        setlexer: function language_setlexer(input:string):string {
             const langmap = {
                 c_cpp     : "script",
                 coldfusion: "markup",
@@ -20,6 +20,7 @@
                 jsp       : "markup",
                 jsx       : "script",
                 less      : "style",
+                markdown  : "markdown",
                 markup    : "markup",
                 php       : "script",
                 phphtml   : "markup",
@@ -62,6 +63,7 @@
                 jsp       : "JSTL (JSP)",
                 jsx       : "React JSX",
                 liquid    : "Liquid Template",
+                markdown  : "markdown",
                 markup    : "markup",
                 phphtml   : "HTML/PHP",
                 scss      : "SCSS",
@@ -92,18 +94,18 @@
                 ),
                 output      = function language_auto_output(langname:string):languageAuto {
                     if (langname === "unknown") {
-                        return [defaultLang, language.setlangmode(defaultLang), "unknown"];
+                        return [defaultLang, language.setlexer(defaultLang), "unknown"];
                     }
                     if (langname === "xhtml" || langname === "markup") {
-                        return ["xml", language.setlangmode("xml"), "XHTML"];
+                        return ["xml", language.setlexer("xml"), "XHTML"];
                     }
                     if (langname === "tss") {
-                        return ["tss", language.setlangmode("tss"), "Titanium Stylesheets"];
+                        return ["tss", language.setlexer("tss"), "Titanium Stylesheets"];
                     }
                     if (langname === "phphtml") {
-                        return ["php", language.setlangmode(langname), language.nameproper(langname)];
+                        return ["php", language.setlexer(langname), language.nameproper(langname)];
                     }
-                    return [langname, language.setlangmode(langname), language.nameproper(langname)];
+                    return [langname, language.setlexer(langname), language.nameproper(langname)];
                 },
                 cssA        = function language_auto_cssA():languageAuto {
                     if ((/\$[a-zA-Z]/).test(sample) === true || (/\{\s*(\w|\.|\$|#)+\s*\{/).test(sample) === true) {
@@ -307,6 +309,9 @@
                 };
             if (sample === null) {
                 return output("unknown");
+            }
+            if (((/\n\s*#{1,6}\s+/).test(sample) === true || (/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) && ((/\s\*\*\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true) || (/-+\|(-+\|)+/).test(sample) === true) {
+                return output("markdown");
             }
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");

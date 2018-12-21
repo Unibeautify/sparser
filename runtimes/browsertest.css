@@ -11,11 +11,12 @@ table{border-collapse:collapse;display:table}
 thead{display:table-header-group}
 tbody{display:table-row-group}
 thead th{background:#ddc}
+tbody th,
 tbody td[class="numb"]{text-align:right}
 tbody tr:hover{background:#ffa}
 tr{display:table-row}
 th,
-td{border-width:0.0833em;border-style:solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
+td{border:#999 0.0833em solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
 
 .input{float:left;margin-right:1%;width:40%}
 .output{float:left;width:59%}
@@ -37,9 +38,9 @@ td{border-width:0.0833em;border-style:solid;display:table-cell;min-width:3em;pad
 #data table{min-width:100%}
 
 .title,
-.keybox{background:#fff;border:0.1em solid #000;box-shadow:0.21em 0.21em 0.42em #bbb}
-#data{background:#fff;border:0.1em solid #000;box-shadow:0.21em 0.21em 0.42em #555}
-#input{border:0.0715em solid #000;box-shadow:0.15em 0.15em 0.3em 0 #555;font-size:1.4em}
+.keybox{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #ddd}
+#data{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #888}
+#input{border:0.0715em solid #ccc;box-shadow:0.15em 0.15em 0.3em 0 #888;font-size:1.4em}
 
 #input .ace_editor{background:#fff;border-color:#999}
 #input .ace-tm .ace_marker-layer .ace_selection,
