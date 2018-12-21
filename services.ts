@@ -522,6 +522,17 @@ const services = function services_() {
                                                 } else {
                                                     parse_options.correct = false;
                                                 }
+                                                if ((/_endComma-/).test(files.code[a][0]) === true) {
+                                                    if ((/_endComma-always/).test(files.code[a][0]) === true) {
+                                                        parse_options.lexerOptions.script.end_comma = "always";
+                                                    } else if ((/_endComma-never/).test(files.code[a][0]) === true) {
+                                                        parse_options.lexerOptions.script.end_comma = "never";
+                                                    } else {
+                                                        parse_options.lexerOptions.script.end_comma = "none";
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.script.end_comma = "none";
+                                                }
                                                 if ((/_noleadzero(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_noleadzero-/).test(files.code[a][0]) === true) {
                                                         if ((/_noleadzero-false/).test(files.code[a][0]) === true) {

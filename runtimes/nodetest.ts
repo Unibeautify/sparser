@@ -169,6 +169,17 @@ const nodetest = function nodetest_() {
                     } else {
                         options.correct = false;
                     }
+                    if ((/_endComma-/).test(sourcepath) === true) {
+                        if ((/_endComma-always/).test(sourcepath) === true) {
+                            options.lexerOptions.script.end_comma = "always";
+                        } else if ((/_endComma-never/).test(sourcepath) === true) {
+                            options.lexerOptions.script.end_comma = "never";
+                        } else {
+                            options.lexerOptions.script.end_comma = "none";
+                        }
+                    } else {
+                        options.lexerOptions.script.end_comma = "none";
+                    }
                     if ((/_noleadzero(\.|_|-)/).test(sourcepath) === true) {
                         if ((/_noleadzero-/).test(sourcepath) === true) {
                             if ((/_noleadzero-false/).test(sourcepath) === true) {

@@ -1902,6 +1902,33 @@
                     } else {
                         brace.pop();
                     }
+                    if (options.lexerOptions.script.end_comma !== undefined && options.lexerOptions.script.end_comma !== "none" && parse.structure[parse.structure.length - 1][0] === "array" || parse.structure[parse.structure.length - 1][0] === "object") {
+                        if (options.lexerOptions.script.end_comma === "always" && data.token[parse.count] !== ",") {
+                            const begin:number = parse.structure[parse.structure.length - 1][1];
+                            let y:number = parse.count;
+                            do {
+                                if (data.begin[y] === begin) {
+                                    if (data.token[y] === ",") {
+                                        break;
+                                    }
+                                } else {
+                                    y = data.begin[y];
+                                }
+                                y = y - 1;
+                            } while (y > begin);
+                            if (y > begin) {
+                                const type:string = ltype,
+                                    toke:string = ltoke;
+                                ltoke = ",";
+                                ltype = "separator";
+                                recordPush("");
+                                ltoke = toke;
+                                ltype = type;
+                            }
+                        } else if (options.lexerOptions.script.end_comma === "never" && data.token[parse.count] === ",") {
+                            parse.pop(data);
+                        }
+                    }
                     recordPush("");
                     if (ltoke === "}" && data.stack[parse.count] !== "object" && data.stack[parse.count] !== "class") {
                         references.pop();

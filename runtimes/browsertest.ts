@@ -294,6 +294,10 @@
                                 options.lexerOptions.script.quote_convert = values;
                                 options.lexerOptions.style.quote_convert = values;
                             }
+                        } else if (name === "end_comma" || name === "endcomma") {
+                            if (values === "always" || values === "never") {
+                                options.lexerOptions.script.end_comma = values;
+                            }
                         } else if (name === "objectsort") {
                             if (values === "true") {
                                 options.lexerOptions.script.objectSort = true;
@@ -472,9 +476,7 @@
         });
         if (location.href.indexOf("scrolldown") > 0) {
             const body = document.getElementsByTagName("body")[0],
-                el = (document.documentElement.clientHeight > body.clientHeight)
-                    ? document.documentElement
-                    : body;
+                el = document.getElementById("data");
             handler();
             body.style.backgroundColor = "#000";
             setTimeout(function web_scrolldelay() {
