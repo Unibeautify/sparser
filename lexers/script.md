@@ -53,7 +53,9 @@ The stack values are identified by either a known categorical term that describe
 * **paren** - Describes parenthsis groupings when other parenthsis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
 
 ## script options
+* **end_comma** - Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
 * **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
+* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
 * **varword** - Whether variables should be declared as:
    - *list*: a comma separated list
    - *each*: separate declaration statements

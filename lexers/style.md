@@ -22,6 +22,7 @@ The style lexer takes the identifier, typically a selector, preceeding the start
 
 ## style options
 * **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
+* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
 
 ## Escaping code from the parser
 The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are JavaScript-like line comments or standard block comments.
