@@ -35,3 +35,28 @@
     		}
     	};
     }
+
+/*These bottom tests were producing double comments when sorting.  The fix is to ensure a sorted group starting with a comment is preceeded by an end type*/
+/*global - body element*/
+#prettydiff{text-align: center;}
+
+/*global - contentarea, the only immediate child of body*/
+#prettydiff .contentarea{border-style:solid;}
+
+/*global - text containers*/
+#prettydiff .analysis {font-weight:bold}
+
+/*global - headings*/
+#prettydiff li {font-size:1em}
+
+/*global - borders*/
+#prettydiff section{border-style:none}
+
+/*global - interactives*/
+#prettydiff select{border-style:inset}
+
+/*global - colorscheme field*/
+#prettydiff #dcolorScheme{float:right}
+
+/*global - remaining items*/
+#prettydiff .content-hide{height:1em;}

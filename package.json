@@ -40,5 +40,5 @@
         "start": "node js/services build --browser",
         "test": "node js/services validation"
     },
-    "version": "2.3.27"
+    "version": "2.3.28"
 }

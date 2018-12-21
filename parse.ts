@@ -196,7 +196,7 @@ Parse Framework
                                 store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
                             }
                             ee = keys[dd][0];
-                            if (style === true && data.types[keyend] === "comment" && data.types[keyend + 1] !== "comment" && dd < keylen - 1) {
+                            if (style === true && data.types[keyend - 1] !== "end" && data.types[keyend] === "comment" && data.types[keyend + 1] !== "comment" && dd < keylen - 1) {
                                 // missing a terminal comment causes many problems
                                 keyend = keyend + 1;
                             }
