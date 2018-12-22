@@ -357,13 +357,30 @@
                 return false;
             }
         },
-        height = function web_inputHeight(scale:number, offset:number, text:number):string {
+        height = function web_inputHeight(scale:number, offset:number):string {
+            const ff = (textsize === 13) // variability for Gecko
+                ? (scale === 10) // pull the output down to align to input
+                    ? -0.7
+                    : (offset < -4) // pull input down to eliminate a white bar
+                        ? -0.4
+                        : -0.6
+                : 0;
             let height:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
             if (height > window.innerHeight) {
                 height = window.innerHeight;
             }
-            height = (height / scale) - (13.75 + text + offset);
+            height = (height / scale) - (18.975 + offset + ff);
             return `${height}em`;
+        },
+        aceHeight = function web_aceHeight() {
+            dataarea.style.height = height(10, 0);
+            document.getElementById("input").style.height = height(12, -3.2);
+            editor.setStyle(`height:${height(12, -3.2)}`);
+            editor.resize();
+        },
+        textHeight = function web_textHeight() {
+            dataarea.style.height = height(10, 0);
+            input.style.height = height(textsize, -4.45);
         };
         if (typeof ace === "object") {
             aceControl.onclick = function web_aceControl() {
@@ -380,8 +397,7 @@
             if (location.href.indexOf("ace=false") > 0) {
                 aceControl.checked = false;
                 input.onkeyup = handler;
-                input.style.height = height(textsize, 0, 1);
-                dataarea.style.height = height(10, 4, 1);
+                textHeight();
             } else {
                 const div:HTMLDivElement        = document.createElement("div"),
                     parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
@@ -405,27 +421,19 @@
                 edit.setTheme("ace/theme/textmate");
                 edit.focus();
                 edit[`${dollar}blockScrolling`] = Infinity;
-                dataarea.style.height = height(10, 5.55, 0);
-                document.getElementById("input").style.height = height(14, 0, 0);
-                edit.setStyle(`height:${height(14, 0, 0)}`);
-                edit.resize();
                 editor = edit;
+                aceHeight();
             }
         } else {
             aceControl.checked = false;
             input.onkeyup = handler;
-            input.style.height = height(textsize, 0, 1);
-            dataarea.style.height = height(10, 4, 1);
+            textHeight();
         }
         window.onresize = function web_fixHeight():void {
             if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
-                dataarea.style.height = height(10, 5.55, 0);
-                document.getElementById("input").style.height = height(14, 0, 0);
-                editor.setStyle(`height:${height(14, 0, 0)}`);
-                editor.resize();
+                aceHeight();
             } else {
-                input.style.height = height(textsize, 0, 1);
-                dataarea.style.height = height(10, 4, 1);
+                textHeight();
             }
     
         };

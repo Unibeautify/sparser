@@ -40,7 +40,7 @@ td{border:#999 0.0833em solid;display:table-cell;min-width:3em;padding:0.2em 0.4
 .title,
 .keybox{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #ddd}
 #data{background:#fff;border:0.1em solid #bbb;box-shadow:0.21em 0.21em 0.42em #888}
-#input{border:0.0715em solid #bbb;box-shadow:0.15em 0.15em 0.3em 0 #888;font-size:1.4em}
+#input{border:0.0715em solid #bbb;box-shadow:0.15em 0.15em 0.3em 0 #888}
 
 #input .ace_editor{background:#fff;border-color:#999}
 #input .ace-tm .ace_marker-layer .ace_selection,
