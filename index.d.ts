@@ -26,6 +26,11 @@ interface language {
 interface lexer {
     [key:string]: (source: string) => data;
 }
+interface markupCount {
+    end  : number;
+    index: number;
+    start: number;
+}
 interface parse {
     concat(data : data, array : data)                               : void;
     count                                                           : number;
