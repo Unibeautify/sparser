@@ -376,14 +376,15 @@ const services = function services_() {
                     },
                     parse:parse,
                     parse_options:parseOptions = {
-                        correct        : false,
-                        crlf           : false,
-                        language       : "javascript",
-                        lexer          : "script",
-                        lexerOptions   : {},
-                        outputFormat   : "arrays",
-                        source         : "",
-                        wrap           : 0
+                        correct         : false,
+                        crlf            : false,
+                        language        : "javascript",
+                        lexer           : "script",
+                        lexerOptions    : {},
+                        outputFormat    : "arrays",
+                        preserve_comment: false,
+                        source          : "",
+                        wrap            : 0
                     },
                     framework:parseFramework;
                 const order      = [
@@ -578,6 +579,19 @@ const services = function services_() {
                                                     parse_options.lexerOptions.style.objectSort = false;
                                                     parse_options.lexerOptions.script.objectSort = false;
                                                 }
+                                                if ((/_preserveComment(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_preserveComment-/).test(files.code[a][0]) === true) {
+                                                        if ((/_preserveComment-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.preserve_comment = false;
+                                                        } else {
+                                                            parse_options.preserve_comment = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.preserve_comment = true;
+                                                    }
+                                                } else {
+                                                    parse_options.preserve_comment = false;
+                                                }
                                                 if ((/_tagSort(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_tagSort-/).test(files.code[a][0]) === true) {
                                                         if ((/_tagSort-false/).test(files.code[a][0]) === true) {
@@ -709,14 +723,15 @@ const services = function services_() {
                             console.log(`${text.cyan}Framework Testing${text.none}`);
                             console.log("");
                             framework.parserArrays({
-                                correct        : false,
-                                crlf           : false,
-                                language       : "html",
-                                lexer          : "markup",
-                                lexerOptions   : {},
-                                outputFormat   : "objects",
-                                source         : "",
-                                wrap           : 0
+                                correct         : false,
+                                crlf            : false,
+                                language        : "html",
+                                lexer           : "markup",
+                                lexerOptions    : {},
+                                outputFormat    : "objects",
+                                preserve_comment: false,
+                                source          : "",
+                                wrap            : 0
                             });
                             keys = Object.keys(parse);
                             keysort = parse.safeSort(keys, "ascend", false).join();
@@ -1331,6 +1346,7 @@ const services = function services_() {
                             lexer: lang[1],
                             lexerOptions: {},
                             outputFormat: "arrays",
+                            preserve_comment: false,
                             source: filedata,
                             wrap: optionValue("wrap", 0)
                         };

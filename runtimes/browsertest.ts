@@ -18,14 +18,15 @@
             ? 13
             : 13.33,
         options:parseOptions = {
-            correct        : false,
-            crlf           : false,
-            language       : "",
-            lexer          : "script",
-            lexerOptions   : {},
-            outputFormat   : "arrays",
-            source         : "",
-            wrap           : 0
+            correct         : false,
+            crlf            : false,
+            language        : "",
+            lexer           : "script",
+            lexerOptions    : {},
+            outputFormat    : "arrays",
+            preserve_comment: false,
+            source          : "",
+            wrap            : 0
         },
         handler = function web_handler():void {
             let outputArrays:data,
@@ -305,6 +306,12 @@
                             } else if (values === "false") {
                                 options.lexerOptions.script.objectSort = false;
                                 options.lexerOptions.style.objectSort = false;
+                            }
+                        } else if (name === "preserve_comment" || name === "preservecomment") {
+                            if (values === "true") {
+                                options.preserve_comment = true;
+                            } else {
+                                options.preserve_comment = false;
                             }
                         } else if (name === "tagsort") {
                             if (values === "true") {

@@ -59,18 +59,19 @@ interface parseFramework {
     parserObjects(obj : parseOptions): record[];
 }
 interface parseOptions {
-    correct        : boolean;
-    crlf           : boolean;
-    language       : string;
-    lexer          : string;
-    lexerOptions   : {
+    correct         : boolean;
+    crlf            : boolean;
+    language        : string;
+    lexer           : string;
+    lexerOptions    : {
         [key: string]: {
             [key: string]: any;
         };
     };
-    outputFormat: "objects" | "arrays";
-    source      : string;
-    wrap        : number;
+    outputFormat    : "objects" | "arrays";
+    preserve_comment: boolean;
+    source          : string;
+    wrap            : number;
 }
 interface record {
     begin: number;
@@ -98,7 +99,9 @@ interface splice {
 interface wrapConfig {
     chars     : string[];
     end       : number;
+    opening   : string;
     start     : number;
+    terminator: string;
 }
 declare module NodeJS {
     interface Global {

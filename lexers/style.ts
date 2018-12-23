@@ -904,12 +904,16 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         ? parse.wrapCommentLine({
                             chars: b,
                             end: len,
-                            start: a
+                            opening: "//",
+                            start: a,
+                            terminator: "\n"
                         })
                         : parse.wrapCommentBlock({
                             chars: b,
                             end: len,
-                            start: a
+                            opening: "/*",
+                            start: a,
+                            terminator: "\u002a/"
                         });
                     ltoke = comm[0];
                     ltype = ((/^(\/\*\s*parse-ignore-start)/).test(ltoke) === true)

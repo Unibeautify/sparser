@@ -287,6 +287,7 @@ Parse Framework
                     script: {}
                 },
                 outputFormat: "arrays",
+                preserve_comment: false,
                 source: "",
                 wrap: 0
             },
@@ -734,12 +735,21 @@ Parse Framework
                 emptyLine:boolean = false,
                 bulletLine:boolean = false,
                 numberLine:boolean = false,
-                output:string  = "";
+                output:string  = "",
+                terml:number = config.terminator.length - 1,
+                term:string = config.terminator.charAt(terml);
             const build:string[] = [],
                 second:string[]  = [],
                 lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
                     ? "\r\n"
                     : "\n",
+                sanitize = function parse_wrapCommentBlock_sanitize(input:string) {
+                    return `\\${input}`;
+                },
+                regEsc:RegExp = (/(\/|\\|\||\*|\[|\]|\{|\})/g),
+                regEnd:RegExp = new RegExp(`\\s*${config.terminator.replace(regEsc, sanitize)}$`),
+                regIgnore:RegExp = new RegExp(`^(${config.opening.replace(regEsc, sanitize)}\\s*parse-ignore-start)`),
+                regStart:RegExp = new RegExp(`(${config.opening.replace(regEsc, sanitize)}\\s*)`),
                 wrap:number = parse.parseOptions.wrap,
                 emptyLines = function parse_wrapCommentBlock_emptyLines() {
                     if ((/^\s+$/).test(lines[b + 1]) === true || lines[b + 1] === "") {
@@ -753,33 +763,49 @@ Parse Framework
                 };
             do {
                 build.push(config.chars[a]);
-                if (config.chars[a - 1] === "*" && config.chars[a] === "/") {
+                if (config.chars[a] === term && config.chars.slice(a - terml, a + 1).join("") === config.terminator) {
                     break;
                 }
                 a = a + 1;
             } while (a < config.end);
             output = build.join("");
-            if ((/^(\/\*\s*parse-ignore-start)/).test(output) === true) {
+            if (regIgnore.test(output) === true) {
                 let termination:string = "\n";
+                a = a + 1;
                 do {
                     build.push(config.chars[a]);
                     a = a + 1;
                 } while (a < config.end && (config.chars[a - 1] !== "d" || (config.chars[a - 1] === "d" && build.slice(build.length - 16).join("") !== "parse-ignore-end")));
                 b = a;
+                terml = config.opening.length - 1;
+                term = config.opening.charAt(terml);
                 do {
-                    b - b - 1;
-                } while (b > config.start && config.chars[b - 1] === "/" && (config.chars[b] === "*" || config.chars[b] === "/"));
-                if (config.chars[b] === "*") {
+                    if (config.opening === "/*" && config.chars[b - 1] === "/" && (config.chars[b] === "*" || config.chars[b] === "/")) {
+                        break; // for script
+                    }
+                    if (config.opening !== "/*" && config.chars[b] === term && config.chars.slice(b - terml, b + 1).join("") === config.opening) {
+                        break; // for markup
+                    }
+                    b = b - 1;
+                } while (b > config.start);
+                if (config.opening === "/*" && config.chars[b] === "*") {
                     termination = "*/";
+                } else if (config.opening !== "/*") {
+                    termination = config.terminator;
                 }
+                terml = termination.length - 1;
+                term = termination.charAt(terml);
                 if (termination !== "\n" || config.chars[a] !== "\n") {
                     do {
                         build.push(config.chars[a]);
                         if (termination === "\n" && config.chars[a + 1] === "\n") {
                             break;
                         }
+                        if (config.chars[a] === term && config.chars.slice(a - terml, a + 1).join("") === termination) {
+                            break;
+                        }
                         a = a + 1;
-                    } while (a < config.end && (termination === "\n" || (termination === "*/" && (config.chars[a - 1] !== "*" || config.chars[a] !== "/"))));
+                    } while (a < config.end);
                 }
                 if (config.chars[a] === "\n") {
                     a = a - 1;
@@ -787,7 +813,7 @@ Parse Framework
                 output = build.join("").replace(/\s+$/, "");
                 return [output, a];
             }
-            if (wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0)) {
+            if (wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || parse.parseOptions.preserve_comment === true) {
                 return [output, a];
             }
             b = config.start;
@@ -800,8 +826,8 @@ Parse Framework
             spaceLine = new RegExp(`\n${space}`, "g");
             lines = output.replace(/\r\n/g, "\n").replace(spaceLine, "\n").split("\n");
             len = lines.length;
-            lines[0] = lines[0].replace(/(\/\*\s*)/, "");
-            lines[len - 1] = lines[len - 1].replace(/\s*\*\/$/, "");
+            lines[0] = lines[0].replace(regStart, "");
+            lines[len - 1] = lines[len - 1].replace(regEnd, "");
             b = 0;
             do {
                 if ((/^\s+$/).test(lines[b]) === true || lines[b] === "") {
@@ -874,7 +900,11 @@ Parse Framework
                 }
                 b = b + 1;
             } while (b < len);
-            output = `${second.join(lf).replace("  ", "/*")} \u002a/`;
+            if (config.opening === "/*") {
+                output = `${second.join(lf).replace("  ", "/*")} \u002a/`;
+            } else {
+                output = `${second.join(lf)} ${config.terminator}`;
+            }
             return [output, a];
         },
         // parsing line comments and simultaneously applying word wrap
@@ -974,6 +1004,7 @@ Parse Framework
             output = build.join("").replace(/\s+$/, "");
             if ((/^(\/\/\s*parse-ignore\u002dstart)/).test(output) === true) {
                 let termination:string = "\n";
+                a = a + 1;
                 do {
                     build.push(config.chars[a]);
                     a = a + 1;
@@ -1000,7 +1031,7 @@ Parse Framework
                 output = build.join("").replace(/\s+$/, "");
                 return [output, a];
             }
-            if (output === "//" || output.slice(0, 6) === "//    ") {
+            if (output === "//" || output.slice(0, 6) === "//    " || parse.parseOptions.preserve_comment === true) {
                 return [output, a];
             }
             output = output.replace(/\/\/\s*/, "// ");

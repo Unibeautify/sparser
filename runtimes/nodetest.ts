@@ -47,6 +47,7 @@ const nodetest = function nodetest_() {
                 process.argv.splice(index, 1);
                 return "objects";
             }()),
+            preserve_comment: false,
             source: "",
             wrap: 0
         },
@@ -224,6 +225,19 @@ const nodetest = function nodetest_() {
                     } else {
                         options.lexerOptions.style.objectSort = false;
                         options.lexerOptions.script.objectSort = false;
+                    }
+                    if ((/_preserveComment(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_preserveComment-/).test(sourcepath) === true) {
+                            if ((/_preserveComment-false/).test(sourcepath) === true) {
+                                options.preserve_comment = false;
+                            } else {
+                                options.preserve_comment = true;
+                            }
+                        } else {
+                            options.preserve_comment = true;
+                        }
+                    } else {
+                        options.preserve_comment = false;
                     }
                     if ((/_tagSort(\.|_|-)/).test(sourcepath) === true) {
                         if ((/_tagSort-/).test(sourcepath) === true) {

@@ -688,7 +688,9 @@
                     comment = parse.wrapCommentBlock({
                         chars: c,
                         end: b,
-                        start: a
+                        opening: "/*",
+                        start: a,
+                        terminator: "\u002a/"
                     });
                     ltoke = comment[0];
                     a = comment[1];
@@ -752,7 +754,9 @@
                     comment = parse.wrapCommentLine({
                         chars: c,
                         end: b,
-                        start: a
+                        opening: "//",
+                        start: a,
+                        terminator: "\n"
                     });
                     ltoke = comment[0];
                     ignore = (/^(\/\/\s*parse-ignore-start)/).test(ltoke);
@@ -765,7 +769,6 @@
                         sourcemap[1] = ltoke;
                     }
                     if (data.token[parse.count] === "x}" || data.token[parse.count] === "x)") {
-                        
                         parse.splice({
                             data: data,
                             howmany: 0,
