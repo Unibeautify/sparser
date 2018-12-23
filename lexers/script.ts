@@ -1902,6 +1902,8 @@
                     } else {
                         brace.pop();
                     }
+
+                    // options.end_comma
                     if (options.lexerOptions.script.end_comma !== undefined && options.lexerOptions.script.end_comma !== "none" && parse.structure[parse.structure.length - 1][0] === "array" || parse.structure[parse.structure.length - 1][0] === "object") {
                         if (options.lexerOptions.script.end_comma === "always" && data.token[parse.count] !== ",") {
                             const begin:number = parse.structure[parse.structure.length - 1][1];

@@ -965,7 +965,12 @@ Parse Framework
                 build.push(config.chars[a]);
                 a = a + 1;
             } while (a < config.end && config.chars[a] !== "\n");
-            a = a - 1;
+            if (a === config.end) {
+                // necessary because the wrapping logic expects line termination
+                config.chars.push("\n");
+            } else {
+                a = a - 1;
+            }
             output = build.join("").replace(/\s+$/, "");
             if ((/^(\/\/\s*parse-ignore\u002dstart)/).test(output) === true) {
                 let termination:string = "\n";
