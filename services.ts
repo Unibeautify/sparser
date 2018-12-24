@@ -419,19 +419,40 @@ const services = function services_() {
                                         str:string       = "",
                                         outputObjects:recordList,
                                         filecount:number = 0,
-                                        currentlex:string = "";
+                                        currentlex:string = "",
+                                        empty:number = 0,
+                                        missing:number = 0;
                                     const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
                                             const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
                                             console.log("");
                                             console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
                                             currentlex = lex;
                                         },
+                                        completeText = function services_validate_validation_coreunits_compare_completeText():void {
+                                            console.log("");
+                                            if (missing < 1 && empty < 1) {
+                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
+                                            } else {
+                                                let pe:string = (empty > 1)
+                                                        ? "s are"
+                                                        : " is",
+                                                    pm:string = (missing > 1)
+                                                        ? "s"
+                                                        : "";
+                                                if (missing < 1) {
+                                                    console.log(`${text.green}Test units passed, but ${text.angry + empty} file${pe} empty.${text.none}`);
+                                                } else if (empty < 1) {
+                                                    console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm}.${text.none}`);
+                                                } else {
+                                                    console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm} and ${empty} file${pe} empty.${text.none}`);
+                                                }
+                                            }
+                                        },
                                         comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
                                             filecount = filecount + 1;
                                             console.log(`${humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
                                             if (a === len - 1) {
-                                                console.log("");
-                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
+                                                completeText();
                                                 return next();
                                             }
                                         },
@@ -506,8 +527,10 @@ const services = function services_() {
                                             a   = a - 1;
                                         } else if (files.code[a][0] === files.parsed[a][0]) {
                                             if (files.parsed[a][1] === "") {
+                                                empty = empty + 1;
                                                 console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
                                             } else if (files.code[a][1] === "") {
+                                                empty = empty + 1;
                                                 console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
                                             } else {
                                                 if ((/_correct(\.|_|-)/).test(files.code[a][0]) === true) {
@@ -645,9 +668,11 @@ const services = function services_() {
                                             }
                                         } else {
                                             if (files.code[a][0] < files.parsed[a][0]) {
+                                                missing = missing + 1;
                                                 console.log(`${text.yellow}Parsed samples directory is missing file:${text.none} ${files.code[a][0]}`);
                                                 files.code.splice(a, 1);
                                             } else {
+                                                missing = missing + 1;
                                                 console.log(`${text.yellow}Code samples directory is missing file:${text.none} ${files.parsed[a][0]}`);
                                                 files.parsed.splice(a, 1);
                                             }
@@ -656,8 +681,7 @@ const services = function services_() {
                                                 : files.parsed.length;
                                             a   = a - 1;
                                             if (a === len - 1) {
-                                                console.log("");
-                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
+                                                completeText();
                                                 return next();
                                             }
                                         }

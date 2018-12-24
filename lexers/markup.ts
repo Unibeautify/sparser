@@ -2350,6 +2350,63 @@
                                 //regular content
                                 a = a - 1;
                                 ltoke = lex.join("").replace(/\s+$/, "");
+                                if (options.wrap > 0) {
+                                    let aa:number  = options.wrap,
+                                        len:number = ltoke.length;
+                                    const wrap:number = options.wrap,
+                                        store:string[] = [],
+                                        wrapper = function beautify_markup_apply_content_wrapper():void {
+                                            if (ltoke.charAt(aa) === " ") {
+                                                store.push(ltoke.slice(0, aa));
+                                                ltoke = ltoke.slice(aa + 1);
+                                                len = ltoke.length;
+                                                aa = wrap;
+                                                return;
+                                            }
+                                            do {
+                                                aa = aa - 1;
+                                            } while (aa > 0 && ltoke.charAt(aa) !== " ");
+                                            if (aa > 0) {
+                                                store.push(ltoke.slice(0, aa));
+                                                ltoke = ltoke.slice(aa + 1);
+                                                len = ltoke.length;
+                                                aa = wrap;
+                                            } else {
+                                                aa = wrap;
+                                                do {
+                                                    aa = aa + 1;
+                                                } while (aa < len && ltoke.charAt(aa) !== " ");
+                                                store.push(ltoke.slice(0, aa));
+                                                ltoke = ltoke.slice(aa + 1);
+                                                len = ltoke.length;
+                                                aa = wrap;
+                                            }
+                                        };
+                                    // HTML anchor lists do not get wrapping unless the content itself exceeds the wrapping limit
+                                    if (
+                                        (data.token[data.begin[parse.count]] === "<a" || data.token[data.begin[parse.count]] === "<a>") &&
+                                        (data.token[data.begin[data.begin[parse.count]]] === "<li>" || data.token[data.begin[data.begin[parse.count]]] === "<li") &&
+                                        data.lines[parse.count] === 0 &&
+                                        data.lines[data.begin[parse.count]] === 0 &&
+                                        data.token[a].length < options.wrap
+                                    ) {
+                                        return;
+                                    }
+                                    if (len < wrap) {
+                                        return;
+                                    }
+                                    do {
+                                        wrapper();
+                                    } while (aa < len);
+                                    if (ltoke !== "" && ltoke !== " ") {
+                                        store.push(ltoke);
+                                    }
+                                    if (options.crlf === true) {
+                                        ltoke = store.join("\r\n");
+                                    } else {
+                                        ltoke = store.join("\n");
+                                    }
+                                }
                                 liner = 0;
                                 record.token = ltoke;
                                 recordPush(data, record, "");
