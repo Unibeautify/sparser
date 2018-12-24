@@ -10,7 +10,7 @@
 {"begin":7,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"Hello World.","types":"content"},
 {"begin":7,"lexer":"markup","lines":0,"presv":false,"stack":"foo","token":"</foo>","types":"end"},
 {"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!DOCTYPE too [","types":"start"},
-{"begin":10,"lexer":"markup","lines":0,"presv":true,"stack":"!DOCTYPE","token":"<!--define the internal DTD-->","types":"comment"},
+{"begin":10,"lexer":"markup","lines":0,"presv":false,"stack":"!DOCTYPE","token":"<!--define the internal DTD-->","types":"comment"},
 {"begin":10,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"<!ELEMENT didi (#PCDATA)>","types":"sgml"},
 {"begin":10,"lexer":"markup","lines":2,"presv":false,"stack":"!DOCTYPE","token":"]>","types":"end"},
 {"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<foo>","types":"start"},

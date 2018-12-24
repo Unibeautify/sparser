@@ -121,7 +121,7 @@
                         lastchar:string        = "",
                         ltype:string           = "",
                         tname:string           = "",
-                        comment:boolean         = false,
+                        start:string            = "",
                         cheat:boolean           = false,
                         earlyexit:boolean       = false,
                         ignoreme:boolean        = false,
@@ -131,7 +131,8 @@
                         preserve:boolean        = false,
                         simple:boolean          = false,
                         singleton:boolean       = false,
-                        attstore:attStore        = [];
+                        attstore:attStore        = [],
+                        comm:[string, number]    = ["", 0];
                     const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
                             lexer: "markup",
@@ -518,8 +519,8 @@
                             sgmlflag = sgmlflag - 1;
                             ltype    = "end";
                         } else if (end === "---") {
-                            preserve = true;
                             ltype    = "comment";
+                            start    = "---";
                         } else if (b[a] === "<") {
                             if (b[a + 1] === "/") {
                                 if (b[a + 2] === "#") {
@@ -534,21 +535,18 @@
                                         end   = "-->";
                                         ltype = "template";
                                     } else if (b[a + 4] === "-" && (/<cf[a-z]/i).test(source) === true) {
-                                        preserve = true;
-                                        comment  = true;
                                         end      = "--->";
                                         ltype    = "comment";
+                                        start    = "<!---";
                                     } else {
                                         end = "-->";
-                                        preserve = true;
-                                        comment = true;
                                         ltype = "comment";
+                                        start = "<!--";
                                     }
                                 } else if (b[a + 2] === "[" && b[a + 3] === "C" && b[a + 4] === "D" && b[a + 5] === "A" && b[a + 6] === "T" && b[a + 7] === "A" && b[a + 8] === "[") {
                                     end      = "]]>";
-                                    preserve = true;
-                                    comment  = true;
                                     ltype    = "cdata";
+                                    preserve = true;
                                 } else {
                                     end      = ">";
                                     sgmlflag = sgmlflag + 1;
@@ -569,12 +567,12 @@
                                 }
                                 if (b[a + 2] === "-" && b[a + 3] === "-") {
                                     end     = "--%>";
-                                    comment = true;
                                     ltype = "comment";
+                                    start = "<%--";
                                 } else if (b[a + 2] === "#") {
                                     end     = "%>";
-                                    comment = true;
                                     ltype = "comment";
+                                    start = "<%#";
                                 } else {
                                     end   = "%>";
                                     ltype = "template";
@@ -605,7 +603,7 @@
                                 } else if (b[a + 2] === "-" && b[a + 3] === "-") {
                                     end      = "-->";
                                     ltype    = "comment";
-                                    preserve = true;
+                                    start    = "<#--";
                                 } else {
                                     end   = ">";
                                     ltype = "template_start";
@@ -637,8 +635,8 @@
                                 }
                                 if (b[a + 1] === "!") {
                                     end     = "!}";
-                                    comment = true;
                                     ltype   = "comment";
+                                    start   = "{!";
                                 } else if (b[a + 1] === "/") {
                                     end   = "}";
                                     ltype = "template_end";
@@ -681,8 +679,7 @@
                             } else if (b[a + 1] === "#") {
                                 end      = "#}";
                                 ltype    = "comment";
-                                preserve = true;
-                                comment  = true;
+                                start = "{#";
                             } else {
                                 end   = b[a + 1] + "}";
                                 ltype = "template";
@@ -701,20 +698,17 @@
                             ltype = "template";
                         } else if (b[a] === "#" && options.language === "apacheVelocity") {
                             if (b[a + 1] === "*") {
-                                preserve = true;
-                                comment  = true;
                                 end      = "*#";
                                 ltype    = "comment";
+                                start    = "#*";
                             } else if (b[a + 1] === "[" && b[a + 2] === "[") {
-                                preserve = true;
-                                comment  = true;
                                 end      = "]]#";
                                 ltype    = "comment";
+                                start    = "#[["
                             } else if (b[a + 1] === "#") {
-                                preserve = true;
-                                comment  = true;
                                 end      = "\n";
                                 ltype    = "comment";
+                                start    = "##";
                             } else if (b[a + 1] === "e" && b[a + 2] === "l" && b[a + 3] === "s" && b[a + 4] === "e" && (/\s/).test(b[a + 5]) === true) {
                                 end   = "\n";
                                 ltype = "template_else";
@@ -746,7 +740,24 @@
                     // This is the real tag lexer. Everything that follows is attribute handling and
                     // edge cases
                     lastchar = end.charAt(end.length - 1);
-                    if (a < c) {
+                    if (ltype === "comment" && b[a] === "<") {
+                        comm = parse.wrapCommentBlock({
+                            chars: b,
+                            end: c,
+                            opening: start,
+                            start: a,
+                            terminator: end
+                        });
+                        element = comm[0];
+                        a = comm[1];
+                        if (element.replace(start, "").replace(/^\s*/, "").indexOf("parse-ignore-start") === 0) {
+                            record.token = element;
+                            record.types = "ignore";
+                            record.presv = true;
+                            recordPush(data, record, "");
+                            return;
+                        }
+                    } else if (a < c) {
                         let bcount:number    = 0,
                             braccount:number = 0,
                             jsxcount:number  = 0,
@@ -858,7 +869,7 @@
                                 framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
                                 break;
                             }
-                            if (comment === true) {
+                            if (ltype === "comment") {
                                 quote = "";
                                 //comments must ignore fancy encapsulations and attribute parsing
                                 if (b[a] === lastchar && lex.length > end.length + 1) {
@@ -893,7 +904,7 @@
                                 }
                             } else {
                                 if (quote === "") {
-                                    if (lex[0] + lex[1] === "<!") {
+                                    if (lex[0] + lex[1] === "<!" && ltype !== "cdata") {
                                         if (b[a] === "[") {
                                             if (b[a + 1] === "<") {
                                                 ltype = "start";
@@ -926,6 +937,7 @@
                                     }
                                     if (data.types[parse.count] === "sgml" && b[a] === "[" && lex.length > 4) {
                                         data.types[parse.count] = "template_start";
+                                        count.start = count.start + 1;
                                         break;
                                     }
                                     if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
@@ -1197,7 +1209,7 @@
                                     } else if (end !== "%>" && end !== "\n" && (b[a] === "\"" || b[a] === "'")) {
                                         //opening quote
                                         quote = b[a];
-                                    } else if (comment === false && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[parse.count] !== "conditional") {
+                                    } else if (ltype !== "comment" && end !== "\n" && b[a] === "<" && b[a + 1] === "!" && b[a + 2] === "-" && b[a + 3] === "-" && b[a + 4] !== "#" && data.types[parse.count] !== "conditional") {
                                         quote = "-->";
                                     } else if (b[a] === "{" && lex[0] !== "{" && end !== "\n" && end !== "%>" && end !== "%]" && (options.language === "dustjs" || b[a + 1] === "{" || b[a + 1] === "%" || b[a + 1] === "@" || b[a + 1] === "#")) {
                                         //opening embedded template expression
@@ -1276,7 +1288,6 @@
                                             end      = "endcomment";
                                             lastchar = "t";
                                             preserve = true;
-                                            comment  = true;
                                             ltype    = "comment";
                                         } else {
                                             //if current character matches the last character of the tag ending sequence
@@ -1347,7 +1358,7 @@
 
                         igcount      = 0;
                         element      = lex.join("");
-                        if ((/<!--\s*parse-ignore-start/).test(element) === true) {
+                        if (element.replace(start, "").replace(/^\s+/, "").indexOf("parse-ignore-start") === 0) {
                             a = a + 1;
                             do {
                                 lex.push(b[a]);
@@ -1358,7 +1369,7 @@
                             } while (a < c);
                             do {
                                 lex.push(b[a]);
-                                if (b[a] === ">" && b[a - 1] === "-" && b[a - 2] === "-") {
+                                if (b[a] === end.charAt(end.length - 1) && b.slice(a - (end.length - 1), a + 1).join("") === end) {
                                     break;
                                 }
                                 a = a + 1;
@@ -1470,6 +1481,7 @@
                                             } else {
                                                 data.types[aa] = "start";
                                             }
+                                            count.start = count.start + 1;
                                             data.token[aa] = data
                                                 .token[aa]
                                                 .replace(/(\s*\/>)$/, ">");
@@ -1502,21 +1514,22 @@
                         //renames the types value for the following two template tags
                         if (tname === "/#assign" || tname === "/#global") {
                             let dd:number    = parse.count - 1,
-                                count:number = 1;
+                                tcount:number = 1;
                             if (dd > -1) {
                                 do {
                                     if (data.types[dd] === "start" || data.types[dd] === "template_start") {
-                                        count = count - 1;
+                                        tcount = tcount - 1;
                                     } else if (data.types[dd] === "end" || data.types[dd] === "template_end") {
-                                        count = count + 1;
+                                        tcount = tcount + 1;
                                     }
-                                    if (count === 1) {
+                                    if (tcount === 1) {
                                         if ((data.token[dd].indexOf("<#assign") === 0 && tname === "/#assign") || (data.token[dd].indexOf("<#global") === 0 && tname === "/#global")) {
                                             data.types[dd] = "template_start";
+                                            count.start = count.start + 1;
                                             return false;
                                         }
                                     }
-                                    if (count === 0) {
+                                    if (tcount === 0) {
                                         return false;
                                     }
                                     dd = dd - 1;
@@ -1581,6 +1594,9 @@
                                         }
                                         ss = ss - 1;
                                     } while (ss > -1);
+                                    if (data.types[ss].indexOf("start") < 0) {
+                                        count.start = count.start + 1;
+                                    }
                                     data.types[ss] = "template_start";
                                     tt = ss + 1;
                                     struc = [["cfmodule", ss]];
@@ -1946,10 +1962,11 @@
                         }
                     }
 
-                    // identify script hidden within a CDATA escape
-                    if (ltype === "cdata" && record.stack === "script") {
+                    // identify script and style hidden within a CDATA escape
+                    if (ltype === "cdata" && (record.stack === "script" || record.stack === "style")) {
                         let counta:number = parse.count,
-                            countb:number = parse.count;
+                            countb:number = parse.count,
+                            stack:string = record.stack;
                         if (data.types[countb] === "attribute") {
                             do {
                                 counta = counta - 1;
@@ -1963,7 +1980,11 @@
                         record.token = "<![CDATA[";
                         recordPush(data, record, "");
                         parse.structure.push(["cdata", parse.count]);
-                        framework.lexer.script(element);
+                        if (stack === "script") {
+                            framework.lexer.script(element);
+                        } else {
+                            framework.lexer.style(element);
+                        }
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.token = "]]>";
                         recordPush(data, record, "");
@@ -2397,7 +2418,7 @@
                 }
                 a = a + 1;
             } while (a < c);
-            if (count.end !== count.start) {
+            if (count.end !== count.start && framework.parseerror === "") {
                 if (count.end > count.start) {
                     let x:number = count.end - count.start,
                         plural:string = (x === 1)

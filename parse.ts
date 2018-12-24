@@ -737,7 +737,8 @@ Parse Framework
                 numberLine:boolean = false,
                 output:string  = "",
                 terml:number = config.terminator.length - 1,
-                term:string = config.terminator.charAt(terml);
+                term:string = config.terminator.charAt(terml),
+                twrap:number = 0;
             const build:string[] = [],
                 second:string[]  = [],
                 lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
@@ -841,12 +842,17 @@ Parse Framework
                     } else if (numberLine === true) {
                         lines[b] = `      ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
                         numberLine = false;
-                    } else {
+                    } else if (config.opening === "/*") {
                         lines[b] = `   ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
+                    } else {
+                        lines[b] = `${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
                     }
                     c = lines[b].length;
-                    if (c > wrap) {
-                        c = wrap;
+                    twrap = (b < 1)
+                        ? wrap - (config.opening.length + 1)
+                        : wrap;
+                    if (c > twrap) {
+                        c = twrap;
                         do {
                             c = c - 1;
                             if ((/\s/).test(lines[b].charAt(c)) === true && c <= wrap) {
@@ -900,10 +906,14 @@ Parse Framework
                 }
                 b = b + 1;
             } while (b < len);
-            if (config.opening === "/*") {
-                output = `${second.join(lf).replace("  ", "/*")} \u002a/`;
+            if (second[second.length - 1].length > wrap - (config.terminator.length + 1)) {
+                second.push(config.terminator);
             } else {
-                output = `${second.join(lf)} ${config.terminator}`;
+                second[second.length - 1] = `${second[second.length - 1]} ${config.terminator}`;
+            }
+            output = `${second.join(lf).replace(/^ +/, `${config.opening} `)}`;
+            if (output.indexOf(config.opening) !== 0) {
+                output = `${config.opening} ${output}`;
             }
             return [output, a];
         },
