@@ -2350,6 +2350,8 @@
                                 //regular content
                                 a = a - 1;
                                 ltoke = lex.join("").replace(/\s+$/, "");
+                                liner = 0;
+                                record.token = ltoke;
                                 if (options.wrap > 0) {
                                     let aa:number  = options.wrap,
                                         len:number = ltoke.length;
@@ -2384,16 +2386,34 @@
                                         };
                                     // HTML anchor lists do not get wrapping unless the content itself exceeds the wrapping limit
                                     if (
-                                        (data.token[data.begin[parse.count]] === "<a" || data.token[data.begin[parse.count]] === "<a>") &&
-                                        (data.token[data.begin[data.begin[parse.count]]] === "<li>" || data.token[data.begin[data.begin[parse.count]]] === "<li") &&
-                                        data.lines[parse.count] === 0 &&
+                                        data.token[data.begin[parse.count]] === "<a>" &&
+                                        data.token[data.begin[data.begin[parse.count]]] === "<li>" &&
                                         data.lines[data.begin[parse.count]] === 0 &&
-                                        data.token[a].length < options.wrap
+                                        parse.linesSpace === 0 &&
+                                        ltoke.length < options.wrap
                                     ) {
-                                        return;
+                                        recordPush(data, record, "");
+                                        break;
                                     }
                                     if (len < wrap) {
-                                        return;
+                                        recordPush(data, record, "");
+                                        break;
+                                    }
+                                    if (parse.linesSpace < 1) {
+                                        let bb = parse.count;
+                                        do {
+                                            aa = aa - data.token[bb].length;
+                                            if (data.types[bb].indexOf("attribute") > -1) {
+                                                aa = aa - 1;
+                                            }
+                                            if (data.lines[bb] > 0 && data.types[bb].indexOf("attribute") < 0) {
+                                                break;
+                                            }
+                                            bb = bb - 1;
+                                        } while (bb > 0 && aa > 0);
+                                        if (aa < 1) {
+                                            aa = ltoke.indexOf(" ");
+                                        }
                                     }
                                     do {
                                         wrapper();

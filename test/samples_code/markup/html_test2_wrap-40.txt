@@ -1,0 +1,5 @@
+<ul>
+    <li><a href="">some text in here</a></li>
+    <li><a href="">other text in here</a></li>
+    <span><saan>some really long test that should wrap even though the text is immediately adjacent to tags without white space</span></span>
+</ul>

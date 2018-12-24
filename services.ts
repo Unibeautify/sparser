@@ -896,7 +896,7 @@ const services = function services_() {
                                         };
                                     files.forEach(lintit);
                                 };
-                            console.log(`${text.cyan}Beautifying and Linting${text.none}`);
+                            console.log(`${text.cyan}Linting${text.none}`);
                             console.log("");
                             (function services_validate_validation_lint_getFiles():void {
                                 let total:number    = 1,
