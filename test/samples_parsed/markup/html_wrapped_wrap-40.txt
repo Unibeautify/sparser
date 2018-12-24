@@ -1,0 +1,21 @@
+[
+{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<!--/*prettydiff.com wrap:40*/-->","types":"comment"},
+{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<mvc:view>","types":"start"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"controllername=\"sapui5.controller.alex\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"xmlns:core=\"sap.ui.core\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"xmlns:html=\"http://www.w3.org/1999/xhtml\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"xmlns:mvc=\"sap.ui.core.mvc\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"xmlns=\"sap.m\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":2,"presv":false,"stack":"mvc:view","token":"<app>","types":"start"},
+{"begin":7,"lexer":"markup","lines":2,"presv":false,"stack":"app","token":"<pages>","types":"start"},
+{"begin":8,"lexer":"markup","lines":2,"presv":false,"stack":"pages","token":"<page>","types":"start"},
+{"begin":9,"lexer":"markup","lines":1,"presv":false,"stack":"page","token":"title=\"Title\"","types":"attribute"},
+{"begin":9,"lexer":"markup","lines":2,"presv":false,"stack":"page","token":"<content>","types":"start"},
+{"begin":11,"lexer":"markup","lines":0,"presv":false,"stack":"content","token":"This is a long string that is\nexpected to wrap onto a new line so we\nwill have to see what happens as this\ngoes on. This is a long string that is\nexpected to wrap onto a new line so we\nwill have to see what happens as this\ngoes on.","types":"content"},
+{"begin":11,"lexer":"markup","lines":0,"presv":false,"stack":"content","token":"</content>","types":"end"},
+{"begin":9,"lexer":"markup","lines":2,"presv":false,"stack":"page","token":"ASDF is a long string that is expected\nto wrap onto a new line so we will have\nto see what happens as this goes on.","types":"content"},
+{"begin":9,"lexer":"markup","lines":2,"presv":false,"stack":"page","token":"</page>","types":"end"},
+{"begin":8,"lexer":"markup","lines":2,"presv":false,"stack":"pages","token":"</pages>","types":"end"},
+{"begin":7,"lexer":"markup","lines":2,"presv":false,"stack":"app","token":"</app>","types":"end"},
+{"begin":1,"lexer":"markup","lines":3,"presv":false,"stack":"mvc:view","token":"</mvc:view>","types":"end"}
+]

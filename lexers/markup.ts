@@ -2415,6 +2415,7 @@
                                             aa = ltoke.indexOf(" ");
                                         }
                                     }
+                                    ltoke = ltoke.replace(/\s+/g, " ");
                                     do {
                                         wrapper();
                                     } while (aa < len);
