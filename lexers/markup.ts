@@ -871,7 +871,7 @@
                                 framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
                                 break;
                             }
-                            if (ltype === "comment") {console.log(end);
+                            if (ltype === "comment") {
                                 quote = "";
                                 //comments must ignore fancy encapsulations and attribute parsing
                                 if (b[a] === lastchar && lex.length > end.length + 1) {
