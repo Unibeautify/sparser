@@ -20,13 +20,15 @@
                 options:parseOptions       = parse.parseOptions,
                 b:string[]             = source.split(""),
                 c:number             = b.length,
-                recordPush = function lexer_markup_recordPush(data, record, structure):void {
-                    if (record.types.indexOf("end") > -1) {
-                        count.end = count.end + 1;
-                    } else if (record.types.indexOf("start") > -1) {
-                        count.start = count.start + 1;
+                recordPush = function lexer_markup_recordPush(target, record, structure):void {
+                    if (target === data) {
+                        if (record.types.indexOf("end") > -1) {
+                            count.end = count.end + 1;
+                        } else if (record.types.indexOf("start") > -1) {
+                            count.start = count.start + 1;
+                        }
                     }
-                    parse.push(data, record, structure);
+                    parse.push(target, record, structure);
                 },
                 // Find the lowercase tag name of the provided token.
                 tagName       = function lexer_markup_tagName(el:string):string {
@@ -1611,10 +1613,10 @@
                                         }
                                         ss = ss - 1;
                                     } while (ss > -1);
+                                    data.types[ss] = "template_start";
                                     if (data.types[ss].indexOf("start") < 0) {
                                         count.start = count.start + 1;
                                     }
-                                    data.types[ss] = "template_start";
                                     tt = ss + 1;
                                     struc = [["cfmodule", ss]];
                                     ss  = parse.count + 1;
@@ -2140,6 +2142,7 @@
                             });
                         }());
                         parse.concat(data, store);
+                        count.end = count.end - 1;
                         recordPush(data, endData, "");
                     }
                     parse.linesSpace = 0;

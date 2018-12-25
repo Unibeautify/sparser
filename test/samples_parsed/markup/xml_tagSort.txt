@@ -1,0 +1,15 @@
+[
+{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<test>","types":"start"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"test","token":"<a>","types":"start"},
+{"begin":1,"lexer":"markup","lines":1,"presv":false,"stack":"a","token":"<c>","types":"start"},
+{"begin":2,"lexer":"markup","lines":0,"presv":false,"stack":"c","token":"</c>","types":"end"},
+{"begin":1,"lexer":"markup","lines":1,"presv":false,"stack":"a","token":"<d/>","types":"singleton"},
+{"begin":4,"lexer":"markup","lines":1,"presv":true,"stack":"d","token":"cat=\"meow\"","types":"attribute"},
+{"begin":1,"lexer":"markup","lines":0,"presv":false,"stack":"a","token":"</a>","types":"end"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"test","token":"<b/>","types":"singleton"},
+{"begin":7,"lexer":"markup","lines":1,"presv":true,"stack":"b","token":"doggy=\"bark\"","types":"attribute"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"test","token":"<x>","types":"start"},
+{"begin":9,"lexer":"markup","lines":1,"presv":false,"stack":"x","token":"<!-- comment 1-->","types":"comment"},
+{"begin":9,"lexer":"markup","lines":0,"presv":false,"stack":"x","token":"</x>","types":"end"},
+{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"</test>","types":"end"}
+]
