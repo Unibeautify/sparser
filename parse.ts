@@ -814,7 +814,7 @@ Parse Framework
                 output = build.join("").replace(/\s+$/, "");
                 return [output, a];
             }
-            if (wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || parse.parseOptions.preserve_comment === true) {
+            if (a === config.end || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || parse.parseOptions.preserve_comment === true) {
                 return [output, a];
             }
             b = config.start;

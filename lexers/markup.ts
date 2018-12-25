@@ -871,7 +871,7 @@
                                 framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
                                 break;
                             }
-                            if (ltype === "comment") {
+                            if (ltype === "comment") {console.log(end);
                                 quote = "";
                                 //comments must ignore fancy encapsulations and attribute parsing
                                 if (b[a] === lastchar && lex.length > end.length + 1) {
@@ -893,7 +893,7 @@
                                             if ((/\s/).test(lex[f]) === true) {
                                                 do {
                                                     f = f - 1;
-                                                } while ((/\s/).test(lex[f]) === true);
+                                                } while (f > 0 && (/\s/).test(lex[f]) === true);
                                             }
                                             if (lex[f - 1] === "{" && lex[f] === "%") {
                                                 end      = "%}";
