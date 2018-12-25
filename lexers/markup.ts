@@ -2372,7 +2372,7 @@
                                 ltoke = lex.join("").replace(/\s+$/, "");
                                 liner = 0;
                                 record.token = ltoke;
-                                if (options.wrap > 0) {
+                                if (options.wrap > 0 && options.lexerOptions.markup.preserve_text !== true) {
                                     let aa:number  = options.wrap,
                                         len:number = ltoke.length;
                                     const wrap:number = options.wrap,

@@ -29,5 +29,6 @@
 The markup lexer uses tag names, even if the tag is a template tag, as the stack values.
 
 ## markup options
-* **tagMerge** - Merges start and end tag pairs, if these tags are adjacent or separated only by white space, into a single singleton tag.
+* **preserve_text** - Preserves text content from formatting or word wrapping.
+* **tag_merge** - Merges start and end tag pairs, if these tags are adjacent or separated only by white space, into a single singleton tag.
 * **tagSort** - Sorts tags by tag name alphabetically amongst siblings under the same parent.

@@ -615,6 +615,19 @@ const services = function services_() {
                                                 } else {
                                                     parse_options.preserve_comment = false;
                                                 }
+                                                if ((/_preserveText(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_preserveText-/).test(files.code[a][0]) === true) {
+                                                        if ((/_preserveText-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.markup.preserve_text = false;
+                                                        } else {
+                                                            parse_options.lexerOptions.markup.preserve_text = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.markup.preserve_text = true;
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.markup.preserve_text = false;
+                                                }
                                                 if ((/_tagSort(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_tagSort-/).test(files.code[a][0]) === true) {
                                                         if ((/_tagSort-false/).test(files.code[a][0]) === true) {

@@ -187,19 +187,25 @@ Name | Type | Default | Description
 ---|---|---|---
 **correct** | boolean | false | If code corrections to syntax should be applied... similar to ESLint's *fix* option
 **crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
-**lang** | string | "javascript" | A lowercase name of a language for certain language specific features
+**language** | string | "javascript" | A lowercase name of a language for certain language specific features
 **lexer** | string | "script" | the lexer to start scanning the code
 **outputFormat** | string | "arrays" or "objects" | describes the format of the output.  The value *"arrays"* is the default which specifies an object containing 7 parallel arrays as described in the *Output* section.  The value *"objects"* instead creates an array of objects where each object property is named and described as the seven output arrays in the *Output* section.  If testing with the *nodetest.js* file on the command line the argument **--outputFormat** can be supplied to force the *"objects"* variation.
+**preserve_comment** | boolean | Preserves comments from formatting or word wrapping.
 **source** | string | "" (empty string) | the code to parse
+**wrap** | number | the number of characters before word wrapping occurs. This option is disabled if it receives a value of less than 1.
 
 ### Lexer Options
 The options are available from the specified lexer and are specified as **options.lexerOptions[lexerName][optionName]** where *lexerName* refers to the name of the lexer and *optionName* refers to the actual option, for example: `options.lexerOptions.markup.tagSort`.
 
 Name | Type | Default | Lexers | Description
 ---|---|---|---|---
+**end_comma** | string | script | Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
 **objectSort** | boolean | false | script, style | If object properties should be sorted.  Supported in the *script* and *style* lexers
-**tagMerge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
+**preserve_text** | boolean | false | Preserves text content from formatting or word wrapping.
+**quote_convert** | string | script, style | Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
+**tag_merge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
 **tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
+**varword** | string | script | Values: *list*, *each*, *none*. Whether variables should be declared as a list or individually each with their own respective *var*, *let*, or *const* keyword.  The value *none* disables this option.
 
 ## Universal Parse Model
 The default format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.  An alternate output format is available if specifying an option named **outputFormat** with the value *objects*.  This alternate format will produce an array of objects where each object contains properties named and described as arrays below.  Essentially the alternate format simply inverts the object/array structure of the standard format.

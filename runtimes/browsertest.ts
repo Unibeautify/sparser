@@ -313,6 +313,12 @@
                             } else {
                                 options.preserve_comment = false;
                             }
+                        } else if (name === "preserve_text" || name === "preservetext") {
+                            if (values === "true") {
+                                options.lexerOptions.markup.preserve_text = true;
+                            } else {
+                                options.lexerOptions.markup.preserve_text = false;
+                            }
                         } else if (name === "tagsort") {
                             if (values === "true") {
                                 options.lexerOptions.markup.tagSort = true;
