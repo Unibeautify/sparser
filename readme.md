@@ -2,7 +2,7 @@
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/Unibeautify/parse-framework.svg)](https://greenkeeper.io/)
 
-## Version 2.4.4
+## Version 2.4.5
 Play around with this application [in your browser](http://prettydiff.com/parse-framework/runtimes/browsertest.xhtml).
 
 ### Todo
@@ -44,7 +44,7 @@ npm install -g eslint
 Second, we need to get the code.  We can get this directly from Github:
 
 ```bash
-git clone git@github.com:Unibeautify/parse-framework.git
+git clone https://github.com/Unibeautify/parse-framework.git
 cd parse-framework
 ```
 

@@ -628,6 +628,19 @@ const services = function services_() {
                                                 } else {
                                                     parse_options.lexerOptions.markup.tagSort = false;
                                                 }
+                                                if ((/_tagMerge(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_tagMerge-/).test(files.code[a][0]) === true) {
+                                                        if ((/_tagMerge-false/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.markup.tag_merge = false;
+                                                        } else {
+                                                            parse_options.lexerOptions.markup.tag_merge = true;
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.markup.tag_merge = true;
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.markup.tag_merge = false;
+                                                }
                                                 if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
                                                     let wrap:string = files.code[a][0].slice(files.code[a][0].indexOf("_wrap-") + 6),
                                                         numb:number = 0;

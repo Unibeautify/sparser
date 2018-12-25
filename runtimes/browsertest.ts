@@ -319,6 +319,12 @@
                             } else if (values === "false") {
                                 options.lexerOptions.markup.tagSort = false;
                             }
+                        } else if (name === "tag_merge" || name === "tagmerge") {
+                            if (values === "true") {
+                                options.lexerOptions.markup.tag_merge = true;
+                            } else if (values === "false") {
+                                options.lexerOptions.markup.tag_merge = false;
+                            }
                         } else if (name === "noleadzero" || name === "no_lead_zero") {
                             if (values === "true") {
                                 options.lexerOptions.style.no_lead_zero = true;

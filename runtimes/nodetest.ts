@@ -252,6 +252,19 @@ const nodetest = function nodetest_() {
                     } else {
                         options.lexerOptions.markup.tagSort = false;
                     }
+                    if ((/_tagMerge(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_tagMerge-/).test(sourcepath) === true) {
+                            if ((/_tagMerge-false/).test(sourcepath) === true) {
+                                options.lexerOptions.markup.tag_merge = false;
+                            } else {
+                                options.lexerOptions.markup.tag_merge = true;
+                            }
+                        } else {
+                            options.lexerOptions.markup.tag_merge = true;
+                        }
+                    } else {
+                        options.lexerOptions.markup.tag_merge = false;
+                    }
                     if ((/_wrap-\d+(\.|_)/).test(sourcepath) === true) {
                         let wrap:string = sourcepath.slice(sourcepath.indexOf("_wrap-") + 6),
                             numb:number = 0;

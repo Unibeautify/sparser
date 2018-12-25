@@ -1494,20 +1494,37 @@
                             };
 
                         //determine if the current end tag is actually part of an HTML singleton
-                        if (data.types[parse.count] === "end" && tname.slice(0, 3) !== "/cf") {
+                        if (ltype === "end" && tname.slice(0, 3) !== "/cf") {
                             const lastToken:string = data.token[parse.count];
                             if (data.types[parse.count - 1] === "singleton" && lastToken.charAt(lastToken.length - 2) !== "/" && "/" + tagName(lastToken) === tname) {
                                 data.types[parse.count - 1] = "start";
-                            } else if (tname !== "/span" && tname !== "/div" && tname !== "/script" && tname === "/" + tagName(data.token[parse.count]) && options.lexerOptions.markup.tagMerge === true && (data.types[parse.count - 1] === "start" || htmlsings[tname.slice(1)] === "singleton") && (options.language !== "html" || (options.language === "html" && tname !== "/li"))) {
-                                parse.pop(data);
-                                if (data.types[parse.count] === "start") {
+                            } else if (
+                                tname !== "/span" &&
+                                tname !== "/div" &&
+                                tname !== "/script" &&
+                                options.lexerOptions.markup.tag_merge === true &&
+                                (options.language !== "html" || (options.language === "html" && tname !== "/li"))
+                            ) {
+                                if (tname === "/" + tagName(data.token[parse.count]) && data.types[parse.count] === "start") {
+                                    parse.structure.pop();
                                     data.token[parse.count] = data
                                         .token[parse.count]
                                         .replace(/>$/, "/>");
+                                    data.types[parse.count] = "singleton";
+                                    singleton                = true;
+                                    count.start = count.start - 1;
+                                    return false;
                                 }
-                                data.types[parse.count] = "singleton";
-                                singleton                = true;
-                                return false;
+                                if (tname === "/" + tagName(data.token[data.begin[parse.count]]) && data.types[parse.count].indexOf("attribute") > -1 && data.types[data.begin[parse.count]] === "start") {
+                                    parse.structure.pop();
+                                    data.token[data.begin[parse.count]] = data
+                                        .token[data.begin[parse.count]]
+                                        .replace(/>$/, "/>");
+                                    data.types[data.begin[parse.count]] = "singleton";
+                                    singleton                = true;
+                                    count.start = count.start - 1;
+                                    return false;
+                                }
                             }
                         }
 
