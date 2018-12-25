@@ -299,6 +299,12 @@
                             if (values === "always" || values === "never") {
                                 options.lexerOptions.script.end_comma = values;
                             }
+                        } else if (name === "noleadzero" || name === "no_lead_zero") {
+                            if (values === "true") {
+                                options.lexerOptions.style.no_lead_zero = true;
+                            } else if (values === "false") {
+                                options.lexerOptions.style.no_lead_zero = false;
+                            }
                         } else if (name === "objectsort") {
                             if (values === "true") {
                                 options.lexerOptions.script.objectSort = true;
@@ -331,11 +337,9 @@
                             } else if (values === "false") {
                                 options.lexerOptions.markup.tag_merge = false;
                             }
-                        } else if (name === "noleadzero" || name === "no_lead_zero") {
-                            if (values === "true") {
-                                options.lexerOptions.style.no_lead_zero = true;
-                            } else if (values === "false") {
-                                options.lexerOptions.style.no_lead_zero = false;
+                        } else if (name === "var_word" || name === "varword") {
+                            if (values === "list" || values === "each" || values === "none") {
+                                options.lexerOptions.script.varword = values;
                             }
                         }
                     } while (aa > 0);

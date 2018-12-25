@@ -2398,7 +2398,7 @@
                         ltype = "separator";
                         recordPush("");
                         ltoke = vart.word[vart.len];
-                        ltype = "reference";
+                        ltype = "word";
                         recordPush("");
                         vart.index[vart.len] = parse.count;
                     } else {

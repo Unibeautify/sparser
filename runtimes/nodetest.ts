@@ -278,6 +278,21 @@ const nodetest = function nodetest_() {
                     } else {
                         options.lexerOptions.markup.tag_merge = false;
                     }
+                    if ((/_varword(\.|_|-)/).test(sourcepath) === true) {
+                        if ((/_varword-/).test(sourcepath) === true) {
+                            if ((/_varword-list/).test(sourcepath) === true) {
+                                options.lexerOptions.script.varword = "list";
+                            } else if ((/_varword-each/).test(sourcepath) === true) {
+                                options.lexerOptions.script.varword = "each";
+                            } else {
+                                options.lexerOptions.script.varword = "none";
+                            }
+                        } else {
+                            options.lexerOptions.script.varword = "none";
+                        }
+                    } else {
+                        options.lexerOptions.script.varword = "none";
+                    }
                     if ((/_wrap-\d+(\.|_)/).test(sourcepath) === true) {
                         let wrap:string = sourcepath.slice(sourcepath.indexOf("_wrap-") + 6),
                             numb:number = 0;

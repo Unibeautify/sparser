@@ -654,6 +654,21 @@ const services = function services_() {
                                                 } else {
                                                     parse_options.lexerOptions.markup.tag_merge = false;
                                                 }
+                                                if ((/_varword(\.|_|-)/).test(files.code[a][0]) === true) {
+                                                    if ((/_varword-/).test(files.code[a][0]) === true) {
+                                                        if ((/_varword-list/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.script.varword = "list";
+                                                        } else if ((/_varword-each/).test(files.code[a][0]) === true) {
+                                                            parse_options.lexerOptions.script.varword = "each";
+                                                        } else {
+                                                            parse_options.lexerOptions.script.varword = "none";
+                                                        }
+                                                    } else {
+                                                        parse_options.lexerOptions.script.varword = "none";
+                                                    }
+                                                } else {
+                                                    parse_options.lexerOptions.script.varword = "none";
+                                                }
                                                 if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
                                                     let wrap:string = files.code[a][0].slice(files.code[a][0].indexOf("_wrap-") + 6),
                                                         numb:number = 0;
