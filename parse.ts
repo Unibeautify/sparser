@@ -731,10 +731,12 @@ Parse Framework
                 len:number = 0,
                 lines:string[] = [],
                 space:string = "",
+                bline:string = "",
                 spaceLine:RegExp,
                 emptyLine:boolean = false,
                 bulletLine:boolean = false,
                 numberLine:boolean = false,
+                bigLine:boolean = false,
                 output:string  = "",
                 terml:number = config.terminator.length - 1,
                 term:string = config.terminator.charAt(terml),
@@ -831,9 +833,15 @@ Parse Framework
             lines[len - 1] = lines[len - 1].replace(regEnd, "");
             b = 0;
             do {
+                bline = (b < len - 1)
+                    ? lines[b + 1].replace(/^\s+/, "")
+                    : "";
+                c = lines[b].length;
                 if ((/^\s+$/).test(lines[b]) === true || lines[b] === "") {
                     emptyLines();
                 } else if (lines[b].slice(0, 4) === "    ") {
+                    second.push(lines[b]);
+                } else if (lines[b].replace(/^\s+/, "").length > wrap && lines[b].replace(/^\s+/, "").indexOf(" ") > wrap) {
                     second.push(lines[b]);
                 } else {
                     if (bulletLine === true) {
@@ -847,10 +855,10 @@ Parse Framework
                     } else {
                         lines[b] = `${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
                     }
-                    c = lines[b].length;
                     twrap = (b < 1)
                         ? wrap - (config.opening.length + 1)
                         : wrap;
+                    c = lines[b].length;
                     if (c > twrap) {
                         c = twrap;
                         do {
@@ -884,25 +892,41 @@ Parse Framework
                             numberLine = true;
                             b = b - 1;
                         } else if (lines[b + 1].slice(0, 4) === "    ") {
-                            lines.splice(b, 0, lines[b].slice(c + 1));
-                            len = len + 1;
-                        } else {
+                            if (c + bline.length > wrap && bline.indexOf(" ") < 0) {
+                                second.push(lines[b].slice(0, c));
+                                lines[b] = lines[b].slice(c + 1);
+                                bigLine = true;
+                                b = b - 1;
+                            } else {
+                                lines.splice(b, 0, lines[b].slice(c + 1));
+                                len = len + 1;
+                            }
+                        } else if (c + bline.length > wrap && bline.indexOf(" ") < 0) {
+                            second.push(lines[b].slice(0, c));
+                            lines[b] = lines[b].slice(c + 1);
+                            bigLine = true;
+                            b = b - 1;
+                        } else if (lines[b].replace(/^\s+/, "").indexOf(" ") < wrap) {
                             lines[b + 1] = `${lines[b].slice(c + 1)} ${lines[b + 1]}`;
                         }
-                        if (emptyLine === false && bulletLine === false && numberLine === false) {
+                        if (emptyLine === false && bulletLine === false && numberLine === false && bigLine === false) {
                             lines[b] = lines[b].slice(0, c);
                         }
+                    } else if (lines[b + 1] !== undefined && ((lines[b].length + bline.indexOf(" ") > wrap && bline.indexOf(" ") > 0) || (lines[b].length + bline.length > wrap && bline.indexOf(" ") < 0))) {
+                        second.push(lines[b]);
+                        b = b + 1;
                     } else if (lines[b + 1] !== undefined && (/^\s+$/).test(lines[b + 1]) === false && lines[b + 1] !== "" && lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-|(\d+\.))\s/).test(lines[b + 1]) === false) {
                         lines[b + 1] = `${lines[b]} ${lines[b + 1]}`;
                         emptyLine = true;
                     }
-                    if (bulletLine === false && numberLine === false) {
+                    if (bigLine === false && bulletLine === false && numberLine === false) {
                         if (emptyLine === true) {
                             emptyLine = false;
                         } else if ((/^\s*(\*|-|(\d+\.))\s*$/).test(lines[b]) === false) {
                             second.push(lines[b]);
                         }
                     }
+                    bigLine = false;
                 }
                 b = b + 1;
             } while (b < len);
