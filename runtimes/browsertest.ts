@@ -292,6 +292,7 @@
                             }
                         } else if (name === "quote_convert" || name === "quoteconvert") {
                             if (values === "single" || values === "double") {
+                                options.lexerOptions.markup.quote_convert = values;
                                 options.lexerOptions.script.quote_convert = values;
                                 options.lexerOptions.style.quote_convert = values;
                             }

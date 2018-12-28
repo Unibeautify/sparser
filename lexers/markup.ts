@@ -348,9 +348,55 @@
                                 ],
                                 store:string[]        = [];
                             const len:number          = attstore.length,
+                                qc:"none"|"double"|"single" = (options.lexerOptions.markup.quote_convert === undefined)
+                                    ? "none"
+                                    : options.lexerOptions.markup.quote_convert,
                                 begin:number = parse.count,
                                 stack:string = tname.replace(/\/$/, ""),
                                 syntax:string       = "<{\"'=/",
+                                convertQ = function lexer_markup_tag_attributeRecord_convertQ():void {
+                                    if (ignoreme === true || qc === "none" || record.types !== "attribute" || (qc === "single" && record.token.indexOf("\"") < 0) || (qc === "double" && record.token.indexOf("'") < 0)) {
+                                        recordPush(data, record, "");
+                                    } else {
+                                        let ee:number = 0,
+                                            inner:boolean = false;
+                                        const chars:string[] = record.token.split(""),
+                                            eq:number = record.token.indexOf("="),
+                                            len:number = chars.length - 1;
+                                        if (chars[eq + 1] !== "\"" && qc === "single" && chars[chars.length - 1] !== "\"") {
+                                            recordPush(data, record, "");
+                                        } else if (chars[eq + 1] !== "'" && qc === "double" && chars[chars.length - 1] !== "'") {
+                                            recordPush(data, record, "");
+                                        } else {
+                                            ee = eq + 2;
+                                            if (qc === "double") {
+                                                if (record.token.slice(eq + 2, len).indexOf("\"") > -1) {
+                                                    inner = true;
+                                                }
+                                                chars[eq + 1] = "\"";
+                                                chars[chars.length - 1] = "\"";
+                                            } else {
+                                                if (record.token.slice(eq + 2, len).indexOf("'") > -1) {
+                                                    inner = true;
+                                                }
+                                                chars[eq + 1] = "'";
+                                                chars[chars.length - 1] = "'";
+                                            }
+                                            if (inner === true) {
+                                                do {
+                                                    if (chars[ee] === "'" && qc === "single") {
+                                                        chars[ee] = "\"";
+                                                    } else if (chars[ee] === "\"" && qc === "double") {
+                                                        chars[ee] = "'";
+                                                    }
+                                                    ee = ee + 1;
+                                                } while (ee < len);
+                                            }
+                                            record.token = chars.join("");
+                                            recordPush(data, record, "");
+                                        }
+                                    }
+                                },
                                 templateAtt = function lexer_markup_tag_attributeRecord_templateAtt(sample:string, token:string):void {
                                     if (sample.charAt(0) === "{" && "{%#@:/?^<+~=".indexOf(sample.charAt(1)) > -1) {
                                         record.types = "template_attribute";
@@ -360,17 +406,33 @@
                                         record.types = "template_attribute";
                                     } else {
                                         record.token = token;
-                                        recordPush(data, record, "");
+                                        convertQ();
                                         return;
                                     }
                                     record.token = token;
-                                    recordPush(data, record, "");
+                                    convertQ();
                                     record.types = "attribute";
                                 };
 
                             if (attstore.length < 1) {
                                 return;
                             }
+                            
+                            /*if (ignoreme === false && (qc === "double" || qc === "single")) {
+                                if (c[ee - 1] === "\\") {
+                                    if (slashes(ee - 1) === true) {
+                                        if (qc === "double" && c[ee] === "'") {
+                                            build.pop();
+                                        } else if (qc === "single" && c[ee] === "\"") {
+                                            build.pop();
+                                        }
+                                    }
+                                } else if (qc === "double" && c[ee] === "\"" && c[a] === "'") {
+                                    c[ee] = "\\\"";
+                                } else if (qc === "single" && c[ee] === "'" && c[a] === "\"") {
+                                    c[ee] = "\\'";
+                                }
+                            }*/
 
                             // fix for singleton tags, since "/" at the end of the tag is not an attribute
                             if (attstore[attstore.length - 1][0] === "/") {
@@ -425,17 +487,17 @@
                                     if ((/^\/(\/|\*)/).test(attstore[ind][0]) === true && options.language === "jsx") {
                                         record.types = "comment_attribute";
                                         record.token = attstore[ind][0];
-                                        recordPush(data, record, "");
+                                        convertQ();
                                     } else if (eq > -1 && store.length > 0) {
                                         // put certain attributes together for coldfusion
                                         record.token = store.join(" ");
-                                        recordPush(data, record, "");
+                                        convertQ();
                                         if (attstore[ind][0].indexOf("=") > 0 && attstore[ind][0].indexOf("//") < 0 && attstore[ind][0].charAt(0) !== ";") {
                                             record.token = attstore[ind][0].replace(/\s$/, "");
                                         } else {
                                             record.token = attstore[ind][0];
                                         }
-                                        recordPush(data, record, "");
+                                        convertQ();
                                         store        = [];
                                     } else if (ltype === "sgml") {
                                         store.push(attstore[ind][0]);
@@ -459,7 +521,7 @@
                                         } else {
                                             record.token = attstore[ind][0];
                                         }
-                                        recordPush(data, record, "");
+                                        convertQ();
                                     } else {
                                         // separates out the attribute name from its value
                                         slice = attstore[ind][0].slice(eq + 1);
@@ -491,7 +553,7 @@
                                             record.stack = parse.structure[parse.structure.length - 1][0];
                                             record.token = "}";
                                             record.types = "jsx_attribute_end";
-                                            recordPush(data, record, "");
+                                            convertQ();
                                             record.types = "attribute";
                                             record.begin = begin;
                                             record.stack = stack;
@@ -505,7 +567,7 @@
                             }
                             if (store.length > 0) {
                                 record.token = store.join(" ");
-                                recordPush(data, record, "");
+                                convertQ();
                             }
                         };
                     ext = false;

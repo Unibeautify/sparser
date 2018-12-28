@@ -30,5 +30,6 @@ The markup lexer uses tag names, even if the tag is a template tag, as the stack
 
 ## markup options
 * **preserve_text** - Preserves text content from formatting or word wrapping.
+* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters of standard quoteed XML/HTML attributes.  The *none* value disables this option.
 * **tag_merge** - Merges start and end tag pairs, if these tags are adjacent or separated only by white space, into a single singleton tag.
 * **tagSort** - Sorts tags by tag name alphabetically amongst siblings under the same parent.

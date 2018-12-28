@@ -565,7 +565,9 @@
                         build:string[]  = [starting],
                         ender:string[]  = ending.split("");
                     const endlen:number = ender.length,
-                        qc:"none"|"double"|"single" = options.lexerOptions.script.quote_convert,
+                        qc:"none"|"double"|"single" = (options.lexerOptions.script.quote_convert === undefined)
+                            ? "none"
+                            : options.lexerOptions.script.quote_convert,
                         base:number   = a + starting.length;
                     if (wordTest > -1) {
                         word();

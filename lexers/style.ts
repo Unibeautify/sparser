@@ -367,7 +367,9 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                         outy:string       = "",
                         mappy:number      = 0;
                     const block:string[]      = [],
-                        qc:"none"|"double"|"single" = options.lexerOptions.style.quote_convert,
+                        qc:"none"|"double"|"single" = (options.lexerOptions.style.quote_convert === undefined)
+                            ? "none"
+                            : options.lexerOptions.style.quote_convert,
                         comma:boolean      = (
                             parse.count > -1 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === ","
                         ),

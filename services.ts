@@ -572,18 +572,22 @@ const services = function services_() {
                                                 }
                                                 if ((/_quoteConvert-/).test(files.code[a][0]) === true) {
                                                     if ((/_quoteConvert-double/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.style.quote_convert = "double";
+                                                        parse_options.lexerOptions.markup.quote_convert = "double";
                                                         parse_options.lexerOptions.script.quote_convert = "double";
+                                                        parse_options.lexerOptions.style.quote_convert = "double";
                                                     } else if ((/_quoteConvert-single/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.style.quote_convert = "single";
+                                                        parse_options.lexerOptions.markup.quote_convert = "single";
                                                         parse_options.lexerOptions.script.quote_convert = "single";
+                                                        parse_options.lexerOptions.style.quote_convert = "single";
                                                     } else {
-                                                        parse_options.lexerOptions.style.quote_convert = "none";
+                                                        parse_options.lexerOptions.markup.quote_convert = "none";
                                                         parse_options.lexerOptions.script.quote_convert = "none";
+                                                        parse_options.lexerOptions.style.quote_convert = "none";
                                                     }
                                                 } else {
-                                                    parse_options.lexerOptions.style.quote_convert = "none";
+                                                    parse_options.lexerOptions.markup.quote_convert = "none";
                                                     parse_options.lexerOptions.script.quote_convert = "none";
+                                                    parse_options.lexerOptions.style.quote_convert = "none";
                                                 }
                                                 if ((/_objectSort(\.|_|-)/).test(files.code[a][0]) === true) {
                                                     if ((/_objectSort-/).test(files.code[a][0]) === true) {
