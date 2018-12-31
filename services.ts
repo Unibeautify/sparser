@@ -526,10 +526,10 @@ const services = function services_() {
                                                 : files.parsed.length;
                                             a   = a - 1;
                                         } else if (files.code[a][0] === files.parsed[a][0]) {
-                                            if (files.parsed[a][1] === "") {
+                                            if (files.parsed[a][1].replace(/^\s+$/, "") === "") {
                                                 empty = empty + 1;
                                                 console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
-                                            } else if (files.code[a][1] === "") {
+                                            } else if (files.code[a][1].replace(/^\s+$/, "") === "") {
                                                 empty = empty + 1;
                                                 console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
                                             } else {

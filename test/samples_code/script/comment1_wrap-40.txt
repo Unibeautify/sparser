@@ -1,0 +1,54 @@
+apps.performance = function node_apps_performance() {
+        if (process.argv.length < 1) {
+            return apps.errout([
+                `The ${text.angry}performance${text.none} command requires a complete task to perform.`,
+                `Example: ${text.cyan}prettydiff performance ${text.bold}node js/services beautify js/services.js${text.none}`
+            ]);
+        }
+        let index = 11, total = 0, low = 0, high = 0, start, end;
+        const store = [], interval = function node_apps_performance_interval() {
+            console.log(process.argv.join(" "));
+            /*node.child(process.argv.join(" "), function node_apps_performance_interval_child(err:Error, stdout:string, stderr:string):void {
+                if (err !== null) {
+                    apps.errout([err.toString()]);
+                    return;
+                }
+                if (stderr !== "") {
+                    apps.errout([stderr]);
+                    return;
+                }
+                index = index - 1;
+                if (index > -1) {
+                    start = process.hrtime();
+                    end = process.hrtime(start);
+                    store.push((end[0] * 1e9) + end[1]);
+                    // specifying a delay between intervals allows for garbage collection without interference to the performance testing
+                    setTimeout(node_apps_performance_interval, 400);
+                } else {
+                    console.log("");
+                    store.forEach(function node_apps_performance_total(value:number, index:number) {
+                        if (index > 0) {
+                            if (index < 10) {
+                                console.log(`${text.yellow + index + text.none}:  ${value}`);
+                            } else {
+                                console.log(`${text.yellow + index + text.none}: ${value}`);
+                            }
+                            total = total + value;
+                            if (value > high) {
+                                high = value;
+                            } else if (value < low) {
+                                low = value;
+                            }
+                        } else {
+                            console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
+                        }
+                    });
+                    console.log("");
+                    console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
+                    console.log(`[${text.cyan + apps.comma(stdout.length) + text.none}] Character size of task's output to terminal.`);
+                    console.log("");
+                }
+            });*/
+        };
+        interval();
+    };

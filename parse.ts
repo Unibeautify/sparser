@@ -892,15 +892,10 @@ Parse Framework
                             numberLine = true;
                             b = b - 1;
                         } else if (lines[b + 1].slice(0, 4) === "    ") {
-                            if (c + bline.length > wrap && bline.indexOf(" ") < 0) {
-                                second.push(lines[b].slice(0, c));
-                                lines[b] = lines[b].slice(c + 1);
-                                bigLine = true;
-                                b = b - 1;
-                            } else {
-                                lines.splice(b, 0, lines[b].slice(c + 1));
-                                len = len + 1;
-                            }
+                            second.push(lines[b].slice(0, c));
+                            bigLine = true;
+                            lines[b] = lines[b].slice(c + 1);
+                            b = b - 1;
                         } else if (c + bline.length > wrap && bline.indexOf(" ") < 0) {
                             second.push(lines[b].slice(0, c));
                             lines[b] = lines[b].slice(c + 1);
