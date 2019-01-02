@@ -583,7 +583,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                             data.token[aa] = data
                                 .token[aa]
                                 .replace(/\s*&/, " &")
-                                .replace(/\s*>\s*/g, " > ")
+                                .replace(/(\s*>\s*)/g, " > ")
                                 .replace(/:\s+/g, ": ")
                                 .replace(/^(\s+)/, "")
                                 .replace(/(\s+)$/, "")

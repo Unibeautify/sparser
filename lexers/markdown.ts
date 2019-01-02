@@ -581,7 +581,7 @@
                         }()),
                         indent:RegExp = new RegExp("^(\\s{0," + indentstr + "})"),
                         language:string = (ticks === true)
-                            ? lines[a].replace(/\s*((`+)|(~+))\s*/, "").replace(/\s*/g, "")
+                            ? lines[a].replace(/(\s*((`+)|(~+))\s*)/, "").replace(/(\s*)/g, "")
                             : "",
                         tilde:boolean = (/^(\s*`)/).test(lines[a]) === false,
                         cchar:string = (tilde === true)
@@ -967,7 +967,7 @@
                                 return 0;
                             }
                             if (order === true) {
-                                xind = (/^(\s*(\d+(\)|\.)))?\s*/).exec(lines[index])[0].length;
+                                xind = (/(^(\s*(\d+(\)|\.)))?\s*)/).exec(lines[index])[0].length;
                                 xsym = lines[index].replace(/^(\s*\d+)/, "").charAt(0);
                             }
                             if (order === false && "*-+".indexOf(xsym) > -1 && xsym !== sym && xind - ind < 2 && (/\s/).test(lines[index].replace(/^(\s+)/, "").charAt(1)) === true) {
@@ -983,7 +983,7 @@
                         };
                     if ((/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                         order = true;
-                        ind = (/^(\s*(\d+(\)|\.)))?\s*/).exec(lines[a])[0].length;
+                        ind = (/(^(\s*(\d+(\)|\.)))?\s*)/).exec(lines[a])[0].length;
                         sym = lines[a].replace(/^(\s*\d+)/, "").charAt(0);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
@@ -1281,24 +1281,24 @@
                                     }
                                     if (y > -1 && z > -1) {
                                         if (y < z) {
-                                            lines[a] = lines[a].replace(/\[x\]\s*/, "");
+                                            lines[a] = lines[a].replace(/(\[x\]\s*)/, "");
                                             record.begin = data.begin[parse.count - 1];
                                             record.stack = "input";
                                             record.token = "checked=\"checked\"";
                                             record.types = "attribute";
                                             parse.push(data, record, "");
                                         } else {
-                                            lines[a] = lines[a].replace(/\[ \]\s*/, "");
+                                            lines[a] = lines[a].replace(/(\[ \]\s*)/, "");
                                         }
                                     } else if (y > -1) {
-                                        lines[a] = lines[a].replace(/\[x\]\s*/, "");
+                                        lines[a] = lines[a].replace(/(\[x\]\s*)/, "");
                                         record.begin = data.begin[parse.count - 1];
                                         record.stack = "input";
                                         record.token = "checked=\"checked\"";
                                         record.types = "attribute";
                                         parse.push(data, record, "");
                                     } else {
-                                        lines[a] = lines[a].replace(/\[ \]\s*/, "");
+                                        lines[a] = lines[a].replace(/(\[ \]\s*)/, "");
                                     }
                                 }
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
@@ -1346,7 +1346,7 @@
                             .replace(/\\\|/g, "parse\\?sep")
                             .split("|"),
                         bar:string[] = lines[a + 1]
-                            .replace(/\s*/g, "")
+                            .replace(/(\s*)/g, "")
                             .replace(/^\|/, "")
                             .replace(/\|$/, "")
                             .split("|");
@@ -1654,7 +1654,7 @@
                     hr();
                 } else if ((/^(\s{0,3}>)/).test(lines[a]) === true) {
                     blockquote();
-                } else if ((/((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*/).test(lines[a + 1]) === true) {
+                } else if ((/(((:-+)|(-+:)|(:-+:)|(-{2,}))\s*\|\s*)/).test(lines[a + 1]) === true) {
                     table();
                 } else if (codeblocktest(a) === true) {
                     codeblock(true, false, false);

@@ -310,7 +310,10 @@
             if (sample === null) {
                 return output("unknown");
             }
-            if (((/\n\s*#{1,6}\s+/).test(sample) === true || (/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) && ((/\s\*\*\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true) || (/-+\|(-+\|)+/).test(sample) === true) {
+            if (
+                ((/\n\s*#{1,6}\s+/).test(sample) === true || (/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) &&
+                ((/\s\*\*\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true || ((/-+\|(-+\|)+/).test(sample) === true && (/<!--/).test(sample) === false))
+            ) {
                 return output("markdown");
             }
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {

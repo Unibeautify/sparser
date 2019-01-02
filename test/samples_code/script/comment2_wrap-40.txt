@@ -1,0 +1,36 @@
+var a = 1;
+
+
+                /*if (ignoreme === false && (qc === "double" || qc === "single")) {
+                    if (c[ee - 1] === "\\") {
+                        if (slashes(ee - 1) === true) {
+                            if (qc === "double" && c[ee] === "'") {
+                                build.pop();
+                            } else if (qc === "single" && c[ee] === "\"") {
+                                build.pop();
+                            }
+                        }
+                    } else if (qc === "double" && c[ee] === "\"" && c[a] === "'") {
+                        c[ee] = "\\\"";
+                    } else if (qc === "single" && c[ee] === "'" && c[a] === "\"") {
+                        c[ee] = "\\'";
+                    }
+                }*/
+
+var b = 2;
+
+    // prettydiff dom insertion start
+/*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
+// eslint-disable-next-line
+
+var c = 3;
+
+/*global ace, ArrayBuffer, AudioContext, console, document, FileReader, localStorage, location, navigator, setTimeout, Uint8Array, window, XMLHttpRequest*/
+/*jshint laxbreak: true*/
+/*jslint for: true*/
+        /*****************************************************************************
+         This is written by Austin Cheney on 3 Mar 2009.
+        
+         Please see the license.txt file associated with the Pretty Diff
+         application for license information.
+         ****************************************************************************/

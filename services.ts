@@ -1318,7 +1318,7 @@ const services = function services_() {
                                 keys: [],
                                 values: {}
                             };
-                            const fragments:string[] = filedata.replace(/options\.language\s*(((!|=)==)|=)\s*/g, "options.language===").split("options.language===");
+                            const fragments:string[] = filedata.replace(/(options\.language\s*(((!|=)==)|=)\s*)/g, "options.language===").split("options.language===");
                             if (fragments.length > 1) {
                                 fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
                                     if (value.charAt(0) === "\"" || value.charAt(0) === "'") {

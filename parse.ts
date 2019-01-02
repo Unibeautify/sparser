@@ -792,7 +792,7 @@ Parse Framework
                     b = b - 1;
                 } while (b > config.start);
                 if (config.opening === "/*" && config.chars[b] === "*") {
-                    termination = "*/";
+                    termination = "\u002a/";
                 } else if (config.opening !== "/*") {
                     termination = config.terminator;
                 }
@@ -831,26 +831,32 @@ Parse Framework
             len = lines.length;
             lines[0] = lines[0].replace(regStart, "");
             lines[len - 1] = lines[len - 1].replace(regEnd, "");
+            if (len < 2) {
+                lines = lines[0].split(" ");
+            }
+            if (lines[0] === "") {
+                lines[0] = config.opening;
+            } else {
+                lines.splice(0, 0, config.opening);
+            }
+            len = lines.length;
             b = 0;
             do {
                 bline = (b < len - 1)
                     ? lines[b + 1].replace(/^\s+/, "")
                     : "";
-                c = lines[b].length;
                 if ((/^\s+$/).test(lines[b]) === true || lines[b] === "") {
                     emptyLines();
                 } else if (lines[b].slice(0, 4) === "    ") {
                     second.push(lines[b]);
                 } else if (lines[b].replace(/^\s+/, "").length > wrap && lines[b].replace(/^\s+/, "").indexOf(" ") > wrap) {
-                    second.push(lines[b]);
+                    lines[b] = lines[b].replace(/^\s+/, "");
+                    c = lines[b].indexOf(" ");
+                    second.push(lines[b].slice(0, c));
+                    lines[b] = lines[b].slice(c + 1);
+                    b = b - 1;
                 } else {
-                    if (bulletLine === true) {
-                        lines[b] = `     ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
-                        bulletLine = false;
-                    } else if (numberLine === true) {
-                        lines[b] = `      ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
-                        numberLine = false;
-                    } else if (config.opening === "/*") {
+                    if (config.opening === "/*" && lines[b].indexOf("/*") !== 0) {
                         lines[b] = `   ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
                     } else {
                         lines[b] = `${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`;
@@ -893,8 +899,8 @@ Parse Framework
                             b = b - 1;
                         } else if (lines[b + 1].slice(0, 4) === "    ") {
                             second.push(lines[b].slice(0, c));
-                            bigLine = true;
                             lines[b] = lines[b].slice(c + 1);
+                            bigLine = true;
                             b = b - 1;
                         } else if (c + bline.length > wrap && bline.indexOf(" ") < 0) {
                             second.push(lines[b].slice(0, c));
@@ -902,7 +908,11 @@ Parse Framework
                             bigLine = true;
                             b = b - 1;
                         } else if (lines[b].replace(/^\s+/, "").indexOf(" ") < wrap) {
-                            lines[b + 1] = `${lines[b].slice(c + 1)} ${lines[b + 1]}`;
+                            if (lines[b].length > wrap) {
+                                lines[b + 1] = lines[b].slice(c + 1) + lf + lines[b + 1];
+                            } else {
+                                lines[b + 1] = `${lines[b].slice(c + 1)} ${lines[b + 1]}`;
+                            }
                         }
                         if (emptyLine === false && bulletLine === false && numberLine === false && bigLine === false) {
                             lines[b] = lines[b].slice(0, c);
@@ -918,22 +928,36 @@ Parse Framework
                         if (emptyLine === true) {
                             emptyLine = false;
                         } else if ((/^\s*(\*|-|(\d+\.))\s*$/).test(lines[b]) === false) {
-                            second.push(lines[b]);
+                            if (b < len - 1 && lines[b + 1] !== "" && (/^\s+$/).test(lines[b]) === false && lines[b + 1].slice(0, 4) !== "    " && (/^\s*(\*|-|(\d+\.))\s/).test(lines[b + 1]) === false) {
+                                lines[b] = `${lines[b]} ${lines[b + 1]}`;
+                                lines.splice(b + 1, 1);
+                                len = len - 1;
+                                b = b - 1;
+                            } else {
+                                if (config.opening === "/*" && lines[b].indexOf("/*") !== 0) {
+                                    second.push(`   ${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`);
+                                } else {
+                                    second.push(`${lines[b].replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ")}`);
+                                }
+                            }
                         }
                     }
                     bigLine = false;
+                    bulletLine = false;
+                    numberLine = false;
                 }
                 b = b + 1;
             } while (b < len);
-            if (second[second.length - 1].length > wrap - (config.terminator.length + 1)) {
-                second.push(config.terminator);
+            if (second.length > 1) {
+                if (second[second.length - 1].length > wrap - (config.terminator.length + 1)) {
+                    second.push(config.terminator);
+                } else {
+                    second[second.length - 1] = `${second[second.length - 1]} ${config.terminator}`;
+                }
             } else {
-                second[second.length - 1] = `${second[second.length - 1]} ${config.terminator}`;
+                second.push(`${lines[0]} ${config.terminator}`);
             }
-            output = `${second.join(lf).replace(/^ +/, `${config.opening} `)}`;
-            if (output.indexOf(config.opening) !== 0) {
-                output = `${config.opening} ${output}`;
-            }
+            output = second.join(lf);
             return [output, a];
         },
         // parsing line comments and simultaneously applying word wrap
@@ -959,7 +983,7 @@ Parse Framework
                         } while (b < config.end && config.chars[b] !== "\n");
                         line = build.join("");
                         if ((/^\/\/ (\*|-|(\d+\.))/).test(line) === false && line.slice(0, 6) !== "//    " && (/^\/\/\s*$/).test(line) === false) {
-                            output = `${output} ${line.replace(/^\/\/\s*/, "").replace(/\s+$/, "")}`;
+                            output = `${output} ${line.replace(/(^\/\/\s*)/, "").replace(/\s+$/, "")}`;
                             a = b - 1;
                             parse_wrapCommentLine_recurse();
                         }
@@ -1043,7 +1067,7 @@ Parse Framework
                     b - b - 1;
                 } while (b > config.start && config.chars[b - 1] === "/" && (config.chars[b] === "*" || config.chars[b] === "/"));
                 if (config.chars[b] === "*") {
-                    termination = "*/";
+                    termination = "\u002a/";
                 }
                 if (termination !== "\n" || config.chars[a] !== "\n") {
                     do {
@@ -1052,7 +1076,7 @@ Parse Framework
                             break;
                         }
                         a = a + 1;
-                    } while (a < config.end && (termination === "\n" || (termination === "*/" && (config.chars[a - 1] !== "*" || config.chars[a] !== "/"))));
+                    } while (a < config.end && (termination === "\n" || (termination === "\u002a/" && (config.chars[a - 1] !== "*" || config.chars[a] !== "/"))));
                 }
                 if (config.chars[a] === "\n") {
                     a = a - 1;
@@ -1063,7 +1087,7 @@ Parse Framework
             if (output === "//" || output.slice(0, 6) === "//    " || parse.parseOptions.preserve_comment === true) {
                 return [output, a];
             }
-            output = output.replace(/\/\/\s*/, "// ");
+            output = output.replace(/(\/\/\s*)/, "// ");
             if (wrap < 1 || (a === config.end - 1 && parse.data.begin[parse.count] < 1)) {
                 return [output, a];
             }

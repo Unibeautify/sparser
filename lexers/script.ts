@@ -65,7 +65,7 @@
                                         dd = "";
                                     }
                                 }
-                                if (dd === "" && c[cc - 1] + c[cc] !== "*/") {
+                                if (dd === "" && c[cc - 1] + c[cc] !== "\u002a/") {
                                     return c
                                         .slice(cc, cc + len)
                                         .join("");
@@ -1409,10 +1409,10 @@
                         recordPush("");
                         return "regex";
                     }
-                    if (c[a] === "?" && ("+-*/".indexOf(c[a + 1]) > -1 || (c[a + 1] === ":" && syntax.join("").indexOf(c[a + 2]) < 0))) {
+                    if (c[a] === "?" && ("+-\u002a/".indexOf(c[a + 1]) > -1 || (c[a + 1] === ":" && syntax.join("").indexOf(c[a + 2]) < 0))) {
                         return "?";
                     }
-                    if (c[a] === ":" && "+-*/".indexOf(c[a + 1]) > -1) {
+                    if (c[a] === ":" && "+-\u002a/".indexOf(c[a + 1]) > -1) {
                         return ":";
                     }
                     if (a < b - 1) {

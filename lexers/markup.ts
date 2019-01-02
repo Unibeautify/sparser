@@ -417,22 +417,6 @@
                             if (attstore.length < 1) {
                                 return;
                             }
-                            
-                            /*if (ignoreme === false && (qc === "double" || qc === "single")) {
-                                if (c[ee - 1] === "\\") {
-                                    if (slashes(ee - 1) === true) {
-                                        if (qc === "double" && c[ee] === "'") {
-                                            build.pop();
-                                        } else if (qc === "single" && c[ee] === "\"") {
-                                            build.pop();
-                                        }
-                                    }
-                                } else if (qc === "double" && c[ee] === "\"" && c[a] === "'") {
-                                    c[ee] = "\\\"";
-                                } else if (qc === "single" && c[ee] === "'" && c[a] === "\"") {
-                                    c[ee] = "\\'";
-                                }
-                            }*/
 
                             // fix for singleton tags, since "/" at the end of the tag is not an attribute
                             if (attstore[attstore.length - 1][0] === "/") {
@@ -814,7 +798,7 @@
                         });
                         element = comm[0];
                         a = comm[1];
-                        if (element.replace(start, "").replace(/^\s*/, "").indexOf("parse-ignore-start") === 0) {
+                        if (element.replace(start, "").replace(/(^\s*)/, "").indexOf("parse-ignore-start") === 0) {
                             record.token = element;
                             record.types = "ignore";
                             record.presv = true;
@@ -907,7 +891,7 @@
                                     // if an attribute follows an attribute ending with `=` then adjoin it to the
                                     // last attribute
                                     attstore[attstore.length - 1][0] = attstore[attstore.length - 1][0] + atty;
-                                } else if (options.language === "coldfusion" && attstore.length > 0 && (("+-*/(^").indexOf(atty) > -1 || ("+-*/(^").indexOf(attstore[attstore.length - 1][0].charAt(attstore[attstore.length - 1][0].length - 1)) > -1)) {
+                                } else if (options.language === "coldfusion" && attstore.length > 0 && (("+-\u002a/(^").indexOf(atty) > -1 || ("+-\u002a/(^").indexOf(attstore[attstore.length - 1][0].charAt(attstore[attstore.length - 1][0].length - 1)) > -1)) {
                                     attstore[attstore.length - 1][0] = `${attstore[attstore.length - 1][0]} ${atty}`;
                                 } else if (atty !== "" && atty !== " ") {
                                     attstore.push([atty, lines]);
@@ -1121,7 +1105,7 @@
                                                         } else if (b[a] === "/") {
                                                             //jsx comments
                                                             if (b[a + 1] === "*") {
-                                                                quote = "*/";
+                                                                quote = "\u002a/";
                                                             } else if (b[a + 1] === "/") {
                                                                 quote = "\n";
                                                             }
@@ -1178,7 +1162,7 @@
                                                             break;
                                                         }
                                                     }
-                                                } else if (options.language === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "*/" && b[a - 1] === "*" && b[a] === "/"))) {
+                                                } else if (options.language === "jsx" && (quote === "}" || (quote === "\n" && b[a] === "\n") || (quote === "\u002a/" && b[a - 1] === "*" && b[a] === "/"))) {
                                                     //jsx attributes
                                                     if (quote === "}") {
                                                         if (b[a] === "{") {
@@ -1334,7 +1318,7 @@
                                         lex[lex.length - 1] = " ";
                                         attribute.push(b[a]);
                                         if (b[a + 1] === "*") {
-                                            jsxquote = "*/";
+                                            jsxquote = "\u002a/";
                                         } else {
                                             jsxquote = "\n";
                                         }
