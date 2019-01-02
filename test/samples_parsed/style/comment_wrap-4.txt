@@ -1,0 +1,17 @@
+[
+{"begin":-1,"lexer":"style","lines":0,"presv":false,"stack":"global","token":"/*\nprettydiff.com\n   css_insert_lines:true,\nobject_sort:false,\n   preserve:4\n*/","types":"comment"},
+{"begin":-1,"lexer":"style","lines":3,"presv":false,"stack":"global","token":"/*\n   top comment1\n*/","types":"comment"},
+{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"/*\n   blah blah1\n*/","types":"comment"},
+{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"a","types":"selector"},
+{"begin":-1,"lexer":"style","lines":0,"presv":false,"stack":"global","token":"{","types":"start"},
+{"begin":4,"lexer":"style","lines":0,"presv":false,"stack":"a","token":"/*\n   top comment2\n*/","types":"comment"},
+{"begin":4,"lexer":"style","lines":2,"presv":false,"stack":"a","token":"/*\n   blah blah2\n*/","types":"comment"},
+{"begin":4,"lexer":"style","lines":0,"presv":false,"stack":"a","token":"b","types":"selector"},
+{"begin":4,"lexer":"style","lines":0,"presv":false,"stack":"a","token":"{","types":"start"},
+{"begin":8,"lexer":"style","lines":0,"presv":false,"stack":"b","token":"color","types":"property"},
+{"begin":8,"lexer":"style","lines":0,"presv":false,"stack":"b","token":":","types":"colon"},
+{"begin":8,"lexer":"style","lines":0,"presv":false,"stack":"b","token":"Red","types":"value"},
+{"begin":8,"lexer":"style","lines":0,"presv":false,"stack":"b","token":"x;","types":"semi"},
+{"begin":8,"lexer":"style","lines":0,"presv":false,"stack":"b","token":"}","types":"end"},
+{"begin":4,"lexer":"style","lines":0,"presv":false,"stack":"a","token":"}","types":"end"}
+]

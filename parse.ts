@@ -728,6 +728,7 @@ Parse Framework
             let a:number = config.start,
                 b:number = 0,
                 c:number = 0,
+                d:number = 0,
                 len:number = 0,
                 lines:string[] = [],
                 space:string = "",
@@ -865,7 +866,8 @@ Parse Framework
                         ? wrap - (config.opening.length + 1)
                         : wrap;
                     c = lines[b].length;
-                    if (c > twrap) {
+                    d = lines[b].replace(/^\s+/, "").indexOf(" ");
+                    if (c > twrap && d > 0 && d < twrap) {
                         c = twrap;
                         do {
                             c = c - 1;
@@ -879,7 +881,10 @@ Parse Framework
                         if (lines[b].slice(0, 4) !== "    " && (/^\s*\d+\.\s/).test(lines[b]) === true && (/^\s*\d+\.\s/).test(lines[b + 1]) === false) {
                             lines.splice(b + 1, 0, "1. ");
                         }
-                        if (b === len - 1) {
+                        if (c < 4) {
+                            second.push(lines[b]);
+                            bigLine = true;
+                        } else if (b === len - 1) {
                             lines.push(lines[b].slice(c + 1));
                             len = len + 1;
                         } else if ((/^\s+$/).test(lines[b + 1]) === true || lines[b + 1] === "") {
@@ -948,16 +953,17 @@ Parse Framework
                 }
                 b = b + 1;
             } while (b < len);
-            if (second.length > 1) {
+            if (second.length > 0) {
                 if (second[second.length - 1].length > wrap - (config.terminator.length + 1)) {
                     second.push(config.terminator);
                 } else {
                     second[second.length - 1] = `${second[second.length - 1]} ${config.terminator}`;
                 }
+                output = second.join(lf);
             } else {
-                second.push(`${lines[0]} ${config.terminator}`);
+                lines[lines.length - 1] = lines[lines.length - 1] + config.terminator;
+                output = lines.join(lf);
             }
-            output = second.join(lf);
             return [output, a];
         },
         // parsing line comments and simultaneously applying word wrap
