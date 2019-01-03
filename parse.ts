@@ -320,7 +320,11 @@ Parse Framework
                     } else if (record.types === "end" || record.types.indexOf("_end") > 0) {
                         parse.structure.pop();
                     } else if (record.types === "else" || record.types.indexOf("_else") > 0) {
-                        parse.structure[parse.structure.length - 1] = ["else", parse.count];
+                        if (structure === "") {
+                            parse.structure[parse.structure.length - 1] = ["else", parse.count];
+                        } else {
+                            parse.structure[parse.structure.length - 1] = [structure, parse.count];
+                        }
                     }
                 }
             },
@@ -1029,7 +1033,7 @@ Parse Framework
                             do {
                                 c = c - 1;
                             } while (c > 0 && output.charAt(c) !== " ");
-                            if (c < 1) {
+                            if (c < 3) {
                                 c = wrap;
                                 do {
                                     c = c + 1;

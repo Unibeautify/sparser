@@ -1,0 +1,20 @@
+(function () {
+(function dom_init() {
+    
+    const load = function dom_load() {
+            // connecting to web sockets if running as localhost
+            if (location > 0) {
+                let ws = new WebSocket(`ws://localhost:${(function dom_load_webSocketsPort() {
+                    if (ind > 0) {
+                        str = str.slice(0, ind);
+                    }
+                }()) + 1}`);
+            }
+    };
+    //reset tool to default configuration
+    method = function dom_event_reset() {
+        localStorage.setItem("settings", `{"feedback":{"newb":${data.settings.feedback.newb},"veteran":${data.settings.feedback.veteran}},"report":{"code":{},"feed":{},"stat":{}},"knownname":${data.settings.knownname}}`);
+        
+    };
+    ]());
+}());

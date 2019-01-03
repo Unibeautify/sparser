@@ -21,6 +21,9 @@ When option *correct* is true missing syntax characters are inserted, which can 
 * **template_else** - A template type that is used as the *else* block of a condition.
 * **template_end** - A terminal token of a template body.
 * **template_start** - A start token of a template body.
+* **template_string_end** - A template string that terminates with `${`.
+* **template_string_else** - A template string that starts with `}` and terminates with `${`.
+* **template_string_start** - A template string that starts with `}`.
 * **word** - A collection of characters that comprise a JavaScript keyword or reference not explicitly declared in the code sample.  This parser is less strict than a JavaScript compiler in that it does not, at this time, trap certain extended UTF8 control characters that aren't valid in identifiers.
 
 ## stack values

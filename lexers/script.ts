@@ -26,8 +26,6 @@
                 c:string[]              = source.split(""),
                 brace:string[]          = [],
                 classy:number[]         = [],
-                // depth and status of templateStrings
-                templateString:boolean[] = [],
                 // identify variable declarations
                 vart           = {
                     count: [],
@@ -1506,11 +1504,9 @@
                         do {
                             output.push(c[a]);
                             if (c[a] === "`" && (c[a - 1] !== "\\" || slashes(a - 1) === false)) {
-                                templateString.pop();
                                 break;
                             }
                             if (c[a - 1] === "$" && c[a] === "{" && (c[a - 2] !== "\\" || slashes(a - 2) === false)) {
-                                templateString[templateString.length - 1] = true;
                                 break;
                             }
                             a = a + 1;
@@ -2318,19 +2314,25 @@
                     ltoke = generic("#endregion", "\n");
                     ltype = "comment";
                     recordPush("");
-                } else if (c[a] === "`" || (c[a] === "}" && templateString[templateString.length - 1] === true)) {
+                } else if (c[a] === "`" || (c[a] === "}" && parse.structure[parse.structure.length - 1][0] === "template_string")) {
                     // template string
                     if (wordTest > -1) {
                         word();
                     }
-                    if (c[a] === "`") {
-                        templateString.push(false);
-                    } else {
-                        templateString[templateString.length - 1] = false;
-                    }
                     ltoke = tempstring();
-                    ltype = "string";
-                    recordPush("");
+                    if (ltoke.charAt(0) === "}" && ltoke.slice(ltoke.length - 2) === "${") {
+                        ltype = "template_string_else";
+                        recordPush("template_string");
+                    } else if (ltoke.slice(ltoke.length - 2) === "${") {
+                        ltype = "template_string_start";
+                        recordPush("template_string");
+                    } else if (ltoke.charAt(0) === "}") {
+                        ltype = "template_string_end";
+                        recordPush("");
+                    } else {
+                        ltype = "string";
+                        recordPush("");
+                    }
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);

@@ -2054,6 +2054,8 @@
                         record.token = "]]>";
                         recordPush(data, record, "");
                         parse.structure.pop();
+                    } else if (record.types === "template_else") {
+                        recordPush(data, record, "");
                     } else {
                         recordPush(data, record, tname);
                     }
