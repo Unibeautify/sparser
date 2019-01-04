@@ -693,10 +693,13 @@ Parse Framework
                     if (data.begin[a] !== structure[structure.length - 1]) {
                         data.begin[a] = structure[structure.length - 1];
                     }
-                    if (data.types[a].indexOf("end") > -1 || (data.lexer[a] === "markup" && data.token[a] === "}" && data.types[a] === "script")) {
+                    if (data.types[a].indexOf("else") > -1) {
+                        structure[structure.length - 1] = a;
+                    }
+                    if (data.types[a].indexOf("end") > -1) {
                         structure.pop();
                     }
-                    if (data.types[a].indexOf("start") > -1 || (data.lexer[a] === "markup" && data.token[a] === "{" && data.types[a] === "script")) {
+                    if (data.types[a].indexOf("start") > -1) {
                         structure.push(a);
                     }
                     a = a + 1;
