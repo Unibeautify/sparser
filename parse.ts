@@ -892,8 +892,10 @@ Parse Framework
                             second.push(lines[b]);
                             bigLine = true;
                         } else if (b === len - 1) {
-                            lines.push(lines[b].slice(c + 1));
-                            len = len + 1;
+                            second.push(lines[b].slice(0, c));
+                            lines[b] = lines[b].slice(c + 1);
+                            bigLine = true;
+                            b = b - 1;
                         } else if ((/^\s+$/).test(lines[b + 1]) === true || lines[b + 1] === "") {
                             second.push(lines[b].slice(0, c));
                             lines[b] = lines[b].slice(c + 1);

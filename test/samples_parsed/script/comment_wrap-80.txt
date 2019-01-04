@@ -1,0 +1,23 @@
+[
+{"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"// prettydiff dom insertion start","types":"comment"},
+{"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"/* ! @source\n   http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */","types":"comment"},
+{"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"// eslint-disable-next-line","types":"comment"},
+{"begin":-1,"lexer":"script","lines":2,"presv":false,"stack":"global","token":"if","types":"word"},
+{"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"(","types":"start"},
+{"begin":4,"lexer":"script","lines":0,"presv":false,"stack":"expression","token":"a","types":"word"},
+{"begin":4,"lexer":"script","lines":0,"presv":false,"stack":"expression","token":")","types":"end"},
+{"begin":-1,"lexer":"script","lines":1,"presv":false,"stack":"global","token":"{","types":"start"},
+{"begin":7,"lexer":"script","lines":2,"presv":false,"stack":"if","token":"let","types":"word"},
+{"begin":7,"lexer":"script","lines":1,"presv":false,"stack":"if","token":"loc","types":"reference"},
+{"begin":7,"lexer":"script","lines":1,"presv":false,"stack":"if","token":"=","types":"operator"},
+{"begin":7,"lexer":"script","lines":1,"presv":false,"stack":"if","token":"location","types":"word"},
+{"begin":7,"lexer":"script","lines":0,"presv":false,"stack":"if","token":";","types":"separator"},
+{"begin":7,"lexer":"script","lines":2,"presv":false,"stack":"if","token":"location","types":"word"},
+{"begin":7,"lexer":"script","lines":0,"presv":false,"stack":"if","token":".","types":"separator"},
+{"begin":7,"lexer":"script","lines":0,"presv":false,"stack":"if","token":"replace","types":"word"},
+{"begin":7,"lexer":"script","lines":0,"presv":false,"stack":"if","token":"(","types":"start"},
+{"begin":16,"lexer":"script","lines":0,"presv":false,"stack":"method","token":"loc","types":"reference"},
+{"begin":16,"lexer":"script","lines":0,"presv":false,"stack":"method","token":")","types":"end"},
+{"begin":7,"lexer":"script","lines":0,"presv":false,"stack":"if","token":";","types":"separator"},
+{"begin":7,"lexer":"script","lines":2,"presv":false,"stack":"if","token":"}","types":"end"}
+]

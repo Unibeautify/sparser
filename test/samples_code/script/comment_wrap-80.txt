@@ -1,0 +1,7 @@
+    // prettydiff dom insertion start
+/*! @source http://purl.eligrey.com/github/FileSaver.js/blob/master/FileSaver.js */
+// eslint-disable-next-line
+if (a) {
+    let loc = location;
+    location.replace(loc);
+}
