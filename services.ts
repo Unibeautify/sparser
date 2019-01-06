@@ -706,8 +706,10 @@ const services = function services_() {
                                                 if (str === files.parsed[a][1]) {
                                                     comparePass();
                                                 } else {
-                                                    if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
-                                                        return;
+                                                    if (framework.parseerror === "") {
+                                                        if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
+                                                            return;
+                                                        }
                                                     }
                                                 }
                                             }

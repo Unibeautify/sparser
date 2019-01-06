@@ -691,10 +691,18 @@ Parse Framework
                         structure.pop();
                     }
                     if (data.begin[a] !== structure[structure.length - 1]) {
-                        data.begin[a] = structure[structure.length - 1];
+                        if (structure.length > 0) {
+                            data.begin[a] = structure[structure.length - 1];
+                        } else {
+                            data.begin[a] = -1;
+                        }
                     }
                     if (data.types[a].indexOf("else") > -1) {
-                        structure[structure.length - 1] = a;
+                        if (structure.length > 0) {
+                            structure[structure.length - 1] = a;
+                        } else {
+                            structure.push(a);
+                        }
                     }
                     if (data.types[a].indexOf("end") > -1) {
                         structure.pop();

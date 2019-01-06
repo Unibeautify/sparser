@@ -618,6 +618,11 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 .replace(/^(\s+)/, "");
                             data.types[aa] = "selector";
                             ltype          = "selector";
+                            if (data.token[aa].indexOf("=\u201c") > 0) {
+                                framework.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                            } else if (data.token[aa].indexOf("=\u201d") > 0) {
+                                framework.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                            }
                         } else if (type === "end") {
                             data.types[aa] = "value";
                             ltype          = "value";
@@ -653,6 +658,11 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 data.types[aa] = "value";
                                 ltype          = "value";
                                 data.token[aa] = value(data.token[aa]);
+                                if (data.token[aa].charAt(0) === "\u201c") {
+                                    framework.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                } else if (data.token[aa].charAt(0) === "\u201d") {
+                                    framework.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                }
                             } else {
                                 //properties without values are considered variables
                                 if (data.types[aa] !== "value") {

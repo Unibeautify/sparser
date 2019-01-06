@@ -180,10 +180,15 @@
                     do {
                         lex.push(c[f]);
                         if (c[f] === "\\") {
-                            framework.parseerror = "Illegal escape in JavaScript on line number " + parse.lineNumber;
+                            framework.parseerror = `Illegal escape in JavaScript on line number ${parse.lineNumber}`;
                         }
                         f = f + 1;
                     } while (f < a);
+                    if (ltoke.charAt(0) === "\u201c") {
+                        framework.parseerror = `Quote looking character (\u201c, \\u201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                    } else if (ltoke.charAt(0) === "\u201d") {
+                        framework.parseerror = `Quote looking character (\u201d, \\u201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                    }
                     output   = lex.join("");
                     wordTest = -1;
                     if (parse.count > 0 && output === "function" && data.token[parse.count] === "(" && (data.token[parse.count - 1] === "{" || data.token[parse.count - 1] === "x{")) {

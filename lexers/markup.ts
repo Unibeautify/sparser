@@ -896,6 +896,11 @@
                                 } else if (atty !== "" && atty !== " ") {
                                     attstore.push([atty, lines]);
                                 }
+                                if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201c") > 0) {
+                                    framework.parseerror = `Quote looking character (\u201c, &#x201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                } else if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201d") > 0) {
+                                    framework.parseerror = `Quote looking character (\u201d, &#x201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                }
                                 attribute = [];
                                 lines = (b[a] === "\n")
                                     ? 2

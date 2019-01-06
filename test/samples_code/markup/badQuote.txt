@@ -1,0 +1,3 @@
+<a>
+<b cat=“This looks like a string”/>
+</a>
