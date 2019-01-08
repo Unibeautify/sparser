@@ -994,7 +994,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        framework.parseerror = `Parse error on line ${parse.lineNumber} on element: ${data.token[parse.count]}`;
+                                        framework.parseerror = `Parse error on line ${parse.lineNumber} on element: ${lex.join("")}`;
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -2250,7 +2250,9 @@
                             quote:string  = "",
                             quotes:number = 0;
                         do {
-
+                            if (b[a] === "\n") {
+                                parse.lineNumber = parse.lineNumber + 1;
+                            }
                             // external code requires additional parsing to look for the appropriate end
                             // tag, but that end tag cannot be quoted or commented
                             if (ext === true) {
@@ -2517,7 +2519,6 @@
                             parse.linesSpace = 1;
                             do {
                                 if (b[x] === "\n") {
-                                    parse.lineNumber = parse.lineNumber + 1;
                                     parse.linesSpace = parse.linesSpace + 1;
                                 }
                                 x = x - 1;

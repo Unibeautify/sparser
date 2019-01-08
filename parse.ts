@@ -782,6 +782,9 @@ Parse Framework
                 };
             do {
                 build.push(config.chars[a]);
+                if (config.chars[a] === "\n") {
+                    parse.lineNumber = parse.lineNumber + 1;
+                }
                 if (config.chars[a] === term && config.chars.slice(a - terml, a + 1).join("") === config.terminator) {
                     break;
                 }
