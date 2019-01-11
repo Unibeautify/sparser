@@ -689,32 +689,14 @@
                                 parse.splice({
                                     data: data,
                                     howmany: 1,
-                                    index: x,
-                                    record: {
-                                        begin: 0,
-                                        lexer: "",
-                                        lines: 0,
-                                        presv: false,
-                                        stack: "",
-                                        token: "",
-                                        types: ""
-                                    }
+                                    index: x
                                 });
                             } else if (data.types[x - 1] === "content") {
                                 data.token[x - 1] = data.token[x - 1] + quote;
                                 parse.splice({
                                     data: data,
                                     howmany: 1,
-                                    index: x,
-                                    record: {
-                                        begin: 0,
-                                        lexer: "",
-                                        lines: 0,
-                                        presv: false,
-                                        stack: "",
-                                        token: "",
-                                        types: ""
-                                    }
+                                    index: x
                                 });
                             } else {
                                 data.token[x] = quote;
@@ -1276,7 +1258,7 @@
                                                 stack: parse.structure[parse.structure.length - 2][0],
                                                 token: "class=\"contains-task-list\"",
                                                 types: "attribute"
-                                            }
+}
                                         });
                                     }
                                     if (y > -1 && z > -1) {

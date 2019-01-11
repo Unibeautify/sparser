@@ -1,5 +1,3 @@
-import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
-
 /*global global*/
 (function style_init() {
     "use strict";
@@ -7,8 +5,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
         style = function lexer_style(source:string):data {
             let a:number = 0,
                 ltype:string       = "",
-                ltoke:string       = "",
-                endtest:boolean     = false;
+                ltoke:string       = "";
             const parse:parse     = framework.parse,
                 data:data        = parse.data,
                 options:parseOptions     = parse.parseOptions,
@@ -166,17 +163,6 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                 len:number         = source.length,
                 mapper:number[]      = [],
                 nosort:boolean[]      = [],
-                recordStore = function lexer_style_recordStore(index:number):record {
-                    return {
-                        begin: data.begin[index],
-                        lexer: data.lexer[index],
-                        lines: data.lines[index],
-                        presv: data.presv[index],
-                        stack: data.stack[index],
-                        token: data.token[index],
-                        types: data.types[index]
-                    };
-                },
                 recordPush = function lexer_style_recordPush(structure:string):void {
                     const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
@@ -558,17 +544,7 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 cc             = cc + 1;
                                 dd             = aa - cc;
                                 lines = data.lines[cc];
-                                parse.splice(
-                                    {data: data, howmany: dd, index: cc, record: {
-                                        begin: 0,
-                                        lexer: "",
-                                        lines: 0,
-                                        presv: false,
-                                        stack: "",
-                                        token: "",
-                                        types: ""
-                                    }}
-                                );
+                                parse.splice({data: data, howmany: dd, index: cc});
                                 aa             = aa - dd;
                                 data.token[aa] = parts
                                     .join("")
@@ -934,218 +910,189 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                     recordPush("");
                     a = comm[1];
                 },
-                //do fancy things to property types like: sorting, consolidating, and padding
-                properties  = function lexer_style_properties():void {
-                    let aa:number          = parse.count,
-                        bb:number          = 1,
-                        cc:number          = 0,
-                        dd:number         = 0,
-                        next:number        = 0,
-                        leng:number      = 0;
-                    const p:number[]           = [],
-                        lines:number = parse.linesSpace,
-                        set:Array<number[]>         = [
-                            []
-                        ],
-                        store:data       = {
-                            begin: [],
-                            lexer: [],
-                            lines: [],
-                            presv: [],
-                            stack: [],
-                            token: [],
-                            types: []
+                //consolidate margin and padding values
+                margin_padding  = function lexer_style_properties():void {
+                    const lines:number = parse.linesSpace,
+                        props:style_properties = {
+                            data: {
+                                margin: ["", "", "", ""],
+                                padding: ["", "", "", ""]
+                            },
+                            last: {
+                                margin: 0,
+                                padding: 0
+                            },
+                            removes: []
                         },
-                        fourcount = function lexer_style_properties_propcheck_fourcount(name:string):void {
-                            let test:[boolean, boolean, boolean, boolean]     = [
-                                    false, false, false, false
-                                ],
-                                val:[string, string, string, string]      = [
-                                    "0", "0", "0", "0"
-                                ],
-                                valsplit:string[] = [],
-                                start:number    = aa,
-                                yy:number       = -1,
-                                zz:number       = 0;
+                        begin:number = (data.begin[parse.count] < 0)
+                            ? 0
+                            : data.begin[parse.count],
+                        populate = function lexer_style_properties_populate(prop:"margin"|"padding"):void {
+                            if (data.token[aa - 2] === prop) {
+                                const values:string[] = data.token[aa].split(" "),
+                                    vlen:number = values.length;
+                                if (vlen > 3) {
+                                    if (props.data[prop][0] === "") {
+                                        props.data[prop][0] = values[0];
+                                    }
+                                    if (props.data[prop][1] === "") {
+                                        props.data[prop][1] = values[1];
+                                    }
+                                    if (props.data[prop][2] === "") {
+                                        props.data[prop][2] = values[2];
+                                    }
+                                    if (props.data[prop][3] === "") {
+                                        props.data[prop][3] = values[3];
+                                    }
+                                } else if (vlen > 2) {
+                                    if (props.data[prop][0] === "") {
+                                        props.data[prop][0] = values[0];
+                                    }
+                                    if (props.data[prop][1] === "") {
+                                        props.data[prop][1] = values[1];
+                                    }
+                                    if (props.data[prop][2] === "") {
+                                        props.data[prop][2] = values[2];
+                                    }
+                                    if (props.data[prop][3] === "") {
+                                        props.data[prop][3] = values[1];
+                                    }
+                                } else if (vlen > 1) {
+                                    if (props.data[prop][0] === "") {
+                                        props.data[prop][0] = values[0];
+                                    }
+                                    if (props.data[prop][1] === "") {
+                                        props.data[prop][1] = values[1];
+                                    }
+                                    if (props.data[prop][2] === "") {
+                                        props.data[prop][2] = values[0];
+                                    }
+                                    if (props.data[prop][3] === "") {
+                                        props.data[prop][3] = values[1];
+                                    }
+                                } else {
+                                    if (props.data[prop][0] === "") {
+                                        props.data[prop][0] = values[0];
+                                    }
+                                    if (props.data[prop][1] === "") {
+                                        props.data[prop][1] = values[0];
+                                    }
+                                    if (props.data[prop][2] === "") {
+                                        props.data[prop][2] = values[0];
+                                    }
+                                    if (props.data[prop][3] === "") {
+                                        props.data[prop][3] = values[0];
+                                    }
+                                }
+                            } else if (data.token[aa - 2] === `${prop}-bottom`) {
+                                if (props.data[prop][2] === "") {
+                                    props.data[prop][2] = data.token[aa];
+                                }
+                            } else if (data.token[aa - 2] === `${prop}-left`) {
+                                if (props.data[prop][3] === "") {
+                                    props.data[prop][3] = data.token[aa];
+                                }
+                            } else if (data.token[aa - 2] === `${prop}-right`) {
+                                if (props.data[prop][1] === "") {
+                                    props.data[prop][1] = data.token[aa];
+                                }
+                            } else if (data.token[aa - 2] === `${prop}-top`) {
+                                if (props.data[prop][0] === "") {
+                                    props.data[prop][0] = data.token[aa];
+                                }
+                            } else {
+                                return;
+                            }
+                            props.removes.push([aa, prop]);
+                            props.last[prop] = aa;
+                        },
+                        removes = function lexer_style_properties_removes():void {
+                            let cc:number = 0,
+                                values:string = "";
                             const zero:RegExp     = (/^(0+([a-z]+|%))/),
-                                storage  = function lexer_style_properties_propcheck_fourcount_storage(side:number):void {
-                                    yy         = yy + 1;
-                                    val[side]  = data.token[set[aa][2]];
-                                    test[side] = true;
-                                    if (start < 0) {
-                                        start = aa;
+                                bb:number = props.removes.length,
+                                tmargin:boolean = (props.data.margin[0] !== "" && props.data.margin[1] !== "" && props.data.margin[2] !== "" && props.data.margin[3] !== ""),
+                                tpadding:boolean = (props.data.padding[0] !== "" && props.data.padding[1] !== "" && props.data.padding[2] !== "" && props.data.padding[3] !== ""),
+                                applyValues = function lexer_style_properties_removes_applyValues(prop:"margin"|"padding") {
+                                    if (zero.test(props.data[prop][0]) === true) {
+                                        props.data[prop][0] = "0";
                                     }
+                                    if (zero.test(props.data[prop][1]) === true) {
+                                        props.data[prop][1] = "0";
+                                    }
+                                    if (zero.test(props.data[prop][2]) === true) {
+                                        props.data[prop][2] = "0";
+                                    }
+                                    if (zero.test(props.data[prop][3]) === true) {
+                                        props.data[prop][3] = "0";
+                                    }
+                                    if (props.data[prop][0] === props.data[prop][1] && props.data[prop][0] === props.data[prop][2] && props.data[prop][0] === props.data[prop][3]) {
+                                        values = props.data[prop][0];
+                                    } else if (props.data[prop][0] === props.data[prop][2] && props.data[prop][1] === props.data[prop][3] && props.data[prop][0] !== props.data[prop][1]) {
+                                        values = `${props.data[prop][0]} ${props.data[prop][1]}`;
+                                    } else if (props.data[prop][0] !== props.data[prop][1] && props.data[prop][1] === props.data[prop][3] && props.data[prop][0] !== props.data[prop][2]) {
+                                        values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]}`;
+                                    } else {
+                                        values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]} ${props.data[prop][3]}`;
+                                    }
+                                    if (props.last[prop] > parse.count) {
+                                        cc = (begin < 1)
+                                            ? 1
+                                            : begin + 1;
+                                        do {
+                                            if (data.begin[cc] === begin && data.types[cc] === "value" && data.token[cc - 2].indexOf(prop) === 0) {
+                                                props.last[prop] = cc;
+                                                break;
+                                            }
+                                            cc = cc + 1;
+                                        } while (cc < parse.count)
+                                    }
+                                    data.token[props.last[prop]] = values;
+                                    data.token[props.last[prop] - 2] = prop;
                                 };
-                            if (aa < leng) {
+                            if (bb > 1 && (tmargin === true || tpadding === true)) {
                                 do {
-                                    if (data.token[set[aa][2]] !== undefined && data.token[set[aa][0]].indexOf(name) === 0) {
-                                        if (data.token[set[aa][0]] === name || data.token[set[aa][0]].indexOf(
-                                            name + " "
-                                        ) === 0) {
-                                            yy       = yy + 1;
-                                            valsplit = data
-                                                .token[set[aa][2]]
-                                                .split(" ");
-                                            if (valsplit.length === 1) {
-                                                val = [
-                                                    data.token[set[aa][2]],
-                                                    data.token[set[aa][2]],
-                                                    data.token[set[aa][2]],
-                                                    data.token[set[aa][2]]
-                                                ];
-                                            } else if (valsplit.length === 2) {
-                                                val = [
-                                                    valsplit[0], valsplit[1], valsplit[0], valsplit[1]
-                                                ];
-                                            } else if (valsplit.length === 3) {
-                                                val = [
-                                                    valsplit[0], valsplit[1], valsplit[2], valsplit[1]
-                                                ];
-                                            } else if (valsplit.length === 4) {
-                                                val = [
-                                                    valsplit[0], valsplit[1], valsplit[2], valsplit[3]
-                                                ];
-                                            } else {
-                                                return;
-                                            }
-                                            test = [true, true, true, true];
-                                        } else if (data.token[set[aa][0]].indexOf(name + "-bottom") === 0) {
-                                            storage(2);
-                                        } else if (data.token[set[aa][0]].indexOf(name + "-left") === 0) {
-                                            storage(3);
-                                        } else if (data.token[set[aa][0]].indexOf(name + "-right") === 0) {
-                                            storage(1);
-                                        } else if (data.token[set[aa][0]].indexOf(name + "-top") === 0) {
-                                            storage(0);
-                                        }
+                                    if (props.removes[cc][0] !== props.last.margin && props.removes[cc][0] !== props.last.padding && ((tmargin === true && props.removes[cc][1] === "margin") || (tpadding === true && props.removes[cc][1] === "padding"))) {
+                                        parse.splice({
+                                            data: data,
+                                            howmany: (data.types[props.removes[cc][0] + 1] === "semi")
+                                                ? 4
+                                                : 3,
+                                            index: props.removes[cc][0] - 2
+                                        });
                                     }
-                                    if (aa === leng - 1 || set[aa + 1] === undefined || data.token[set[aa + 1][0]].indexOf(name) < 0) {
-                                        if (test[0] === true && test[1] === true && test[2] === true && test[3] === true) {
-                                            set.splice(start + 1, yy);
-                                            leng = leng - yy;
-                                            aa   = aa - yy;
-                                            zz   = 0;
-                                            bb   = p.length;
-                                            do {
-                                                if (p[zz] === set[start][0]) {
-                                                    break;
-                                                }
-                                                zz = zz + 1;
-                                            } while (zz < bb);
-                                            if (zz < bb) {
-                                                p.splice(zz + 1, yy);
-                                            }
-                                            data.token[set[start][0]] = name;
-                                            if (zero.test(val[0]) === true) {
-                                                val[0] = "0";
-                                            }
-                                            if (zero.test(val[1]) === true) {
-                                                val[1] = "0";
-                                            }
-                                            if (zero.test(val[2]) === true) {
-                                                val[2] = "0";
-                                            }
-                                            if (zero.test(val[3]) === true) {
-                                                val[3] = "0";
-                                            }
-                                            if (val[1] === val[3]) {
-                                                val.pop();
-                                                if (val[0] === val[2]) {
-                                                    val.pop();
-                                                    if (val[0] === val[1]) {
-                                                        val.pop();
-                                                    }
-                                                }
-                                            }
-                                            data.token[set[start][2]] = val.join(" ");
-                                        }
-                                        break;
-                                    }
-                                    aa = aa + 1;
-                                } while (aa < leng);
+                                    cc = cc + 1;
+                                } while (cc < bb - 1);
+                            }
+                            if (tmargin === true) {
+                                applyValues("margin");
+                            }
+                            if (tpadding === true) {
+                                applyValues("padding");
+                            }
+                            // this is necessary to fix the "begin" values of descendent blocks
+                            if (endtest === true && options.lexerOptions.style.objectSort === false) {
+                                parse.sortCorrection(begin, parse.count);
                             }
                         };
-                    //identify properties and build out prop/val sets
+                    let aa:number = parse.count,
+                        endtest:boolean = false;
                     do {
-                        if (data.types[aa] === "start") {
-                            bb = bb - 1;
-                            if (bb === 0) {
-                                next = aa;
-                                set.pop();
-                                aa = set.length - 1;
-                                if (aa > -1) {
-                                    do {
-                                        set[aa].reverse();
-                                        aa = aa - 1;
-                                    } while (aa > -1);
-                                }
-                                break;
-                            }
-                        }
-                        if (data.types[aa] === "end") {
-                            bb = bb + 1;
-                        }
-                        if (bb === 1 && (data.types[aa] === "property" || (data.types[aa] === "variable" && data.types[aa + 1] === "colon"))) {
-                            p.push(aa);
-                        }
-                        set[set.length - 1].push(aa);
-                        if (bb === 1 && (data.types[aa - 1] === "comment" || data.types[aa - 1] === "semi" || data.types[aa - 1] === "end" || data.types[aa - 1] === "start") && data.types[aa] !== "start" && data.types[aa] !== "end") {
-                            set.push([]);
-                        }
                         aa = aa - 1;
-                    } while (aa > -1);
-                    //this reverse fixes the order of consecutive comments
-                    set.reverse();
-                    p.reverse();
-
-                    //consolidate margin and padding
-                    leng = set.length;
-                    aa = 0;
-                    if (aa < leng) {
-                        do {
-                            if (data.types[set[aa][0]] === "property") {
-                                if (data.token[set[aa][0]].indexOf("margin") === 0) {
-                                    fourcount("margin");
-                                }
-                                if (data.token[set[aa][0]].indexOf("padding") === 0) {
-                                    fourcount("padding");
+                        if (data.begin[aa] === begin) {
+                            if (data.types[aa] === "value" && data.types[aa - 2] === "property") {
+                                if (data.token[aa - 2].indexOf("margin") === 0) {
+                                    populate("margin");
+                                } else if (data.token[aa - 2].indexOf("padding") === 0) {
+                                    populate("padding");
                                 }
                             }
-                            aa = aa + 1;
-                        } while (aa < leng);
-                    }
-
-                    bb = set.length;
-                    aa = 0;
-                    if (aa < bb) {
-                        do {
-                            dd = set[aa].length;
-                            cc = 0;
-                            if (cc < dd) {
-                                do {
-                                    parse.push(store, recordStore(set[aa][cc]), "");
-                                    cc          = cc + 1;
-                                } while (cc < dd);
-                            }
-                            aa = aa + 1;
-                        } while (aa < bb);
-                    }
-                    //replace a block's data with sorted analyzed data
-                    parse.splice({
-                        data   : data,
-                        howmany: parse.count - next,
-                        index  : next + 1,
-                        record : {
-                            begin: 0,
-                            lexer: "",
-                            lines: 0,
-                            presv: false,
-                            stack: "",
-                            token: "",
-                            types: ""
+                        } else {
+                            endtest = true;
+                            aa = data.begin[aa];
                         }
-                    });
-                    parse.concat(data, store);
+                    } while (aa > begin);
+                    removes();
                     parse.linesSpace = lines;
                 };
             //token building loop
@@ -1198,7 +1145,6 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                     }
                     nosort.push(false);
                 } else if (b[a] === "}" || (b[a] === ")" && parse.structure[parse.structure.length - 1][0] === "map" && mapper[mapper.length - 1] === 0)) {
-                    endtest = true;
                     if (b[a] === "}" && data.types[parse.count] === "item" && data.token[parse.count - 1] === "{" && data.token[parse.count - 2] !== undefined && data.token[parse.count - 2].charAt(data.token[parse.count - 2].length - 1) === "@") {
                         data.token[parse.count - 2] = data.token[parse.count - 2] + "{" + data.token[parse.count] +
                                 "}";
@@ -1227,7 +1173,6 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                                 semiComment();
                             }
                         }
-                        properties();
                         ltype = "end";
                         nosort.pop();
                         ltoke = b[a];
@@ -1236,6 +1181,9 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
                             parse.objectSort(data);
                         }
                         recordPush("");
+                        if (b[a] === "}") {
+                            margin_padding();
+                        }
                     }
                 } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                     item("semi");
@@ -1259,9 +1207,6 @@ import { SSL_OP_NETSCAPE_CHALLENGE_BUG } from "constants";
             } while (a < len);
             if (options.lexerOptions.style.objectSort === true) {
                 parse.objectSort(data);
-            }
-            if (endtest === false && data.types.indexOf("end") > -1) {
-                properties();
             }
 
             return data;

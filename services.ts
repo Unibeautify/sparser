@@ -1,5 +1,3 @@
-import { resolveTxt } from "dns";
-
 /*jslint node:true */
 /*eslint-env node*/
 /*eslint no-console: 0*/
@@ -790,7 +788,7 @@ const services = function services_() {
                         framework: function services_validate_validation_framework() {
                             let keys    = [],
                                 keysort = "";
-                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,references,safeSort,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
+                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,references,safeSort,sortCorrection,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
                             console.log(`${text.cyan}Framework Testing${text.none}`);
                             console.log("");
                             framework.parserArrays({

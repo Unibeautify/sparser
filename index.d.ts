@@ -44,6 +44,7 @@ interface parse {
     push(data : data, record : record, structure : string)          : void;
     references                                                      : string[][];
     safeSort(array : any[], operation : string, recursive : boolean): any[];
+    sortCorrection(start:number, end:number)                        : void;
     spacer(args : spacer)                                           : number;
     splice(spliceData : splice)                                     : void;
     structure                                                       : Array <[string, number]>;
@@ -94,7 +95,23 @@ interface splice {
     data   : data;
     howmany: number;
     index  : number;
-    record : record;
+    record ?: record;
+}
+interface style_properties {
+    data: style_properties_data;
+    last: style_properties_last;
+    removes: style_properties_removes;
+}
+interface style_properties_data {
+    margin: [string, string, string, string];
+    padding: [string, string, string, string]
+}
+interface style_properties_last {
+    margin: number,
+    padding: number
+}
+interface style_properties_removes extends Array<[number, string]> {
+    [index:number]: [number, string];
 }
 interface wrapConfig {
     chars     : string[];

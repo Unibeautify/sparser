@@ -260,16 +260,7 @@ Parse Framework
                         parse.splice({
                             data   : data,
                             howmany: ff,
-                            index  : cc + 1,
-                            record : {
-                                begin: 0,
-                                lexer: "",
-                                lines: 0,
-                                presv: false,
-                                stack: "",
-                                token: "",
-                                types: ""
-                            }
+                            index  : cc + 1
                         });
                         parse.linesSpace = lines;
                         parse.concat(data, store);
@@ -519,6 +510,7 @@ Parse Framework
                 }
                 return ascend(array);
             },
+            sortCorrection: function parse_sortCorrection_init():void {},
             spacer: function parse_spacer(args:spacer): number {
                 // * array - the characters to scan
                 // * index - the index to start scanning from
@@ -542,7 +534,7 @@ Parse Framework
                 // * howmany - How many indexes to remove
                 // * index   - The index where to start
                 // * record  - A new record to insert
-                if (spliceData.record.token !== "") {
+                if (spliceData.record !== undefined && spliceData.record.token !== "") {
                     parse
                         .datanames
                         .forEach(function parse_splice_datanames(value) {
@@ -616,7 +608,7 @@ Parse Framework
                 return arr;
             };
             if (framework.lexer[parseOptions.lexer] === undefined) {
-                framework.parseerror = "Lexer '" + parseOptions.lexer + "' isn't available.";
+                framework.parseerror = `Lexer "${parseOptions.lexer}" isn't available.`;
             }
             if (typeof framework.lexer[parseOptions.lexer] === "function") {
                 framework.parseerror = "";
@@ -627,9 +619,9 @@ Parse Framework
                     parseOptions.lexerOptions[value] = (parseOptions.lexerOptions[value] || {});
                 });
                 // This line parses the code using a lexer file
-                framework.lexer[parseOptions.lexer](parseOptions.source + " ");
+                framework.lexer[parseOptions.lexer](`${parseOptions.source} `);
             } else {
-                framework.parseerror = "Specified lexer, " + parseOptions.lexer + ", is not a function.";
+                framework.parseerror = `Specified lexer, ${parseOptions.lexer}, is not a function.`;
             }
 
             // validate that all the data arrays are the same length
@@ -642,8 +634,7 @@ Parse Framework
                     b = a + 1;
                     do {
                         if (parse.data[keys[a]].length !== parse.data[keys[b]].length) {
-                            framework.parseerror = "'" + keys[a] + "' array is of different length than '" +
-                                    keys[b] + "'";
+                            framework.parseerror = `"${keys[a]}" array is of different length than "${keys[b]}"`;
                             break;
                         }
                         b = b + 1;
@@ -666,52 +657,7 @@ Parse Framework
             
             // fix begin values.  They must be reconsidered after reordering from object sort
             if (parse.data.begin.length > 0 && (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true)) {
-                let a:number = 0;
-                const data:data    = parse.data,
-                    b:number         = data.begin.length,
-                    structure: number[] = [-1];
-                do {
-                    if (
-                        a > 0 &&
-                        data.types[a].indexOf("attribute") > -1 &&
-                        data.types[a].indexOf("end") < 0 &&
-                        data.types[a - 1].indexOf("start") < 0 &&
-                        data.types[a - 1].indexOf("attribute") < 0 &&
-                        data.lexer[a] === "markup"
-                    ) {
-                        structure.push(a - 1);
-                    }
-                    if (
-                        a > 0 &&
-                        data.types[a - 1].indexOf("attribute") > -1 &&
-                        data.types[a].indexOf("attribute") < 0 &&
-                        data.lexer[structure[structure.length - 1]] === "markup" &&
-                        data.types[structure[structure.length - 1]].indexOf("start") < 0
-                    ) {
-                        structure.pop();
-                    }
-                    if (data.begin[a] !== structure[structure.length - 1]) {
-                        if (structure.length > 0) {
-                            data.begin[a] = structure[structure.length - 1];
-                        } else {
-                            data.begin[a] = -1;
-                        }
-                    }
-                    if (data.types[a].indexOf("else") > -1) {
-                        if (structure.length > 0) {
-                            structure[structure.length - 1] = a;
-                        } else {
-                            structure.push(a);
-                        }
-                    }
-                    if (data.types[a].indexOf("end") > -1) {
-                        structure.pop();
-                    }
-                    if (data.types[a].indexOf("start") > -1) {
-                        structure.push(a);
-                    }
-                    a = a + 1;
-                } while (a < b);
+                parse.sortCorrection(0, parse.data.begin.length);
             }
         },
         parserArrays = function parserArrays(parseOptions: parseOptions):data {
@@ -737,6 +683,53 @@ Parse Framework
                 a = a + 1;
             } while (a < len);
             return data;
+        };
+        parse.sortCorrection = function parse_sortCorrection(start:number, end:number):void {
+            let a:number = start;
+            const data:data    = parse.data,
+                structure: number[] = [-1];
+            do {
+                if (
+                    a > 0 &&
+                    data.types[a].indexOf("attribute") > -1 &&
+                    data.types[a].indexOf("end") < 0 &&
+                    data.types[a - 1].indexOf("start") < 0 &&
+                    data.types[a - 1].indexOf("attribute") < 0 &&
+                    data.lexer[a] === "markup"
+                ) {
+                    structure.push(a - 1);
+                }
+                if (
+                    a > 0 &&
+                    data.types[a - 1].indexOf("attribute") > -1 &&
+                    data.types[a].indexOf("attribute") < 0 &&
+                    data.lexer[structure[structure.length - 1]] === "markup" &&
+                    data.types[structure[structure.length - 1]].indexOf("start") < 0
+                ) {
+                    structure.pop();
+                }
+                if (data.begin[a] !== structure[structure.length - 1]) {
+                    if (structure.length > 0) {
+                        data.begin[a] = structure[structure.length - 1];
+                    } else {
+                        data.begin[a] = -1;
+                    }
+                }
+                if (data.types[a].indexOf("else") > -1) {
+                    if (structure.length > 0) {
+                        structure[structure.length - 1] = a;
+                    } else {
+                        structure.push(a);
+                    }
+                }
+                if (data.types[a].indexOf("end") > -1) {
+                    structure.pop();
+                }
+                if (data.types[a].indexOf("start") > -1) {
+                    structure.push(a);
+                }
+                a = a + 1;
+            } while (a < end);
         };
         // parsing block comments and simultaneously applying word wrap
         parse.wrapCommentBlock = function parse_wrapCommentBlock(config: wrapConfig):[string, number] {
