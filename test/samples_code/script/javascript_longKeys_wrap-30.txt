@@ -1,0 +1,12 @@
+var a = {
+    "wgRelatedArticles"                 : null,
+        "wgRelatedArticlesUseCirrusSearch"                    : true,
+        "wgRelatedArticlesOnlyUseCirrusSearch"                : false,
+        "wgWMESchemaEditAttemptStepOversample"                : false,
+        "wgULSCurrentAutonym"           : "English",
+        "wgNoticeProject"               : "wikipedia",
+        "wgCentralNoticeCookiesToDelete": [],
+        "wgCentralNoticeCategoriesUsingLegacy"                : [
+            "Fundraising", "fundraising"
+        ]
+}

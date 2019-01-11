@@ -2341,7 +2341,7 @@
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);
-                    if (options.language === "json") {
+                    if (options.language === "json" || (parse.structure[parse.structure.length - 1][0] === "object" && nextchar(1, false) === ":" && (data.token[parse.count] === "," || data.token[parse.count] === "{"))) {
                         ltype = "string";
                         recordPush("");
                     } else if (ltoke.length > options.wrap && options.wrap > 0) {
