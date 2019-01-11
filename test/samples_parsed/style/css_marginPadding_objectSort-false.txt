@@ -38,5 +38,12 @@
 {"begin":1,"lexer":"style","lines":0,"presv":false,"stack":"a","token":":","types":"colon"},
 {"begin":1,"lexer":"style","lines":0,"presv":false,"stack":"a","token":"12em 2px 3px 4px","types":"value"},
 {"begin":1,"lexer":"style","lines":0,"presv":false,"stack":"a","token":";","types":"semi"},
-{"begin":1,"lexer":"style","lines":2,"presv":false,"stack":"a","token":"}","types":"end"}
+{"begin":1,"lexer":"style","lines":2,"presv":false,"stack":"a","token":"}","types":"end"},
+{"begin":-1,"lexer":"style","lines":2,"presv":false,"stack":"global","token":"b","types":"selector"},
+{"begin":-1,"lexer":"style","lines":1,"presv":false,"stack":"global","token":"{","types":"start"},
+{"begin":41,"lexer":"style","lines":2,"presv":false,"stack":"b","token":"margin","types":"property"},
+{"begin":41,"lexer":"style","lines":0,"presv":false,"stack":"b","token":":","types":"colon"},
+{"begin":41,"lexer":"style","lines":1,"presv":false,"stack":"b","token":"0 0 1px","types":"value"},
+{"begin":41,"lexer":"style","lines":0,"presv":false,"stack":"b","token":";","types":"semi"},
+{"begin":41,"lexer":"style","lines":2,"presv":false,"stack":"b","token":"}","types":"end"}
 ]

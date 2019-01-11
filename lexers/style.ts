@@ -1028,7 +1028,7 @@
                                         values = props.data[prop][0];
                                     } else if (props.data[prop][0] === props.data[prop][2] && props.data[prop][1] === props.data[prop][3] && props.data[prop][0] !== props.data[prop][1]) {
                                         values = `${props.data[prop][0]} ${props.data[prop][1]}`;
-                                    } else if (props.data[prop][0] !== props.data[prop][1] && props.data[prop][1] === props.data[prop][3] && props.data[prop][0] !== props.data[prop][2]) {
+                                    } else if (props.data[prop][1] === props.data[prop][3] && props.data[prop][0] !== props.data[prop][2]) {
                                         values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]}`;
                                     } else {
                                         values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]} ${props.data[prop][3]}`;
