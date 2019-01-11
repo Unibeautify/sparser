@@ -924,9 +924,7 @@
                             },
                             removes: []
                         },
-                        begin:number = (data.begin[parse.count] < 0)
-                            ? 0
-                            : data.begin[parse.count],
+                        begin:number = parse.structure[parse.structure.length - 1][1],
                         populate = function lexer_style_properties_populate(prop:"margin"|"padding"):void {
                             if (data.token[aa - 2] === prop) {
                                 const values:string[] = data.token[aa].split(" "),
@@ -1071,7 +1069,7 @@
                                 applyValues("padding");
                             }
                             // this is necessary to fix the "begin" values of descendent blocks
-                            if (endtest === true && options.lexerOptions.style.objectSort === false) {
+                            if (endtest === true) {
                                 parse.sortCorrection(begin, parse.count);
                             }
                         };
@@ -1177,13 +1175,13 @@
                         nosort.pop();
                         ltoke = b[a];
                         ltype = "end";
+                        if (b[a] === "}") {
+                            margin_padding();
+                        }
                         if (options.lexerOptions.style.objectSort === true && b[a] === "}") {
                             parse.objectSort(data);
                         }
                         recordPush("");
-                        if (b[a] === "}") {
-                            margin_padding();
-                        }
                     }
                 } else if (b[a] === ";" || (b[a] === "," && parse.structure[parse.structure.length - 1][0] === "map")) {
                     item("semi");

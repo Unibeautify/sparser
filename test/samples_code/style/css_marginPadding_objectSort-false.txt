@@ -1,0 +1,16 @@
+a {
+    @include transition;
+    text-decoration: none;
+    color          : $primaryColor;
+    margin:1px 2px 3px 4px;
+    margin-top:10em;
+    font           : {
+        family: Helvetica, Arial, sans-serif;
+        size  : 14px;
+    }
+    &:hover {
+        text-decoration: underline;
+    }
+    padding:1px 2px 3px 4px;
+    padding-top:12em;
+}
