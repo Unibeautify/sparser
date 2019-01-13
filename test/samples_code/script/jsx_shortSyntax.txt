@@ -1,0 +1,13 @@
+  render() {
+    return (
+        < >
+        <CartHeader />
+        <main className='container'>
+        <CartItems items={this.state.cart} />
+        <Total total={this.state.total} />
+        <AddItem products={this.state.products} addItem={this.addItem} />
+        </main>
+        <CartFooter copyright='2016'/>
+      <    />
+    );
+  }

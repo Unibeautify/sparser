@@ -1614,13 +1614,29 @@
                             d > 0 && data.types[d] === "comment"
                         );
                     }
-                    if (c[a] === "<" && c[a + 1] === ">") {
+                    if (c[a] === "<" && c[a + 1] === ">" && ltoke !== "(") {
                         a     = a + 1;
                         ltype = "generic";
                         ltoke = "<>";
                         return;
                     }
-                    if ((c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) || data.token[d] === "++" || data.token[d] === "--" || (/\s/).test(c[a + 1]) === true || ((/\d/).test(c[a + 1]) === true && (ltype === "operator" || ltype === "string" || ltype === "number" || ltype === "reference" || (ltype === "word" && ltoke !== "return")))) {
+                    if (
+                        nextchar(1, false) !== ">" && (
+                        (c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) ||
+                        data.token[d] === "++" ||
+                        data.token[d] === "--" ||
+                        (/\s/).test(c[a + 1]) === true ||
+                        (
+                            (/\d/).test(c[a + 1]) === true &&
+                            (
+                                ltype === "operator" ||
+                                ltype === "string" ||
+                                ltype === "number" ||
+                                ltype === "reference" ||
+                                (ltype === "word" && ltoke !== "return")
+                            )
+                        ))
+                    ) {
                         ltype = "operator";
                         ltoke = operator();
                         return recordPush("");
@@ -1711,7 +1727,7 @@
                                 } while (a < b && c[a + 1] === "<");
                             }
                             anglecount = anglecount + 1;
-                            if (c[a + 1] === "/") {
+                            if (nextchar(1, false) === "/") {
                                 endtag = true;
                             }
                         } else if (c[a] === ">" && curlytest === false) {

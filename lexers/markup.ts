@@ -917,6 +917,18 @@
                             }
                             if (preserve === true || (((/\s/).test(b[a]) === false && quote !== "}") || quote === "}")) {
                                 lex.push(b[a]);
+                                if (lex[0] === "<" && lex[1] === ">" && end === ">") {
+                                    record.token = "<>";
+                                    record.types = "start";
+                                    recordPush(data, record, "(empty)");
+                                    return;
+                                }
+                                if (lex[0] === "<" && lex[1] === "/" && lex[2] === ">" && end === ">") {
+                                    record.token = "</>";
+                                    record.types = "end";
+                                    recordPush(data, record, "");
+                                    return;
+                                }
                             }
                             if (ltype === "cdata" && b[a] === ">" && b[a - 1] === "]" && b[a - 2] !== "]") {
                                 framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
