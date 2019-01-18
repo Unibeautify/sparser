@@ -166,11 +166,9 @@
                 recordPush = function lexer_style_recordPush(structure:string):void {
                     const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: 0,
                         lexer: "style",
                         lines: parse.linesSpace,
-                        presv: (ltype === "ignore")
-                            ? true
-                            : false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: ltoke,
                         types: ltype
@@ -711,9 +709,9 @@
                         index: x + 1,
                         record: {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: 0,
                             lexer: "style",
                             lines: parse.linesSpace,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: ";",
                             types: "semi"

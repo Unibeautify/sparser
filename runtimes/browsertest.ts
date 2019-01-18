@@ -69,6 +69,12 @@
                                     className: "numb"
                                 });
                                 cell({
+                                    text: outputObjects[a].ender.toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
                                     text: outputObjects[a].lexer,
                                     type: "td",
                                     row: tr,
@@ -79,12 +85,6 @@
                                     type: "td",
                                     row: tr,
                                     className: "numb"
-                                });
-                                cell({
-                                    text: outputObjects[a].presv.toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
                                 });
                                 cell({
                                     text: outputObjects[a].stack.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
@@ -117,6 +117,12 @@
                                     className: "numb"
                                 });
                                 cell({
+                                    text: outputArrays.ender[a].toString(),
+                                    type: "td",
+                                    row: tr,
+                                    className: "numb"
+                                });
+                                cell({
                                     text: outputArrays.lexer[a],
                                     type: "td",
                                     row: tr,
@@ -127,12 +133,6 @@
                                     type: "td",
                                     row: tr,
                                     className: "numb"
-                                });
-                                cell({
-                                    text: outputArrays.presv[a].toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
                                 });
                                 cell({
                                     text: outputArrays.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
@@ -175,6 +175,12 @@
                                 className: "numb"
                             });
                             cell({
+                                text: "ender",
+                                type: "th",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
                                 text: "lexer",
                                 type: "th",
                                 row: tr,
@@ -185,12 +191,6 @@
                                 type: "th",
                                 row: tr,
                                 className: "numb"
-                            });
-                            cell({
-                                text: "presv",
-                                type: "th",
-                                row: tr,
-                                className: ""
                             });
                             cell({
                                 text: "stack",

@@ -7,7 +7,7 @@
 * **comment_attribute** - JSX allows JavaScript style comments as tag attributes.
 * **conditional** - Comments used in IE to hack references to CSS by IE version.  Follows a SGML square brace convention.
 * **content** - Regular text nodes, but white space is removed from the front and end of the node as an approximate value is accounted for in the *lines* data field.
-* **content_preserve** - Allows parsing of an element but identifies the element as preserved so that its *presv* value is *true*.
+* **content_preserve** - A content type that lets consuming applications this token must not be modified.
 * **end** - An end tag of a tag pair.
 * **ignore** - These types are used to excuse a structure from deeper evaluation and treats the element as a singleton even if it is part of tag pair and contains descendant nodes.
 * **jsx_attribute_end** - The end of an curly brace delimited escape, stated as a tag attribute, that allows JavaScript inside the markup tag of a JSX markup element.

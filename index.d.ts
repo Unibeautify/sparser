@@ -5,9 +5,9 @@ interface attStore extends Array<[string, number]>{
 }
 interface data {
     begin: number[];
+    ender: number[];
     lexer: string[];
     lines: number[];
-    presv: boolean[];
     stack: string[];
     token: string[];
     types: string[];
@@ -36,6 +36,7 @@ interface parse {
     count                                                           : number;
     data                                                            : data;
     datanames                                                       : string[];
+    globals                                                         : number[];
     lineNumber                                                      : number;
     linesSpace                                                      : number;
     objectSort(data : data)                                         : void;
@@ -76,9 +77,9 @@ interface parseOptions {
 }
 interface record {
     begin: number;
+    ender: number;
     lexer: string;
     lines: number;
-    presv: boolean;
     stack: string;
     token: string;
     types: string;

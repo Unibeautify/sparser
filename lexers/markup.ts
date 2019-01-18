@@ -137,9 +137,9 @@
                         comm:[string, number]    = ["", 0];
                     const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: 0,
                             lexer: "markup",
                             lines: parse.linesSpace,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "",
                             types: ""
@@ -443,9 +443,6 @@
                             // sort the attributes
                             if (options.lexerOptions.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore, "", false);
-                                record.presv = true;
-                            } else {
-                                record.presv = false;
                             }
 
                             // preparation for a coldfusion edge case
@@ -675,7 +672,6 @@
                                 if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a            = a + 6;
                                     earlyexit    = true;
-                                    record.presv = true;
                                     record.token = "{:else}";
                                     record.types = "template_else";
                                     recordPush(data, record, "");
@@ -735,7 +731,6 @@
                             if (b[a + 1] === "@" && b[a + 2] === "}" && b[a + 3] === "e" && b[a + 4] === "l" && b[a + 5] === "s" && b[a + 6] === "e" && b[a + 7] === "{" && b[a + 8] === "@" && b[a + 9] === "}") {
                                 a            = a + 9;
                                 earlyexit    = true;
-                                record.presv = true;
                                 record.token = "{@}else{@}";
                                 record.types = "template_else";
                                 recordPush(data, record, "");
@@ -801,7 +796,6 @@
                         if (element.replace(start, "").replace(/(^\s*)/, "").indexOf("parse-ignore-start") === 0) {
                             record.token = element;
                             record.types = "ignore";
-                            record.presv = true;
                             recordPush(data, record, "");
                             return;
                         }
@@ -1441,13 +1435,10 @@
                             } while (a < c);
                             record.token = lex.join("");
                             record.types = "ignore";
-                            record.presv = true;
                             recordPush(data, record, "");
                             return;
                         }
                     }
-
-                    record.presv = preserve;
                     record.token = element;
                     record.types = ltype;
                     tname        = tagName(element);
@@ -1742,13 +1733,11 @@
                                             }
                                             if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
                                                 record.lines                 = data.lines[parse.count];
-                                                record.presv                 = false;
                                                 record.token                 = "</li>";
                                                 record.types                 = "end";
                                                 recordPush(data, record, "");
                                                 record.begin                 = parse.structure[parse.structure.length - 1][1];
                                                 record.lines                 = parse.linesSpace;
-                                                record.presv                 = preserve;
                                                 record.stack                 = parse.structure[parse.structure.length - 1][0];
                                                 record.token                 = element;
                                                 record.types                 = ltype;
@@ -1771,13 +1760,11 @@
                             } else if (tname === "/ul" || tname === "/ol") {
                                 if (litag === list) {
                                     record.lines                 = data.lines[parse.count];
-                                    record.presv                 = false;
                                     record.token                 = "</li>";
                                     record.types                 = "end";
                                     recordPush(data, record, "");
                                     record.begin                 = parse.structure[parse.structure.length - 1][1];
                                     record.lines                 = parse.linesSpace;
-                                    record.presv                 = preserve;
                                     record.stack                 = parse.structure[parse.structure.length - 1][0];
                                     record.token                 = element;
                                     record.types                 = "end";
@@ -1908,7 +1895,6 @@
                                 atstring.push(value[0]);
                             });
                             preserve                = true;
-                            data.presv[parse.count] = true;
                             ltype                   = "ignore";
                             a                       = a + 1;
                             if (a < c) {
@@ -2087,11 +2073,11 @@
                             jsxatt:boolean      = false,
                             endData:record;
                         const children:Array<[number, number]> = [],
-                            store       = {
+                            store:data       = {
                                 begin: [],
+                                ender: [],
                                 lexer: [],
                                 lines: [],
-                                presv: [],
                                 stack: [],
                                 token: [],
                                 types: []
@@ -2099,9 +2085,9 @@
                             storeRecord = function lexer_markup_tag_sorttag_storeRecord(index: number):record {
                                 const output:record = {
                                     begin: data.begin[index],
+                                    ender: data.ender[index],
                                     lexer: data.lexer[index],
                                     lines: data.lines[index],
-                                    presv: data.presv[index],
                                     stack: data.stack[index],
                                     token: data.token[index],
                                     types: data.types[index]
@@ -2194,9 +2180,9 @@
                         }
                         endData = {
                             begin: data.begin.pop(),
+                            ender: data.ender.pop(),
                             lexer: data.lexer.pop(),
                             lines: data.lines.pop(),
-                            presv: data.presv.pop(),
                             stack: data.stack.pop(),
                             token: data.token.pop(),
                             types: data.types.pop()
@@ -2230,9 +2216,9 @@
                         ),
                         record:record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: 0,
                             lexer: "markup",
                             lines: liner,
-                            presv: (linepreserve > 0),
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "",
                             types: "content"
@@ -2429,7 +2415,6 @@
                                     recordPush(data, record, "");
                                     record.token = "{:else}";
                                     record.types = "template_else";
-                                    record.presv = false;
                                     recordPush(data, record, "");
                                     break;
                                 }

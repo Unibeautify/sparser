@@ -81,4 +81,4 @@ if (b[a] === "\n") {
 }
 ```
 
-Code from the opening comment to the closing comment is parsed as a single token of types value *ignore* presv value *true*.
+Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.

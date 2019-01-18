@@ -83,8 +83,8 @@ const nodetest = function nodetest_() {
                     }
                     str.push(" | ");
                 },
-                heading:string = "index | begin | lexer  | lines | presv | stack       | types       | token",
-                bar:string     = "------|-------|--------|-------|-------|-------------|-------------|------";
+                heading:string = "index | begin | ender | lexer  | lines | stack       | types       | token",
+                bar:string     = "------|-------|-------|--------|-------|-------------|-------------|------";
             console.log("");
             console.log(heading);
             console.log(bar);
@@ -105,9 +105,9 @@ const nodetest = function nodetest_() {
                     }
                     pad(a.toString(), 5);
                     pad(outputArrays.begin[a].toString(), 5);
+                    pad(outputArrays.ender[a].toString(), 5);
                     pad(outputArrays.lexer[a].toString(), 5);
                     pad(outputArrays.lines[a].toString(), 5);
-                    pad(outputArrays.presv[a].toString(), 5);
                     pad(outputArrays.stack[a].toString(), 11);
                     pad(outputArrays.types[a].toString(), 11);
                     str.push(outputArrays.token[a].replace(/\s/g, " "));
@@ -123,9 +123,9 @@ const nodetest = function nodetest_() {
                     }
                     pad(a.toString(), 5);
                     pad(outputObjects[a].begin.toString(), 5);
+                    pad(outputObjects[a].ender.toString(), 5);
                     pad(outputObjects[a].lexer.toString(), 5);
                     pad(outputObjects[a].lines.toString(), 5);
-                    pad(outputObjects[a].presv.toString(), 5);
                     pad(outputObjects[a].stack.toString(), 11);
                     pad(outputObjects[a].types.toString(), 11);
                     str.push(outputObjects[a].token.replace(/\s/g, " "));

@@ -91,25 +91,17 @@
                     }
                     if (data.token[len] === "x;") {
                         parse.splice(
-                            {data: data, howmany: 1, index: len, record: {
-                                begin: 0,
-                                lexer: "",
-                                lines: 0,
-                                presv: false,
-                                stack: "",
-                                token: "",
-                                types: ""
-                            }}
+                            {data: data, howmany: 1, index: len}
                         );
                     }
                 },
                 // determine the definition of containment by stack
                 recordPush     = function lexer_script_recordPush(structure: string):void {
-                    const record = {
+                    const record:record = {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: 0,
                         lexer: "script",
                         lines: parse.linesSpace,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: ltoke,
                         types: ltype
@@ -143,24 +135,15 @@
                             parse.splice({
                                 data   : data,
                                 howmany: 1,
-                                index  : parse.count - 3,
-                                record : {
-                                    begin: 0,
-                                    lexer: "",
-                                    lines: 0,
-                                    presv: false,
-                                    stack: "",
-                                    token: "",
-                                    types: ""
-                                }
+                                index  : parse.count - 3
                             });
                         },
                         builder = function lexer_script_word_builder(index:number):record {
                             return {
                                 begin: data.begin[index],
+                                ender: data.ender[index],
                                 lexer: data.lexer[index],
                                 lines: data.lines[index],
-                                presv: data.presv[index],
                                 stack: data.stack[index],
                                 token: data.token[index],
                                 types: data.types[index]
@@ -294,15 +277,7 @@
                             );
                             if (data.token[f] === "x;" && (data.token[f - 1] === "}" || data.token[f - 1] === "x}")) {
                                 parse.splice(
-                                    {data: data, howmany: 1, index: f, record: {
-                                        begin: 0,
-                                        lexer: "",
-                                        lines: 0,
-                                        presv: false,
-                                        stack: "",
-                                        token: "",
-                                        types: ""
-                                    }}
+                                    {data: data, howmany: 1, index: f}
                                 );
                                 g            = g - 1;
                                 f            = f - 1;
@@ -444,9 +419,9 @@
                                         index  : parse.count - 1,
                                         record : {
                                             begin: data.begin[data.begin[data.begin[parse.count - 1] - 1] - 1],
+                                            ender: 0,
                                             lexer: "script",
                                             lines: 0,
-                                            presv: false,
                                             stack: "if",
                                             token: "x}",
                                             types: "end"
@@ -723,20 +698,20 @@
                                 index: parse.count,
                                 record: {
                                     begin: data.begin[parse.count],
+                                    ender: 0,
                                     lexer: "script",
                                     lines: parse.linesSpace,
-                                    presv: ignore,
                                     stack: data.stack[parse.count],
                                     token: ltoke,
                                     types: ltype
                                 }
                             });
                         } else {
-                            const record = {
+                            const record:record = {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: 0,
                                 lexer: "script",
                                 lines: parse.linesSpace,
-                                presv: ignore,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: ltoke,
                                 types: ltype
@@ -780,20 +755,20 @@
                             index: parse.count,
                             record: {
                                 begin: data.begin[parse.count],
+                                ender: 0,
                                 lexer: "script",
                                 lines: parse.linesSpace,
-                                presv: ignore,
                                 stack: data.stack[parse.count],
                                 token: ltoke,
                                 types: ltype
                             }
                         });
                     } else if (ltoke !== "") {
-                        const record = {
+                        const record:record = {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: 0,
                             lexer: "script",
                             lines: parse.linesSpace,
-                            presv: ignore,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: ltoke,
                             types: ltype
@@ -885,9 +860,9 @@
                             index  : x,
                             record : {
                                 begin: data.begin[x],
+                                ender: 0,
                                 lexer: "script",
                                 lines: parse.linesSpace,
-                                presv: false,
                                 stack: data.stack[x],
                                 token: ",",
                                 types: "separator"
@@ -902,9 +877,9 @@
                     const next:string   = nextchar(1, false),
                         record:record = {
                             begin: data.begin[parse.count],
+                            ender: data.begin[parse.count],
                             lexer: data.lexer[parse.count],
                             lines: data.lines[parse.count],
-                            presv: data.presv[parse.count],
                             stack: data.stack[parse.count],
                             token: data.token[parse.count],
                             types: data.types[parse.count]
@@ -1051,9 +1026,9 @@
                         recordStore = function lexer_script_plusplus_recordStore(index:number):record {
                             return {
                                 begin: data.begin[index],
+                                ender: data.ender[index],
                                 lexer: data.lexer[index],
                                 lines: data.lines[index],
-                                presv: data.presv[index],
                                 stack: data.stack[index],
                                 token: data.token[index],
                                 types: data.types[index]
@@ -1083,16 +1058,7 @@
                             parse.splice({
                                 data   : data,
                                 howmany: parse.count - walk,
-                                index  : walk,
-                                record : {
-                                    begin: 0,
-                                    lexer: "",
-                                    lines: 0,
-                                    presv: false,
-                                    stack: "",
-                                    token: "",
-                                    types: ""
-                                }
+                                index  : walk
                             });
                         }
                     } else {
@@ -1184,16 +1150,7 @@
                         parse.splice({
                             data   : data,
                             howmany: 1,
-                            index  : walk - 1,
-                            record : {
-                                begin: 0,
-                                lexer: "",
-                                lines: 0,
-                                presv: false,
-                                stack: "",
-                                token: "",
-                                types: ""
-                            }
+                            index  : walk - 1
                         });
                         ltoke        = "=";
                         ltype        = "operator";
@@ -1239,9 +1196,9 @@
                         index  : aa,
                         record : {
                             begin: data.begin[aa],
+                            ender: 0,
                             lexer: "script",
                             lines: parse.linesSpace,
-                            presv: false,
                             stack: data.stack[aa],
                             token: ltoke,
                             types: ltype
@@ -1383,9 +1340,9 @@
                             do {
                                 store.push({
                                     begin: data.begin[inc],
+                                    ender: data.ender[inc],
                                     lexer: data.lexer[inc],
                                     lines: data.lines[inc],
-                                    presv: data.presv[inc],
                                     stack: data.stack[inc],
                                     token: data.token[inc],
                                     types: data.types[inc]
@@ -1819,16 +1776,7 @@
                                 parse.splice({
                                     data   : data,
                                     howmany: 2,
-                                    index  : aa - 2,
-                                    record : {
-                                        begin: 0,
-                                        lexer: "",
-                                        lines: 0,
-                                        presv: false,
-                                        stack: "",
-                                        token: "",
-                                        types: ""
-                                    }
+                                    index  : aa - 2
                                 });
                                 parse.structure[parse.structure.length - 1] = [
                                     namear, aa - 2

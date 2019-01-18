@@ -824,14 +824,14 @@ const services = function services_() {
                             console.log(`${humantime(false) + text.green}parse.count has default value of -1 and type number.${text.none}`);
                             
                             if (
-                                typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"lexer\":[],\"lines\":[],\"presv\":[],\"stack\":[],\"token\":[],\"types\":[]}"
+                                typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"ender\":[],\"lexer\":[],\"lines\":[],\"stack\":[],\"token\":[],\"types\":[]}"
                             ) {
                                 return errout(`${text.angry}Parse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.${text.none} `);
                             }
                             console.log(`${humantime(false) + text.green}parse.data contains properties as defined by parse.datanames and each is an empty array.${text.none}`);
                             
-                            if (JSON.stringify(parse.datanames) !== "[\"begin\",\"lexer\",\"lines\",\"presv\",\"stack\",\"token\",\"types\"]") {
-                                return errout(`${text.angry}Parse framework failure: parse.datanames does not contain the values: 'begin', 'lexer', 'lines', 'presv', 'stack', 'token', and 'types'.${text.none} `);
+                            if (JSON.stringify(parse.datanames) !== "[\"begin\",\"ender\",\"lexer\",\"lines\",\"stack\",\"token\",\"types\"]") {
+                                return errout(`${text.angry}Parse framework failure: parse.datanames does not contain the values: 'begin', 'ender', lexer', 'lines', 'stack', 'token', and 'types'.${text.none} `);
                             }
                             console.log(`${humantime(false) + text.green}parse.datanames contains only the data field names.${text.none}`);
             

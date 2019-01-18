@@ -20,9 +20,9 @@
 1. [Input](#input)
 1. [Output](#output)
    1. [begin](#begin)
+   1. [ender](#ender)
    1. [lexer](#lexer)
    1. [lines](#lines)
-   1. [presv](#presv)
    1. [stack](#stack)
    1. [token](#token)
    1. [types](#types)
@@ -211,9 +211,9 @@ Name | Type | Default | Lexers | Description
 The default format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.  An alternate output format is available if specifying an option named **outputFormat** with the value *objects*.  This alternate format will produce an array of objects where each object contains properties named and described as arrays below.  Essentially the alternate format simply inverts the object/array structure of the standard format.
  
 * begin
+* ender
 * lexer
 * lines
-* presv
 * stack
 * token
 * types
@@ -224,16 +224,16 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output in the defaul
 ```
 {
     begin: [
-        0, 0, 1, 1, 0
+        -1, 0, 1, 1, 0
+    ],
+    ender: [
+        4, 3, 3, 3, 4
     ],
     lexer: [
         "markup", "markup", "markup", "markup", "markup"
     ],
     lines: [
         0, 0, 0, 0, 0
-    ],
-    presv: [
-        false, false, false, false, false
     ],
     stack: [
         "global", "a", "b", "b", "a"
@@ -249,46 +249,46 @@ The output in the `outputFormat="objects"` format will be:
 ```
 [
     {
-        begin: 0,
+        begin: -1,
+        ender: 4,
         lexer: "markup",
         lines: 0,
-        presv: false,
         stack: "global",
         token: "<a>",
         types: "start"
     },
     {
         begin: 0,
+        ender: 3,
         lexer: "markup",
         lines: 0,
-        presv: false,
         stack: "a",
         token: "<b>",
         types: "start"
     },
     {
         begin: 0,
+        ender: 3,
         lexer: "markup",
         lines: 1,
-        presv: false,
         stack: "b",
         token: "class=\"cat\"",
         types: "attribute"
     },
     {
         begin: 0,
+        ender: 3,
         lexer: "markup",
         lines: 1,
-        presv: false,
         stack: "global",
         token: "</b>",
         types: "end"
     },
     {
         begin: 0,
+        ender: 4,
         lexer: "markup",
         lines: 0,
-        presv: false,
         stack: "global",
         token: "</a>",
         types: "end"
@@ -298,18 +298,21 @@ The output in the `outputFormat="objects"` format will be:
 
 If that parsed output were arranged as a table it would look something like:
 
-index | begin | lexer    |  lines | presv | stack    | token         | types
------ | ----- | -------- | ------ | ----- | -------- | ------------- | -----
-0     | 0     | "markup" | 0      | false | "global" | "&lt;a&gt;"   | "start"
-1     | 0     | "markup" | 0      | false | "a"      | "&lt;b &gt;"  | "start"
-2     | 1     | "markup" | 0      | false | "b"      | "class="cat"" | "attribute"
-3     | 1     | "markup" | 0      | false | "b"      | "&lt;/b&gt;"  | "end"
-4     | 0     | "markup" | 0      | false | "a"      | "&lt;/a&gt;"  | "end"
+index | begin | ender | lexer    |  lines | stack    | token         | types
+----- | ----- | ----- | -------- | ------ | -------- | ------------- | -----
+0     | -1    | 4     | "markup" | 0      | "global" | "&lt;a&gt;"   | "start"
+1     | 0     | 3     | "markup" | 0      | "a"      | "&lt;b &gt;"  | "start"
+2     | 1     | 3     | "markup" | 0      | "b"      | "class="cat"" | "attribute"
+3     | 1     | 3     | "markup" | 0      | "b"      | "&lt;/b&gt;"  | "end"
+4     | 0     | 4     | "markup" | 0      | "a"      | "&lt;/a&gt;"  | "end"
 
 ### begin
 The *begin* array stores a number representing the index where the parent structure starts.  In markup language this value would represent the index for the parent element.  In style based langauges it would store the index where the parent block opens.  In script based langauges it would store the index where the current structure opens whether that structure is a block, parenthesis, array, or something else.
 
 Regardless of the language or lexer used the values supplied in this array allow walking of the code's structure from any local point to the global/root location.
+
+### ender
+The *ender* array stores a number representing the index of the end of a token's containing structure.  This is the pair to the token's *begin* value.  This is a big structure difference between the *begin* and *ender* values in that an end type will use its own index as its *ender* value, but a start type's *begin* value will point to its starting parent opposed to pointing to itself.
 
 ### lexer
 The *lexer* array indicates which parsed the given record. This data is helpful working with documents that require multiple lexers, such as HTML with embedded JavaScript or CSS. It is particularly helpful when working with JSX and TSX as these documents can interchange between the markup and script lexers recursively.
@@ -324,9 +327,6 @@ The *lines* array stores a white space value.  A value of 0 means no white space
 * **2** - The current token is preceded by white space containing a single new line character, such that the current token is on the next line of code compared to the previous token in the submitted code sample.
 * **3** - The current token is preceded by white space containing two new line characters, which means a single empty line or a line containing only white space characters.
 * **x** - The current token is preceded by white space containing (x - 2) empty lines or lines that contain only white space characters.  For example if a token follows 5 empty lines from the submitted code sample this token's *lines* value would be `7`.
-
-### presv
-The *presv* array stores a boolean indicating if the current item should be preserved from any kind of manipulation in the beautifier.  Some examples of a preserved item would be a markup comment, certain templating tags, or a tag with the attribute *data-parse-preserve*.  Script and style code items always receive a value of false in this array.
 
 ### stack
 The *stack* array stores strings that describe the current structure where the item resides from the code.  In markup code the value is the tag name for the parent element at the index in the *begin* array.  In script and style code the value is a generic description of the current structure, such as: function, object, or class.
