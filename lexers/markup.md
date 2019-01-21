@@ -3,6 +3,8 @@
 ## types values
 * **attribute** - A tag attribute from a regular *start* or *singular* tag type.
 * **cdata** - An XML/SGML CDATA block.  Typically used to allow extraneous string content in an XML document that might otherwise break the XML syntax rules.
+* **cdata_end** - When a CDATA segment terminates an enclosed grammar parsed with a different lexer.
+* **cdata_start** - When a CDATA segment starts an enclosed grammar parsed with a different lexer.
 * **comment** - An XML comment.
 * **comment_attribute** - JSX allows JavaScript style comments as tag attributes.
 * **conditional** - Comments used in IE to hack references to CSS by IE version.  Follows a SGML square brace convention.

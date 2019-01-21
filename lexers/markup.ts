@@ -4,7 +4,6 @@
     const framework:parseFramework = global.parseFramework,
         markup = function lexer_markup(source:string):data {
             let a:number             = 0,
-                linepreserve:number  = 0,
                 list:number          = 0,
                 litag:number         = 0,
                 sgmlflag:number      = 0,
@@ -137,7 +136,7 @@
                         comm:[string, number]    = ["", 0];
                     const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markup",
                             lines: parse.linesSpace,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -787,6 +786,7 @@
                         comm = parse.wrapCommentBlock({
                             chars: b,
                             end: c,
+                            lexer: "markup",
                             opening: start,
                             start: a,
                             terminator: end
@@ -1532,10 +1532,10 @@
                                             }
                                         }
                                         if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
-                                            if (cftags[tname] !== undefined) {
-                                                data.types[aa] = "template_start";
-                                            } else {
+                                            if (cftags[tname] === undefined) {
                                                 data.types[aa] = "start";
+                                            } else {
+                                                data.types[aa] = "template_start";
                                             }
                                             count.start = count.start + 1;
                                             data.token[aa] = data
@@ -1668,10 +1668,10 @@
                                         ss = ss - 1;
                                     } while (ss > -1);
                                     data.types[ss] = "template_start";
-                                    if (data.types[ss].indexOf("start") < 0) {
+                                    if (data.types[ss].indexOf("start") > -1) {
                                         count.start = count.start + 1;
                                     }
-                                    tt = ss + 1;
+                                    tt = Math.min(ss + 1, parse.count);
                                     struc = [["cfmodule", ss]];
                                     ss  = parse.count + 1;
                                     do {
@@ -2046,6 +2046,7 @@
                             .replace(/^(\s*<!\[cdata\[)/i, "")
                             .replace(/(\]\]>\s*)$/, "");
                         record.token = "<![CDATA[";
+                        record.types = "cdata_start";
                         recordPush(data, record, "");
                         parse.structure.push(["cdata", parse.count]);
                         if (stack === "script") {
@@ -2055,6 +2056,7 @@
                         }
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.token = "]]>";
+                        record.types = "cdata_end";
                         recordPush(data, record, "");
                         parse.structure.pop();
                     } else if (record.types === "template_else") {
@@ -2216,7 +2218,7 @@
                         ),
                         record:record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markup",
                             lines: liner,
                             stack: parse.structure[parse.structure.length - 1][0],

@@ -1,8 +1,8 @@
 [
-{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<person>","types":"start"},
-{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"person","token":"<!-- comment -->","types":"comment"},
-{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"person","token":"<name>","types":"start"},
-{"begin":2,"lexer":"markup","lines":0,"presv":false,"stack":"name","token":"bob","types":"content"},
-{"begin":2,"lexer":"markup","lines":0,"presv":false,"stack":"name","token":"</name>","types":"end"},
-{"begin":0,"lexer":"markup","lines":2,"presv":false,"stack":"person","token":"</person>","types":"end"}
+{"begin":-1,"ender":5,"lexer":"markup","lines":0,"stack":"global","token":"<person>","types":"start"},
+{"begin":0,"ender":5,"lexer":"markup","lines":2,"stack":"person","token":"<!-- comment -->","types":"comment"},
+{"begin":0,"ender":4,"lexer":"markup","lines":2,"stack":"person","token":"<name>","types":"start"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"name","token":"bob","types":"content"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"name","token":"</name>","types":"end"},
+{"begin":0,"ender":5,"lexer":"markup","lines":2,"stack":"person","token":"</person>","types":"end"}
 ]

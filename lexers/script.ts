@@ -99,7 +99,7 @@
                 recordPush     = function lexer_script_recordPush(structure: string):void {
                     const record:record = {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "script",
                         lines: parse.linesSpace,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -419,7 +419,7 @@
                                         index  : parse.count - 1,
                                         record : {
                                             begin: data.begin[data.begin[data.begin[parse.count - 1] - 1] - 1],
-                                            ender: 0,
+                                            ender: -1,
                                             lexer: "script",
                                             lines: 0,
                                             stack: "if",
@@ -668,6 +668,7 @@
                     comment = parse.wrapCommentBlock({
                         chars: c,
                         end: b,
+                        lexer: "script",
                         opening: "/*",
                         start: a,
                         terminator: "\u002a/"
@@ -698,7 +699,7 @@
                                 index: parse.count,
                                 record: {
                                     begin: data.begin[parse.count],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "script",
                                     lines: parse.linesSpace,
                                     stack: data.stack[parse.count],
@@ -709,7 +710,7 @@
                         } else {
                             const record:record = {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "script",
                                 lines: parse.linesSpace,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -734,6 +735,7 @@
                     comment = parse.wrapCommentLine({
                         chars: c,
                         end: b,
+                        lexer: "script",
                         opening: "//",
                         start: a,
                         terminator: "\n"
@@ -755,7 +757,7 @@
                             index: parse.count,
                             record: {
                                 begin: data.begin[parse.count],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "script",
                                 lines: parse.linesSpace,
                                 stack: data.stack[parse.count],
@@ -766,7 +768,7 @@
                     } else if (ltoke !== "") {
                         const record:record = {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "script",
                             lines: parse.linesSpace,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -860,7 +862,7 @@
                             index  : x,
                             record : {
                                 begin: data.begin[x],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "script",
                                 lines: parse.linesSpace,
                                 stack: data.stack[x],
@@ -1196,7 +1198,7 @@
                         index  : aa,
                         record : {
                             begin: data.begin[aa],
-                            ender: 0,
+                            ender: -1,
                             lexer: "script",
                             lines: parse.linesSpace,
                             stack: data.stack[aa],

@@ -36,7 +36,6 @@ interface parse {
     count                                                           : number;
     data                                                            : data;
     datanames                                                       : string[];
-    globals                                                         : number[];
     lineNumber                                                      : number;
     linesSpace                                                      : number;
     objectSort(data : data)                                         : void;
@@ -117,6 +116,7 @@ interface style_properties_removes extends Array<[number, string]> {
 interface wrapConfig {
     chars     : string[];
     end       : number;
+    lexer     : string;
     opening   : string;
     start     : number;
     terminator: string;

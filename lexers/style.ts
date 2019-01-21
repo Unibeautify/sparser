@@ -166,7 +166,7 @@
                 recordPush = function lexer_style_recordPush(structure:string):void {
                     const record = {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "style",
                         lines: parse.linesSpace,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -709,7 +709,7 @@
                         index: x + 1,
                         record: {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "style",
                             lines: parse.linesSpace,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -890,6 +890,7 @@
                         ? parse.wrapCommentLine({
                             chars: b,
                             end: len,
+                            lexer: "style",
                             opening: "//",
                             start: a,
                             terminator: "\n"
@@ -897,6 +898,7 @@
                         : parse.wrapCommentBlock({
                             chars: b,
                             end: len,
+                            lexer: "style",
                             opening: "/*",
                             start: a,
                             terminator: "\u002a/"

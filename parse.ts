@@ -10,7 +10,7 @@ Parse Framework
     "use strict";
     let framework:parseFramework;
     const parse: parse = {
-            concat: function parse_concat_init(data:data, array:data):void {},
+            concat: function parse_concat_init():void {},
             count: -1,
             data: {
                 begin: [],
@@ -22,10 +22,9 @@ Parse Framework
                 types: []
             },
             datanames: ["begin", "ender", "lexer", "lines", "stack", "token", "types"],
-            globals:[],
             lineNumber: 1,
             linesSpace: 0,
-            objectSort: function parse_objectSort_init(data:data):void {},
+            objectSort: function parse_objectSort_init():void {},
             parseOptions: {
                 correct: false,
                 crlf: false,
@@ -39,7 +38,7 @@ Parse Framework
                 source: "",
                 wrap: 0
             },
-            pop: function parse_pop_init(data:data):record {
+            pop: function parse_pop_init():record {
                 return {
                     begin: 0,
                     ender: 0,
@@ -50,21 +49,21 @@ Parse Framework
                     types: ""
                 };
             },
-            push: function parse_push_init(data:data, record:record, structure:string):void {},
+            push: function parse_push_init():void {},
             references: [[]],
-            safeSort: function parse_safeSort_init(array: any[], operation:"ascend" | "descend" | "normal", recursive:boolean): any[] {
+            safeSort: function parse_safeSort_init(): any[] {
                 return [];
             },
-            sortCorrection: function parse_sortCorrection_init(start:number, end:number):void {},
-            spacer: function parse_spacer_init(args:spacer):number {
+            sortCorrection: function parse_sortCorrection_init():void {},
+            spacer: function parse_spacer_init():number {
                 return 0;
             },
-            splice: function parse_splice_init(sliceData:splice):void {},
+            splice: function parse_splice_init():void {},
             structure: [["global", -1]],
-            wrapCommentBlock: function parse_wrapCommentBlock_init(config:wrapConfig):[string, number] {
+            wrapCommentBlock: function parse_wrapCommentBlock_init():[string, number] {
                 return ["", 0];
             },
-            wrapCommentLine: function parse_wrapCommentLint_init(config:wrapConfig):[string, number] {
+            wrapCommentLine: function parse_wrapCommentLint_init():[string, number] {
                 return ["", 0];
             }
         },
@@ -156,12 +155,6 @@ Parse Framework
             // fix begin values.  They must be reconsidered after reordering from object sort
             if (parse.data.begin.length > 0 && (parse.parseOptions.lexerOptions[parseOptions.lexer].objectSort === true || parse.parseOptions.lexerOptions.markup.tagSort === true)) {
                 parse.sortCorrection(0, parse.count + 1);
-            } else {
-                let a:number = parse.globals.length;
-                do {
-                    a = a - 1;
-                    parse.data.ender[parse.globals[a]] = parse.count;
-                } while (a > 0);
             }
         },
         parserArrays = function parserArrays(parseOptions: parseOptions):data {
@@ -468,7 +461,7 @@ Parse Framework
                 const begin:number = data.begin[parse.count];
                 let a:number = parse.count;
                 do {
-                    if (data.begin[a] === begin) {
+                    if (data.begin[a] === begin || (data.begin[data.begin[a]] === begin && data.types[a].indexOf("attribute") > -1)) {
                         data.ender[a] = parse.count;
                     } else {
                         a = data.begin[a];
@@ -485,8 +478,6 @@ Parse Framework
                 } else {
                     parse.structure[parse.structure.length - 1] = [structure, parse.count];
                 }
-            } else if (data.stack[parse.count] === "global") {
-                parse.globals.push(parse.count);
             }
         }
     };
@@ -683,9 +674,15 @@ Parse Framework
     };
     // this functionality provides corrections to the "begin" and "ender" values after use of objectSort
     parse.sortCorrection = function parse_sortCorrection(start:number, end:number):void {
-        let a:number = start;
+        let a:number = start,
+            endslen:number = -1;
         const data:data    = parse.data,
-            structure: number[] = [-1];
+            ends:number[] = [],
+            structure: number[] = (parse.structure.length < 2)
+                ? [-1]
+                : [parse.structure[parse.structure.length - 2][1]];
+        
+        // this first loop solves for the begin values
         do {
             if (
                 a > 0 &&
@@ -725,11 +722,28 @@ Parse Framework
             }
             if (data.types[a].indexOf("start") > -1) {
                 structure.push(a);
-            } else if (start < 1 && end > parse.count && data.stack[a] === "global") {
-                data.ender[a] = parse.count;
             }
             a = a + 1;
         } while (a < end);
+
+        // and now for the ender values
+        a = end;
+        do {
+            a = a - 1;
+            if (data.types[a].indexOf("end") > -1) {
+                ends.push(a);
+                endslen = endslen + 1;
+            }
+            if (endslen > -1) {
+                data.ender[a] = ends[endslen];
+            } else {
+                data.ender[a] = -1;
+            }
+            if (data.types[a].indexOf("start") > -1) {
+                ends.pop();
+                endslen = endslen - 1;
+            }
+        } while (a > start);
     };
     // a simple tool to take note of whitespace between tokens
     parse.spacer = function parse_spacer(args:spacer): number {
@@ -1067,18 +1081,18 @@ Parse Framework
                 const lines:string[] = [],
                     record:record = (parse.count > -1)
                         ? {
-                            begin: parse.data.begin[parse.count],
-                            ender: parse.data.ender[parse.count],
-                            lexer: parse.data.lexer[parse.count],
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
+                            lexer: config.lexer,
                             lines: parse.linesSpace,
-                            stack: parse.data.stack[parse.count],
+                            stack: parse.structure[parse.structure.length - 1][0],
                             token: parse.data.token[parse.count],
                             types: "comment"
                         }
                         : {
                             begin: -1,
                             ender: -1,
-                            lexer: parse.parseOptions.lexer,
+                            lexer: config.lexer,
                             lines: parse.linesSpace,
                             stack: "global",
                             token: "",

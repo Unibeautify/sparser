@@ -708,6 +708,13 @@ const services = function services_() {
                                                         if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
                                                             return;
                                                         }
+                                                    } else {
+                                                        console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
+                                                        console.log("");
+                                                        console.log(`Unexpected parse error returned: ${text.angry + framework.parseerror + text.none}`);
+                                                        console.log("");
+                                                        errout(`Pretty Diff ${text.angry}failed${text.none} on file: ${text.cyan + files.parsed[a][0] + text.none}`);
+                                                        return;
                                                     }
                                                 }
                                             }

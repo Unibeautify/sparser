@@ -20,7 +20,7 @@
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -61,7 +61,7 @@
                         if (tag !== "multiline") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -83,7 +83,7 @@
                                             if (content !== "") {
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
-                                                    ender: 0,
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 0,
                                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -106,7 +106,7 @@
                                                 }
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
-                                                    ender: 0,
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
                                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -117,7 +117,7 @@
                                                 if (content !== "") {
                                                     parse.push(data, {
                                                         begin: parse.structure[parse.structure.length - 1][1],
-                                                        ender: 0,
+                                                        ender: -1,
                                                         lexer: "markdown",
                                                         lines: 0,
                                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -127,7 +127,7 @@
                                                 }
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
-                                                    ender: 0,
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
                                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -138,7 +138,7 @@
                                             } else {
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
-                                                    ender: 0,
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
                                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -147,7 +147,7 @@
                                                 }, "a");
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
-                                                    ender: 0,
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 0,
                                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -165,7 +165,7 @@
                                 if (content !== "" && content.length > 1 && parse.structure[parse.structure.length - 1][0] !== "img") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -201,7 +201,7 @@
                                 if (parse.structure[parse.structure.length - 1][0] === "a") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -251,7 +251,7 @@
                                     if (content !== "") {
                                         parse.push(data, {
                                             begin: parse.structure[parse.structure.length - 1][1],
-                                            ender: 0,
+                                            ender: -1,
                                             lexer: "markdown",
                                             lines: 0,
                                             stack: parse.structure[parse.structure.length - 1][0],
@@ -268,7 +268,7 @@
                                     stack.pop();
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -283,7 +283,7 @@
                                     if (content !== "") {
                                         parse.push(data, {
                                             begin: parse.structure[parse.structure.length - 1][1],
-                                            ender: 0,
+                                            ender: -1,
                                             lexer: "markdown",
                                             lines: 0,
                                             stack: parse.structure[parse.structure.length - 1][0],
@@ -300,7 +300,7 @@
                                     stack.push(quote);
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 1,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -313,7 +313,7 @@
                                 if (content !== "") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -327,7 +327,7 @@
                                     stack.pop();
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -340,7 +340,7 @@
                                     stack.push("`");
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
-                                        ender: 0,
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 1,
                                         stack: parse.structure[parse.structure.length - 1][0],
@@ -377,7 +377,7 @@
                         if (content !== "") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 1,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -391,7 +391,7 @@
                         if (tag !== "multiline") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -409,7 +409,7 @@
                     if (tag !== "multiline") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -422,7 +422,7 @@
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -433,7 +433,7 @@
                     if (tag !== "multiline") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -494,7 +494,7 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -505,7 +505,7 @@
                 code     = function lexer_markdown_code(codetext:string, language:string, fourspace:boolean):void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -514,7 +514,7 @@
                     }, "p");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -524,7 +524,7 @@
                     if (language !== "") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -542,7 +542,7 @@
                         }
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -552,7 +552,7 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -561,7 +561,7 @@
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -710,7 +710,7 @@
                         } while (x < b && test(x) === true);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -724,7 +724,7 @@
                                 text(lines[a], "multiline", false);
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -739,7 +739,7 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -765,7 +765,7 @@
                     if (content === "" || (/^(#+)$/).test(content) === true) {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -774,7 +774,7 @@
                         }, "h" + hash.length);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -791,7 +791,7 @@
                     bc2 = bc1;
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -829,7 +829,7 @@
                             if (a + 1 < x) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -838,7 +838,7 @@
                                 }, "p");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -847,7 +847,7 @@
                                 }, "code");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -856,7 +856,7 @@
                                 }, "");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -888,7 +888,7 @@
                         do {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -905,7 +905,7 @@
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
                         record:record = {
                             begin: -1,
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: "",
@@ -969,7 +969,7 @@
                         sym = lines[a].replace(/^(\s*\d+)/, "").charAt(0);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -980,7 +980,7 @@
                         if (numb !== "1") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -992,7 +992,7 @@
                         ind = indlen(a);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1161,6 +1161,8 @@
                                     } else if (data.token[parse.count] === "</p>" && lines[a - 1] !== "") {
                                         parse.pop(data);
                                         parse.structure.push(["p", data.begin[parse.count]]);
+                                        record.begin = parse.structure[parse.structure.length - 1][1];
+                                        record.stack = parse.structure[parse.structure.length - 1][0];
                                         record.token = "<br/>";
                                         record.types = "singleton";
                                         parse.push(data, record, "");
@@ -1176,6 +1178,8 @@
                                         record.begin = parse.structure[parse.structure.length - 1][1];
                                         record.stack = parse.structure[parse.structure.length - 1][0];
                                         parse.push(data, record, "p");
+                                        record.begin = parse.structure[parse.structure.length - 1][1];
+                                        record.stack = parse.structure[parse.structure.length - 1][0];
                                         text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
                                         record.token = "<br/>";
                                         record.types = "singleton";
@@ -1222,6 +1226,35 @@
                                 record.types = "start";
                                 parse.push(data, record, "li");
                                 if (checktest() === true) {
+                                    if (data.types[parse.structure[parse.structure.length - 2][1] + 1] !== "attribute") {
+                                        const index:number = parse.structure[parse.structure.length - 2][1] + 1;
+                                        parse.structure[parse.structure.length - 1][1] = parse.structure[parse.structure.length - 1][1] + 1;
+                                        if (parse.count > index) {
+                                            const parent:number = index - 1;
+                                            let aa:number = parse.count;
+                                            do {
+                                                aa = aa - 1;
+                                                if (data.begin[aa] !== parent) {
+                                                    data.begin[aa] = data.begin[aa] + 1;
+                                                }
+                                                data.ender[aa] = data.ender[aa] + 1;
+                                            } while (aa > index);
+                                        }
+                                        parse.splice({
+                                            data: data,
+                                            howmany: 0,
+                                            index: index,
+                                            record: {
+                                                begin: parse.structure[parse.structure.length - 2][1],
+                                                ender: -1,
+                                                lexer: "markdown",
+                                                lines: 0,
+                                                stack: parse.structure[parse.structure.length - 2][0],
+                                                token: "class=\"contains-task-list\"",
+                                                types: "attribute"
+                                            }
+                                        });
+                                    }
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "class=\"task-list-item\"";
@@ -1229,7 +1262,7 @@
                                     parse.push(data, record, "");
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
-                                    record.token = "input";
+                                    record.token = "<input/>";
                                     record.types = "singleton";
                                     parse.push(data, record, "");
                                     y = parse.count;
@@ -1245,22 +1278,6 @@
                                     parse.push(data, record, "");
                                     y = lines[a].indexOf("[x]");
                                     z = lines[a].indexOf("[ ]");
-                                    if (data.types[parse.structure[parse.structure.length - 2][1] + 1] !== "attribute") {
-                                        parse.splice({
-                                            data: data,
-                                            howmany: 0,
-                                            index: parse.structure[parse.structure.length - 2][1] + 1,
-                                            record: {
-                                                begin: parse.structure[parse.structure.length - 2][1],
-                                                ender: 0,
-                                                lexer: "markdown",
-                                                lines: 0,
-                                                stack: parse.structure[parse.structure.length - 2][0],
-                                                token: "class=\"contains-task-list\"",
-                                                types: "attribute"
-}
-                                        });
-                                    }
                                     if (y > -1 && z > -1) {
                                         if (y < z) {
                                             lines[a] = lines[a].replace(/(\[x\]\s*)/, "");
@@ -1300,7 +1317,7 @@
                     if (order === true) {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1310,7 +1327,7 @@
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1337,7 +1354,7 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1346,7 +1363,7 @@
                     }, "table");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1355,7 +1372,7 @@
                     }, "thead");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1366,7 +1383,7 @@
                     do {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1376,7 +1393,7 @@
                         if ((/:-+:/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1386,7 +1403,7 @@
                         } else if ((/:-+/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1396,7 +1413,7 @@
                         } else if ((/-+:/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1409,7 +1426,7 @@
                         stack = [];
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1420,7 +1437,7 @@
                     } while (c < d);
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1429,7 +1446,7 @@
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1438,13 +1455,13 @@
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<tbody>",
                         types: "start"
-                    }, "thead");
+                    }, "tbody");
                     a = a + 2;
                     d = bar.length;
                     do {
@@ -1458,7 +1475,7 @@
                             } else {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -1468,7 +1485,7 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1484,7 +1501,7 @@
                             .split("|");
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1501,7 +1518,7 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1511,7 +1528,7 @@
                             if ((/:-+:/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -1521,7 +1538,7 @@
                             } else if ((/:-+/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -1531,7 +1548,7 @@
                             } else if ((/-+:/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: 0,
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
                                     stack: parse.structure[parse.structure.length - 1][0],
@@ -1546,7 +1563,7 @@
                             stack = [];
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
-                                ender: 0,
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1557,7 +1574,7 @@
                         } while (c < d);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1572,7 +1589,7 @@
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
-                            ender: 0,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
@@ -1582,7 +1599,7 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
-                        ender: 0,
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
                         stack: parse.structure[parse.structure.length - 1][0],
@@ -1593,7 +1610,7 @@
             b = lines.length;
             parse.push(data, {
                 begin: parse.structure[parse.structure.length - 1][1],
-                ender: 0,
+                ender: -1,
                 lexer: "markdown",
                 lines: 0,
                 stack: parse.structure[parse.structure.length - 1][0],
@@ -1651,7 +1668,7 @@
             } while (a < b);
             parse.push(data, {
                 begin: parse.structure[parse.structure.length - 1][1],
-                ender: 0,
+                ender: -1,
                 lexer: "markdown",
                 lines: 0,
                 stack: parse.structure[parse.structure.length - 1][0],
