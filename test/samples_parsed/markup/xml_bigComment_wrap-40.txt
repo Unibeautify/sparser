@@ -1,13 +1,13 @@
 [
-{"begin":-1,"lexer":"markup","lines":0,"presv":false,"stack":"global","token":"<!-- first comment -->","types":"comment"},
-{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!-- second comment -->","types":"comment"},
-{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!-- /*prettydiff.com topcoms: true,\ninchar: \" \", insize: 4, vertical: true\n*/ /*global ace, ArrayBuffer,\nAudioContext, console, document,\nFileReader, localStorage, location,\nnavigator, setTimeout, Uint8Array,\nwindow, XMLHttpRequest*/ /*jshint\nlaxbreak: true*/ /*jslint for: true*/\n/*****************************************************************************\nThis is written by Austin Cheney on 3\nMar 2009.\n\nPlease see the license.txt file\nassociated with the Pretty Diff\napplication for license information.\n*****************************************************************************/\n-->","types":"comment"},
-{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<?xml?>","types":"xml"},
-{"begin":3,"lexer":"markup","lines":1,"presv":false,"stack":"xml","token":"version=\"1.0\"","types":"attribute"},
-{"begin":3,"lexer":"markup","lines":1,"presv":false,"stack":"xml","token":"encoding=\"UTF-8\"","types":"attribute"},
-{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<!DOCTYPE html PUBLIC \"-//W3C//DTDXHTML1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">","types":"sgml"},
-{"begin":-1,"lexer":"markup","lines":2,"presv":false,"stack":"global","token":"<html>","types":"start"},
-{"begin":7,"lexer":"markup","lines":1,"presv":false,"stack":"html","token":"xml:lang=\"en\"","types":"attribute"},
-{"begin":7,"lexer":"markup","lines":1,"presv":false,"stack":"html","token":"xmlns=\"http://www.w3.org/1999/xhtml\"","types":"attribute"},
-{"begin":7,"lexer":"markup","lines":2,"presv":false,"stack":"html","token":"</html>","types":"end"}
+{"begin":-1,"ender":-1,"lexer":"markup","lines":0,"stack":"global","token":"<!-- first comment -->","types":"comment"},
+{"begin":-1,"ender":-1,"lexer":"markup","lines":2,"stack":"global","token":"<!-- second comment -->","types":"comment"},
+{"begin":-1,"ender":-1,"lexer":"markup","lines":2,"stack":"global","token":"<!-- /*prettydiff.com topcoms: true,\ninchar: \" \", insize: 4, vertical: true\n*/ /*global ace, ArrayBuffer,\nAudioContext, console, document,\nFileReader, localStorage, location,\nnavigator, setTimeout, Uint8Array,\nwindow, XMLHttpRequest*/ /*jshint\nlaxbreak: true*/ /*jslint for: true*/\n/*****************************************************************************\nThis is written by Austin Cheney on 3\nMar 2009.\n\nPlease see the license.txt file\nassociated with the Pretty Diff\napplication for license information.\n*****************************************************************************/\n-->","types":"comment"},
+{"begin":-1,"ender":-1,"lexer":"markup","lines":2,"stack":"global","token":"<?xml?>","types":"xml"},
+{"begin":3,"ender":-1,"lexer":"markup","lines":1,"stack":"xml","token":"version=\"1.0\"","types":"attribute"},
+{"begin":3,"ender":-1,"lexer":"markup","lines":1,"stack":"xml","token":"encoding=\"UTF-8\"","types":"attribute"},
+{"begin":-1,"ender":-1,"lexer":"markup","lines":2,"stack":"global","token":"<!DOCTYPE html PUBLIC \"-//W3C//DTDXHTML1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">","types":"sgml"},
+{"begin":-1,"ender":10,"lexer":"markup","lines":2,"stack":"global","token":"<html>","types":"start"},
+{"begin":7,"ender":10,"lexer":"markup","lines":1,"stack":"html","token":"xml:lang=\"en\"","types":"attribute"},
+{"begin":7,"ender":10,"lexer":"markup","lines":1,"stack":"html","token":"xmlns=\"http://www.w3.org/1999/xhtml\"","types":"attribute"},
+{"begin":7,"ender":10,"lexer":"markup","lines":2,"stack":"html","token":"</html>","types":"end"}
 ]

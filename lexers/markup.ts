@@ -1653,6 +1653,8 @@
                                 }
                                 record.token = element.replace(/\s+/, " ");
                                 record.types = "template";
+                                // The following madness is required because cfmodule may be a singleton or a block.
+                                // You don't know until you encounter the end tag
                                 if (tname === "cfmodule" && element.charAt(1) === "/") {
                                     let ss = parse.count,
                                         tt = 1;
@@ -1677,14 +1679,11 @@
                                     do {
                                         data.begin[tt] = struc[struc.length - 1][1];
                                         data.stack[tt] = struc[struc.length - 1][0];
-                                        if (data.types[tt] === "end" || data.types[tt] === "template_end") {
+                                        if (data.types[tt] === "end" || data.types[tt].indexOf("_end") > 0) {
                                             if (struc.length > 1) {
                                                 struc.pop();
                                             }
-                                        } else if (
-                                            data.lexer[tt] === "markup" &&
-                                            (data.types[tt] === "start" || data.types[tt] === "template_start")
-                                        ) {
+                                        } else if (data.types[tt] === "start" || data.types[tt].indexOf("_start") > 0) {
                                             struc.push([tagName(data.token[tt]), tt]);
                                         }
                                         tt = tt + 1;

@@ -312,7 +312,7 @@ The *begin* array stores a number representing the index where the parent struct
 Regardless of the language or lexer used the values supplied in this array allow walking of the code's structure from any local point to the global/root location.
 
 ### ender
-The *ender* array stores a number representing the index of the end of a token's containing structure.  This is the pair to the token's *begin* value.  This is a big structure difference between the *begin* and *ender* values in that an end type will use its own index as its *ender* value, but a start type's *begin* value will point to its starting parent opposed to pointing to itself.
+The *ender* array stores a number representing the index of the end of a token's containing structure.  This is the pair to the token's *begin* value.  This is a big structure difference between the *begin* and *ender* values in that an end type will use its own index as its *ender* value, but a start type's *begin* value will point to its starting parent opposed to pointing to itself. Tokens of types *else* or *template_else* will serve as the ender value for the preceeding tokens, but will take the value of their ending pair whether its types value is some form of *end* or *else*.
 
 ### lexer
 The *lexer* array indicates which parsed the given record. This data is helpful working with documents that require multiple lexers, such as HTML with embedded JavaScript or CSS. It is particularly helpful when working with JSX and TSX as these documents can interchange between the markup and script lexers recursively.

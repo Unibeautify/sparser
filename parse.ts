@@ -447,6 +447,26 @@ Parse Framework
     };
     // an extension of Array.prototype.push to work across the data structure
     parse.push = function parse_push(data:data, record:record, structure:string):void {
+        const ender = function parse_push_ender():void {
+            const begin:number = data.begin[parse.count];
+            let a:number = parse.count;
+            if (data.lexer[a] === "markup" && parse.parseOptions.lexerOptions.markup.tagSort === true) {
+                // necessary to avoid an endless loop in the case of a singleton with an attribute sorted
+                // such that the begin value is one more than the current index
+                return;
+            }
+            do {
+                if (data.begin[a] === begin || (data.begin[data.begin[a]] === begin && data.types[a].indexOf("attribute") > -1)) {
+                    data.ender[a] = parse.count;
+                } else {
+                    a = data.begin[a];
+                }
+                a = a - 1;
+            } while (a > begin);
+            if (a > -1) {
+                data.ender[a] = parse.count;
+            }
+        };
         parse
             .datanames
             .forEach(function parse_push_datanames(value) {
@@ -458,21 +478,10 @@ Parse Framework
             if (record.types === "start" || record.types.indexOf("_start") > 0) {
                 parse.structure.push([structure, parse.count]);
             } else if (record.types === "end" || record.types.indexOf("_end") > 0) {
-                const begin:number = data.begin[parse.count];
-                let a:number = parse.count;
-                do {
-                    if (data.begin[a] === begin || (data.begin[data.begin[a]] === begin && data.types[a].indexOf("attribute") > -1)) {
-                        data.ender[a] = parse.count;
-                    } else {
-                        a = data.begin[a];
-                    }
-                    a = a - 1;
-                } while (a > begin);
-                if (a > -1) {
-                    data.ender[a] = parse.count;
-                }
+                ender();
                 parse.structure.pop();
             } else if (record.types === "else" || record.types.indexOf("_else") > 0) {
+                ender();
                 if (structure === "") {
                     parse.structure[parse.structure.length - 1] = ["else", parse.count];
                 } else {
