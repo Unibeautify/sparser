@@ -1004,62 +1004,7 @@
                             "%",
                             "~"
                         ],
-                        synlen = syntax.length,
-                        plusequal = function lexer_script_operator_plusequal(op) {
-                            let walk        = parse.count,
-                                inc         = 0;
-                            const toke        = op.charAt(0),
-                                store       = [],
-                                applyStore  = function lexer_script_plusplus_applyStore():void {
-                                    let x:number = 0;
-                                    const y:number = store.length;
-                                    if (x < y) {
-                                        do {
-                                            parse.push(data, store[x], "");
-                                            x            = x + 1;
-                                        } while (x < y);
-                                    }
-                                },
-                                end         = function lexer_script_operator_plusequal_end():void {
-                                    walk = data.begin[walk] - 1;
-                                    if (data.types[walk] === "end") {
-                                        lexer_script_operator_plusequal_end();
-                                    } else if (data.token[walk - 1] === ".") {
-                                        period();
-                                    }
-                                },
-                                period      = function lexer_script_operator_plusequal_period():void {
-                                    walk = walk - 2;
-                                    if (data.types[walk] === "end") {
-                                        end();
-                                    } else if (data.token[walk - 1] === ".") {
-                                        lexer_script_operator_plusequal_period();
-                                    }
-                                };
-                            if (data.types[walk] === "end") {
-                                end();
-                            } else if (data.token[walk - 1] === ".") {
-                                period();
-                            }
-                            inc = walk;
-                            do {
-                                store.push({
-                                    begin: data.begin[inc],
-                                    ender: data.ender[inc],
-                                    lexer: data.lexer[inc],
-                                    lines: data.lines[inc],
-                                    stack: data.stack[inc],
-                                    token: data.token[inc],
-                                    types: data.types[inc]
-                                });
-                                inc = inc + 1;
-                            } while (inc < parse.count);
-                            ltoke = "=";
-                            ltype = "operator";
-                            recordPush("");
-                            applyStore();
-                            return toke;
-                        };
+                        synlen = syntax.length;
                     if (wordTest > -1) {
                         word();
                     }
@@ -1157,9 +1102,6 @@
                             }
                             g = g - 1;
                         } while (g > jj - 1);
-                    }
-                    if (output.length === 2 && output.charAt(1) === "=" && "!=<>|&?".indexOf(output.charAt(0)) < 0 && options.correct === true) {
-                        return plusequal(output);
                     }
                     return output;
                 },
