@@ -448,11 +448,16 @@ Parse Framework
     // an extension of Array.prototype.push to work across the data structure
     parse.push = function parse_push(data:data, record:record, structure:string):void {
         const ender = function parse_push_ender():void {
-            const begin:number = data.begin[parse.count];
             let a:number = parse.count;
-            if (data.lexer[a] === "markup" && parse.parseOptions.lexerOptions.markup.tagSort === true) {
-                // necessary to avoid an endless loop in the case of a singleton with an attribute sorted
-                // such that the begin value is one more than the current index
+            const begin:number = data.begin[a];
+            if (
+                (data.lexer[a] === "markup" && parse.parseOptions.lexerOptions.markup.tagSort === true) ||
+                ((data.lexer[a] === "script" || data.lexer[a] === "style") && parse.parseOptions.lexerOptions[data.lexer[a]].objectSort === true)
+            ) {
+                // sorting can result in a token whose begin value is greater than either
+                // its current index or the index of the end token, which results in an endless loop
+                //
+                // these end values are addressed at the end of the "parser" function with parse.sortCorrection
                 return;
             }
             do {

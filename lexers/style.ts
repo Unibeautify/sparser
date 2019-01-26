@@ -1070,7 +1070,7 @@
                             }
                             // this is necessary to fix the "begin" values of descendent blocks
                             if (endtest === true) {
-                                parse.sortCorrection(begin, parse.count);
+                                parse.sortCorrection(begin, parse.count + 1);
                             }
                         };
                     let aa:number = parse.count,
