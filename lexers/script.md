@@ -55,15 +55,6 @@ The stack values are identified by either a known categorical term that describe
 * **object** - A regular object literal.
 * **paren** - Describes parenthsis groupings when other parenthsis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
 
-## script options
-* **end_comma** - Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
-* **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
-* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
-* **varword** - Whether variables should be declared as:
-   - *list*: a comma separated list
-   - *each*: separate declaration statements
-   - *none*: or left alone
-
 ## Escaping code from the parser
 The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are line comments or a block comments.
 
@@ -82,3 +73,12 @@ if (b[a] === "\n") {
 ```
 
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
+
+## script options
+* **end_comma** - Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
+* **object_sort** - Sorts the named properties (keys) of object literals alphabetically.
+* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
+* **varword** - Whether variables should be declared as:
+   - *list*: a comma separated list
+   - *each*: separate declaration statements
+   - *none*: or left alone

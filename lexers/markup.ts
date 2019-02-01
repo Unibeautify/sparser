@@ -1,7 +1,7 @@
 /*global global*/
 (function markup_init() {
     "use strict";
-    const framework:parseFramework = global.parseFramework,
+    const sparser:sparser = global.sparser,
         markup = function lexer_markup(source:string):data {
             let a:number             = 0,
                 list:number          = 0,
@@ -9,7 +9,7 @@
                 sgmlflag:number      = 0,
                 cftransaction:boolean = false,
                 ext:boolean           = false;
-            const parse:parse       = framework.parse,
+            const parse:parse       = sparser.parse,
                 data:data          = parse.data,
                 count:markupCount = {
                     end  : 0,
@@ -347,9 +347,9 @@
                                 ],
                                 store:string[]        = [];
                             const len:number          = attstore.length,
-                                qc:"none"|"double"|"single" = (options.lexerOptions.markup.quote_convert === undefined)
+                                qc:"none"|"double"|"single" = (options.lexer_options.markup.quote_convert === undefined)
                                     ? "none"
-                                    : options.lexerOptions.markup.quote_convert,
+                                    : options.lexer_options.markup.quote_convert,
                                 begin:number = parse.count,
                                 stack:string = tname.replace(/\/$/, ""),
                                 syntax:string       = "<{\"'=/",
@@ -440,7 +440,7 @@
                             }
 
                             // sort the attributes
-                            if (options.lexerOptions.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.lexer_options.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore, "", false);
                             }
 
@@ -493,7 +493,7 @@
                                         if (options.language === "html") {
                                             record.token = attstore[ind][0].toLowerCase();
                                         } else if (options.language === "xml" || options.language === "coldfusion") {
-                                            if (options.lexerOptions.markup.quote_convert === "single") {
+                                            if (options.lexer_options.markup.quote_convert === "single") {
                                                 record.token = `${attstore[ind][0]}='${attstore[ind][0]}'`;
                                             } else {
                                                 record.token = `${attstore[ind][0]}="${attstore[ind][0]}"`;
@@ -516,7 +516,7 @@
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
                                             recordPush(data, record, "jsx_attribute");
-                                            framework.lexer.script(slice.slice(1, slice.length - 1));
+                                            sparser.lexers.script(slice.slice(1, slice.length - 1));
                                             record.begin = parse.count;
                                             if ((/\s\}$/).test(slice) === true) {
                                                 slice = slice.slice(0, slice.length - 1);
@@ -771,7 +771,7 @@
                             end   = "\n";
                             ltype = "template";
                         }
-                        if (options.lexerOptions.markup.unformatted === true) {
+                        if (options.lexer_options.markup.unformatted === true) {
                             preserve = true;
                         }
                     }());
@@ -891,9 +891,9 @@
                                     attstore.push([atty, lines]);
                                 }
                                 if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201c") > 0) {
-                                    framework.parseerror = `Quote looking character (\u201c, &#x201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201c, &#x201c) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 } else if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201d") > 0) {
-                                    framework.parseerror = `Quote looking character (\u201d, &#x201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201d, &#x201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 }
                                 attribute = [];
                                 lines = (b[a] === "\n")
@@ -925,7 +925,7 @@
                                 }
                             }
                             if (ltype === "cdata" && b[a] === ">" && b[a - 1] === "]" && b[a - 2] !== "]") {
-                                framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
+                                sparser.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
                                 break;
                             }
                             if (ltype === "comment") {
@@ -983,7 +983,7 @@
                                             }
                                         }
                                         if (b[a] !== ">" && b[a + 1] === "<") {
-                                            framework.parseerror = `SGML tag ${lex.join("")} is missing termination with '[' or '>'.`
+                                            sparser.parseerror = `SGML tag ${lex.join("")} is missing termination with '[' or '>'.`
                                             break;
                                         }
                                     }
@@ -1000,7 +1000,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        framework.parseerror = `Parse error on line ${parse.lineNumber} on element: ${lex.join("")}`;
+                                        sparser.parseerror = `Parse error on line ${parse.lineNumber} on element: ${lex.join("")}`;
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -1013,7 +1013,7 @@
                                                 if (b[a] === "\n") {
                                                     parse.lineNumber = parse.lineNumber + 1;
                                                 }
-                                                if (options.lexerOptions.markup.unformatted === true) {
+                                                if (options.lexer_options.markup.unformatted === true) {
                                                     lex.push(b[a]);
                                                 }
                                                 attribute.push(b[a]);
@@ -1184,7 +1184,7 @@
                                                                 jsxcount = 0;
                                                                 quote    = "";
                                                                 element  = attribute.join("");
-                                                                if (options.lexerOptions.markup.unformatted === false) {
+                                                                if (options.lexer_options.markup.unformatted === false) {
                                                                     if (options.language === "jsx") {
                                                                         if ((/^(\s*)$/).test(element) === false) {
                                                                             attstore.push([element, lines]);
@@ -1558,7 +1558,7 @@
                                 tname !== "/span" &&
                                 tname !== "/div" &&
                                 tname !== "/script" &&
-                                options.lexerOptions.markup.tag_merge === true &&
+                                options.lexer_options.markup.tag_merge === true &&
                                 (options.language !== "html" || (options.language === "html" && tname !== "/li"))
                             ) {
                                 if (tname === "/" + tagName(data.token[parse.count]) && data.types[parse.count] === "start") {
@@ -2049,9 +2049,9 @@
                         recordPush(data, record, "");
                         parse.structure.push(["cdata", parse.count]);
                         if (stack === "script") {
-                            framework.lexer.script(element);
+                            sparser.lexers.script(element);
                         } else {
-                            framework.lexer.style(element);
+                            sparser.lexers.style(element);
                         }
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.token = "]]>";
@@ -2067,7 +2067,7 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (options.lexerOptions.markup.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
+                    if (options.lexer_options.markup.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
                         let bb:number          = 0,
                             d:number           = 0,
                             startStore:number  = 0,
@@ -2272,7 +2272,7 @@
                                         quotes = quotes + 1;
                                     } else if (b[a] === "}" && jsxbrace === true) {
                                         if (quotes === 0) {
-                                            framework.lexer.script(
+                                            sparser.lexers.script(
                                                 lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                             );
                                             parse.structure[parse.structure.length - 1][1] + 1;
@@ -2302,7 +2302,7 @@
                                         if (lex.length < 1) {
                                             break;
                                         }
-                                        framework.lexer.script(
+                                        sparser.lexers.script(
                                             lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                         );
                                         break;
@@ -2326,11 +2326,11 @@
                                                 record.types = "comment";
                                                 recordPush(data, record, "");
                                                 outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
-                                                framework.lexer.script(outside);
+                                                sparser.lexers.script(outside);
                                                 record.token = "-->";
                                                 recordPush(data, record, "");
                                             } else {
-                                                framework.lexer.script(outside);
+                                                sparser.lexers.script(outside);
                                             }
                                             break;
                                         }
@@ -2356,11 +2356,11 @@
                                                 record.types = "comment";
                                                 recordPush(data, record, "");
                                                 outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
-                                                framework.lexer.style(outside);
+                                                sparser.lexers.style(outside);
                                                 record.token = "-->";
                                                 recordPush(data, record, "");
                                             } else {
-                                                framework.lexer.style(outside);
+                                                sparser.lexers.style(outside);
                                             }
                                             break;
                                         }
@@ -2425,7 +2425,7 @@
                                 ltoke = lex.join("").replace(/\s+$/, "");
                                 liner = 0;
                                 record.token = ltoke;
-                                if (options.wrap > 0 && options.lexerOptions.markup.preserve_text !== true) {
+                                if (options.wrap > 0 && options.lexer_options.markup.preserve_text !== true) {
                                     let aa:number  = options.wrap,
                                         len:number = ltoke.length;
                                     const wrap:number = options.wrap,
@@ -2568,23 +2568,23 @@
                 }
                 a = a + 1;
             } while (a < c);
-            if (count.end !== count.start && framework.parseerror === "") {
+            if (count.end !== count.start && sparser.parseerror === "") {
                 if (count.end > count.start) {
                     let x:number = count.end - count.start,
                         plural:string = (x === 1)
                             ? ""
                             : "s";
-                    framework.parseerror = `${x} more end type${plural} than start types.`;
+                    sparser.parseerror = `${x} more end type${plural} than start types.`;
                 } else {
                     let x:number = count.start - count.end,
                         plural:string = (x === 1)
                             ? ""
                             : "s";
-                    framework.parseerror = `${x} more start type${plural} than end types.`;
+                    sparser.parseerror = `${x} more start type${plural} than end types.`;
                 }
             }
             return data;
         };
 
-    framework.lexer.markup = markup;
+    sparser.lexers.markup = markup;
 }());

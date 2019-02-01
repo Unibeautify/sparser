@@ -4,21 +4,40 @@
 
 /* This file exists to consolidate the various Node service offerings in
    this application. */
-
-const services = function services_() {
+import { Stats } from "fs";
+import * as http from "http";
+type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
+interface directoryList extends Array<directoryItem> {
+    [key:number]: directoryItem;
+}
+(function node() {
     "use strict";
-    let version:string = "",
-        command:string = "";
-    const startTime:[number, number] = process.hrtime(),
-        args:string[] = process.argv.slice(2),
+    const startTime:[number, number]      = process.hrtime(),
         node = {
-            child: require("child_process").exec,
-            fs   : require("fs"),
-            http : require("http"),
-            os   : require("os"),
-            path : require("path")
+            child : require("child_process").exec,
+            crypto: require("crypto"),
+            fs    : require("fs"),
+            http  : require("http"),
+            https : require("https"),
+            os    : require("os"),
+            path  : require("path")
         },
+        cli:string = process.argv.join(" "),
         sep:string = node.path.sep,
+        projectPath:string = (function node_project() {
+            const dirs:string[] = __dirname.split(sep);
+            return dirs.slice(0, dirs.length - 1).join(sep) + sep;
+        }()),
+        js:string = `${projectPath}js${sep}`,
+        libFiles:string[] = [`${js}language.js`, `${js}lexers`, `${js}options.js`, `${js}parse.js`],
+        // node option default start
+        options:any = {},
+        version:any = {
+            date: "",
+            number: "",
+            parse: ""
+        },
+        // node option default end
         text:any     = {
             angry    : "\u001b[1m\u001b[31m",
             blue     : "\u001b[34m",
@@ -34,216 +53,1284 @@ const services = function services_() {
             underline: "\u001b[4m",
             yellow   : "\u001b[33m"
         },
-        project:string = (function services_project() {
-            const dirs:string[] = __dirname.split(sep);
-            return dirs.slice(0, dirs.length - 1).join(sep) + sep;
-        }()),
-        js = `${project}js${sep}`,
-        commandList = {
-            "build"       : {
-                brief: "Run the project's TypeScript build.",
-                detail: "Run the project's TypeScript build and produces a single large file for use in the browser.  This command accepts no options.",
-                example: "build"
+        commands:commandList = {
+            build: {
+                description: "Rebuilds the application.",
+                example: [
+                    {
+                        code: "sparser build",
+                        defined: "Compiles from TypeScript into JavaScript and puts librarys together."
+                    }
+                ]
             },
-            "commands"    : {
-                brief: "Displays a brief list of supported commands or details of a given command.",
-                detail: "When no arguments are supplied the command list is printed to console.  Supply a command name as an additional argument to see details and support for additional arguments.",
-                example: "commands inventory"
+            commands: {
+                description: "List all supported commands to the console or examples of a specific command.",
+                example: [
+                    {
+                        code: "sparser commands",
+                        defined: "Lists all commands and their definitions to the shell."
+                    },
+                    {
+                        code: "sparser commands commands",
+                        defined: "Details the mentioned command with code examples."
+                    }
+                ]
             },
-            "help"        : {
-                brief: "Displays general information about this application.",
-                detail: "Displays general information about this application.  This command accepts no options.",
-                example: "help"
+            debug: {
+                description: "Prepares a formal report in markdown format with information to assist in troubleshooting.",
+                example: [{
+                    code: "sparser debug",
+                    defined: "Generates markdown format report directly to standard output."
+                }]
             },
-            "inventory"   : {
-                brief: "List the currently supplied lexers and their language's in language specific logic.",
-                detail: "The generated list is computed by scraping the code for the 'options.language' data property.  This means the specified supported languages are languages that demand unique instructions.  Other languages that aren't in this list may also be supported.  This command accepts no options.",
-                example: "inventory"
+            get: {
+                description: "Retrieve a resource via an absolute URI.",
+                example: [
+                    {
+                        code: "sparser get http://example.com/file.txt",
+                        defined: "Gets a resource from the web and prints the output to the shell."
+                    },
+                    {
+                        code: "sparser get http://example.com/file.txt path/to/file",
+                        defined: "Get a resource from the web and writes the resource as UTF8 to a file at the specified path."
+                    }
+                ]
             },
-            "parse-array" : {
-                brief: "Prints to standard output the parsed data as an object of parallel arrays.",
-                detail: "Prints to standard output the parsed data as an object of parallel arrays.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-array js${sep}example${sep}file.js`
+            help: {
+                description: "Introductory information to Sparser on the command line.",
+                example: [{
+                    code: "sparser help",
+                    defined: "Writes help text to shell."
+                }]
             },
-            "parse-object": {
-                brief: "Prints to standard output the parsed data as an array of objects.",
-                detail: "Prints to standard output the parsed data as an array of objects.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-object js${sep}example${sep}file.js`
+            inventory   : {
+                description: "List the currently supplied lexers and their language's in language specific logic.",
+                example: [{
+                    code: "sparser inventory",
+                    defined: "The generated list is computed by scraping the code for the 'options.language' data property.  This means the specified supported languages are languages that demand unique instructions.  Other languages that aren't in this list may also be supported.  This command accepts no options."
+                }]
             },
-            "parse-table" : {
-                brief: "Prints to standard output the parsed data formatted into a grid with ANSI colors.",
-                detail: "Prints to standard output the parsed data formatted into a grid with ANSI colors.  Requires either a code sample or a relative path from the current working directory to a file.",
-                example: `parse-table js${sep}example${sep}file.js`
+            lint: {
+                description: "Use ESLint against all JavaScript files in a specified directory tree.",
+                example: [
+                    {
+                        code: "sparser lint ../tools",
+                        defined: "Lints all the JavaScript files in that location and in its subdirectories."
+                    },
+                    {
+                        code: "sparser lint",
+                        defined: "Specifying no location defaults to the Sparser application directory."
+                    },
+                    {
+                        code: "sparser lint ../tools ignore [node_modules, .git, test, units]",
+                        defined: "An ignore list is also accepted if there is a list wrapped in square braces following the word 'ignore'."
+                    }
+                ]
             },
-            "performance" : {
-                brief: "Test a parse operation with nanosecond precision.",
-                detail: "Prints to screen a time duration in nanoseconds for a parse operation.  The raw data is acquired by running an initial operation that is discard and then averaging from 10 additional operations.  The time duration is only a measure of the actual parse operation and the timer code.  All other operations, including those related to Node.js aren't included in the timer.  A relative address to a file is required.",
-                example: `performance js${sep}example${sep}file.js`
+            options: {
+                description: "List all Sparser's options to the console or gather instructions on a specific option.",
+                example: [
+                    {
+                        code: "sparser options",
+                        defined: "List all options and their definitions to the shell."
+                    },
+                    {
+                        code: "sparser options mode",
+                        defined: "Writes details about the specified option to the shell."
+                    },
+                    {
+                        code: "sparser options api:any lexer:script values",
+                        defined: "The option list can be queried against key and value (if present) names. This example will return only options that work with the script lexer, takes specific values, and aren't limited to a certain API environment."
+                    }
+                ]
             },
-            "server"      : {
-                brief: "Starts a web server and opens a web socket channel.",
-                detail: "Starts a web server so that TypeScript builds will execute on file updates and the browser tool will automatically refresh upon build completion.  Two consecutive ports are required for this service to work.  The first port is for the webserver and the second port is for a web sockets channel.  A port may be specified as an additional argument.",
-                example: "server 3000"
+            performance: {
+                description: "Executes the Sparser application 11 times.  The first execution is dropped and the remaining 10 are averaged.  Specify a complete Sparser terminal command.",
+                example: [
+                        {
+                        code: "sparser performance beautify source:\"js/services.js\" method_chain:3",
+                        defined: "Just specify the actual command to execute.  Sparser will execute the provided command as though the 'performance' command weren't there."
+                    },
+                    {
+                        code: "sparser performance base64 js/services.js",
+                        defined: "The command to test may be any command supported by Sparser's terminal services."
+                    }
+                ]
             },
-            "testprep": {
-                brief: "Produces parsed output for validation test cases.",
-                detail: "Produces the object based format of the parsed table in a way that is easier for humans to read and is the format used for validation of stored test cases.",
-                example: "testprep test/sample_code/script/jsx_recurse.txt"
+            server: {
+                description: "Launches a HTTP service and web sockets so that the web tool is automatically refreshed once code changes in the local file system.",
+                example: [
+                    {
+                        code: "sparser server",
+                        defined: "Launches the server on default port 9001 and web sockets on port 9002."
+                    },
+                    {
+                        code: "sparser server 8080",
+                        defined: "If a numeric argument is supplied the web server starts on the port specified and web sockets on the following port."
+                    }
+                ]
             },
-            "validation"  : {
-                brief: "Runs the validation build.",
-                detail: "Runs the validation build that checks for TypeScript build defects, framework schema violations, ESLint rule violations, and finally tests the lexer files against supplied test units.  This command accepts no options.",
-                example: "validation"
+            simulation: {
+                description: "Launches a test runner to execute the various commands of the services file.",
+                example: [{
+                    code: "sparser simulation",
+                    defined: "Runs tests against the commands offered by the services file."
+                }]
             },
-            "version"     : {
-                brief: "Prints a version number to screen.",
-                detail: "Prints a version number to screen.  This command accepts no options.",
-                example: "version"
+            test: {
+                description: "Builds the application and then runs all the test commands",
+                example: [{
+                    code: "sparser test",
+                    defined: "After building the code, it will lint the JavaScript output, test Node.js commands as simulations, and validate the Sparser modes against test samples."
+                }]
+            },
+            testprep: {
+                description: "Produces a formatted parse table for the validation test cases.",
+                example: [{
+                    code: "sparser testprep test/sample_code/script/jsx_recurse.txt",
+                    defined: "Produces a parse table for the specified file where each line is a record in object format."
+                }]
+            },
+            validation: {
+                description: "Runs Sparser against various code samples and compares the generated output against known good output looking for regression errors.",
+                example: [{
+                    code: "sparser validation",
+                    defined: "Runs the unit test runner against Sparser"
+                }]
+            },
+            version: {
+                description: "Prints the current version number and date of prior modification to the console.",
+                example: [{
+                    code: "sparser version",
+                    defined: "Prints the current version number and date to the shell."
+                }]
             }
         },
-        wrap = function services_wrap(input:string, commandlist:number):string {
-            if (commandlist + input.length > 80) {
-                const chars:string[] = input.split("");
-                let len:number = chars.length + commandlist,
-                    index:number = 77 - commandlist,
-                    lindex:number = 0,
-                    length:number = 0;
-                
-                if (commandlist < 1) {
-                    chars.splice(0, 0, " ");
-                    chars.splice(0, 0, " ");
-                    chars.splice(0, 0, " ");
-                    chars.splice(0, 0, " ");
-                }
-
-                // outer loop iterates over line segments
-                do {
-                    // inner loop finds the last space on a line
-                    do {
-                        if (chars[index] === " ") {
-                            chars[index] = "\n   ";
-                            if (chars[index + 1] === " ") {
-                                chars.splice(index + 1, 1);
-                                len = len - 1;
+        exclusions = (function node_exclusions():string[] {
+            const args = process.argv.join(" "),
+                match = args.match(/\signore\s*\[/);
+            if (match !== null) {
+                const list:string[] = [],
+                    listBuilder = function node_exclusions_listBuilder():void {
+                        do {
+                            if (process.argv[a] === "]" || process.argv[a].charAt(process.argv[a].length - 1) === "]") {
+                                if (process.argv[a] !== "]") {
+                                    list.push(process.argv[a].replace(/,$/, "").slice(0, process.argv[a].length - 1));
+                                }
+                                process.argv.splice(igindex, (a + 1) - igindex);
+                                break;
                             }
-                            length = commandlist;
-                            // applies left padding
-                            do {
-                                chars[index] = `${chars[index]} `;
-                                length = length - 1;
-                            } while (length > 0);
+                            list.push(process.argv[a].replace(/,$/, ""));
+                            a = a + 1;
+                        } while (a < len);
+                    };
+                let a:number = 0,
+                    len:number = process.argv.length,
+                    igindex:number = process.argv.indexOf("ignore");
+                if (igindex > -1 && igindex < len - 1 && process.argv[igindex + 1].charAt(0) === "[") {
+                    a = igindex + 1;
+                    if (process.argv[a] !== "[") {
+                        process.argv[a] = process.argv[a].slice(1).replace(/,$/, "");
+                    }
+                    listBuilder();
+                } else {
+                    do {
+                        if (process.argv[a].indexOf("ignore[") === 0) {
+                            igindex = a;
                             break;
                         }
-                        index = index - 1;
-                    } while (index > lindex);
-                    index = index + (77 - commandlist);
-                    lindex = index - 80;
-                } while (index < len);
-                return chars.join("");
-            }
-            return input;
-        },
-        humantime  = function services_humantime(finished:boolean):string {
-            let minuteString:string = "",
-                hourString:string   = "",
-                secondString:string = "",
-                finalTime:string    = "",
-                finalMem:string     = "",
-                strSplit:string[]     = [],
-                minutes:number      = 0,
-                hours:number        = 0,
-                memory,
-                elapsed:number      = (function services_humantime_elapsed():number {
-                    const endtime:[number, number] = process.hrtime();
-                    let dtime:[number, number] = [endtime[0] - startTime[0], endtime[1] - startTime[1]];
-                    if (dtime[1] === 0) {
-                        return dtime[0];
-                    }
-                    if (dtime[1] < 0) {
-                        dtime[1] = ((1000000000 + endtime[1]) - startTime[1]);
-                    }
-                    return dtime[0] + (dtime[1] / 1000000000);
-                }());
-            const prettybytes  = function services_humantime_prettybytes(an_integer:number):string {
-                    //find the string length of input and divide into triplets
-                    let output:string = "",
-                        length:number  = an_integer
-                            .toString()
-                            .length;
-                    const triples:number = (function services_humantime_prettybytes_triples():number {
-                            if (length < 22) {
-                                return Math.floor((length - 1) / 3);
-                            }
-                            //it seems the maximum supported length of integer is 22
-                            return 8;
-                        }()),
-                        //each triplet is worth an exponent of 1024 (2 ^ 10)
-                        power:number   = (function services_humantime_prettybytes_power():number {
-                            let a = triples - 1,
-                                b = 1024;
-                            if (triples === 0) {
-                                return 0;
-                            }
-                            if (triples === 1) {
-                                return 1024;
-                            }
-                            do {
-                                b = b * 1024;
-                                a = a - 1;
-                            } while (a > 0);
-                            return b;
-                        }()),
-                        //kilobytes, megabytes, and so forth...
-                        unit    = [
-                            "",
-                            "KB",
-                            "MB",
-                            "GB",
-                            "TB",
-                            "PB",
-                            "EB",
-                            "ZB",
-                            "YB"
-                        ];
-
-                    if (typeof an_integer !== "number" || Number.isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
-                        //input not a positive integer
-                        output = "0.00B";
-                    } else if (triples === 0) {
-                        //input less than 1000
-                        output = `${an_integer}B`;
-                    } else {
-                        //for input greater than 999
-                        length = Math.floor((an_integer / power) * 100) / 100;
-                        output = length.toFixed(2) + unit[triples];
-                    }
-                    return output;
-                },
-                plural       = function services_validate_proctime_plural(x:number, y:string):string {
-                    if (x !== 1) {
-                        if (y === " second") {
-                            return `${secondFix() + y}s `; 
+                        a = a + 1;
+                    } while (a < len);
+                    if (process.argv[a] !== "ignore[") {
+                        process.argv[a] = process.argv[a].slice(7);
+                        if (process.argv[a].charAt(process.argv[a].length - 1) === "]") {
+                            list.push(process.argv[a].replace(/,$/, "").slice(0, process.argv[a].length - 1));
+                        } else {
+                            listBuilder();
                         }
-                        return `${x + y}s `;
                     }
-                    return `${x + y} `;
+                }
+                return list;
+            }
+            require(`${js}parse.js`);
+            return [];
+        }()),
+        sparser:sparser = global.sparser,
+        apps:any = {};
+    let verbose:boolean = false,
+        errorflag:boolean = false,
+        command:string = (function node_command():string {
+            let comkeys:string[] = Object.keys(commands),
+                filtered:string[] = [],
+                a:number = 0,
+                b:number = 0,
+                mode:string = "";
+            if (process.argv[2] === undefined) {
+                console.log("");
+                console.log("Sparser requires a command. Try:");
+                console.log(`global install - ${text.cyan}sparser help${text.none}`);
+                console.log(`local install  - ${text.cyan}node js/services help${text.none}`);
+                console.log("");
+                console.log("To see a list of commands try:");
+                console.log(`global install - ${text.cyan}sparser commands${text.none}`);
+                console.log(`local install  - ${text.cyan}node js/services commands${text.none}`);
+                console.log("");
+                process.exit(1);
+                return;
+            }
+            const arg:string = process.argv[2],
+                boldarg:string = text.angry + arg + text.none,
+                len:number = arg.length + 1,
+                commandFilter = function node_command_commandFilter(item:string):boolean {
+                    if (item.indexOf(arg.slice(0, a)) === 0) {
+                        return true;
+                    }
+                    return false;
                 },
-                minute       = function services_validate_proctime_minute():void {
-                    minutes      = parseInt((elapsed / 60).toString(), 10);
-                    minuteString = (finished === true)
-                        ? plural(minutes, " minute")
-                        : (minutes < 10)
-                            ? `0${minutes}`
-                            : String(minutes);
-                    minutes      = elapsed - (minutes * 60);
-                    secondString = (finished === true)
-                        ? (minutes === 1)
-                            ? " 1 second "
-                            : `${minutes.toFixed(3)} seconds `
-                        : minutes.toFixed(3);
+                modeval = function node_command_modeval():boolean {
+                    let a:number = 0,
+                        diff:boolean = false,
+                        source:boolean = false;
+                    const len:number = process.argv.length;
+                    if (len > 0) {
+                        do {
+                            if (process.argv[a].indexOf("mode") === 0) {
+                                if (process.argv[a].indexOf("beautify") > 0) {
+                                    mode = "beautify";
+                                } else if (process.argv[a].indexOf("diff") > 0) {
+                                    mode = "diff";
+                                } else if (process.argv[a].indexOf("minify") > 0) {
+                                    mode = "minify";
+                                } else if (process.argv[a].indexOf("parse") > 0) {
+                                    mode = "parse";
+                                } else {
+                                    return false;
+                                }
+                                console.log("");
+                                console.log(`${boldarg} is not a supported command. Sparser is assuming command ${text.bold + text.cyan + mode + text.none}.`);
+                                console.log("");
+                                return true;
+                            }
+                            if (process.argv[a].replace(/\s+/g, "").indexOf("source:") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source=") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source\"") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source'") === 0) {
+                                source = true;
+                            } else if (process.argv[a].replace(/\s+/g, "").indexOf("diff:") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff=") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff\"") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff'") === 0) {
+                                diff = true;
+                            }
+                            a = a + 1;
+                        } while (a < len);
+                        if (source === true || arg.replace(/\s+/g, "").indexOf("source:") === 0 || arg.replace(/\s+/g, "").indexOf("source=") === 0 || arg.replace(/\s+/g, "").indexOf("source\"") === 0 || arg.replace(/\s+/g, "").indexOf("source'") === 0) {
+                            if (source === false) {
+                                process.argv.push(arg);
+                            }
+                            if (diff === true || arg.replace(/\s+/g, "").indexOf("diff:") === 0 || arg.replace(/\s+/g, "").indexOf("diff=") === 0 || arg.replace(/\s+/g, "").indexOf("diff\"") === 0 || arg.replace(/\s+/g, "").indexOf("diff'") === 0) {
+                                if (diff === false) {
+                                    process.argv.push(arg);
+                                }
+                                mode = "diff";
+                            } else {
+                                mode = "beautify";
+                            }
+                            console.log("");
+                            console.log(`No supported command found.  Sparser is assuming command ${text.bold + text.cyan + mode + text.none}.`);
+                            console.log("");
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+            
+            if (process.argv[2] === "debug") {
+                process.argv = process.argv.slice(3);
+                return "debug";
+            }
+            process.argv = process.argv.slice(3);
+
+            // trim empty values
+            b = process.argv.length;
+            do {
+                if (process.argv[a] === "") {
+                    process.argv.splice(a, 1);
+                    b = b - 1;
+                }
+                a = a + 1;
+            } while (a < b);
+
+            // filter available commands against incomplete input
+            a = 1;
+            do {
+                filtered = comkeys.filter(commandFilter);
+                a = a + 1;
+            } while (filtered.length > 1 && a < len);
+
+            if (filtered.length < 1 || (filtered[0] === "debug" && filtered.length < 2)) {
+                if (modeval() === true) {
+                    return mode;
+                }
+                console.log(`Command ${boldarg} is not a supported command.`);
+                console.log("");
+                console.log("Please try:");
+                console.log(`  ${text.angry}*${text.none} globally installed - ${text.cyan}sparser commands${text.none}`);
+                console.log(`  ${text.angry}*${text.none} locally installed  - ${text.cyan}node js/services commands${text.none}`);
+                console.log("");
+                process.exit(1);
+                return "";
+            }
+            if (filtered.length > 1) {
+                if (modeval() === true) {
+                    return mode;
+                }
+                console.log(`Command '${boldarg}' is ambiguous as it could refer to any of: [${text.cyan + filtered.join(", ") + text.none}]`);
+                process.exit(1);
+                return "";
+            }
+            if (arg !== filtered[0]) {
+                console.log("");
+                console.log(`${boldarg} is not a supported command. Sparser is assuming command ${text.bold + text.cyan + filtered[0] + text.none}.`);
+                console.log("");
+            }
+            return filtered[0];
+        }()),
+        writeflag:string = ""; // location of written assets in case of an error and they need to be deleted
+
+    (function node_args():void {
+        const requireDir = function node_args_requireDir(item:string):void {
+                let counts = {
+                    items: 0,
+                    total: 0
+                };
+                const dirlist:string[] = item.split(sep),
+                    dirname:string = (dirlist[dirlist.length - 1] === "")
+                        ? dirlist[dirlist.length - 2]
+                        : dirlist[dirlist.length - 1],
+                    completeTest = function node_args_requireDir_completeTest(filesLength:number):boolean {
+                        counts.total = counts.total + filesLength;
+                        if (counts.total === counts.items) {
+                            dirs = dirs + 1;
+                            if (dirs === dirstotal) {
+                                if (process.argv.length > 0) {
+                                    readOptions();
+                                }
+                                apps[command]();
+                            }
+                            return true;
+                        }
+                        return false;
+                    },
+                    readdir = function node_args_requireDir_dirwrapper(start:string):void {
+                        node.fs.stat(start, function node_args_requireDir_dirwrapper_stat(ers:Error, stat:Stats):void {
+                            if (ers !== null) {
+                                console.log(ers.toString());
+                                process.exit(1);
+                                return;
+                            }
+                            if (stat.isDirectory() === true) {
+                                sparser[dirname] = {};
+                                node.fs.readdir(start, function node_args_requireDir_dirwrapper_stat_readdir(err:Error, files:string[]) {
+                                    if (err !== null) {
+                                        console.log(err.toString());
+                                        process.exit(1);
+                                        return;
+                                    }
+                                    if (completeTest(files.length) === true) {
+                                        return;
+                                    }
+                                    files.forEach(function node_args_requireDir_dirwrapper_stat_readdir_each(value:string) {
+                                        const valpath:string = start + sep + value;
+                                        node.fs.stat(valpath, function node_args_requireDir_dirwrapper_stat_readdir_each_stat(errs:Error, stats:Stats):void {
+                                            if (errs !== null) {
+                                                console.log(errs.toString());
+                                                process.exit(1);
+                                                return;
+                                            }
+                                            if (stats.isDirectory() === true) {
+                                                node_args_requireDir_dirwrapper(valpath);
+                                            } else {
+                                                counts.items = counts.items + 1;
+                                            }
+                                            if (completeTest(0) === true) {
+                                                return;
+                                            }
+                                        });
+                                    });
+                                });
+                            }
+                            if (stat.isFile() === true) {
+                                require(item);
+                                if (completeTest(0) === true) {
+                                    return;
+                                }
+                            }
+                        });
+                    };
+                dirstotal = dirstotal + 1;
+                readdir(item);
+            },
+            readOptions = function node_args_readOptions():void {
+                const list:string[] = process.argv,
+                    def:optionDef = sparser.optionDef,
+                    keys:string[] = (command === "options")
+                        ? Object.keys(def.mode)
+                        : [],
+                    obj = (command === "options")
+                        ? def.mode
+                        : options,
+                    optionName = function node_args_optionName(bindArgument:boolean):void {
+                        if (a === 0 || options[list[a]] === undefined) {
+                            if (keys.indexOf(list[a]) < 0 && options[list[a]] === undefined) {
+                                list.splice(a, 1);
+                                len = len - 1;
+                                a = a - 1;
+                            }
+                            return;
+                        }
+                        if (bindArgument === true && list[a + 1] !== undefined && list[a + 1].length > 0) {
+                            list[a] = `${list[a]}:${list[a + 1]}`;
+                            list.splice(a + 1, 1);
+                            len = len - 1;
+                        }
+                        list.splice(0, 0, list[a]);
+                        list.splice(a + 1, 1);
+                    };
+                let split:string = "",
+                    value:string = "",
+                    name:string = "",
+                    a:number = 0,
+                    si:number = 0,
+                    len:number = list.length;
+                do {
+                    list[a] = list[a].replace(/^(-+)/, "");
+                    if (list[a] === "verbose") {
+                        verbose = true;
+                        list.splice(a, 1);
+                        len = len - 1;
+                        a = a - 1;
+                    } else {
+                        si = list[a].indexOf("=");
+                        if (
+                            si > 0 &&
+                            (list[a].indexOf("\"") < 0 || si < list[a].indexOf("\"")) &&
+                            (list[a].indexOf("'") < 0 || si < list[a].indexOf("'")) &&
+                            (si < list[a].indexOf(":") || list[a].indexOf(":") < 0)
+                        ) {
+                            split = "=";
+                        } else {
+                            split = ":";
+                        }
+                        if (list[a + 1] === undefined) {
+                            si = 99;
+                        } else {
+                            si = list[a + 1].indexOf(split);
+                        }
+                        if (
+                            obj[list[a]] !== undefined &&
+                            list[a + 1] !== undefined &&
+                            obj[list[a + 1]] === undefined &&
+                            (
+                                si < 0 || 
+                                (si > list[a + 1].indexOf("\"") && list[a + 1].indexOf("\"") > -1) ||
+                                (si > list[a + 1].indexOf("'") && list[a + 1].indexOf("'") > -1)
+                            )
+                        ) {
+                            if (command === "options") {
+                                optionName(true);
+                            } else {
+                                options[list[a]] = list[a + 1];
+                                a = a + 1;
+                            }
+                        } else if (list[a].indexOf(split) > 0 || (list[a].indexOf(split) < 0 && list[a + 1] !== undefined && (list[a + 1].charAt(0) === ":" || list[a + 1].charAt(0) === "="))) {
+                            if (list[a].indexOf(split) > 0) {
+                                name = list[a].slice(0, list[a].indexOf(split)).toLowerCase();
+                                value = list[a].slice(list[a].indexOf(split) + 1);
+                            } else {
+                                name = list[a].toLowerCase();
+                                value = list[a + 1].slice(1);
+                                list.splice(a + 1, 1);
+                                len = len - 1;
+                            }
+                            if (command === "options") {
+                                if (keys.indexOf(name) > -1) {
+                                    if (value !== undefined && value.length > 0) {
+                                        list[a] = `${name}:${value}`;
+                                    } else {
+                                        list[a] = name;
+                                    }
+                                } else {
+                                    list.splice(a, 1);
+                                    len = len - 1;
+                                }
+                            } else if (options[name] !== undefined) {
+                                if (value === "true" && def[name].type === "boolean") {
+                                    options[name] = true;
+                                } else if (value === "false" && def[name].type === "boolean") {
+                                    options[name] = false;
+                                } else if (isNaN(Number(value)) === false && def[name].type === "number") {
+                                    options[name] = Number(value);
+                                } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
+                                    options[name] = value;
+                                } else if (def[name].values === undefined) {
+                                    options[name] = value;
+                                }
+                            }
+                        } else if (command === "options") {
+                            optionName(false);
+                        }
+                    }
+                    a = a + 1;
+                } while (a < len);
+                if (options.source === "" && process.argv.length > 0 && process.argv[0].indexOf("=") < 0 && process.argv[0].replace(/^[a-zA-Z]:\\/, "").indexOf(":") < 0) {
+                    if (command === "performance") {
+                        options.source = (process.argv.length < 1)
+                            ? ""
+                            : process.argv[1];
+                    } else {
+                        options.source = process.argv[0];
+                    }
+                }
+            };
+        let dirs:number = 0,
+            dirstotal:number = 0;
+        options.api = "node";
+        options.binary_check = (
+            // eslint-disable-next-line
+            /\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u000b|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001c|\u001d|\u001e|\u001f|\u007f|\u0080|\u0081|\u0082|\u0083|\u0084|\u0085|\u0086|\u0087|\u0088|\u0089|\u008a|\u008b|\u008c|\u008d|\u008e|\u008f|\u0090|\u0091|\u0092|\u0093|\u0094|\u0095|\u0096|\u0097|\u0098|\u0099|\u009a|\u009b|\u009c|\u009d|\u009e|\u009f/g
+        );
+        libFiles.forEach(function node_args_each(value:string) {
+            requireDir(value);
+        });
+    }());
+
+    // build system
+    apps.build = function node_apps_build(test:boolean):void {
+        let firstOrder:boolean = true,
+            sectionTime:[number, number] = [0, 0];
+        const order = {
+                build: [
+                    "npminstall",
+                    "optionsMarkdown",
+                    "typescript"
+                ],
+                test: [
+                    "lint",
+                    "simulation",
+                    "validation"
+                ]
+            },
+            type:string = (test === true)
+                ? "test"
+                : "build",
+            orderlen:number = order[type].length,
+            heading = function node_apps_build_heading(message:string):void {
+                if (firstOrder === true) {
+                    console.log("");
+                    firstOrder = false;
+                } else if (order[type].length < orderlen) {
+                    console.log("________________________________________________________________________");
+                    console.log("");
+                }
+                console.log(text.cyan + message + text.none);
+                console.log("");
+            },
+            sectionTimer = function node_apps_build_sectionTime(input:string):void {
+                let now:string[] = input.replace(`${text.cyan}[`, "").replace(`]${text.none} `, "").split(":"),
+                    numb:[number, number] = [(Number(now[0]) * 3600) + (Number(now[1]) * 60) + Number(now[2].split(".")[0]), Number(now[2].split(".")[1])],
+                    difference:[number, number],
+                    times:string[] = [],
+                    time:number = 0,
+                    str:string = "";
+                difference = [numb[0] - sectionTime[0], (numb[1] + 1000000000) - (sectionTime[1] + 1000000000)];
+                sectionTime = numb;
+                if (difference[1] < 0) {
+                    difference[0] = difference[0] - 1;
+                    difference[1] = difference[1] + 1000000000;
+                }
+                if (difference[0] < 3600) {
+                    times.push("00");
+                } else {
+                    time = Math.floor(difference[0] / 3600);
+                    difference[0] = difference[0] - (time * 3600);
+                    if (time < 10) {
+                        times.push(`0${time}`);
+                    } else {
+                        times.push(String(time));
+                    }
+                }
+                if (difference[0] < 60) {
+                    times.push("00");
+                } else {
+                    time = Math.floor(difference[0] / 60);
+                    difference[0] = difference[0] - (time * 60);
+                    if (time < 10) {
+                        times.push(`0${time}`);
+                    } else {
+                        times.push(String(time));
+                    }
+                }
+                if (difference[0] < 1) {
+                    times.push("00");
+                } else if (difference[0] < 10) {
+                    times.push(`0${difference[0]}`);
+                } else {
+                    times.push(String(difference[0]));
+                }
+                str = String(difference[1]);
+                if (str.length < 9) {
+                    do {
+                        str = `0${str}`;
+                    } while (str.length < 9);
+                }
+                times[2] = `${times[2]}.${str}`;
+                console.log(`${text.cyan + text.bold}[${times.join(":")}]${text.none} ${text.green}Total section time.${text.none}`);
+            },
+            next = function node_apps_build_next(message:string):void {
+                let phase = order[type][0],
+                    time:string = apps.humantime(false);
+                if (message !== "") {
+                    console.log(time + message);
+                    sectionTimer(time);
+                }
+                if (order[type].length < 1) {
+                    verbose = true;
+                    heading(`${text.none}All ${text.green + text.bold + type + text.none} tasks complete... Exiting clean!\u0007`);
+                    apps.log([""], "");
+                    process.exit(0);
+                    return;
+                }
+                order[type].splice(0, 1);
+                phases[phase]();
+            },
+            // These are all the parts of the execution cycle, but their order is dictated by the 'order' object.
+            phases = {
+                // phase lint is merely a call to apps.lint
+                lint     : function node_apps_build_lint():void {
+                    const callback = function node_apps_build_lint_callback(message:string):void {
+                        next(message);
+                    };
+                    heading("Linting");
+                    apps.lint(callback);
                 },
-                secondFix     = function services_validate_proctime_secondFix():string {
-                    strSplit     = String(elapsed).split(".");
+                // phase npminstall checks if dependencies are absent
+                npminstall: function node_apps_build_npminstall():void {
+                    heading("First Time Developer Dependency Installation");
+                    node.fs.stat(`${projectPath}node_modules${sep}ace-builds`, function node_apps_build_npminstall_stat(errs:Error):void {
+                        if (errs !== null) {
+                            if (errs.toString().indexOf("no such file or directory") > 0) {
+                                node.child("npm install", {
+                                    cwd: projectPath
+                                }, function node_apps_build_npminstall_stat_child(err:Error, stdout:string, stderr:string) {
+                                    if (err !== null) {
+                                        apps.errout([err.toString()]);
+                                        return;
+                                    }
+                                    if (stderr !== "") {
+                                        apps.errout([stderr]);
+                                        return;
+                                    }
+                                    next(`${text.green}Installed dependencies.${text.none}`);
+                                });
+                            } else {
+                                apps.errout([errs.toString()]);
+                                return;
+                            }
+                        } else {
+                            next(`${text.green}Dependencies appear to be already installed...${text.none}`);
+                        }
+                    });
+                },
+                // phase optionsMarkdown builds a markdown file of options documentation
+                optionsMarkdown: function node_apps_build_optionsMarkdown():void {
+                    const def:optionDef = sparser.optionDef,
+                        keys:string[] = Object.keys(def),
+                        len:number = keys.length,
+                        doc:string[] = ["# Sparser Options"];
+                    let a:number = 0,
+                        b:number = 0,
+                        lenv:number = 0,
+                        vals:string[] = [],
+                        valstring:string[] = [];
+                    heading("Writing options documentation in markdown format");
+                    do {
+                        doc.push("");
+                        doc.push(`## ${keys[a]}`);
+                        doc.push("property   | value");
+                        doc.push("-----------|---");
+                        doc.push(`default    | ${def[keys[a]].default}`);
+                        doc.push(`definition | ${def[keys[a]].definition}`);
+                        doc.push(`label      | ${def[keys[a]].label}`);
+                        doc.push(`lexer      | ${def[keys[a]].lexer.join(", ")}`);
+                        doc.push(`type       | ${def[keys[a]].type}`);
+                        if (def[keys[a]].lexer[0] === "any") {
+                            doc.push(`use        | options.${keys[a]}`);
+                        } else {
+                            vals = [];
+                            b = 0;
+                            lenv = def[keys[a]].lexer.length;
+                            do {
+                                vals.push(`options.lexer_options.**${def[keys[a]].lexer[b]}**.${keys[a]}`);
+                                b = b + 1;
+                            } while (b < lenv);
+                            doc.push(`use        | ${vals.join(" \\| ")}`);
+                        }
+                        if (def[keys[a]].values !== undefined) {
+                            vals = Object.keys(def[keys[a]].values);
+                            valstring = [`values | ${vals[0]}`];
+                            b = 1;
+                            lenv = vals.length;
+                            do {
+                                valstring.push(vals[b]);
+                                b = b + 1;
+                            } while (b < lenv);
+                            doc.push(valstring.join(", "));
+                            b = 0;
+                            doc.push("");
+                            doc.push("### Value Definitions");
+                            do {
+                                doc.push(`* **${vals[b]}** - ${def[keys[a]].values[vals[b]].replace("example: ", "example: `").replace(/.$/, "`.")}`);
+                                b = b + 1;
+                            } while (b < lenv);
+                        }
+                        a = a + 1;
+                    } while (a < len);
+                    node.fs.writeFile(`${projectPath}docs${sep}options.md`, doc.join("\n"), "utf8", function node_apps_build_optionsMarkdown_writeFile(err:Error) {
+                        if (err !== null) {
+                            apps.errout([err.toString()]);
+                            return;
+                        }
+                        next(`${text.green}Options documentation successfully written to markdown file.${text.none}`);
+                    });
+                },
+                // phase simulation is merely a call to apps.simulation
+                simulation: function node_apps_build_simulation():void {
+                    const callback = function node_apps_build_lint_callback(message:string):void {
+                        next(message);
+                    };
+                    heading("Simulations of Node.js commands from js/services.js");
+                    apps.simulation(callback);
+                },
+                // phase typescript compiles the working code into JavaScript
+                typescript: function node_apps_build_typescript():void {
+                    const flag = {
+                            services: false,
+                            typescript: false
+                        },
+                        ts = function node_apps_build_typescript_ts() {
+                            node.child("tsc --pretty", {
+                                cwd: projectPath
+                            }, function node_apps_build_typescript_callback(err:Error, stdout:string, stderr:string):void {
+                                if (stdout !== "" && stdout.indexOf(` \u001b[91merror${text.none} `) > -1) {
+                                    console.log(`${text.red}TypeScript reported warnings.${text.none}`);
+                                    apps.errout([stdout]);
+                                    return;
+                                }
+                                if (err !== null) {
+                                    apps.errout([err.toString()]);
+                                    return;
+                                }
+                                if (stderr !== "") {
+                                    apps.errout([stderr]);
+                                    return;
+                                }
+                                next(`${text.green}TypeScript build completed without warnings.${text.none}`);
+                            });
+                        };
+                    heading("TypeScript Compilation");
+                    node.fs.stat(`${projectPath}services.ts`, function node_apps_build_typescript_services(err:Error) {
+                        if (err !== null) {
+                            if (err.toString().indexOf("no such file or directory") > 0) {
+                                flag.services = true;
+                                if (flag.typescript === true) {
+                                    next(`${text.angry}TypeScript code files not present.${text.none}`);
+                                }
+                            } else {
+                                apps.errout([err]);
+                                return;
+                            }
+                        } else {
+                            flag.services = true;
+                            if (flag.typescript === true) {
+                                ts();
+                            }
+                        }
+                    });
+                    node.child("tsc --version", function node_apps_build_typescript_tsc(err:Error, stdout:string, stderr:string) {
+                        if (err !== null) {
+                            const str = err.toString();
+                            if (str.indexOf("command not found") > 0 || str.indexOf("is not recognized") > 0) {
+                                console.log(`${text.angry}TypeScript does not appear to be installed.${text.none}`);
+                                flag.typescript = true;
+                                if (flag.services === true) {
+                                    next(`${text.angry}Install TypeScript with this command: ${text.green}npm install typescript -g${text.none}`);
+                                }
+                            } else {
+                                apps.errout([err.toString(), stdout]);
+                            }
+                        } else {
+                            if (stderr !== "") {
+                                apps.errout([stderr]);
+                                return;
+                            }
+                            flag.typescript = true;
+                            if (flag.services === true) {
+                                ts();
+                            }
+                        }
+                    });
+                },
+                // phase validation is merely a call to apps.validation
+                validation: function node_apps_build_validation():void {
+                    const callback = function node_apps_build_lint_callback(message:string):void {
+                        next(message);
+                    };
+                    heading("Sparser validation tests");
+                    apps.validation(callback);
+                }
+            };
+        next("");
+    };
+    // CLI commands documentation generator
+    apps.commands = function node_apps_commands():void {
+        const output:string[] = [];
+        verbose = true;
+        if (commands[process.argv[0]] === undefined) {
+            // all commands in a list
+            apps.lists({
+                emptyline: false,
+                heading: "Commands",
+                obj: commands,
+                property: "description"
+            });
+        } else {
+            // specificly mentioned option
+            const comm:any = commands[process.argv[0]],
+                len:number = comm.example.length,
+                plural:string = (len > 1)
+                    ? "s"
+                    : "";
+            let a:number = 0;
+            output.push(`${text.bold + text.underline}Sparser - Command: ${text.green + process.argv[0] + text.none}`);
+            output.push("");
+            output.push(comm.description);
+            output.push("");
+            output.push(`${text.underline}Example${plural + text.none}`);
+            do {
+                apps.wrapit(output, comm.example[a].defined);
+                output.push(`   ${text.cyan + comm.example[a].code + text.none}`);
+                output.push("");
+                a = a + 1;
+            } while (a < len);
+            apps.log(output, "");
+        }
+    };
+    // converts numbers into a string of comma separated triplets
+    apps.commas = function node_apps_commas(number:number):string {
+        const str:string = String(number);
+        let arr:string[] = [],
+            a:number   = str.length;
+        if (a < 4) {
+            return str;
+        }
+        arr = String(number).split("");
+        a   = arr.length;
+        do {
+            a      = a - 3;
+            arr[a] = "," + arr[a];
+        } while (a > 3);
+        return arr.join("");
+    };
+    // for testing the debug report generation
+    // * the debug report is a markdown report for posting online
+    // to aid with troubleshooting a defect
+    apps.debug = function node_apps_debug():void {
+        process.argv.push("debug");
+        apps.errout(["Debug Command"]);
+    };
+    // similar to node's fs.readdir, but recursive
+    apps.directory = function node_apps_directory(args:readDirectory):void {
+        // arguments:
+        // * callback - function - the output is passed into the callback as an argument
+        // * exclusions - string array - a list of items to exclude
+        // * path - string - where to start in the local file system
+        // * recursive - boolean - if child directories should be scanned
+        // * symbolic - boolean - if symbolic links should be identified
+        let dirtest:boolean = false,
+            size:number = 0,
+            dirs:number = 0;
+        const dircount:number[] = [],
+            dirnames:string[] = [],
+            listonly:boolean = (command === "directory" && process.argv.indexOf("listonly") > -1),
+            type:boolean = (function node_apps_directory_typeof():boolean {
+                const typeindex:number = process.argv.indexOf("typeof");
+                if (command === "directory" && typeindex > -1) {
+                    process.argv.splice(typeindex, 1);
+                    return true;
+                }
+                return false;
+            }()),
+            startPath:string = (function node_apps_directory_startPath():string {
+                if (command === "directory") {
+                    const len:number = process.argv.length;
+                    let a:number = 0;
+                    args = {
+                        callback: function node_apps_directory_startPath_callback(result:string[]|directoryList) {
+                            const output:string[] = [];
+                            if (verbose === true) {
+                                apps.wrapit(output, `Pretty Diff found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
+                            }
+                            apps.log(output, JSON.stringify(result));
+                        },
+                        exclusions: exclusions,
+                        path: "",
+                        recursive: (process.argv.indexOf("shallow") > -1)
+                            ? (function node_apps_directory_startPath_recursive():boolean {
+                                process.argv.splice(process.argv.indexOf("shallow"), 1);
+                                return false;
+                            }())
+                            : true,
+                        symbolic: (process.argv.indexOf("symbolic") > -1)
+                            ? (function node_apps_directory_startPath_symbolic():boolean {
+                                process.argv.splice(process.argv.indexOf("symbolic"), 1);
+                                return true;
+                            }())
+                            : false
+                    };
+                    if (process.argv.length < 1) {
+                        apps.errout([
+                            "No path supplied for the directory command. For an example please see:",
+                            `    ${text.cyan}prettydiff commands directory${text.none}`
+                        ]);
+                        return "";
+                    }
+                    do {
+                        if (process.argv[a].indexOf("source:") === 0) {
+                            return node.path.resolve(process.argv[a].replace(/source:("|')?/, "").replace(/("|')$/, ""));
+                        }
+                        a = a + 1;
+                    } while (a < len);
+                    return node.path.resolve(process.argv[0]);
+                }
+                return node.path.resolve(args.path);
+            }()),
+            list:directoryList = [],
+            filelist:string[] = [],
+            method:string = (args.symbolic === true)
+                ? "lstat"
+                : "stat",
+            dirCounter = function node_apps_directory_dirCounter(item:string):void {
+                let dirlist:string[] = item.split(sep),
+                    dirpath:string = "",
+                    index:number = 0;
+                dirlist.pop();
+                dirpath = dirlist.join(sep);
+                index = dirnames.indexOf(dirpath);
+                dircount[index] = dircount[index] - 1;
+                if (dircount[index] < 1) {
+                    // dircount and dirnames are parallel arrays
+                    dircount.splice(index, 1);
+                    dirnames.splice(index, 1);
+                    dirs = dirs - 1;
+                    if (dirs < 1) {
+                        if (listonly === true) {
+                            args.callback(filelist.sort());
+                        } else {
+                            args.callback(list);
+                        }
+                    } else {
+                        node_apps_directory_dirCounter(dirpath);
+                    }
+                }
+            },
+            statWrapper = function node_apps_directory_wrapper(filepath:string, parent:number):void {
+                node.fs[method](filepath, function node_apps_directory_wrapper_stat(er:Error, stat:Stats):void {
+                    const angrypath:string = `Filepath ${text.angry + filepath + text.none} is not a file or directory.`,
+                        dir = function node_apps_directory_wrapper_stat_dir(item:string):void {
+                            node.fs.readdir(item, {encoding: "utf8"}, function node_apps_directory_wrapper_stat_dir_readdirs(erd:Error, files:string[]):void {
+                                if (erd !== null) {
+                                    apps.errout([erd.toString()]);
+                                    return;
+                                }
+                                const index:number = list.length;
+                                if (listonly === true) {
+                                    filelist.push(item);
+                                } else {
+                                    list.push([item, "directory", parent, files.length, stat]);
+                                }
+                                if (files.length < 1) {
+                                    dirCounter(item);
+                                } else {
+                                    // dircount and dirnames are parallel arrays
+                                    dircount.push(files.length);
+                                    dirnames.push(item);
+                                    dirs = dirs + 1;
+                                }
+                                files.forEach(function node_apps_directory_wrapper_stat_dir_readdirs_each(value:string):void {
+                                    node_apps_directory_wrapper(item + sep + value, index);
+                                });
+                            });
+                        },
+                        populate = function node_apps_directory_wrapper_stat_populate(type:"link"|"file"|"directory"):void {
+                            if (exclusions.indexOf(filepath.replace(startPath + sep, "")) < 0) {
+                                if (listonly === true) {
+                                    filelist.push(filepath);
+                                } else {
+                                    list.push([filepath, type, parent, 0, stat]);
+                                }
+                            }
+                            if (dirs > 0) {
+                                dirCounter(filepath);
+                            } else {
+                                if (listonly === true) {
+                                    args.callback(filelist.sort());
+                                } else {
+                                    args.callback(list);
+                                }
+                            }
+                        };
+                    if (er !== null) {
+                        if (er.toString().indexOf("no such file or directory") > 0) {
+                            if (errorflag === true) {
+                                args.callback([]);
+                                return;
+                            }
+                            if (type === true) {
+                                apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`], "");
+                                return;
+                            }
+                            apps.errout([angrypath]);
+                            return;
+                        }
+                        apps.errout([er.toString()]);
+                        return;
+                    }
+                    if (stat === undefined) {
+                        if (type === true) {
+                            apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`], "");
+                            return;
+                        }
+                        apps.errout([angrypath]);
+                        return;
+                    }
+                    if (stat.isDirectory() === true) {
+                        if (type === true) {
+                            apps.log(["directory"], "");
+                            return;
+                        }
+                        if ((args.recursive === true || dirtest === false) && exclusions.indexOf(filepath.replace(startPath + sep, "")) < 0) {
+                            dirtest = true;
+                            dir(filepath);
+                        } else {
+                            populate("directory");
+                        }
+                    } else if (stat.isSymbolicLink() === true) {
+                        if (type === true) {
+                            apps.log(["symbolicLink"], "");
+                            return;
+                        }
+                        populate("link");
+                    } else if (stat.isFile() === true || stat.isBlockDevice() === true || stat.isCharacterDevice() === true) {
+                        if (type === true) {
+                            if (stat.isBlockDevice() === true) {
+                                apps.log(["blockDevice"], "");
+                            } else if (stat.isCharacterDevice() === true) {
+                                apps.log(["characterDevice"], "");
+                            } else {
+                                apps.log(["file"], "");
+                            }
+                            return;
+                        }
+                        size = size + stat.size;
+                        populate("file");
+                    } else {
+                        if (type === true) {
+                            if (stat.isFIFO() === true) {
+                                apps.log(["FIFO"], "");
+                            } else if (stat.isSocket() === true) {
+                                apps.log(["socket"], "");
+                            } else {
+                                apps.log(["unknown"], "");
+                            }
+                            return;
+                        }
+                        list[parent][3] = list[parent][3] - 1;
+                    }
+                });
+            };
+        statWrapper(startPath, 0);
+    };
+    // uniform error formatting
+    apps.errout = function node_apps_errout(errtext:string[]):void {
+        const bell = function node_apps_errout_bell():void {
+                apps.humantime(true);
+                if (command === "build" || command === "simulation" || command === "validation") {
+                    console.log("\u0007"); // bell sound
+                } else {
+                    console.log("");
+                }
+                if (command !== "debug") {
+                    process.exit(1);
+                }
+            },
+            error = function node_apps_errout_error():void {
+                const stack:string = new Error().stack.replace("Error", `${text.cyan}Stack trace${text.none + node.os.EOL}-----------`);
+                console.log("");
+                console.log(stack);
+                console.log("");
+                console.log(`${text.angry}Error Message${text.none}`);
+                console.log("------------");
+                if (errtext[0] === "" && errtext.length < 2) {
+                    console.log(`${text.yellow}No error message supplied${text.none}`);
+                } else {
+                    errtext.forEach(function node_apps_errout_each(value:string):void {
+                        console.log(value);
+                    });
+                }
+                console.log("");
+                bell();
+            },
+            debug = function node_apps_errout_debug():void {
+                const stack:string = new Error().stack,
+                    source:string = options.source,
+                    diff:string = options.diff,
+                    totalmem:number = node.os.totalmem(),
+                    freemem:number = node.os.freemem();
+                delete options.source;
+                delete options.diff;
+                console.log("");
+                console.log("---");
+                console.log("");
+                console.log("");
+                console.log("# Sparser - Debug Report");
+                console.log("");
+                console.log(`${text.green}## Error Message${text.none}`);
+                if (errtext[0] === "" && errtext.length < 2) {
+                    console.log(`${text.yellow}No error message supplied${text.none}`);
+                } else {
+                    console.log("```");
+                    errtext.forEach(function node_apps_errout_each(value:string):void {
+                        // eslint-disable-next-line
+                        console.log(value.replace(/\u001b/g, "\\u001b"));
+                    });
+                    console.log("```");
+                }
+                console.log("");
+                console.log(`${text.green}## Stack Trace${text.none}`);
+                console.log("```");
+                console.log(stack.replace(/\s*Error\s+/, "    "));
+                console.log("```");
+                console.log("");
+                console.log(`${text.green}## Environment${text.none}`);
+                console.log(`* OS - **${node.os.platform()} ${node.os.release()}**`);
+                console.log(`* Mem - ${apps.commas(totalmem)} - ${apps.commas(freemem)} = **${apps.commas(totalmem - freemem)}**`);
+                console.log(`* CPU - ${node.os.arch()} ${node.os.cpus().length} cores`);
+                console.log("");
+                console.log(`${text.green}## Command Line Instruction${text.none}`);
+                console.log("```");
+                console.log(cli);
+                console.log("```");
+                console.log("");
+                if (command === "beautify" || command === "diff" || command === "minify" || command === "parse") {
+                    console.log(`${text.green}## Source Sample${text.none}`);
+                    console.log("```");
+                    console.log(source);
+                    console.log("```");
+                    console.log("");
+                } else {
+                    delete options.parsed;
+                }
+                if (command === "diff") {
+                    console.log(`${text.green}## Diff Sample${text.none}`);
+                    console.log("```");
+                    console.log(diff);
+                    console.log("```");
+                    console.log("");
+                }
+                console.log(`${text.green}## Options${text.none}`);
+                console.log("```");
+                console.log(options);
+                console.log("```");
+                console.log("");
+                console.log(`${text.green}## Time${text.none}`);
+                bell();
+            };
+        errorflag = true;
+        if (writeflag !== "") {
+            apps.remove(writeflag, error);
+            writeflag = "";
+        } else if (process.argv.indexOf("debug") > -1) {
+            debug();
+        } else {
+            error();
+        }
+    };
+    // http(s) get function
+    apps.get = function node_apps_get(address:string, callback:Function|null):void {
+        if (command === "get") {
+            address = process.argv[0];
+        }
+        if (address === undefined) {
+            apps.errout([
+                "The get command requires an address in http/https scheme.",
+                `Please execute ${text.cyan}prettydiff commands get${text.none} for examples.`
+            ]);
+            return;
+        }
+        let file:string = "";
+        const scheme:string = (address.indexOf("https") === 0)
+                ? "https"
+                : "http";
+        if ((/^(https?:\/\/)/).test(address) === false) {
+            apps.errout([
+                `Address: ${text.angry + address + text.none}`,
+                "The get command requires an address in http/https scheme.",
+                `Please execute ${text.cyan}prettydiff commands get${text.none} for examples.`
+            ]);
+            return;
+        }
+        node[scheme].get(address, function node_apps_get_callback(res:http.IncomingMessage) {
+            res.on("data", function node_apps_get_callback_data(chunk:string):void {
+                file = file + chunk;
+            });
+            res.on("end", function node_apps_get_callback_end() {
+                if (res.statusCode !== 200) {
+                    if (res.statusCode === 301 || res.statusCode === 302 || res.statusCode === 303 || res.statusCode === 307 || res.statusCode === 308) {
+                        if (verbose === true) {
+                            console.log(`${res.statusCode} ${node.http.STATUS_CODES[res.statusCode]} - ${address}`);
+                        }
+                        process.argv[0] = res.headers.location;
+                        address = process.argv[0];
+                        apps.get(address, callback);
+                        return;
+                    }
+                    apps.errout([`${scheme}.get failed with status code ${res.statusCode}`]);
+                    return;
+                }
+                if (command === "get") {
+                    apps.log([""], file.toString());
+                } else if (callback !== null) {
+                    callback(file);
+                }
+            });
+        });
+    };
+    // converting time durations into something people read
+    apps.humantime = function node_apps_humantime(finished:boolean):string {
+        let minuteString:string = "",
+            hourString:string   = "",
+            secondString:string = "",
+            finalTime:string    = "",
+            finalMem:string     = "",
+            minutes:number      = 0,
+            hours:number        = 0,
+            memory,
+            elapsed:number      = (function node_apps_humantime_elapsed():number {
+                const big:number = 1e9,
+                    dtime:[number, number] = process.hrtime(startTime);
+                if (dtime[1] === 0) {
+                    return dtime[0];
+                }
+                return dtime[0] + (dtime[1] / big);
+            }());
+        const numberString = function node_apps_humantime_numberString(numb:number):string {
+                const strSplit:string[] = String(numb).split(".");
+                if (strSplit.length > 1) {
                     if (strSplit[1].length < 9) {
                         do {
                             strSplit[1]  = strSplit[1] + 0;
@@ -253,1311 +1340,1082 @@ const services = function services_() {
                     if (strSplit[1].length > 9) {
                         return `${strSplit[0]}.${strSplit[1].slice(0, 9)}`;
                     }
-                    return String(elapsed);
-                };
-            memory       = process.memoryUsage();
-            finalMem     = prettybytes(memory.rss);
-
-            //last line for additional instructions without bias to the timer
-            secondString = secondFix();
-            if (elapsed >= 60 && elapsed < 3600) {
-                minute();
-            } else if (elapsed >= 3600) {
-                hours      = parseInt((elapsed / 3600).toString(), 10);
-                elapsed    = elapsed - (hours * 3600);
-                hourString = (finished === true)
-                    ? plural(hours, " hour")
-                    : (hours < 10)
-                        ? `0${hours}`
-                        : String(hours);
-                minute();
-            } else {
-                secondString = (finished === true)
-                    ? plural(elapsed, " second")
-                    : secondString;
-            }
-            if (finished === true) {
-                finalTime = hourString + minuteString + secondString;
-                console.log(`${finalMem} of memory consumed`);
-                console.log(`${finalTime}total time`);
-                console.log("");
-            } else {
-                if (hourString === "") {
-                    hourString = "00";
+                    return `${strSplit[0]}.${strSplit[1]}`;
                 }
-                if (minuteString === "") {
-                    minuteString = "00";
-                }
-                if ((/^([0-9]\.)/).test(secondString) === true) {
-                    secondString = `0${secondString}`;
-                }
-                return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
-            }
-        },
-        errout = function services_errout(message:string):void {
-            let stack = new Error().stack;
-            console.log("");
-            console.log(`${text.angry}Script error${text.none}`);
-            console.log("------------");
-            if (message === "") {
-                console.log(`${text.yellow}No error message supplied${text.none}`);
-            } else {
-                console.log(message);
-            }
-            console.log("");
-            if (process.platform.toLowerCase() === "win32") {
-                stack = stack.replace("Error", `${text.cyan}Stack trace${text.none}\r\n-----------`);
-            } else {
-                stack = stack.replace("Error", `${text.cyan}Stack trace${text.none}\n-----------`);
-            }
-            console.log(stack);
-            humantime(true);
-            process.exit(1);
-        },
-        alias = function services_alias(comms:string):string {
-            if (commandList[comms] !== undefined) {
-                return comms;
-            }
-            if (comms.charAt(0) === "b") {
-                return "build";
-            }
-            if (comms.indexOf("c") === 0) {
-                return "commands";
-            }
-            if (comms.charAt(0) === "i") {
-                return "inventory";
-            }
-            if (comms.indexOf("p") === 0) {
-                if (comms.indexOf("pe") === 0) {
-                    return "performance";
-                }
-                if (comms.indexOf("parse-a") === 0) {
-                    return "parse-array";
-                }
-                if (comms.indexOf("parse-o") === 0) {
-                    return "parse-object";
-                }
-                return "parse-table";
-            }
-            if (comms.indexOf("s") > -1 || comms === "http") {
-                return "server";
-            }
-            if (comms.charAt(0) === "v") {
-                if (comms.charAt(1) === "" || comms.charAt(1) === "e") {
-                    return "version";
-                }
-                return "validation";
-            }
-            return "help";
-        },
-        validate = function services_validate():void {
-            const validation = function services_validate_validation() {
-                let next       = function services_validate_validation_next() {
-                        let phase = order[0];
-                        const complete = function services_validate_validation_complete() {
-                                console.log("\u0007");
-                                console.log("All tasks complete... Exiting clean!");
-                                humantime(true);
-                                if (process.argv[1].indexOf("validate.js") > -1) {
-                                    process.exit(0);
-                                }
-                            };
-                        if (order.length < orderlen) {
-                            console.log("________________________________________________________________________");
-                            console.log("");
-                        }
-                        if (order.length < 1) {
-                            return complete();
-                        }
-                        order.splice(0, 1);
-                        phases[phase]();
-                    },
-                    parse:parse,
-                    parse_options:parseOptions = {
-                        correct         : false,
-                        crlf            : false,
-                        language        : "javascript",
-                        lexer           : "script",
-                        lexerOptions    : {},
-                        outputFormat    : "arrays",
-                        preserve_comment: false,
-                        source          : "",
-                        wrap            : 0
-                    },
-                    framework:parseFramework;
-                const order      = [
-                        "lint", //       - run eslint on all unexcluded JS files in the repo
-                        "framework", //  - test the framework
-                        "codeunits" //   - test the lexers
-                    ],
-                    orderlen:number   = order.length,
-                    phases     = {
-                        codeunits: function services_validate_validation_coreunits():void {
-                            const files  = {
-                                    code  : [],
-                                    parsed: []
-                                },
-                                count  = {
-                                    code  : 0,
-                                    lexer : 0,
-                                    parsed: 0
-                                },
-                                total  = {
-                                    code  : 0,
-                                    lexer : 0,
-                                    parsed: 0
-                                },
-                                lexers:string[] = Object.keys(framework.lexer),
-                                compare = function services_validate_validation_coreunits_compare():void {
-                                    let len:number       = (files.code.length > files.parsed.length)
-                                            ? files.code.length
-                                            : files.parsed.length,
-                                        lang:languageAuto,
-                                        a:number         = 0,
-                                        str:string       = "",
-                                        outputObjects:recordList,
-                                        filecount:number = 0,
-                                        currentlex:string = "",
-                                        empty:number = 0,
-                                        missing:number = 0;
-                                    const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
-                                            const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
-                                            console.log("");
-                                            console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
-                                            currentlex = lex;
-                                        },
-                                        completeText = function services_validate_validation_coreunits_compare_completeText():void {
-                                            console.log("");
-                                            if (missing < 1 && empty < 1) {
-                                                console.log(`${text.green}Test units evaluated without failure!${text.none}`);
-                                            } else {
-                                                let pe:string = (empty > 1)
-                                                        ? "s are"
-                                                        : " is",
-                                                    pm:string = (missing > 1)
-                                                        ? "s"
-                                                        : "";
-                                                if (missing < 1) {
-                                                    console.log(`${text.green}Test units passed, but ${text.angry + empty} file${pe} empty.${text.none}`);
-                                                } else if (empty < 1) {
-                                                    console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm}.${text.none}`);
-                                                } else {
-                                                    console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm} and ${empty} file${pe} empty.${text.none}`);
-                                                }
-                                            }
-                                        },
-                                        comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
-                                            filecount = filecount + 1;
-                                            console.log(`${humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
-                                            if (a === len - 1) {
-                                                completeText();
-                                                return next();
-                                            }
-                                        },
-                                        diffFiles  = function services_validate_validation_coreunits_compare_diffFiles(sampleName:string, sampleSource:recordList, sampleDiff:recordList):boolean {
-                                            let plus:string   = "",
-                                                plural:string = "",
-                                                report:[string, number, number],
-                                                total:number  = 0;
-                                            const diffview = require(`${project}test${sep}diffview.js`),
-                                                beautify = function services_validate_validation_coreunits_compare_beautify(item:recordList) {
-                                                    const outputString:string[] = ["["],
-                                                        len:number = item.length - 1;
-                                                    let x:number = 0;
-                                                    if (len > 0) {
-                                                        do {
-                                                            outputString.push(`${JSON.stringify(item[x])},`);
-                                                            x = x + 1;
-                                                        } while (x < len);
-                                                    }
-                                                    outputString.push(JSON.stringify(item[len]));
-                                                    outputString.push("]");
-                                                    return outputString.join(node.os.EOL);
-                                                },
-                                                diff_options = {
-                                                    context: 2,
-                                                    diff: beautify(sampleDiff),
-                                                    diff_cli: true,
-                                                    language: "text",
-                                                    mode: "diff",
-                                                    source: beautify(sampleSource)
-                                                };
-                                            report          = diffview(diff_options);
-                                            total           = report[1];
-                                            if (total > 50) {
-                                                plus = "+";
-                                            }
-                                            if (total !== 1) {
-                                                plural = "s";
-                                            }
-                                            if (total < 1) {
-                                                comparePass();
-                                                return false;
-                                            }
-                                            console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
-                                            console.log("");
-                                            console.log(`${text.red}Red${text.none} = Generated from raw code file`);
-                                            console.log(`${text.green}Green${text.none} = Control code from parsed file`);
-                                            console.log(report[0]);
-                                            console.log("");
-                                            console.log(`${total + plus} ${text.green}difference${plural} counted.${text.none}`);
-                                            errout(`Pretty Diff ${text.angry}failed${text.none} on file: ${text.cyan + sampleName + text.none}`);
-                                            return true;
-                                        };
-                                    files.code   = parse.safeSort(files.code, "ascend", false);
-                                    files.parsed = parse.safeSort(files.parsed, "ascend", false);
-                                    lexer();
-                                    do {
-                                        if (files.code[a][0].indexOf(currentlex) !== 0) {
-                                            lexer();
-                                        }
-                                        if (files.code[a] === undefined || files.parsed[a] === undefined) {
-                                            if (files.code[a] === undefined) {
-                                                console.log(`${text.yellow}samples_code directory is missing file:${text.none} ${files.parsed[a][0]}`);
-                                                files.parsed.splice(a, 1);
-                                            } else {
-                                                console.log(`${text.yellow}samples_parse directory is missing file:${text.none} ${files.code[a][0]}`);
-                                                files.code.splice(a, 1);
-                                            }
-                                            len = (files.code.length > files.parsed.length)
-                                                ? files.code.length
-                                                : files.parsed.length;
-                                            a   = a - 1;
-                                        } else if (files.code[a][0] === files.parsed[a][0]) {
-                                            if (files.parsed[a][1].replace(/^\s+$/, "") === "") {
-                                                empty = empty + 1;
-                                                console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
-                                            } else if (files.code[a][1].replace(/^\s+$/, "") === "") {
-                                                empty = empty + 1;
-                                                console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
-                                            } else {
-                                                if ((/_correct(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_correct-/).test(files.code[a][0]) === true) {
-                                                        if ((/_correct-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.correct = false;
-                                                        } else {
-                                                            parse_options.correct = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.correct = true;
-                                                    }
-                                                } else {
-                                                    parse_options.correct = false;
-                                                }
-                                                if ((/_endComma-/).test(files.code[a][0]) === true) {
-                                                    if ((/_endComma-always/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.script.end_comma = "always";
-                                                    } else if ((/_endComma-never/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.script.end_comma = "never";
-                                                    } else {
-                                                        parse_options.lexerOptions.script.end_comma = "none";
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.script.end_comma = "none";
-                                                }
-                                                if ((/_noleadzero(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_noleadzero-/).test(files.code[a][0]) === true) {
-                                                        if ((/_noleadzero-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.style.no_lead_zero = false;
-                                                        } else {
-                                                            parse_options.lexerOptions.style.no_lead_zero = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.style.no_lead_zero = true;
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.style.no_lead_zero = false;
-                                                }
-                                                if ((/_quoteConvert-/).test(files.code[a][0]) === true) {
-                                                    if ((/_quoteConvert-double/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.markup.quote_convert = "double";
-                                                        parse_options.lexerOptions.script.quote_convert = "double";
-                                                        parse_options.lexerOptions.style.quote_convert = "double";
-                                                    } else if ((/_quoteConvert-single/).test(files.code[a][0]) === true) {
-                                                        parse_options.lexerOptions.markup.quote_convert = "single";
-                                                        parse_options.lexerOptions.script.quote_convert = "single";
-                                                        parse_options.lexerOptions.style.quote_convert = "single";
-                                                    } else {
-                                                        parse_options.lexerOptions.markup.quote_convert = "none";
-                                                        parse_options.lexerOptions.script.quote_convert = "none";
-                                                        parse_options.lexerOptions.style.quote_convert = "none";
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.markup.quote_convert = "none";
-                                                    parse_options.lexerOptions.script.quote_convert = "none";
-                                                    parse_options.lexerOptions.style.quote_convert = "none";
-                                                }
-                                                if ((/_objectSort(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_objectSort-/).test(files.code[a][0]) === true) {
-                                                        if ((/_objectSort-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.style.objectSort = false;
-                                                            parse_options.lexerOptions.script.objectSort = false;
-                                                        } else {
-                                                            parse_options.lexerOptions.style.objectSort = true;
-                                                            parse_options.lexerOptions.script.objectSort = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.style.objectSort = true;
-                                                        parse_options.lexerOptions.script.objectSort = true;
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.style.objectSort = false;
-                                                    parse_options.lexerOptions.script.objectSort = false;
-                                                }
-                                                if ((/_preserveComment(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_preserveComment-/).test(files.code[a][0]) === true) {
-                                                        if ((/_preserveComment-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.preserve_comment = false;
-                                                        } else {
-                                                            parse_options.preserve_comment = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.preserve_comment = true;
-                                                    }
-                                                } else {
-                                                    parse_options.preserve_comment = false;
-                                                }
-                                                if ((/_preserveText(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_preserveText-/).test(files.code[a][0]) === true) {
-                                                        if ((/_preserveText-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.markup.preserve_text = false;
-                                                        } else {
-                                                            parse_options.lexerOptions.markup.preserve_text = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.markup.preserve_text = true;
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.markup.preserve_text = false;
-                                                }
-                                                if ((/_tagSort(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_tagSort-/).test(files.code[a][0]) === true) {
-                                                        if ((/_tagSort-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.markup.tagSort = false;
-                                                        } else {
-                                                            parse_options.lexerOptions.markup.tagSort = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.markup.tagSort = true;
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.markup.tagSort = false;
-                                                }
-                                                if ((/_tagMerge(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_tagMerge-/).test(files.code[a][0]) === true) {
-                                                        if ((/_tagMerge-false/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.markup.tag_merge = false;
-                                                        } else {
-                                                            parse_options.lexerOptions.markup.tag_merge = true;
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.markup.tag_merge = true;
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.markup.tag_merge = false;
-                                                }
-                                                if ((/_varword(\.|_|-)/).test(files.code[a][0]) === true) {
-                                                    if ((/_varword-/).test(files.code[a][0]) === true) {
-                                                        if ((/_varword-list/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.script.varword = "list";
-                                                        } else if ((/_varword-each/).test(files.code[a][0]) === true) {
-                                                            parse_options.lexerOptions.script.varword = "each";
-                                                        } else {
-                                                            parse_options.lexerOptions.script.varword = "none";
-                                                        }
-                                                    } else {
-                                                        parse_options.lexerOptions.script.varword = "none";
-                                                    }
-                                                } else {
-                                                    parse_options.lexerOptions.script.varword = "none";
-                                                }
-                                                if ((/_wrap-\d+(\.|_)/).test(files.code[a][0]) === true) {
-                                                    let wrap:string = files.code[a][0].slice(files.code[a][0].indexOf("_wrap-") + 6),
-                                                        numb:number = 0;
-                                                    do {
-                                                        numb = numb + 1;
-                                                    } while ((/\d/).test(wrap.charAt(numb)) === true);
-                                                    wrap = wrap.slice(0, numb);
-                                                    if (isNaN(Number(wrap)) === false) {
-                                                        parse_options.wrap = Number(wrap);
-                                                    }
-                                                } else {
-                                                    parse_options.wrap = 0;
-                                                }
-                                                lang = framework.language.auto(files.code[a][1], "javascript");
-                                                if ((/_lang-\w+(\.|_)/).test(files.code[a][0]) === true) {
-                                                    parse_options.language = files.code[a][0].split("_lang-")[1];
-                                                    if (parse_options.language.indexOf("_") > 0) {
-                                                        parse_options.language = parse_options.language.split("_")[0];
-                                                    } else {
-                                                        parse_options.language = parse_options.language.split(".")[0];
-                                                    }
-                                                } else {
-                                                    parse_options.language = lang[0];
-                                                }
-                                                parse_options.source = files.code[a][1];
-                                                parse_options.lexer  = currentlex;
-                                                outputObjects        = framework.parserObjects(parse_options);
-                                                str                  = (framework.parseerror === "")
-                                                    ? JSON.stringify(outputObjects)
-                                                    : framework.parseerror;
-                                                if (str === files.parsed[a][1]) {
-                                                    comparePass();
-                                                } else {
-                                                    if (framework.parseerror === "") {
-                                                        if (diffFiles(files.parsed[a][0], outputObjects, JSON.parse(files.parsed[a][1])) === true) {
-                                                            return;
-                                                        }
-                                                    } else {
-                                                        console.log(`${humantime(false) + text.angry}Fail ${filecount + 1}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
-                                                        console.log("");
-                                                        console.log(`Unexpected parse error returned: ${text.angry + framework.parseerror + text.none}`);
-                                                        console.log("");
-                                                        errout(`Pretty Diff ${text.angry}failed${text.none} on file: ${text.cyan + files.parsed[a][0] + text.none}`);
-                                                        return;
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            if (files.code[a][0] < files.parsed[a][0]) {
-                                                missing = missing + 1;
-                                                console.log(`${text.yellow}Parsed samples directory is missing file:${text.none} ${files.code[a][0]}`);
-                                                files.code.splice(a, 1);
-                                            } else {
-                                                missing = missing + 1;
-                                                console.log(`${text.yellow}Code samples directory is missing file:${text.none} ${files.parsed[a][0]}`);
-                                                files.parsed.splice(a, 1);
-                                            }
-                                            len = (files.code.length > files.parsed.length)
-                                                ? files.code.length
-                                                : files.parsed.length;
-                                            a   = a - 1;
-                                            if (a === len - 1) {
-                                                completeText();
-                                                return next();
-                                            }
-                                        }
-                                        a = a + 1;
-                                    } while (a < len);
-                                },
-                                readDir = function services_validate_validation_coreunits_readDir(type:string, lexer:string):void {
-                                    const dirpath:string = `${project}test${sep}samples_${type + sep + lexer + sep}`;
-                                    node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
-                                        if (err !== null) {
-                                            if (err.toString().indexOf("no such file or directory") > 0) {
-                                                return errout(`The directory ${dirpath} ${text.angry}doesn't exist${text.none}. Provide the necessary test samples for ${text.cyan + lexer + text.none}.`);
-                                            }
-                                            console.log(`Error reading from directory ${dirpath}`);
-                                            return errout(err);
-                                        }
-                                        if (list === undefined) {
-                                            if (total[type] === 0) {
-                                                return errout(`No files of type ${type} for lexer ${lexer}.`);
-                                            }
-                                            return errout(`undefined returned when reading files from ${dirpath}`);
-                                        }
-                                        const pusher = function services_validate_validation_coreunits_readDir_callback_pusher(val) {
-                                            node.fs.readFile(
-                                                dirpath + val,
-                                                "utf8",
-                                                function services_validate_validation_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
-                                                    count[type] = count[type] + 1;
-                                                    if (erra !== null && erra !== undefined) {
-                                                        errout(`Error reading file: ${project}test${sep}samples_${type + sep + lexer + sep + val}`);
-                                                    } else {
-                                                        files[type].push([lexer + sep + val, fileData]);
-                                                    }
-                                                    if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
-                                                        compare();
-                                                    }
-                                                }
-                                            );
-                                        };
-                                        total[type] = total[type] + list.length;
-                                        if (err !== null) {
-                                            errout(`Error reading from directory: ${dirpath}`);
-                                        }
-                                        if (list.length === 0 && count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
-                                            compare();
-                                        } else {
-                                            list.forEach(pusher);
-                                        }
-                                    });
-                                };
-                            console.log(`${text.cyan}Core Unit Testing${text.none}`);
-                            total.lexer = lexers.length;
-                            lexers.forEach(function services_validate_validation_coreunits_lexers(value:string) {
-                                count.lexer = count.lexer + 1;
-                                readDir("code", value);
-                                readDir("parsed", value);
-                            });
-                        },
-                        framework: function services_validate_validation_framework() {
-                            let keys    = [],
-                                keysort = "";
-                            const keylist = "concat,count,data,datanames,lineNumber,linesSpace,objectSort,parseOptions,pop,push,references,safeSort,sortCorrection,spacer,splice,structure,wrapCommentBlock,wrapCommentLine";
-                            console.log(`${text.cyan}Framework Testing${text.none}`);
-                            console.log("");
-                            framework.parserArrays({
-                                correct         : false,
-                                crlf            : false,
-                                language        : "html",
-                                lexer           : "markup",
-                                lexerOptions    : {},
-                                outputFormat    : "objects",
-                                preserve_comment: false,
-                                source          : "",
-                                wrap            : 0
-                            });
-                            keys = Object.keys(parse);
-                            keysort = parse.safeSort(keys, "ascend", false).join();
-                            if (keysort !== keylist) {
-                                console.log(`${text.cyan}Expected Keys${text.none}`);
-                                console.log(keylist);
-                                console.log(`${text.cyan}Actual Keys${text.none}`);
-                                console.log(keysort);
-                                return errout(`${text.angry}Parse framework failure:${text.none} The "parse" object does not match the known list of required properties.`);
-                            }
-                            console.log(`${humantime(false) + text.green}Object parse contains only the standard properties.${text.none}`);
-                            
-                            if (typeof parse.concat !== "function" || parse.concat.name !== "parse_concat") {
-                                return errout(`${text.angry}Parse framework failure:${text.none} parse.concat does not point to the function named parse_concat.`);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.concat points to function parse_concat.${text.none}`);
-                            
-                            if (parse.count !== -1) {
-                                return errout(`${text.angry}Parse framework failure:${text.none} The default for parse.count isn't -1 or type number.`);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.count has default value of -1 and type number.${text.none}`);
-                            
-                            if (
-                                typeof parse.data !== "object" || JSON.stringify(parse.data) !== "{\"begin\":[],\"ender\":[],\"lexer\":[],\"lines\":[],\"stack\":[],\"token\":[],\"types\":[]}"
-                            ) {
-                                return errout(`${text.angry}Parse framework failure: parse.data does not contain the properties as defined by parse.datanames or their values aren't empty arrays.${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.data contains properties as defined by parse.datanames and each is an empty array.${text.none}`);
-                            
-                            if (JSON.stringify(parse.datanames) !== "[\"begin\",\"ender\",\"lexer\",\"lines\",\"stack\",\"token\",\"types\"]") {
-                                return errout(`${text.angry}Parse framework failure: parse.datanames does not contain the values: 'begin', 'ender', lexer', 'lines', 'stack', 'token', and 'types'.${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.datanames contains only the data field names.${text.none}`);
-            
-                            if (parse.lineNumber !== 1) {
-                                return errout("${text.angry}Parse framework failure: parse.lineNumber does not have a default value of 1 or type number.${text.none} ");
-                            }
-                            console.log(`${humantime(false) + text.green}parse.lineNumber has a default value of 1 and type number.${text.none}`);
-                            
-                            // The correct default for linesSpace is 0
-                            // but the default is changed by the source of empty string.
-                            if (parse.linesSpace !== 1) {
-                                return errout(`${text.angry}Parse framework failure: parse.linesSpace does not have a default value of 1 or type number.${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.linesSpace has a default value of 0 and type number.${text.none}`);
-                            
-                            if (typeof parse.objectSort !== "function" || parse.objectSort.name !== "parse_objectSort") {
-                                return errout(`${text.angry}Parse framework failure: parse.objectSort is not assigned to named function parse_objectSort${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.objectSort is assigned to named function parse_objectSort${text.none}`);
-                            
-                            if (typeof parse.pop !== "function" || parse.pop.name !== "parse_pop") {
-                                return errout(`${text.angry}Parse framework failure: parse.pop is not assigned to named function parse_pop${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.pop is assigned to named function parse_pop${text.none}`);
-                            
-                            if (typeof parse.push !== "function" || parse.push.name !== "parse_push") {
-                                return errout(`${text.angry}Parse framework failure: parse.push is not assigned to named function parse_push${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.push is assigned to named function parse_push${text.none}`);
-                            
-                            if (parse.push.toString().indexOf("parse.structure.push([structure, parse.count])") < 0 || parse.push.toString().indexOf("parse.structure.pop") < 0) {
-                                return errout(`${text.angry}Parse framework failure: parse.push does not regulate parse.structure${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.push contains references to push and pop parse.structure${text.none}`);
-            
-                            if (typeof parse.safeSort !== "function" || parse.safeSort.name !== "parse_safeSort") {
-                                return errout(`${text.angry}Parse framework failure: parse.safeSort is not assigned to named function parse_safeSort${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.safeSort is assigned to named function parse_safeSort${text.none}`);
-                            
-                            if (typeof parse.spacer !== "function" || parse.spacer.name !== "parse_spacer") {
-                                return errout(`${text.angry}Parse framework failure: parse.spacer is not assigned to named function parse_spacer${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.spacer is assigned to named function parse_spacer${text.none}`);
-                            
-                            if (typeof parse.splice !== "function" || parse.splice.name !== "parse_splice") {
-                                return errout(`${text.angry}Parse framework failure: parse.splice is not assigned to named function parse_splice${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.splice is assigned to named function parse_splice${text.none}`);
-            
-                            if (Array.isArray(parse.structure) === false || parse.structure.length !== 1 || Array.isArray(parse.structure[0]) === false || parse.structure[0][0] !== "global" || parse.structure[0][1] !== -1) {
-                                return errout(`${text.angry}Parse framework failure: parse.structure is not assigned the default [["global", -1]]${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.structure is assigned the default of [["global", -1]]${text.none}`);
-            
-                            if (parse.structure.pop.name !== "parse_structure_pop") {
-                                return errout(`${text.angry}Parse framework failure: parse.structure does not have a custom 'pop' method.${text.none} `);
-                            }
-                            console.log(`${humantime(false) + text.green}parse.structure does have a custom 'pop' method.${text.none}`);
-
-                            console.log("");
-                            console.log(`${text.green}Framework testing complete!${text.none}`);
-                            return next();
-                        },
-                        lint     : function services_validate_validation_lint() {
-                            const ignoreDirectory = [
-                                    ".git",
-                                    ".vscode",
-                                    "bin",
-                                    "coverage",
-                                    "guide",
-                                    "ignore",
-                                    "node_modules",
-                                    "test"
-                                ],
-                                files:string[]           = [],
-                                lintrun         = function services_validate_validation_lint_lintrun() {
-                                    let filesCount:number = 0;
-                                    const filesTotal = files.length,
-                                        lintit = function services_validate_validation_lint_lintrun_lintit(val:string):void {
-                                            node.child(`eslint ${val}`, {
-                                                cwd: project
-                                            }, function services_validate_validation_lint_lintrun_lintit_eslint(err, stdout, stderr) {
-                                                if (stdout === "" || stdout.indexOf("0:0  warning  File ignored because of a matching ignore pattern.") > -1) {
-                                                    if (err !== null) {
-                                                        errout(err);
-                                                        return;
-                                                    }
-                                                    if (stderr !== null && stderr !== "") {
-                                                        errout(stderr);
-                                                        return;
-                                                    }
-                                                    filesCount = filesCount + 1;
-                                                    console.log(`${humantime(false) + text.green}Lint passed:${text.none} ${val}`);
-                                                    if (filesCount === filesTotal) {
-                                                        console.log("");
-                                                        console.log(`${text.green}Lint complete!${text.none}`);
-                                                        next();
-                                                        return;
-                                                    }
-                                                } else {
-                                                    console.log(stdout);
-                                                    errout("Lint failure.");
-                                                    return;
-                                                }
-                                            })
-                                        };
-                                    files.forEach(lintit);
-                                };
-                            console.log(`${text.cyan}Linting${text.none}`);
-                            console.log("");
-                            (function services_validate_validation_lint_getFiles():void {
-                                let total:number    = 1,
-                                    count:number    = 0;
-                                const idLen:number    = ignoreDirectory.length,
-                                    readDir  = function services_validate_validation_lint_getFiles_readDir(filepath:string):void {
-                                        node.fs.readdir(
-                                            filepath,
-                                            function services_validate_validation_lint_getFiles_readDir_callback(erra, list) {
-                                                const fileEval = function services_validate_validation_lint_getFiles_readDir_callback_fileEval(val:string):void {
-                                                    const filename:string = filepath + sep + val;
-                                                    node.fs.stat(
-                                                        filename,
-                                                        function services_validate_validation_lint_getFiles_readDir_callback_fileEval_stat(errb, stat) {
-                                                            let a:number         = 0,
-                                                                ignoreDir:boolean = false;
-                                                            const dirtest:string   = `${filepath.replace(/\\/g, "/")}/${val}`;
-                                                            if (errb !== null) {
-                                                                return errout(errb);
-                                                            }
-                                                            count = count + 1;
-                                                            if (stat.isFile() === true && (/(\.js)$/).test(val) === true) {
-                                                                files.push(filename);
-                                                            }
-                                                            if (stat.isDirectory() === true) {
-                                                                do {
-                                                                    if (dirtest.indexOf(ignoreDirectory[a]) === dirtest.length - ignoreDirectory[a].length) {
-                                                                        ignoreDir = true;
-                                                                        break;
-                                                                    }
-                                                                    a = a + 1;
-                                                                } while (a < idLen);
-                                                                if (ignoreDir === true) {
-                                                                    if (count === total) {
-                                                                        lintrun();
-                                                                    }
-                                                                } else {
-                                                                    total = total + 1;
-                                                                    services_validate_validation_lint_getFiles_readDir(filename);
-                                                                }
-                                                            } else if (count === total) {
-                                                                lintrun();
-                                                            }
-                                                        }
-                                                    );
-                                                };
-                                                if (erra !== null) {
-                                                    return errout(`Error reading path: ${filepath}\n${erra}`);
-                                                }
-                                                total = total + list.length - 1;
-                                                list.forEach(fileEval);
-                                            }
-                                        );
-                                    };
-                                readDir(`${project}`);
-                            }());
-                        }
-                    };
-            
-                require(`${project}js${sep}parse.js`);
-                require(`${project}js${sep}language.js`);
-                framework = global.parseFramework;
-                framework.lexer      = {};
-                framework.parseerror = "";
-                parse             = framework.parse;
-                require(`${project}js${sep}lexers${sep}all.js`)(parse_options, next);
-                return "";
-            };
-            console.log("");
-            console.log("Parse Framework - Validation Tasks");
-            console.log("");
-            validation();
-        },
-        server = function services_server():void {
-            let ws:any,
-                timeStore:number = 0;
-            const socket   = require("ws"),
-                cwd      = process.cwd(),
-                port:number = (process.argv[2] === undefined)
-                    ? 9999
-                    : Number(process.argv[2]),
-                serverError = function services_server_serverError(error) {
-                    if (error.code === "EADDRINUSE") {
-                        if (error.port === port + 1) {
-                            console.log(`${text.angry}Error:${text.none} Web socket channel port, ${text.cyan + port + text.none}, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.`);
-                        } else {
-                            console.log(`${text.angry}Error:${text.none} Specified port, ${text.cyan + port + text.none}, is in use!`);
-                        }
-                    } else {
-                        console.log(`${text.angry}Error:${text.none} ${error.Error}`);
-                    }
-                    return process.exit(1);
-                },
-                server   = node.http.createServer(function services_server_create(request, response):void {
-                    let quest:number = request.url.indexOf("?"),
-                        uri:string = (quest > 0)
-                            ? request.url.slice(0, quest)
-                            : request.url,
-                        file:string = project + sep + uri.slice(1);
-                    if (uri === "/") {
-                        file = `${project + sep}runtimes${sep}browsertest.xhtml`;
-                    }
-                    if (request.url.indexOf("favicon.ico") < 0) {
-                        node.fs.readFile(file, "utf8", function services_server_create_readFile(err, data):void {
-                            if (err !== undefined && err !== null) {
-                                if (err.toString().indexOf("no such file or directory") > 0) {
-                                    response.writeHead(404, {"Content-Type": "text/plain"});
-                                    if (file.indexOf("apple-touch") < 0 && file.indexOf("favicon") < 0) {
-                                        console.log(`${text.angry}404${text.none} for ${file.replace(/\/|\\/g, sep)}`);
-                                    }
-                                    return;
-                                }
-                                response.write(JSON.stringify(err));
-                                console.log(err);
-                                return;
-                            }
-                            if (file.indexOf(".js") === file.length - 3) {
-                                response.writeHead(200, {"Content-Type": "application/javascript"});
-                            } else if (file.indexOf(".css") === file.length - 4) {
-                                response.writeHead(200, {"Content-Type": "text/css"});
-                            } else if (file.indexOf(".xhtml") === file.length - 6) {
-                                response.writeHead(200, {"Content-Type": "application/xhtml+xml"});
-                            }
-                            response.write(data);
-                            response.end();
-                            //console.log(`Responded with ${file}`);
-                        });
-                    } else {
-                        response.end();
-                    }
-                });
-            if (isNaN(port) === true) {
-                console.log(`${text.angry}Error:${text.none} Specified port is, ${port}, which not a number!`);
-                return process.exit(1);
-            }
-            if (cwd.indexOf("parse-framework") < cwd.length - 15) {
-                process.chdir(cwd.slice(0, cwd.indexOf("parse-framework") + 15));
-            }
-            ws = new socket.Server({port: port + 1});
-            ws.broadcast = function socket_broadcast(data:string):void {
-                ws.clients.forEach(function socket_broadcast_clients(client):void {
-                    if (client.readyState === socket.OPEN) {
-                        client.send(data);
-                    }
-                });
-            };
-            console.log(`HTTP server is up at: ${text.cyan}http://localhost:${port + text.none}`);
-            console.log(`${text.green}Starting web server and file system watcher!${text.none}`);
-            console.log("");
-            node.fs.watch(project, {
-                recursive: true
-            }, function services_server_watch(type, filename:string):void {
-                if (filename.indexOf(".git") === 0) {
-                    return;
-                }
-                if (filename.indexOf("node_modules") === 0) {
-                    return;
-                }
-                if (filename.indexOf("js") === 0) {
-                    return;
-                }
-                if (filename.indexOf(`test${sep}samples_code`) === 0) {
-                    return;
-                }
-                const extension:string = (function services_server_watch_extension() {
-                        const list = filename.split(".");
-                        return list[list.length - 1];
-                    }());
-                if (timeStore < Date.now() - 2000) {
-                    let st:[number, number] = process.hrtime();
-                    timeStore = Date.now();
-                    startTime[0] = st[0];
-                    startTime[1] = st[1];
-                    if (extension === "ts") {
-                        console.log(`${humantime(false)}Compiling TypeScript for ${text.green + filename + text.none}`);
-                        action.build(function services_server_watch_reload():void {
-                            ws.broadcast("reload");
-                        });
-                    } else if (extension === "css" || extension === "xhtml" || extension === "js") {
-                        console.log(`${humantime(false)}Refreshing browser tab(s) - ${text.green + filename + text.none}`);
-                        ws.broadcast("reload");
-                        console.log("\u0007");
-                    } else if (extension === "txt" && filename.indexOf("samples_parsed") > -1) {
-                        console.log(`${humantime(false)}Running validation build`);
-                        validate();
-                    }
-                }
-            });
-            server.on("error", serverError);
-            server.listen(port);
-        },
-        action = {
-            build: function services_action_build(callback?:Function):void {
-                if (command !== "server") {
-                    console.log("");
-                }
-                console.log(`${humantime(false)}Running TypeScript build`);
-                node.child("tsc --pretty", {
-                    cwd: project.slice(0, project.length - 1)
-                }, function services_action_build_callback(err, stdout, stderr):void {
-                    if (err !== null) {
-                        return errout(err);
-                    }
-                    if (stderr !== null && stderr !== "") {
-                        return errout(stderr);
-                    }
-                    let output:string = "window.parseFramework={language:function framework_language(){\"use strict\";return;},lexer:{},parse:{},parseerror:\"\",parser:function framework_parser(){\"use strict\";return;}};",
-                        outputa:string = "";
-                    node.fs.readFile(`${js}parse.js`, {
-                        encoding: "utf8"
-                    }, function services_action_build_callback_parse(errp, datap) {
-                        if (errp !== null) {
-                            return errout(errp);
-                        }
-                        datap = datap
-                            .replace(/#!\/usr\/bin\/env\s+node\s+/, "")
-                            .replace(/global\.parseFramework/g, "window.parseFramework");
-                        datap = `${datap.slice(0, datap.indexOf("global.") - 4)}}());`;
-                        output = output + datap;
-                        outputa = output;
-                        node.fs.readdir(`${js}lexers`, function services_action_build_callback_parse_lexers(errf, files) {
-                            if (errf !== null) {
-                                return errout(errf);
-                            }
-                            files.splice(files.indexOf("all.js"), 1);
-                            files.forEach(function services_action_build_callback_parse_lexers_each(value, index, array) {
-                                array[index] = `${js}lexers${sep + value}`;
-                            });
-                            files.push(`${js}language.js`);
-                            let a = files.length,
-                                b = 0,
-                                c = a;
-                            do {
-                                node.fs.readFile(files[b], {
-                                    encoding: "utf8"
-                                }, function services_action_build_callback_parse_lexers_each_files(errx, filex) {
-                                    if (errx !== null) {
-                                        return errout(errx);
-                                    }
-                                    output = output + filex;
-                                    c = c - 1;
-                                    if (c < 1) {
-                                        node.fs.writeFile(
-                                            `${js}browser.js`,
-                                            output.replace(/global\.parseFramework/g, "window.parseFramework"),
-                                            function services_action_build_callback_parse_lexers_each_files_write(errb) {
-                                                if (errb !== null) {
-                                                    return errout(errb);
-                                                }
-                                            }
-                                        );
-                                        node.fs.readFile(`${js}runtimes${sep}browsertest.js`, {
-                                            encoding: "utf8"
-                                        }, function services_action_build_callback_parse_lexers_each_files_web(errw, filew) {
-                                            if (errw !== null) {
-                                                return errout(errw);
-                                            }
-                                            outputa = output + filew;
-                                            outputa = outputa.replace(/global\.parseFramework/g, "window.parseFramework");
-                                            node.fs.writeFile(`${js}browsertest.js`, outputa, function services_action_build_callback_parse_lexers_each_files_web_write(erro) {
-                                                if (erro !== null) {
-                                                    return errout(erro);
-                                                }
-                                                console.log(`${humantime(false)}Total compile time`);
-                                                console.log("\u0007");
-                                                if (typeof callback === "function") {
-                                                    callback();
-                                                }
-                                            });
-                                        });
-                                    }
-                                });
-                                if (files[b].indexOf("lexers") > 0) {
-                                    outputa = `${outputa}window.parseFramework.parse.parseOptions.lexerOptions.${files[b].replace(`${js}lexers${sep}`, "").replace(".js", "")}={};`
-                                }
-                                b = b + 1;
-                            } while (b < a);
-                        });
-                    });
-                });
+                return `${strSplit[0]}`;
             },
-            commands: function services_action_commands():void {
-                let longest:number = 0;
-                
-                console.log("");
-                if (commandList[args[1]] === undefined) {
-                    keys.forEach(function services_action_commands_longest(value):void {
-                        if (value.length > longest) {
-                            longest = value.length;
+            prettybytes  = function node_apps_humantime_prettybytes(an_integer:number):string {
+                //find the string length of input and divide into triplets
+                let output:string = "",
+                    length:number  = an_integer
+                        .toString()
+                        .length;
+                const triples:number = (function node_apps_humantime_prettybytes_triples():number {
+                        if (length < 22) {
+                            return Math.floor((length - 1) / 3);
                         }
-                    });
-                    keys.forEach(function services_action_commands_output(value):void {
-                        const output:string[] = [`${text.angry}*${text.none} ${text.green}`];
-                        let length:number = value.length;
-                        output.push(value);
-                        output.push(text.none);
-                        if (length < longest) {
-                            do {
-                                output.push(" ");
-                                length = length + 1;
-                            } while (length < longest);
-                        } else {
-                            length = longest;
+                        //it seems the maximum supported length of integer is 22
+                        return 8;
+                    }()),
+                    //each triplet is worth an exponent of 1024 (2 ^ 10)
+                    power:number   = (function node_apps_humantime_prettybytes_power():number {
+                        let a = triples - 1,
+                            b = 1024;
+                        if (triples === 0) {
+                            return 0;
                         }
-                        output.push(" ");
-                        output.push(wrap(commandList[value].brief, longest));
-                        console.log(output.join(""));
-                    });
-                    console.log("");
-                    console.log("Examples:");
-                    console.log(`${text.cyan}node js${sep}services commands server${text.none}`);
-                    console.log(`${text.cyan}node js${sep}services version${text.none}`);
-                    console.log(`${text.cyan}node js${sep}services parse-table js/parse.js${text.none}`);
-                    console.log(`${text.cyan}node js${sep}services server 3000${text.none}`);
+                        if (triples === 1) {
+                            return 1024;
+                        }
+                        do {
+                            b = b * 1024;
+                            a = a - 1;
+                        } while (a > 0);
+                        return b;
+                    }()),
+                    //kilobytes, megabytes, and so forth...
+                    unit    = [
+                        "",
+                        "KB",
+                        "MB",
+                        "GB",
+                        "TB",
+                        "PB",
+                        "EB",
+                        "ZB",
+                        "YB"
+                    ];
+
+                if (typeof an_integer !== "number" || Number.isNaN(an_integer) === true || an_integer < 0 || an_integer % 1 > 0) {
+                    //input not a positive integer
+                    output = "0.00B";
+                } else if (triples === 0) {
+                    //input less than 1000
+                    output = `${an_integer}B`;
                 } else {
-                    console.log(`${text.underline + args[1] + text.none}`);
-                    console.log("");
-                    console.log(wrap(commandList[args[1]].detail, longest));
-                    console.log("");
-                    console.log("Example");
-                    console.log(`${text.cyan}node js${sep}services ${commandList[args[1]].example + text.none}`);
+                    //for input greater than 999
+                    length = Math.floor((an_integer / power) * 100) / 100;
+                    output = length.toFixed(2) + unit[triples];
                 }
-                console.log("");
+                return output;
             },
-            help: function services_action_help():void {
-                console.log("");
-                console.log("");
-                console.log(`Thank you for experimenting with the ${text.underline}Unibeautify Parse-Framework${text.none} ${text.green + version + text.none} in Node.js`);
-                console.log("");
-                console.log(`${text.angry}*${text.none} For a list of commands please try: ${text.cyan}node js/service commands${text.none}`);
-                console.log(`${text.angry}*${text.none} For a description of the project please read the readme.md document.`);
-                console.log(`${text.angry}*${text.none} For project status please visit https://github.com/Unibeautify/parse-framework`);
-                console.log(`${text.angry}*${text.none} For standard output of parse data please try: ${text.cyan}node js/service parse-table path/to/file${text.none}`);
-                console.log(`    or ${text.cyan}node js/service parse-table code${text.none}`);
-                console.log(`${text.angry}*${text.none} For raw unformatted parser output try: ${text.cyan}node js/service parse-array path/to/file${text.none}`);
-                console.log(`    or ${text.cyan}node js/service parse-array code${text.none}`);
-                console.log(`    or ${text.cyan}node js/service parse-object path/to/file${text.none}`);
-                console.log(`    or ${text.cyan}node js/service parse-object code${text.none}`);
-                console.log("");
-                console.log(`${text.underline}About${text.none}`);
-                console.log("The goal is to provide a framework for plug-and-play rules that parse");
-                console.log("various languages with output in the same universal format for use by");
-                console.log("any application.  To examine the supplied language rules browse the");
-                console.log("code in the 'lexers' directory.");
-                console.log("");
-                console.log(`${text.angry}https://github.com/Unibeautify/parse-framework${text.none}`);
-                console.log("");
+            plural       = function node_proctime_plural(x:number, y:string):string {
+                if (x !== 1) {
+                    return `${numberString(x) + y}s `;
+                }
+                return `${numberString(x) + y} `;
             },
-            inventory: function services_action_inventory():void {
-                console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
-                console.log("");
-                console.log(wrap("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.", 0));
-                node.fs.readdir(`${project}lexers`, function services_action_inventory_readdir(err, files) {
-                    if (err !== null) {
-                        return errout(err);
+            minute       = function node_proctime_minute():void {
+                minutes      = parseInt((elapsed / 60).toString(), 10);
+                minuteString = (finished === true)
+                    ? plural(minutes, " minute")
+                    : (minutes < 10)
+                        ? `0${minutes}`
+                        : String(minutes);
+                minutes      = elapsed - (minutes * 60);
+                secondString = (finished === true)
+                    ? (minutes === 1)
+                        ? " 1 second "
+                        : `${numberString(minutes)} seconds `
+                    : numberString(minutes);
+            };
+        memory       = process.memoryUsage();
+        finalMem     = prettybytes(memory.rss);
+
+        //last line for additional instructions without bias to the timer
+        secondString = numberString(elapsed);
+        if (elapsed >= 60 && elapsed < 3600) {
+            minute();
+        } else if (elapsed >= 3600) {
+            hours      = parseInt((elapsed / 3600).toString(), 10);
+            elapsed    = elapsed - (hours * 3600);
+            hourString = (finished === true)
+                ? plural(hours, " hour")
+                : (hours < 10)
+                    ? `0${hours}`
+                    : String(hours);
+            minute();
+        } else {
+            secondString = (finished === true)
+                ? plural(elapsed, " second")
+                : secondString;
+        }
+        if (finished === true) {
+            finalTime = hourString + minuteString + secondString;
+            console.log("");
+            console.log(`${finalMem} of memory consumed`);
+            console.log(`${finalTime}total time`);
+            console.log("");
+        } else {
+            if (hourString === "") {
+                hourString = "00";
+            }
+            if (minuteString === "") {
+                minuteString = "00";
+            }
+            // pad single digit seconds with a 0
+            if ((/^([0-9]\.)/).test(secondString) === true) {
+                secondString = `0${secondString}`;
+            }
+        }
+        return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
+    };
+    // provides a detailed list of supported languages by available lexer
+    apps.inventory = function services_action_inventory():void {
+        console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
+        console.log("");
+        console.log(apps.wrapit("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.", 0));
+        node.fs.readdir(`${js}lexers`, function services_action_inventory_readdir(err, files) {
+            if (err !== null) {
+                return apps.errout(err);
+            }
+            const langs = {};
+            let index:number = files.length;
+            do {
+                index = index - 1;
+                if (files[index].indexOf(".ts") !== files[index].length - 3) {
+                    files.splice(index, 1);
+                    index = index + 1;
+                }
+            } while (index > 0);
+            files.forEach(function services_action_inventory_readdir_each(filename) {
+                node.fs.readFile(`${js}lexers${sep + filename}`, {
+                    encoding: "utf8"
+                }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
+                    if (errf !== null) {
+                        return apps.errout(errf);
                     }
-                    const langs = {};
-                    let index:number = files.length;
-                    do {
-                        index = index - 1;
-                        if (files[index].indexOf(".ts") !== files[index].length - 3) {
-                            files.splice(index, 1);
-                            index = index + 1;
-                        }
-                    } while (index > 0);
-                    files.forEach(function services_action_inventory_readdir_each(filename) {
-                        node.fs.readFile(`${project}lexers${sep + filename}`, {
-                            encoding: "utf8"
-                        }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
-                            if (errf !== null) {
-                                return errout(errf);
-                            }
-                            langs[filename] = {
-                                keys: [],
-                                values: {}
-                            };
-                            const fragments:string[] = filedata.replace(/(options\.language\s*(((!|=)==)|=)\s*)/g, "options.language===").split("options.language===");
-                            if (fragments.length > 1) {
-                                fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
-                                    if (value.charAt(0) === "\"" || value.charAt(0) === "'") {
-                                        let quote:string = value.charAt(0);
-                                        value = value.slice(1);
-                                        value = value.slice(0, value.indexOf(quote));
-                                        langs[filename].values[value] = "";
-                                    }
-                                });
-                                langs[filename].keys = Object.keys(langs[filename].values);
-                            }
-                            index = index + 1;
-                            if (index === files.length) {
-                                const keys = Object.keys(langs).sort();
-                                console.log("");
-                                keys.forEach(function services_action_inventory_readdir_each_readfile_output(value) {
-                                    console.log(`${text.angry}*${text.none} ${text.green + value + text.none}`);
-                                    if (langs[value].keys.length > 0) {
-                                        langs[value].keys.sort();
-                                        langs[value].keys.forEach(function services_action_inventory_readdir_each_readfile_output_dedicated(dedval) {
-                                            console.log(`   ${text.angry}-${text.none} ${dedval}`);
-                                        });
-                                    }
-                                });
-                                console.log("");
+                    langs[filename] = {
+                        keys: [],
+                        values: {}
+                    };
+                    const fragments:string[] = filedata.replace(/(options\.language\s*(((!|=)==)|=)\s*)/g, "options.language===").split("options.language===");
+                    if (fragments.length > 1) {
+                        fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
+                            if (value.charAt(0) === "\"" || value.charAt(0) === "'") {
+                                let quote:string = value.charAt(0);
+                                value = value.slice(1);
+                                value = value.slice(0, value.indexOf(quote));
+                                langs[filename].values[value] = "";
                             }
                         });
-                    });
-                });
-            },
-            parse: function services_action_parse():void {
-                const nodetest = require(`${js}runtimes${sep}nodetest`);
-                process.argv.splice(0, 1);
-                if (process.argv[2] === undefined) {
-                    return errout(`No code sample or file path. The ${text.angry + command + text.none} command requires an additional argument.`);
-                }
-                if (command === "parse-table") {
-                    return nodetest();
-                }
-                process.argv.push("--testprep");
-                if (command === "parse-object") {
-                    process.argv.push("--outputFormat");
-                }
-                nodetest();
-            },
-            performance: function services_action_performance():void {
-                if (args[1] === undefined) {
-                    return errout(`The ${text.angry}performance${text.none} command requires a relative path to a file`);
-                }
-                const optionValue = function services_action_performance_optionValue(name:string, defaultValue:string|number|boolean, ):any {
-                        if (args.join("").indexOf(`${name}:`) > -1) {
-                            let argNumb:number = args.length;
-                            do {
-                                argNumb = argNumb - 1;
-                                if (args[argNumb].indexOf(`${name}:`) === 0) {
-                                    if (defaultValue === true || defaultValue === false) {
-                                        return args[argNumb].replace(`${name}:`, "") === "true";
-                                    }
-                                    if (typeof defaultValue === "number") {
-                                        return Number(args[argNumb].replace(`${name}:`, ""));
-                                    }
-                                    return args[argNumb].replace(`${name}:`, "");
-                                }
-                            } while (argNumb > 0);
-                            if (defaultValue === true || defaultValue === false) {
-                                return args[argNumb].replace(`${name}:`, "") === "true";
-                            }
-                            if (typeof defaultValue === "number") {
-                                return Number(args[argNumb].replace(`${name}:`, ""));
-                            }
-                            return args[argNumb].replace(`${name}:`, "");
-                        }
-                        return defaultValue;
-                    },
-                    sourcePath:string = node.path.normalize(optionValue("source", process.argv[3]));
-                node.fs.readFile(sourcePath, {
-                    encoding: "utf8"
-                }, function services_action_performance_readFile(errfile, filedata) {
-                    if (errfile !== null) {
-                        const errstring = errfile.toString();
-                        if (errstring.indexOf("no such file or directory") > 0) {
-                            return errout(`No file exists as the path specified: ${args[1]}`);
-                        }
-                        return errout(errfile);
+                        langs[filename].keys = Object.keys(langs[filename].values);
                     }
-                    require(`${js}parse`);
-                    require(`${js}language`);
-                    const framework = global.parseFramework,
-                        lang = framework.language.auto(filedata, "javascript"),
-                        options:parseOptions = {
-                            correct: optionValue("correct", false),
-                            crlf: optionValue("crlf", false),
-                            language: lang[0],
-                            lexer: lang[1],
-                            lexerOptions: {},
-                            outputFormat: "arrays",
-                            preserve_comment: false,
-                            source: filedata,
-                            wrap: optionValue("wrap", 0)
-                        };
-                    require(`${js}lexers${sep}all`)(options, function services_action_performance_readFile_lexers() {
-                        let index:number = 11,
-                            total:number = 0,
-                            low:number = 0,
-                            high:number = 0,
-                            start:[number, number],
-                            end:[number, number];
-                        const store:number[] = [],
-                            output:data = framework.parserArrays(options),
-                            comma = function services_action_performance_readFile_readdir_comma(input:number):string {
-                                const arr = input.toString().split("").reverse(),
-                                    len = arr.length - 1;
-                                let ind:number = 0;
-                                if (len > 2) {
-                                    do {
-                                        ind = ind + 3;
-                                        if (ind < len) {
-                                            arr[ind - 1] = `,${arr[ind - 1]}`;
-                                        }
-                                    } while (ind < len);
-                                }
-                                return arr.reverse().join("");
-                            },
-                            interval = function services_action_performance_readFile_readdir_interval():void {
-                                index = index - 1;
-                                if (index > -1) {
-                                    start = process.hrtime();
-                                    framework.parserArrays(options);
-                                    end = process.hrtime(start);
-                                    store.push((end[0] * 1e9) + end[1]);
-                                    // specifying a delay between intervals allows for garbage collection without interference to the performance testing
-                                    setTimeout(services_action_performance_readFile_readdir_interval, 400);
-                                } else {
-                                    console.log("");
-                                    store.forEach(function services_action_performance_readFile_readdir_total(value:number, index:number) {
-                                        if (index > 0) {
-                                            console.log(`${text.yellow + index + text.none}: ${value}`);
-                                            total = total + value;
-                                            if (value > high) {
-                                                high = value;
-                                            } else if (value < low) {
-                                                low = value;
-                                            }
-                                        } else {
-                                            console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
-                                        }
-                                    });
-                                    console.log("");
-                                    console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
-                                    console.log(`[${text.cyan + comma(filedata.length) + text.none}] Character size`);
-                                    console.log(`[${text.cyan + comma(output.token.length) + text.none}] Token length`);
-                                    console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
-                                    console.log("");
-                                }
-                            };
-                        interval();
-                    });
+                    index = index + 1;
+                    if (index === files.length) {
+                        const keys = Object.keys(langs).sort();
+                        console.log("");
+                        keys.forEach(function services_action_inventory_readdir_each_readfile_output(value) {
+                            console.log(`${text.angry}*${text.none} ${text.green + value + text.none}`);
+                            if (langs[value].keys.length > 0) {
+                                langs[value].keys.sort();
+                                langs[value].keys.forEach(function services_action_inventory_readdir_each_readfile_output_dedicated(dedval) {
+                                    console.log(`   ${text.angry}-${text.none} ${dedval}`);
+                                });
+                            }
+                        });
+                        console.log("");
+                    }
                 });
-            },
-            server: function services_action_server():void {
-                process.argv.splice(0, 1);
-                server();
-            },
-            testprep: function services_action_testprep():void {
-                process.argv.push("--testprep");
-                process.argv.splice(0, 1);
-                require(`${js}runtimes${sep}nodetest`)();
-            },
-            validation: validate,
-            version: function services_action_version():void {
-                console.log(version);
-            }
-        },
-        keys:string[] = Object.keys(commandList);
-    
-    command = (args[0] === undefined)
-        ? ""
-        : args[0].toLowerCase();
-    
-    command = alias(command);
-    if (command === "commands" && args[1] !== undefined) {
-        args[1] = alias(args[1]);
-    }
-
-    // updates the files that mention a version number
-    node.fs.readFile(`${project}package.json`, {
-        encoding: "utf8"
-    }, function service_version(err, file) {
-        if (err !== null) {
-            return errout("Error reading package.json file");
-        }
-        const versionFiles = [
-            "readme.md",
-            `runtimes${sep}browsertest.xhtml`
-        ];
-        version = JSON.parse(file).version;
-        versionFiles.forEach(function service_version_each(filePath) {
-            node.fs.readFile(project + filePath, {
-                encoding: "utf8"
-            }, function service_version_each_read(erra, fileData) {
-                if (erra !== null) {
-                    return errout(`Error reading ${filePath} file`);
-                }
-                let ftest = (filePath === "readme.md")
-                        ? "Version "
-                        : "<span class=\"version\">",
-                    ltest = (filePath === "readme.md")
-                        ? "\n"
-                        : "</span>",
-                    index = fileData.indexOf(ftest),
-                    fvers = fileData.slice(index);
-                fvers  = fvers.slice(0, fvers.indexOf(ltest)).replace(ftest, "");
-                if (fvers !== version) {
-                    fileData = fileData.replace(ftest + fvers, ftest + version);
-                    node.fs.writeFile(project + filePath, fileData, {
-                        encoding: "utf8"
-                    }, function service_version_each_read_write(errw) {
-                        if (errw !== null) {
-                            return errout(`Error writing version update to ${filePath}`);
-                        }
-                    });
-                }
             });
         });
-        if (command.indexOf("parse") === 0) {
-            action.parse();
-        } else {
-            action[command]();
+    };
+    // wrapper for ESLint usage
+    apps.lint = function node_apps_lint(callback:Function):void {
+        node.child("eslint", function node_apps_build_lint_eslintCheck(eserr:Error) {
+            const lintpath:string = (command === "lint" && process.argv[0] !== undefined)
+                ? node.path.resolve(process.argv[0])
+                : js;
+            if (eserr !== null) {
+                console.log("ESLint is not globally installed or is corrupt.");
+                console.log(`Install ESLint using the command: ${text.green}npm install eslint -g${text.none}`);
+                console.log("");
+                if (callback !== undefined) {
+                    callback("Skipping code validation...");
+                } else {
+                    console.log("Skipping code validation...");
+                }
+                return;
+            }
+            if (command === "lint") {
+                verbose = true;
+                callback = function node_apps_lint_callback():void {
+                    apps.log([`Lint complete for ${lintpath}`], "");
+                };
+            }
+            (function node_apps_build_lint_getFiles():void {
+                const lintrun         = function node_apps_build_lint_lintrun(list:directoryList) {
+                    let filesRead:number = 0,
+                        filesLinted:number = 0,
+                        a:number = 0,
+                        first:boolean = false;
+                    const len = list.length,
+                        lintit = function node_apps_build_lint_lintrun_lintit(val:string):void {
+                            console.log(`${apps.humantime(false)}Starting lint: ${val}`);
+                            filesRead = filesRead + 1;
+                            node.child(`eslint ${val}`, {
+                                cwd: projectPath
+                            }, function node_apps_build_lint_lintrun_lintit_eslint(err:Error, stdout:string, stderr:string) {
+                                if (stdout === "" || stdout.indexOf("0:0  warning  File ignored because of a matching ignore pattern.") > -1) {
+                                    if (err !== null) {
+                                        apps.errout([err.toString()]);
+                                        return;
+                                    }
+                                    if (stderr !== null && stderr !== "") {
+                                        apps.errout([stderr]);
+                                        return;
+                                    }
+                                    filesLinted = filesLinted + 1;
+                                    if (first === false) {
+                                        first = true;
+                                        console.log("");
+                                    }
+                                    console.log(`${apps.humantime(false) + text.green}Lint ${filesLinted} passed:${text.none} ${val}`);
+                                    if (filesRead === filesLinted) {
+                                        console.log("");
+                                        if (callback !== undefined) {
+                                            callback(`${text.green}Lint complete for ${filesLinted} files!${text.none}`);
+                                        } else {
+                                            console.log(`${text.green}Lint complete for ${filesLinted} files!${text.none}`);
+                                        }
+                                        return;
+                                    }
+                                } else {
+                                    console.log(stdout);
+                                    apps.errout(["Lint failure."]);
+                                    return;
+                                }
+                            })
+                        };
+                    console.log(`${apps.humantime(false)}Linting files...`);
+                    console.log("");
+                    do {
+                        if (list[a][1] === "file" && (/\.js$/).test(list[a][0]) === true) {
+                            lintit(list[a][0]);
+                        }
+                        a = a + 1;
+                    } while (a < len);
+                };
+                console.log(`${apps.humantime(false)}Gathering JavaScript files from directory: ${text.green + lintpath + text.none}`);
+                apps.directory({
+                    callback: lintrun,
+                    exclusions: (command === "lint" && process.argv[0] !== undefined)
+                        ? exclusions
+                        : [],
+                    path      : lintpath,
+                    recursive: true,
+                    symbolic: false
+                });
+            }());
+        });
+    };
+    // CLI string output formatting for lists of items
+    apps.lists = function node_apps_lists(lists:nodeLists):void {
+        // * lists.emptyline - boolean - if each key should be separated by an empty line
+        // * lists.heading   - string  - a text heading to precede the list
+        // * lists.obj       - object  - an object to traverse
+        // * lists.property  - string  - The child property to read from or "eachkey" to
+        // access a directly assigned primitive
+        const keys:string[] = Object.keys(lists.obj).sort(),
+            output:string[] = [],
+            lenn:number = keys.length,
+            plural = (lenn === 1)
+                ? ""
+                : "s",
+            displayKeys = function node_apps_lists_displayKeys(item:string, keylist:string[]):void {
+                const len:number = keylist.length;
+                let a:number = 0,
+                    b:number = 0,
+                    c:number = 0,
+                    lens:number = 0,
+                    comm:string = "";
+                if (len < 1) {
+                    apps.errout([`Please run the build: ${text.cyan}prettydiff build${text.none}`]);
+                    return;
+                }
+                do {
+                    if (keylist[a].length > lens) {
+                        lens = keylist[a].length;
+                    }
+                    a = a + 1;
+                } while (a < len);
+                do {
+                    comm = keylist[b];
+                    c    = comm.length;
+                    if (c < lens) {
+                        do {
+                            comm = comm + " ";
+                            c    = c + 1;
+                        } while (c < lens);
+                    }
+                    if (item !== "") {
+                        // each of the "values" keys
+                        apps.wrapit(output, `   ${text.angry}- ${text.none + text.cyan + comm + text.none}: ${lists.obj.values[keylist[b]]}`);
+                    } else {
+                        // list all items
+                        if (lists.property === "eachkey") {
+                            if (command === "options" && keylist[b] === "values") {
+                                // "values" keyname of options
+                                output.push(`${text.angry}* ${text.none + text.cyan + comm + text.none}:`);
+                                node_apps_lists_displayKeys(command, Object.keys(lists.obj.values).sort());
+                            } else {
+                                // all items keys and their primitive value
+                                apps.wrapit(output, `${text.angry}* ${text.none + text.cyan + comm + text.none}: ${lists.obj[keylist[b]]}`);
+                            }
+                        } else {
+                            // a list by key and specified property
+                            apps.wrapit(output, `${text.angry}* ${text.none + text.cyan + comm + text.none}: ${lists.obj[keylist[b]][lists.property]}`);
+                        }
+                        if (lists.emptyline === true) {
+                            output.push("");
+                        }
+                    }
+                    b = b + 1;
+                } while (b < len);
+            };
+        output.push(`${text.underline + text.bold}Sparser - ${lists.heading + text.none}`);
+        output.push("");
+        displayKeys("", keys);
+        if (command === "commands") {
+            output.push("");
+            output.push("For examples and usage instructions specify a command name, for example:");
+            output.push(`globally installed - ${text.green}prettydiff commands hash${text.none}`);
+            output.push(`locally installed - ${text.green}node js/services commands hash${text.none}`);
+            output.push("");
+            output.push(`Commands are tested using the ${text.green}simulation${text.none} command.`);
+        } else if (command === "options") {
+            output.push(`${text.green + lenn + text.none} matching option${plural}.`);
         }
-    });
-};
-module.exports = services;
-if (process.argv[1].replace(/\\/g, "/").indexOf("js/services") > -1) {
-    services();
-}
+        apps.log(output, "");
+    };
+    // verbose metadata printed to the shell about Sparser
+    apps.log = function node_apps_log(output:string[], code:string):void {
+        const conclusion = function node_apps_log_conclusion():void {
+            if (process.argv.indexOf("debug") > -1 || process.argv.indexOf("debug") > -1) {
+                process.argv[2] = "debug";
+                return apps.errout(["Debug statement requested."]);
+            }
+            if (verbose === true && (output.length > 1 || output[0] !== "")) {
+                console.log("");
+            }
+            if (output[output.length - 1] === "") {
+                output.pop();
+            }
+            output.forEach(function node_apps_log_each(value:string) {
+                console.log(value);
+            });
+            if (verbose === true) {
+                console.log("");
+                console.log(`Sparser version ${text.angry + version.parse + text.none}`);
+                apps.humantime(true);
+            }
+        };
+        if (code !== "") {
+            if (options.output === "" || options.output === undefined) {
+                console.log(code);
+                conclusion();
+            } else {
+                const out:string = node.path.resolve(options.output);
+                node.fs.writeFile(out, code, function node_apps_output_writeFile(err:Error):void {
+                    if (err !== null) {
+                        apps.errout([err.toString()]);
+                        return;
+                    }
+                    output.push(`Wrote output to ${text.green + out + text.none} at ${text.green + apps.commas(code.length) + text.none} characters.`);
+                    conclusion();
+                });
+            }
+        } else if (code === "" || options.output === "") {
+            conclusion();
+        }
+    };
+    // CLI documentation for supported Sparser options
+    apps.options = function node_apps_options():void {
+        const def:optionDef = sparser.optionDef;
+        if (def[process.argv[0]] === undefined) {
+            if (process.argv.length < 1) {
+                // all options in a list
+                apps.lists({
+                    emptyline: true,
+                    heading: "Options",
+                    obj: def,
+                    property: "definition"
+                });
+            } else {
+                // queried list of options
+                const keys:string[] = Object.keys(def),
+                    arglen:number = process.argv.length,
+                    output:any = {},
+                    namevalue = function node_apps_options_namevalue(item:string):void {
+                        const si:number = item.indexOf(":");
+                        if (si < 1) {
+                            name = item;
+                            value = "";
+                            return;
+                        }
+                        if (
+                            (si < item.indexOf("\"") && item.indexOf("\"") > -1) ||
+                            (si < item.indexOf("'") && item.indexOf("'") > -1) ||
+                            (item.indexOf("\"") < 0 && item.indexOf("'") < 0)
+                        ) {
+                            name = item.slice(0, si);
+                            value = item.slice(si + 1);
+                            return;
+                        }
+                        name = item;
+                        value = "";
+                    };
+                let keylen:number = keys.length,
+                    a:number = 0,
+                    b:number = 0,
+                    name:string = "",
+                    value:string = "";
+                do {
+                    namevalue(process.argv[a]);
+                    b = 0;
+                    do {
+                        if (def[keys[b]][name] === undefined || (value !== "" && def[keys[b]][name] !== value)) {
+                            keys.splice(b, 1);
+                            b = b - 1;
+                            keylen = keylen - 1;
+                        }
+                        b = b + 1;
+                    } while (b < keylen);
+                    if (keylen < 1) {
+                        break;
+                    }
+                    a = a + 1;
+                } while (a < arglen);
+                a = 0;
+                do {
+                    output[keys[a]] = def[keys[a]];
+                    a = a + 1;
+                } while (a < keylen);
+                if (keylen < 1) {
+                    apps.log([`${text.angry}Sparser has no options matching the query criteria.${text.none}`], "");
+                } else {
+                    apps.lists({
+                        emptyline: true,
+                        heading: "Options",
+                        obj: output,
+                        property: "definition"
+                    });
+                }
+            }
+        } else {
+            // specificly mentioned option
+            apps.lists({
+                emptyLine: false,
+                heading: `Option: ${text.green + process.argv[0] + text.none}`,
+                obj: def[process.argv[0]],
+                property: "eachkey"
+            });
+        }
+    };
+    // a performance application for testing the speed of the parser
+    apps.performance = function node_apps_performance():void {
+        if (process.argv[0] === undefined) {
+            return apps.errout([`The ${text.angry}performance${text.none} command requires a relative path to a file`]);
+        }
+        const optionValue = function node_apps_performance_optionValue(name:string, defaultValue:string|number|boolean, ):any {
+                if (process.argv.join("").indexOf(`${name}:`) > -1) {
+                    let argNumb:number = process.argv.length;
+                    do {
+                        argNumb = argNumb - 1;
+                        if (process.argv[argNumb].indexOf(`${name}:`) === 0) {
+                            if (defaultValue === true || defaultValue === false) {
+                                return process.argv[argNumb].replace(`${name}:`, "") === "true";
+                            }
+                            if (typeof defaultValue === "number") {
+                                return Number(process.argv[argNumb].replace(`${name}:`, ""));
+                            }
+                            return process.argv[argNumb].replace(`${name}:`, "");
+                        }
+                    } while (argNumb > 0);
+                    if (defaultValue === true || defaultValue === false) {
+                        return process.argv[argNumb].replace(`${name}:`, "") === "true";
+                    }
+                    if (typeof defaultValue === "number") {
+                        return Number(process.argv[argNumb].replace(`${name}:`, ""));
+                    }
+                    return process.argv[argNumb].replace(`${name}:`, "");
+                }
+                return defaultValue;
+            },
+            sourcePath:string = node.path.normalize(optionValue("source", process.argv[3]));
+        node.fs.readFile(sourcePath, {
+            encoding: "utf8"
+        }, function node_apps_performance_readFile(errfile, filedata) {
+            if (errfile !== null) {
+                const errstring = errfile.toString();
+                if (errstring.indexOf("no such file or directory") > 0) {
+                    return apps.errout([`No file exists as the path specified: ${process.argv[1]}`]);
+                }
+                return apps.errout([errfile]);
+            }
+            require(`${js}parse`);
+            require(`${js}language`);
+            const lang = sparser.language.auto(filedata, "javascript"),
+                options:parseOptions = {
+                    correct: optionValue("correct", false),
+                    crlf: optionValue("crlf", false),
+                    language: lang[0],
+                    lexer: lang[1],
+                    lexer_options: {},
+                    format: "arrays",
+                    preserve_comment: false,
+                    source: filedata,
+                    wrap: optionValue("wrap", 0)
+                };
+            require(`${js}lexers${sep}all`)(options, function node_apps_performance_readFile_lexers() {
+                let index:number = 11,
+                    total:number = 0,
+                    low:number = 0,
+                    high:number = 0,
+                    start:[number, number],
+                    end:[number, number];
+                const store:number[] = [],
+                    output:data = sparser.parser(options),
+                    interval = function node_apps_performance_readFile_readdir_interval():void {
+                        index = index - 1;
+                        if (index > -1) {
+                            start = process.hrtime();
+                            sparser.parser(options);
+                            end = process.hrtime(start);
+                            store.push((end[0] * 1e9) + end[1]);
+                            // specifying a delay between intervals allows for garbage collection without interference to the performance testing
+                            setTimeout(node_apps_performance_readFile_readdir_interval, 400);
+                        } else {
+                            console.log("");
+                            store.forEach(function node_apps_performance_readFile_readdir_total(value:number, index:number) {
+                                if (index > 0) {
+                                    console.log(`${text.yellow + index + text.none}: ${value}`);
+                                    total = total + value;
+                                    if (value > high) {
+                                        high = value;
+                                    } else if (value < low) {
+                                        low = value;
+                                    }
+                                } else {
+                                    console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
+                                }
+                            });
+                            console.log("");
+                            console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
+                            console.log(`[${text.cyan + apps.commas(filedata.length) + text.none}] Character size`);
+                            console.log(`[${text.cyan + apps.commas(output.token.length) + text.none}] Token length`);
+                            console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
+                            console.log("");
+                        }
+                    };
+                interval();
+            });
+        });
+    };
+    // runs services: http, web sockets, and file system watch.  Allows rapid testing with automated rebuilds
+    apps.server = function node_apps_server():void {
+        if (process.argv[0] !== undefined && isNaN(Number(process.argv[0])) === true) {
+            apps.errout([`Specified port, ${text.angry + process.argv[0] + text.none}, is not a number.`]);
+            return;
+        }
+        let timeStore:number = 0;
+        const port:number = (isNaN(Number(process.argv[0])))
+                ? 9001
+                : Number(process.argv[0]),
+            server = node.http.createServer(function node_apps_server_create(request, response):void {
+                let quest:number = request.url.indexOf("?"),
+                    uri:string = (quest > 0)
+                        ? request.url.slice(0, quest)
+                        : request.url,
+                    file:string = projectPath + uri.slice(1).replace(/\//g, node.path.sep);
+                if (uri === "/") {
+                    file = `${projectPath + node.path.sep}index.xhtml`;
+                }
+                if (request.url.indexOf("favicon.ico") < 0 && request.url.indexOf("images/apple") < 0) {
+                    node.fs.readFile(file, "utf8", function node_apps_server_create_readFile(err:Error, data:string):void {
+                        if (err !== undefined && err !== null) {
+                            if (err.toString().indexOf("no such file or directory") > 0) {
+                                response.writeHead(404, {"Content-Type": "text/plain"});
+                                if (file.indexOf("apple-touch") < 0 && file.indexOf("favicon") < 0) {
+                                    console.log(`${text.angry}404${text.none} for ${file}`);
+                                }
+                                return;
+                            }
+                            response.write(JSON.stringify(err));
+                            console.log(err);
+                            return;
+                        }
+                        if (file.indexOf(".js") === file.length - 3) {
+                            response.writeHead(200, {"Content-Type": "application/javascript"});
+                        } else if (file.indexOf(".css") === file.length - 4) {
+                            response.writeHead(200, {"Content-Type": "text/css"});
+                        } else if (file.indexOf(".xhtml") === file.length - 6) {
+                            response.writeHead(200, {"Content-Type": "application/xhtml+xml"});
+                        }
+                        response.write(data);
+                        response.end();
+                    });
+                } else {
+                    response.end();
+                }
+            }),
+            serverError = function node_apps_server_serverError(error):void {
+                if (error.code === "EADDRINUSE") {
+                    if (error.port === port + 1) {
+                        apps.errout([`Web socket channel port, ${text.cyan + port + text.none}, is in use!  The web socket channel is 1 higher than the port designated for the HTTP server.`]);
+                    } else {
+                        apps.errout([`Specified port, ${text.cyan + port + text.none}, is in use!`]);
+                    }
+                } else {
+                    apps.errout([`${error.Error}`]);
+                }
+                return
+            },
+            ignore   = function node_apps_server_ignore(input:string|null):boolean {
+                if (input.indexOf(".git") === 0) {
+                    return true;
+                }
+                if (input.indexOf("node_modules") === 0) {
+                    return true;
+                }
+                if (input.indexOf("js") === 0) {
+                    return true;
+                }
+                return false;
+            },
+            socket = require("ws"),
+            ws = new socket.Server({port: port + 1});
+        if (process.cwd() !== projectPath) {
+            process.chdir(projectPath);
+        }
+        ws.broadcast = function node_apps_server_broadcast(data:string):void {
+            ws.clients.forEach(function node_apps_server_broadcast_clients(client):void {
+                if (client.readyState === socket.OPEN) {
+                    client.send(data);
+                }
+            });
+        };
+        console.log(`HTTP server is up at: ${text.bold + text.green}http://localhost:${port + text.none}`);
+        console.log(`${text.green}Starting web server and file system watcher!${text.none}`);
+        node.fs.watch(projectPath, {
+            recursive: true
+        }, function node_apps_server_watch(type:"rename"|"change", filename:string|null):void {
+            if (filename === null || ignore(filename) === true) {
+                return;
+            }
+            const extension:string = (function node_apps_server_watch_extension():string {
+                    const list = filename.split(".");
+                    return list[list.length - 1];
+                }()),
+                time = function node_apps_server_watch_time(message:string):number {
+                    const date:Date = new Date(),
+                        datearr:string[] = [];
+                    let hours:string = String(date.getHours()),
+                        minutes:string = String(date.getMinutes()),
+                        seconds:string = String(date.getSeconds()),
+                        mseconds:string = String(date.getMilliseconds());
+                    if (hours.length === 1) {
+                        hours = `0${hours}`;
+                    }
+                    if (minutes.length === 1) {
+                        minutes = `0${minutes}`;
+                    }
+                    if (seconds.length === 1) {
+                        seconds = `0${seconds}`;
+                    }
+                    if (mseconds.length < 3) {
+                        do {
+                            mseconds = `0${mseconds}`;
+                        } while (mseconds.length < 3);
+                    }
+                    datearr.push(hours);
+                    datearr.push(minutes);
+                    datearr.push(seconds);
+                    datearr.push(mseconds);
+                    console.log(`[${text.cyan + datearr.join(":") + text.none}] ${message}`);
+                    timeStore = date.valueOf();
+                    return timeStore;
+                };
+            if ((extension === "ts" || extension === "css") && timeStore < Date.now() - 1000) {
+                let start:number,
+                    compile:number,
+                    duration = function node_apps_server_watch_duration(length:number):void {
+                        let hours:number = 0,
+                            minutes:number = 0,
+                            seconds:number = 0,
+                            list:string[] = [];
+                        if (length > 3600000) {
+                            hours = Math.floor(length / 3600000);
+                            length = length - (hours * 3600000);
+                        }
+                        list.push(hours.toString());
+                        if (list[0].length < 2) {
+                            list[0] = `0${list[0]}`;
+                        }
+                        if (length > 60000) {
+                            minutes = Math.floor(length / 60000);
+                            length = length - (minutes * 60000);
+                        }
+                        list.push(minutes.toString());
+                        if (list[1].length < 2) {
+                            list[1] = `0${list[1]}`;
+                        }
+                        if (length > 1000) {
+                            seconds = Math.floor(length / 1000);
+                            length = length - (seconds * 1000);
+                        }
+                        list.push(seconds.toString());
+                        if (list[2].length < 2) {
+                            list[2] = `0${list[2]}`;
+                        }
+                        list.push(length.toString());
+                        if (list[3].length < 3) {
+                            do {
+                                list[3] = `0${list[3]}`;
+                            } while (list[3].length < 3);
+                        }
+                        console.log(`[${text.bold + text.purple + list.join(":") + text.none}] Total compile time.\u0007`);
+                    };
+                console.log("");
+                start = time(`Compiling for ${text.green + filename + text.none}`);
+                node.child(`node js/services build`, {
+                    cwd: projectPath
+                }, function node_apps_server_watch_child(err:Error, stdout:string, stderr:string):void {
+                    if (err !== null) {
+                        apps.errout([err.toString()]);
+                        return;
+                    }
+                    if (stderr !== "") {
+                        apps.errout([stderr]);
+                        return;
+                    }
+                    compile = time("TypeScript Compiled") - start;
+                    duration(compile);
+                    ws.broadcast("reload");
+                    return;
+                });
+            }
+        });
+        server.on("error", serverError);
+        server.listen(port);
+    };
+    apps.test = function node_apps_test():void {
+        apps.build(true);
+    };
+    apps.testprep = function node_apps_testprep():void {
+        options.format = "testprep";
+        console.log(sparser.parser(options));
+    };
+    // unit test validation runner for Sparser mode commands
+    apps.validation = function node_apps_validation(callback:Function):void {
+        require(`${js}parse`);
+        let count_raw = 0,
+            count_formatted = 0;
+        const all = require(`${js}lexers${sep}all`),
+            flag = {
+                raw: false,
+                formatted: false
+            },
+            def:optionDef = sparser.optionDef,
+            raw:[string, string][] = [],
+            formatted:[string, string][] = [],
+            reset = function node_apps_validation_reset():void {
+                const key:string[] = Object.keys(def),
+                    len:number = key.length;
+                let a:number = 0;
+                do {
+                    options[key[a]] = def[key[a]].default;
+                    a = a + 1;
+                } while (a < len);
+                options.correct      = true;
+                options.diff_context = 4;
+                options.end_comma    = "none";
+                options.lexer_options = {};
+                options.lexer_options[options.lexer] = {};
+                options.lexer_options[options.lexer].objectSort = true;
+                options.mode         = "diff";
+                options.new_line     = true;
+                options.object_sort  = true;
+                options.preserve     = 2;
+                options.read_method  = "screen";
+                options.vertical     = true;
+                options.wrap         = 80;
+            },
+            compare = function node_apps_validation_compare():void {
+                const len:number = (raw.length > formatted.length)
+                        ? raw.length
+                        : formatted.length,
+                    sort = function node_apps_validation_compare_sort(a:[string, string], b:[string, string]):number {
+                        if (a[0] > b[0]) {
+                            return 1;
+                        }
+                        return -1;
+                    };
+                let a:number = 0,
+                    b:number = 0,
+                    missing:number = 0,
+                    filecount:number = 0,
+                    noteslen:number = 0,
+                    notes:string[] = [],
+                    output:data,
+                    str:string = "";
+                raw.sort(sort);
+                formatted.sort(sort);
+                if (command === "validation") {
+                    console.log("");
+                }
+                do {
+                    if (raw[a] === undefined || formatted[a] === undefined) {
+                        if (raw[a] === undefined && formatted[a] !== undefined) {
+                            console.log(`${text.angry}raw directory is missing file:${text.none} ${formatted[a][0]}`);
+                            formatted.splice(a, 1);
+                        } else if (formatted[a] === undefined && raw[a] !== undefined) {
+                            console.log(`${text.angry}formatted directory is missing file:${text.none} ${raw[a][0]}`);
+                            raw.splice(a, 1);
+                        }
+                    } else if (raw[a][0] === formatted[a][0]) {
+                        let value:string = "",
+                            numb:number = 0,
+                            name:string = "";
+                        reset();
+                        notes = raw[a][0].split("_");
+                        noteslen = notes.length;
+                        options.language   = notes[2];
+                        options.lexer      = notes[1];
+                        options.mode       = notes[0];
+                        options.source     = raw[a][1];
+                        if (noteslen > 3) {
+                            b = 3;
+                            do {
+                                if (b < noteslen - 2 && notes[b].indexOf("-") < 0 && notes[b + 1].indexOf("-") < 0) {
+                                    name = `${notes[b]}_${notes[b + 1]}_${notes[b + 2].replace(".txt", "")}`;
+                                    if (name.indexOf("-") > 0) {
+                                        name = name.slice(0, name.indexOf("-"));
+                                    }
+                                    if (options[name] !== undefined) {
+                                        notes[b + 2] = `${notes[b]}_${notes[b + 1]}_${notes[b + 2]}`;
+                                        b = b + 2;
+                                    } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
+                                        name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
+                                        if (name.indexOf("-") > 0) {
+                                            name = name.slice(0, name.indexOf("-"));
+                                        }
+                                        if (options[name] !== undefined) {
+                                            notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
+                                            b = b + 1;
+                                        }
+                                    }
+                                } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
+                                    name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
+                                    if (name.indexOf("-") > 0) {
+                                        name = name.slice(0, name.indexOf("-"));
+                                    }
+                                    if (options[name] !== undefined) {
+                                        notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
+                                        b = b + 1;
+                                    }
+                                }
+                                notes[b] = notes[b].replace(".txt", "");
+                                if (notes[b].indexOf("-") > 0 && options[notes[b].slice(0, notes[b].indexOf("-"))] !== undefined) {
+                                    value = notes[b].slice(notes[b].indexOf("-") + 1);
+                                    notes[b] = notes[b].slice(0, notes[b].indexOf("-"));
+                                    numb = Number(value);
+                                    if (value === "true" && def[notes[b]].type === "boolean") {
+                                        options[notes[b]] = true;
+                                    } else if (value === "false" && def[notes[b]].type === "boolean") {
+                                        options[notes[b]] = false;
+                                    } else if (isNaN(numb) === true) {
+                                        options[notes[b]] = value;
+                                    } else {
+                                        options[notes[b]] = numb;
+                                    }
+                                } else if (options[notes[b]] !== undefined && def[notes[b]].type === "boolean") {
+                                    options[notes[b]] = true;
+                                }
+                                b = b + 1;
+                            } while (b < noteslen);
+                        }
+                        output = sparser.parser(options);
+                        str = (sparser.parseerror === "")
+                            ? JSON.stringify(output)
+                            : sparser.parseerror;
+                        if (str === formatted[a][1]) {
+                            filecount = filecount + 1;
+                            console.log(`${apps.humantime(false) + text.green}Pass ${filecount}:${text.none} ${formatted[a][0]}`);
+                        } else {
+                            const diffview = require(`${js}test${sep}diffview.js`);
+                            console.log(`${apps.humantime(false) + text.angry}Fail: ${text.cyan + raw[a][0] + text.none}`);
+                            console.log("");
+                            console.log(`Diff output colors: ${text.angry + text.underline}red = generated${text.none} and ${text.green + text.underline}green = saved file${text.none}`);
+                            reset();
+                            options.context      = 2;
+                            options.diff         = formatted[a][1];
+                            options.diff_format  = "text";
+                            options.language     = "text";
+                            options.mode         = "diff";
+                            options.source       = output;
+                            options.source_label = raw[a][1];
+                            apps.errout([diffview(options)[0], "", `${text.angry}Validation test failure${text.none}`, `Failed on file ${text.cyan + text.bold + raw[a][0] + text.none}`, ""]);
+                            return;
+                        }
+                    } else {
+                        missing = missing + 1;
+                        if (raw[a][0] < formatted[a][0]) {
+                            console.log(`${text.angry}formatted directory is missing file:${text.none} ${raw[a][0]}`);
+                            raw.splice(a, 1);
+                        } else {
+                            console.log(`${text.angry}raw directory is missing file:${text.none} ${formatted[a][0]}`);
+                            formatted.splice(a, 1);
+                        }
+                    }
+                    a = a + 1;
+                } while (a < len);
+                if (a === len) {
+                    if (command === "validation") {
+                        verbose = true;
+                        if (missing > 0) {
+                            let plural:string = (missing === 1)
+                                ? " is"
+                                : "s are";
+                            apps.log([`${text.green + text.bold + filecount + text.none} files passed, but ${text.angry + missing} file${plural} missing${text.none}.`], "");
+                        } else {
+                            apps.log([`${text.green}All ${filecount} files passed.${text.none}`], "");
+                        }
+                    } else {
+                        let msg:string = "";
+                        console.log("");
+                        if (missing > 0) {
+                            let plural:string = (missing === 1)
+                                ? " is"
+                                : "s are";
+                            msg = `${text.green + text.bold + filecount + text.none} files passed, but ${text.angry + missing} file${plural} missing${text.none}.`;
+                        } else {
+                            msg = `${text.green}All ${filecount} files passed.${text.none}`;
+                        }
+                        callback(msg);
+                    }
+                }
+            },
+            readDir = function node_apps_validation_readDir(type:string):void {
+                const dir:string = `${projectPath}tests${sep + type}`;
+                node.fs.readdir(dir, function node_apps_validation_readDir_reading(err:Error, list:string[]) {
+                    if (err !== null) {
+                        apps.errout([err.toString()]);
+                        return;
+                    }
+                    const pusher = function node_apps_validation_readDir_reading_pusher(value:string, index:number, arr:string[]) {
+                        node.fs.readFile(dir + sep + value, "utf8", function node_apps_validation_readDir_reading_pusher_readFile(er:Error, fileData:string) {
+                            if (er !== null) {
+                                apps.errout([er.toString()]);
+                                return;
+                            }
+                            if (type === "raw") {
+                                raw.push([value, fileData]);
+                                count_raw = count_raw + 1;
+                                if (count_raw === arr.length) {
+                                    flag.raw = true;
+                                    if (flag.formatted === true) {
+                                        compare();
+                                    }
+                                }
+                            } else if (type === "formatted") {
+                                formatted.push([value, fileData]);
+                                count_formatted = count_formatted + 1;
+                                if (count_formatted === arr.length) {
+                                    flag.formatted = true;
+                                    if (flag.raw === true) {
+                                        compare();
+                                    }
+                                }
+                            }
+                        });
+                    };
+                    list.forEach(pusher);
+                });
+            };
+        if (command === "validation") {
+            verbose = true;
+        }
+        all(options, function node_apps_validation_allLexers() {
+            options.format = "objects";
+            readDir("raw");
+            readDir("formatted");
+        });
+    };
+    // runs apps.log
+    apps.version = function ():void {
+        verbose = true;
+        apps.log([""], "");
+    };
+    // performs word wrap when printing text to the shell
+    apps.wrapit = function node_apps_lists_wrapit(outputArray:string[], string:string):void {
+        const wrap:number = 100;
+        if (string.length > wrap) {
+            const indent:string = (function node_apps_options_wrapit_indent():string {
+                    const len:number = string.length;
+                    let inc:number = 0,
+                        num:number = 2,
+                        str:string = "";
+                    // eslint-disable-next-line
+                    if ((/^(\s*((\*|-)\s*)?\w+\s*:)/).test(string.replace(/\u001b\[\d+m/g, "")) === false) {
+                        return "";
+                    }
+                    do {
+                        if (string.charAt(inc) === ":") {
+                            break;
+                        }
+                        if (string.charAt(inc) === "\u001b") {
+                            if (string.charAt(inc + 4) === "m") {
+                                inc = inc + 4;
+                            } else {
+                                inc = inc + 3;
+                            }
+                        } else {
+                            num = num + 1;
+                        }
+                        inc = inc + 1;
+                    } while (inc < len);
+                    inc = 0;
+                    do {
+                        str = str + " ";
+                        inc = inc + 1;
+                    } while (inc < num);
+                    return str;
+                }()),
+                formLine = function node_apps_options_wrapit_formLine():void {
+                    let inc:number = 0,
+                        wrapper:number = wrap;
+                    do {
+                        if (string.charAt(inc) === "\u001b") {
+                            if (string.charAt(inc + 4) === "m") {
+                                wrapper = wrapper + 4;
+                            } else {
+                                wrapper = wrapper + 3;
+                            }
+                        }
+                        inc = inc + 1;
+                    } while (inc < wrapper);
+                    if (string.charAt(wrapper) !== " " && string.length > wrapper) {
+                        do {
+                            wrapper = wrapper - 1;
+                        } while (wrapper > 0 && string.charAt(wrapper) !== " ");
+                        if (wrapper === 0) {
+                            outputArray.push(string);
+                            return;
+                        }
+                    }
+                    outputArray.push(string.slice(0, wrapper).replace(/ $/, ""));
+                    string = string.slice(wrapper + 1);
+                    if (string.length + indent.length > wrap) {
+                        string = indent + string;
+                        node_apps_options_wrapit_formLine();
+                    } else if (string !== "") {
+                        outputArray.push(indent + string);
+                    }
+                };
+            formLine();
+        } else {
+            outputArray.push(string);
+        }
+    };
+}());

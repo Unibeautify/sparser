@@ -1,4 +1,4 @@
-# Parse Framework - Intoduction To Parsers
+# Sparser - Intoduction To Parsers
 
 ## Terminology
 Let's define the niche terms so that the wordy paragraphs further down make sense to normal people.  It is important to note that these terms come from the linguistic sciences of human spoken and written language, but they are adapted to apply to computer programming languages in nearly identical ways.
@@ -17,7 +17,7 @@ A well known computer science term, *lexical scope*, was not included in the def
 Lexical scope is a type of scope mechanism in language design where by a scope is a structure that could be referenced as though it were an atomic unit.  The benefit of that is that the very boundaries that define the availability of a reference can be passed between code units like any other reference and it can contain child scopes no different than a structure containing child references.  This feature is called *lexical scope* similar to *lexical analysis*, because the idea is to analyze the code in a lexical manner and compose certain structures as though they were semi-atomic word units much like phrases in a spoken statement whereby context is extended to the represented collection of pieces.  This feature is not unique programming as evidenced by languages like Swahili whose grammars emphasize extensible semantics.
 
 ## Blurry Boundaries
-Don't get too married to the definitions above.  The boundaries of different levels in the process of parsing and compiling vary wildly by application.  In the case of this application the lexers actually complete all the lexical analysis and half the parsing step, according the definitions above.  The lexer files analyze, describe, and in some cases even modify the produced tokens.  The remainder of the parsing step, structure and context, is abstracted away and fully automated by the framework logic as determined by the identified types for a given parsed token.
+Don't get too married to the definitions above.  The boundaries of different levels in the process of parsing and compiling vary wildly by application.  In the case of this application the lexers actually complete all the lexical analysis and half the parsing step, according the definitions above.  The lexer files analyze, describe, and in some cases even modify the produced tokens.  The remainder of the parsing step, structure and context, is abstracted away and fully automated by the application logic as determined by the identified types for a given parsed token.
 
 ## What Parsing Gets You
 Parsing decomposes a large substance into small usable pieces another system can use whether it is reading written language, understanding speech, or making use of computer programming code.  Common applications that immediately benefit from parsers are applications dedicated to analyzing code: compilers (translators), linters, code beautifiers, minifiers, and so forth.

@@ -341,5 +341,5 @@
             return output("unknown");
         }
     };
-    global.parseFramework.language = language;
+    global.sparser.language = language;
 }());

@@ -1,12 +1,12 @@
 /*global global*/
 (function style_init() {
     "use strict";
-    const framework:parseFramework = global.parseFramework,
+    const sparser:sparser = global.sparser,
         style = function lexer_style(source:string):data {
             let a:number = 0,
                 ltype:string       = "",
                 ltoke:string       = "";
-            const parse:parse     = framework.parse,
+            const parse:parse     = sparser.parse,
                 data:data        = parse.data,
                 options:parseOptions     = parse.parseOptions,
                 colors:string[]      = [],
@@ -211,7 +211,7 @@
                             return value;
                         },
                         zerofix     = function lexer_style_item_value_zerofix(find:string):string {
-                            if (options.lexerOptions.style.no_lead_zero === true) {
+                            if (options.lexer_options.style.no_lead_zero === true) {
                                 const scrub = function lexer_style_item_value_zerofix_scrub(search:string) {
                                     return search.replace(/0+/, "");
                                 };
@@ -303,9 +303,9 @@
                     cc   = 0;
                     if (cc < leng) {
                         do {
-                            if (options.lexerOptions.style.no_lead_zero === true && zerodotstart.test(values[cc]) === true) {
+                            if (options.lexer_options.style.no_lead_zero === true && zerodotstart.test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(/0+\./, ".");
-                            } else if ((options.lexerOptions.style.no_lead_zero === false || options.lexerOptions.style.no_lead_zero === undefined) && dotstart.test(values[cc]) === true) {
+                            } else if ((options.lexer_options.style.no_lead_zero === false || options.lexer_options.style.no_lead_zero === undefined) && dotstart.test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(".", "0.");
                             } else if (zerodot.test(values[cc]) === true || dot.test(values[cc]) === true) {
                                 values[cc] = values[cc].replace(zerodot, zerofix).replace(dot, zerofix);
@@ -319,7 +319,7 @@
                             } else if ((/^url\((?!('|"))/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
                                 block = values[cc].charAt(values[cc].indexOf("url(") + 4);
                                 if (block !== "@" && block !== "{" && block !== "<") {
-                                    if (options.lexerOptions.style.quote_convert === "double") {
+                                    if (options.lexer_options.style.quote_convert === "double") {
                                         values[cc] = values[cc]
                                             .replace(/url\(/, "url(\"")
                                             .replace(/\)$/, "\")");
@@ -351,9 +351,9 @@
                         outy:string       = "",
                         mappy:number      = 0;
                     const block:string[]      = [],
-                        qc:"none"|"double"|"single" = (options.lexerOptions.style.quote_convert === undefined)
+                        qc:"none"|"double"|"single" = (options.lexer_options.style.quote_convert === undefined)
                             ? "none"
-                            : options.lexerOptions.style.quote_convert,
+                            : options.lexer_options.style.quote_convert,
                         comma:boolean      = (
                             parse.count > -1 && data.token[parse.count].charAt(data.token[parse.count].length - 1) === ","
                         ),
@@ -593,9 +593,9 @@
                             data.types[aa] = "selector";
                             ltype          = "selector";
                             if (data.token[aa].indexOf("=\u201c") > 0) {
-                                framework.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                sparser.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
                             } else if (data.token[aa].indexOf("=\u201d") > 0) {
-                                framework.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                sparser.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                             }
                         } else if (type === "end") {
                             data.types[aa] = "value";
@@ -633,9 +633,9 @@
                                 ltype          = "value";
                                 data.token[aa] = value(data.token[aa]);
                                 if (data.token[aa].charAt(0) === "\u201c") {
-                                    framework.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201c, \\201c) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 } else if (data.token[aa].charAt(0) === "\u201d") {
-                                    framework.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 }
                             } else {
                                 //properties without values are considered variables
@@ -1178,7 +1178,7 @@
                         if (b[a] === "}") {
                             margin_padding();
                         }
-                        if (options.lexerOptions.style.objectSort === true && b[a] === "}") {
+                        if (options.lexer_options.style.objectSort === true && b[a] === "}") {
                             parse.objectSort(data);
                         }
                         recordPush("");
@@ -1203,12 +1203,12 @@
                 }
                 a = a + 1;
             } while (a < len);
-            if (options.lexerOptions.style.objectSort === true) {
+            if (options.lexer_options.style.objectSort === true) {
                 parse.objectSort(data);
             }
 
             return data;
         };
 
-    framework.lexer.style  = style;
+    sparser.lexers.style  = style;
 }());

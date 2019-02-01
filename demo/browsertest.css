@@ -27,18 +27,17 @@ td{border:#999 0.0833em solid;display:table-cell;min-width:3em;padding:0.2em 0.4
 .output p,
 .output ul,
 .output table{font-size:1.2em}
-.keybox,
-.title{background:#fff;padding:0.5em 0.5em 0;position:relative}
-.title{float:left;margin:0 0 0.5em}
-.keybox{float:right}
+.title{margin:0 0 0.5em}
 .keybox ul{padding:0}
+.navigation ul{line-height:2.15em;list-style-position:inside;padding:0}
 .clear{clear:both;display:block;float:none;height:0.01em}
 .ace-control{display:inline-block;margin:0 0 0.5em}
 #data{overflow:scroll;width:100%}
 #data table{min-width:100%}
 
 .title,
-.keybox{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #ddd}
+.keybox,
+.navigation{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #ddd;float:left;height:11.5em;margin:0 1em 0 0;padding:0.5em 0.5em 0;position:relative}
 #data{background:#fff;border:0.1em solid #bbb;box-shadow:0.21em 0.21em 0.42em #888}
 #input{border:0.0715em solid #bbb;box-shadow:0.15em 0.15em 0.3em 0 #888}
 

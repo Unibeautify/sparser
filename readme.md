@@ -1,9 +1,9 @@
-# Parse Framework
+# Sparser
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/Unibeautify/parse-framework.svg)](https://greenkeeper.io/)
+[![Greenkeeper badge](https://badges.greenkeeper.io/Unibeautify/sparser.svg)](https://greenkeeper.io/)
 
 ## Version 2.5.4
-Play around with this application [in your browser](http://prettydiff.com/parse-framework/runtimes/browsertest.xhtml).
+Play around with this application [in your browser](https://sparser/demo/).
 
 ### Todo
 * add advanced analytics and reporting of parse errors
@@ -20,7 +20,7 @@ Play around with this application [in your browser](http://prettydiff.com/parse-
 1. [FAQ](#faq)
 
 ## Overview
-A parser that is the framework.  The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything. **A universal parser of everything for everybody.** The parser/framework comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
+The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything. **A universal parser of everything for everybody.** The parser comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
 
 ## Standard Format
 I call the standard output format the **[Universal Parse Model](docs/tech-documentation.md#universal-parse-model)**.  It is a simple means to describe any structured programming language.
@@ -44,15 +44,15 @@ npm install -g eslint
 Second, we need to get the code.  We can get this directly from Github:
 
 ```bash
-git clone https://github.com/Unibeautify/parse-framework.git
-cd parse-framework
+git clone https://github.com/Unibeautify/sparser.git
+cd sparser
 ```
 
 Or, we can get the code from NPM:
 
 ```bash
-npm install parse-framework
-cd node_modules/parse-framework
+npm install sparser
+cd node_modules/sparser
 ```
 
 ### TypeScript Build
@@ -80,14 +80,14 @@ Contributing is simple and this project needs lots of help.  Here are some sugge
 
 * If contributing code ensure that you provide a healthy serving of unit test code samples and pass the validation build.  I am not emotionally tied to code style concerns.  I tried to add as many of my preferred code style opinions to the ESLint validation rules, so as long as contributing code passes the validation build and includes enough coverage from unit test samples I will accept it.
 * If you wish to contribute new language support or write a new lexer file please see the [lexer readme](lexers/readme.md) to get started.
-* QA and user acceptance is always a huge concern.  If you notice a defect please open a [github issue](https://github.com/Unibeautify/parse-framework/issues/new).  I cannot be aware of all user concerns or edge cases and so feedback from users is absolutely critical to building a quality application.
+* QA and user acceptance is always a huge concern.  If you notice a defect please open a [github issue](https://github.com/Unibeautify/sparser/issues/new).  I cannot be aware of all user concerns or edge cases and so feedback from users is absolutely critical to building a quality application.
 
 ## FAQ
 
 ### Why a table instead of a tree like other parsers?
 Arrays are faster to access at execution time potentially allowing consumers to write much faster applications.  Arrays are also simple to reason about and manipulate both directly in the code and at execution time.
 
-Most importantly, though, is this allows a simplified standard format that is easy to maintain, document, and consume.  If you don't like the lexers provided in the framework then write your own and submit a pull request.
+Most importantly, though, is this allows a simplified standard format that is easy to maintain, document, and consume.  If you don't like the lexers provided then write your own and submit a pull request.
 
 ### How fast does it parse JavaScript?
 Try it yourself:
@@ -102,4 +102,4 @@ I find this application generally performs half as fast as the fastest JavaScrip
 This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.
 
 ### Why not just use Babel.js, Esprima, Acorn, or one of the various other parsers written in JavaScript?
-Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  The mission of this project it to parse every language for every environment, which is more than the JavaScript, JSX, and TypeScript supported by Babel.js and other parsers.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort due to a narrowed focus.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort, because this project stops at being a parser.  In short, this parser scales faster and wider than many other parsers by doing less and providing an open framework.
+Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  The mission of this project it to parse every language for every environment, which is more than the JavaScript, JSX, and TypeScript supported by Babel.js and other parsers.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort due to a narrowed focus.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort, because this project stops at being a parser.  In short, this parser scales faster and wider than many other parsers by doing less.

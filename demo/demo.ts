@@ -6,7 +6,7 @@
     "use strict";
     let editor:any,
         lang:[string, string, string] = ["", "", ""];
-    const framework:parseFramework = global.parseFramework,
+    const sparser:sparser = global.sparser,
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input:HTMLTextAreaElement   = document.getElementsByTagName("textarea")[0],
@@ -22,15 +22,14 @@
             crlf            : false,
             language        : "",
             lexer           : "script",
-            lexerOptions    : {},
-            outputFormat    : "arrays",
+            lexer_options   : {},
+            format          : "arrays",
             preserve_comment: false,
             source          : "",
             wrap            : 0
         },
         handler = function web_handler():void {
-            let outputArrays:data,
-                outputObjects:record[],
+            let output:any,
                 startTime:number = 0;
             const value:string = (acetest === true)
                     ? editor.getValue()
@@ -43,7 +42,7 @@
                 builder = function web_handler_builder():void {
                     let a:number         = 0,
                         body      = document.createElement("thead");
-                    const len:number       = global.parseFramework.parse.count + 1,
+                    const len:number       = global.sparser.parse.count + 1,
                         table     = document.createElement("table"),
                         cell      = function web_handler_builder_cell(data:htmlCellBuilder):void {
                             const el = document.createElement(data.type);
@@ -61,102 +60,52 @@
                                 row: tr,
                                 className: "numb"
                             });
-                            if (options.outputFormat === "objects") {
-                                cell({
-                                    text: outputObjects[a].begin.toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputObjects[a].ender.toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputObjects[a].lexer,
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputObjects[a].lines.toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputObjects[a].stack.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputObjects[a].types,
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputObjects[a].token.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                if (a % 2 === 0) {
-                                    tr.setAttribute("class", outputObjects[a].lexer + " even");
-                                } else {
-                                    tr.setAttribute("class", outputObjects[a].lexer + " odd");
-                                }
+                            cell({
+                                text: output.begin[a].toString(),
+                                type: "td",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: output.ender[a].toString(),
+                                type: "td",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: output.lexer[a],
+                                type: "td",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: output.lines[a].toString(),
+                                type: "td",
+                                row: tr,
+                                className: "numb"
+                            });
+                            cell({
+                                text: output.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                type: "td",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: output.types[a],
+                                type: "td",
+                                row: tr,
+                                className: ""
+                            });
+                            cell({
+                                text: output.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                                type: "td",
+                                row: tr,
+                                className: ""
+                            });
+                            if (a % 2 === 0) {
+                                tr.setAttribute("class", output.lexer[a] + " even");
                             } else {
-                                cell({
-                                    text: outputArrays.begin[a].toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputArrays.ender[a].toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputArrays.lexer[a],
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputArrays.lines[a].toString(),
-                                    type: "td",
-                                    row: tr,
-                                    className: "numb"
-                                });
-                                cell({
-                                    text: outputArrays.stack[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputArrays.types[a],
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                cell({
-                                    text: outputArrays.token[a].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-                                    type: "td",
-                                    row: tr,
-                                    className: ""
-                                });
-                                if (a % 2 === 0) {
-                                    tr.setAttribute("class", outputArrays.lexer[a] + " even");
-                                } else {
-                                    tr.setAttribute("class", outputArrays.lexer[a] + " odd");
-                                }
+                                tr.setAttribute("class", output.lexer[a] + " odd");
                             }
                             body.appendChild(tr);
                         },
@@ -214,8 +163,8 @@
                             parent.appendChild(tr);
                         };
                     
-                    if (framework.lexer[options.lexer] === undefined) {
-                        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                    if (sparser.lexers[options.lexer] === undefined) {
+                        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
                         return;
                     }
                     header(body);
@@ -235,21 +184,21 @@
                     dataarea.innerHTML = "";
                     dataarea.appendChild(table);
                 };
-            options.lexerOptions = {};
-            Object.keys(framework.lexer).forEach(function web_handler_lexers(value):void {
-                options.lexerOptions[value] = {};
+            options.lexer_options = {};
+            Object.keys(sparser.lexers).forEach(function web_handler_lexers(value):void {
+                options.lexer_options[value] = {};
             });
             if (editor !== undefined && (acetest === true || lang[0] !== "")) {
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
             if (checkboxes[1] !== undefined) {
-                options.lexerOptions.script.objectSort = (checkboxes[1].checked === true);
-                options.lexerOptions.style.objectSort  = (checkboxes[1].checked === true);
+                options.lexer_options.script.objectSort = (checkboxes[1].checked === true);
+                options.lexer_options.style.objectSort  = (checkboxes[1].checked === true);
             }
             if (checkboxes[0] !== undefined) {
-                options.lexerOptions.markup.tagSort    = (checkboxes[0].checked === true);
+                options.lexer_options.markup.tagSort    = (checkboxes[0].checked === true);
             }
-            lang = framework.language.auto(value, "javascript");
+            lang = sparser.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
@@ -292,27 +241,27 @@
                             }
                         } else if (name === "quote_convert" || name === "quoteconvert") {
                             if (values === "single" || values === "double") {
-                                options.lexerOptions.markup.quote_convert = values;
-                                options.lexerOptions.script.quote_convert = values;
-                                options.lexerOptions.style.quote_convert = values;
+                                options.lexer_options.markup.quote_convert = values;
+                                options.lexer_options.script.quote_convert = values;
+                                options.lexer_options.style.quote_convert = values;
                             }
                         } else if (name === "end_comma" || name === "endcomma") {
                             if (values === "always" || values === "never") {
-                                options.lexerOptions.script.end_comma = values;
+                                options.lexer_options.script.end_comma = values;
                             }
                         } else if (name === "noleadzero" || name === "no_lead_zero") {
                             if (values === "true") {
-                                options.lexerOptions.style.no_lead_zero = true;
+                                options.lexer_options.style.no_lead_zero = true;
                             } else if (values === "false") {
-                                options.lexerOptions.style.no_lead_zero = false;
+                                options.lexer_options.style.no_lead_zero = false;
                             }
                         } else if (name === "objectsort") {
                             if (values === "true") {
-                                options.lexerOptions.script.objectSort = true;
-                                options.lexerOptions.style.objectSort = true;
+                                options.lexer_options.script.objectSort = true;
+                                options.lexer_options.style.objectSort = true;
                             } else if (values === "false") {
-                                options.lexerOptions.script.objectSort = false;
-                                options.lexerOptions.style.objectSort = false;
+                                options.lexer_options.script.objectSort = false;
+                                options.lexer_options.style.objectSort = false;
                             }
                         } else if (name === "preserve_comment" || name === "preservecomment") {
                             if (values === "true") {
@@ -322,25 +271,25 @@
                             }
                         } else if (name === "preserve_text" || name === "preservetext") {
                             if (values === "true") {
-                                options.lexerOptions.markup.preserve_text = true;
+                                options.lexer_options.markup.preserve_text = true;
                             } else {
-                                options.lexerOptions.markup.preserve_text = false;
+                                options.lexer_options.markup.preserve_text = false;
                             }
                         } else if (name === "tagsort") {
                             if (values === "true") {
-                                options.lexerOptions.markup.tagSort = true;
+                                options.lexer_options.markup.tagSort = true;
                             } else if (values === "false") {
-                                options.lexerOptions.markup.tagSort = false;
+                                options.lexer_options.markup.tagSort = false;
                             }
                         } else if (name === "tag_merge" || name === "tagmerge") {
                             if (values === "true") {
-                                options.lexerOptions.markup.tag_merge = true;
+                                options.lexer_options.markup.tag_merge = true;
                             } else if (values === "false") {
-                                options.lexerOptions.markup.tag_merge = false;
+                                options.lexer_options.markup.tag_merge = false;
                             }
                         } else if (name === "var_word" || name === "varword") {
                             if (values === "list" || values === "each" || values === "none") {
-                                options.lexerOptions.script.varword = values;
+                                options.lexer_options.script.varword = values;
                             }
                         }
                     } while (aa > 0);
@@ -351,11 +300,7 @@
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
-            if (options.outputFormat === "arrays") {
-                outputArrays = framework.parserArrays(options);
-            } else {
-                outputObjects = framework.parserObjects(options);
-            }
+            output = sparser.parser(options);
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
@@ -367,8 +312,8 @@
                     time:number = (endTime - startTotal) / 1000;
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            if (framework.parseerror !== "") {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = framework.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (sparser.parseerror !== "") {
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
             } else {
                 document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             }
@@ -469,7 +414,7 @@
     if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
         if (acetest === true && editor !== undefined) {
             lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto" || options.lexer === "")
-                ? framework.language.auto(parseCode, "javascript")
+                ? sparser.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
             editor.setValue(parseCode);
             editor.getSession().setMode(`ace/mode/${lang[0]}`);

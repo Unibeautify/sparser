@@ -1,4 +1,4 @@
-# Parse Framework - Technical Documentation
+# Sparser - Technical Documentation
 
 ## Contents
 1. [Execution](#execution)
@@ -18,6 +18,8 @@
    1. [Lexers](#lexers)
 1. [Ignore Code](#ignore-code)
 1. [Input](#input)
+   1. [Standard Options](#standard-options)
+   1. [Lexer Options](#lexer-options)
 1. [Output](#output)
    1. [begin](#begin)
    1. [ender](#ender)
@@ -30,22 +32,22 @@
 
 ## Execution
 ```javascript
-global.parseFramework.parserArrays(options);
+global.sparser.arrays(options);
 ```
 
 or
 
 ```javascript
-global.parseFramework.parserObjects(options);
+global.sparser.objects(options);
 ```
 
-Execute the application by simply running this instruction, where the options is an object described in [Input](#input).  The first code example, parserArrays, produces the default format of a single object containing 7 parallel arrays.  The second code example, parserObjects, produces a single array containing objects of 7 data properties for each parsed token.
+Execute the application by simply running this instruction, where the options is an object described in [Input](#input).  The first code example, *arrays*, produces the default format of a single object containing 7 parallel arrays.  The second code example, *objects*, produces a single array containing objects of 7 data properties for each parsed token.
 
 ### Supplied Runtimes
-The framework is intended for inclusion in other applications as an embedded utility.  To run the framework immediately and experiment without any configuration some simple runtime interfaces are provided.
+Sparser is intended for inclusion in other applications as an embedded utility.  To run Sparser immediately and experiment without any configuration some simple runtime interfaces are provided.
 
 #### Browser Runtime
-A handy-dandy browser utility is provided to run the framework in a web browser as *runtimes/browsertest.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  First, run the build, `node js/services build`, to create the necessary JavaScript file.  To run the web server simply execute `node js/services server` on the command line.  The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.
+A handy-dandy browser utility is provided to run Sparser in a web browser as *demo/index.xhtml*.  This utility can be run from any location whether on your local file system or from a webserver.  First, run the build, `node js/services build`, to create the necessary JavaScript file.  To run the web server simply execute `node js/services server` on the command line.  The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.
 
 The browser utility produces output in a HTML table and color codes the output based upon the lexer used.
 
@@ -53,32 +55,30 @@ The browser utility produces output in a HTML table and color codes the output b
 All Node.js support is consolidated into a single location.  To examine available features run this command: `node js/services command`
 
 ### Embedding
-The framework is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.  Getting the framework to run in different environments requires a bit of configuration that varies by environment.
+Sparser is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.  Getting Sparser to run in different environments requires a bit of configuration that varies by environment.
 
 The minimum requirements for embedding into all environments is to include the *js/parse.js* file and included the desired lexer files from the *lexers* directory.
 
 #### Browser Embedding
 The browser environment makes use of a single dynamically created file: *js/browser.js*.  Just simply run the build `node js/services build` to compile the TypeScript and generate this file.  This file is actually API agnostic except that it builds out the application and attaches it as a property of the *window* object.  The file also contains every available lexer.
 
-Include the js/browser.js file in your HTML assuming the framework is an NPM dependency:
+Include the js/browser.js file in your HTML assuming Sparser is an NPM dependency:
 ```html
-<script src="node_modules/parse-framework/js/browser.js" type="application/javascript"></script>
+<script src="node_modules/sparser/js/browser.js" type="application/javascript"></script>
 ```
 
-Inside your browser-based JavaScript application simply call the framework, which returns a parse table in string format (stringified JSON):
+Inside your browser-based JavaScript application simply call Sparser, which returns a parse table in string format (stringified JSON):
 ```javascript
-window.parseFramework.parserArrays(options);
+window.sparser.arrays(options);
 ```
-
-The *js/browser.js* file should not be confused with the *js/browsertest.js* file which provides the custom interface code for the *runtimes/browsertest.xhtml* file.
 
 #### Node Embedding
 You can pick and choose which lexer files to run through manual inclusion.  To include all supported lexer files simply require the *lexers/all.js* file.
 
-Here is a brief code example demonstrating how to initiate the framework as an NPM dependency with all lexers:
+Here is a brief code example demonstrating how to initiate Sparser as an NPM dependency with all lexers:
 
 1. Ensure the necessary `lexerOptions` property is present on your options object
-1. Require the framework
+1. Require Sparser
 1. Require the *lexers/all.js* file
 1. Call the function from the *lexers/all.js* file passing in options and a callback
 
@@ -88,7 +88,7 @@ let sep = node.path.sep; // directory separator from node's path module
 require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}parse`);
 const all = require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}lexers${sep}all`);
 all(options, function node_apps_mode_allLexers() {
-    options.parsed = global.parseFramework.parserArrays(options);
+    options.parsed = global.parseFramework.arrays(options);
     console.log(options.parsed);
 });
 ```
@@ -96,7 +96,7 @@ all(options, function node_apps_mode_allLexers() {
 ### Including New or Custom Lexers
 Simply drop the new lexer file into the directory named *lexers*.  Specify the name of the lexer in the *options.lexer* option.  Please see [Input](#input) for details about the options object and [lexers/readme.md](lexers/readme.md) for technical guidance on starting a new lexer file.
 
-The two mentioned steps are all that is required to integrate new parsing rules or new language support into the framework.  It is important to note this only works if the consuming application loads the lexer file into its application.  **I recommend always reading all lexer files in the lexers directory.** For an example please see the *fs.readdir* instruction in the [js/runtimes/nodetest.js](js/runtimes/nodetest.js) file.
+The two mentioned steps are all that is required to integrate new parsing rules or new language support into Sparser.  It is important to note this only works if the consuming application loads the lexer file into its application.  **I recommend always reading all lexer files in the lexers directory.** For an example please see the *fs.readdir* instruction in the [js/runtimes/nodetest.js](js/runtimes/nodetest.js) file.
 
 ## Framework
 The application operates as a global object containing a few data properties and methods plus a collection of language specific rule files called *lexers*.
@@ -107,16 +107,16 @@ The application operates as a global object containing a few data properties and
 * **standard format** - The standard format describes an object with property names from `parse.datanames` where the value of each property is an array and each of those arrays contain an identical number of indexes.  These arrays will never be sparse arrays.
 
 ### Architecture
-The application is arranged as an object named *parseFramework*.  This object is attached to Node.js's *global* object.  This means of organization allows a convenient means to extend code in a module way without a module focused convention.  This also allows a code organization that is easy to extend and modify without regards for any specific environment.  In order to adapt this organization to the web browser all necessary files are combined into a single file and the *parseFramework* object is assigned to the *window* object instead of *global*.
+The application is arranged as an object named *sparser*.  This object is attached to Node.js's *global* object.  This means of organization allows a convenient means to extend code in a module way without a module focused convention.  This also allows a code organization that is easy to extend and modify without regards for any specific environment.  In order to adapt this organization to the web browser all necessary files are combined into a single file and the *sparser* object is assigned to the *window* object instead of *global*.
 
 ### global
 The *global* object contains five key references.
 
-* **langauge** - A convenience library, from the file *js/language.js*, for guessing a code's language by analyzing the code.  This library is executed using its *auto* method and passing in a string to analyze: `global.parseFramework.language.auto(myCode)`.  An array of three value is returned: 
+* **langauge** - A convenience library, from the file *js/language.js*, for guessing a code's language by analyzing the code.  This library is executed using its *auto* method and passing in a string to analyze: `global.sparser.language.auto(myCode)`.  An array of three value is returned: 
    - a generalized name of the language
    - the lexer name
    - a formal language name for human reading
-* **lexer** - An object storing the various available lexers.  This object must be manually populated in your run time.  Look into the *runtimes/browsertest.xhtml* and *nodetest.js* files as examples.  Auto-population of this object from the files in the lexer directory does not occur because IO operations would break the environment agnostic nature of this application.
+* **lexer** - An object storing the various available lexers.  This object must be manually populated in your run time.  Look into the *demo/index.xhtml* and *nodetest.js* files as examples.  Auto-population of this object from the files in the lexer directory does not occur because IO operations would break the environment agnostic nature of this application.
 * **parse** - An object containing various data properties and methods to reason about and populate the centralized parse data.
 * **parseerror** - A string storing an empty value by default.  When a lexer produces a parse error it will write an error message to this property.
 * **parser** - A small function to initiate execution of the framework.  This function is not intended to be referenced from within a lexer file.
@@ -348,5 +348,5 @@ The *types* array contains a string that describes the token value according to 
 
 ### Maintenance and Support
 * nodetest.ts - An interface to quickly run the parser from a command line terminal using Node.js.
-* browsertest.xhtml - An interface to quickly run the parser in a browser with formatted output.
-* language.ts - A library used in nodetest.ts and browsertest.xhtml to conveniently guess at the submitted language.
+* demo/index.xhtml - An interface to quickly run the parser in a browser with formatted output.
+* language.ts - A library used to conveniently guess at the submitted language.

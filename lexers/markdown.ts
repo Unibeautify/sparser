@@ -1,7 +1,7 @@
 /*global global*/
 (function markdown_init() {
     "use strict";
-    const framework: parseFramework = global.parseFramework,
+    const sparser: sparser = global.sparser,
         markdown = function lexer_markdown(source : string): data {
             let a   : number   = 0,
                 b   : number   = 0,
@@ -9,7 +9,7 @@
                 bc2 : number   = 0,
                 quote:string   = "",
                 stack:string[] = [];
-            const parse: parse    = framework.parse,
+            const parse: parse    = sparser.parse,
                 data   : data     = parse.data,
                 options: parseOptions  = parse.parseOptions,
                 lines  : string[] = (options.crlf === true)
@@ -1677,5 +1677,5 @@
             }, "");
             return data;
         }
-    framework.lexer.markdown = markdown;
+    sparser.lexers.markdown = markdown;
 }());

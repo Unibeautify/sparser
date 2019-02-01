@@ -1,7 +1,22 @@
 declare var ace: any;
+type codes = [string, number, number, number, number];
 type languageAuto = [string, string, string];
+type lexerValues = ["any"] | ("markdown" | "markup" | "script" | "style")[];
+type minimal = [number, number, string, number, string, string, string];
 interface attStore extends Array<[string, number]>{
     [index:number]: [string, number]
+}
+interface commandList {
+    [key: string]: {
+        description: string;
+        example: {
+            code: string;
+            defined: string;
+        }[];
+    }
+}
+interface compareStore extends Array<[number, number]>{
+    [index:number]: [number, number];
 }
 interface data {
     begin: number[];
@@ -11,6 +26,15 @@ interface data {
     stack: string[];
     token: string[];
     types: string[];
+}
+interface diffJSON extends Array<["+"|"-"|"=", string]|["r", string, string]> {
+    [index:number]: ["+"|"-"|"=", string]|["r", string, string];
+}
+interface difftable {
+    [key: string]: [number, number];
+}
+interface diffview {
+    (): [string, number, number]
 }
 interface htmlCellBuilder {
     text:string;
@@ -30,6 +54,28 @@ interface markupCount {
     end  : number;
     index: number;
     start: number;
+}
+interface nodeLists {
+    emptyline: boolean;
+    heading: string;
+    obj: any;
+    property: "eachkey" | string;
+}
+interface opcodes extends Array<codes> {
+    [index: number]: codes;
+}
+interface option {
+    default: boolean | number | string;
+    definition: string;
+    label: string;
+    lexer: lexerValues;
+    type: "boolean" | "number" | "string";
+    values?: {
+        [key: string]: string;
+    }
+}
+interface optionDef {
+    [key:string]: option;
 }
 interface parse {
     concat(data : data, array : data)                               : void;
@@ -51,28 +97,27 @@ interface parse {
     wrapCommentBlock(config: wrapConfig)                            : [string, number];
     wrapCommentLine(config: wrapConfig)                             : [string, number];
 }
-interface parseFramework {
-    language?                        : language;
-    lexer                            : lexer;
-    parse                            : parse;
-    parseerror                       : string;
-    parserArrays(obj : parseOptions) : data;
-    parserObjects(obj : parseOptions): record[];
-}
 interface parseOptions {
     correct         : boolean;
     crlf            : boolean;
     language        : string;
     lexer           : string;
-    lexerOptions    : {
+    lexer_options    : {
         [key: string]: {
             [key: string]: any;
         };
     };
-    outputFormat    : "objects" | "arrays";
+    format          : "arrays" | "markdown" | "minimal" | "objects" | "table" | "testprep";
     preserve_comment: boolean;
     source          : string;
     wrap            : number;
+}
+interface readDirectory {
+    callback: Function;
+    exclusions: string[];
+    path: string;
+    recursive: boolean;
+    symbolic: boolean;
 }
 interface record {
     begin: number;
@@ -90,6 +135,14 @@ interface spacer {
     array: string[];
     index: number;
     end  : number;
+}
+interface sparser {
+    language           ?: language;
+    lexers              : lexer;
+    optionDef          ?: optionDef;
+    parse               : parse;
+    parser(parseOptions): data;
+    parseerror          : string;
 }
 interface splice {
     data   : data;
@@ -123,6 +176,6 @@ interface wrapConfig {
 }
 declare module NodeJS {
     interface Global {
-        parseFramework: parseFramework
+        sparser: sparser;
     }
 }

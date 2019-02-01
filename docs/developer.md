@@ -1,17 +1,17 @@
-# Parse Framework - Developer Environment
+# Sparser - Demo Tool
 
-The application comes with a helpful file to execute in the browser, [runtimes/browsertest.xhtml](runtimes/browsertest.xthml).
+The application comes with a helpful file to execute in the browser, [demo/index.xhtml](demo/index.xthml).
 
 ## Direct Access (No Automation)
-This file provides direct access to the application by simply navigating to the file in your local filesystem, for example: `/Users/austincheney/parse-framework/runtimes/browsertest.xhtml`
+This file provides direct access to the application by simply navigating to the file in your local filesystem, for example: `/Users/austincheney/sparser/demo/`
 
 ## Automated Environment
 Sometimes it is more convenient to have automation running in the background.  The provided service will perform these tasks in this order:
 
 1. Watch the files in the project for changes.
 1. If a TypeScript file is saved the TypeScript build process executes.
-1. If the saved file is the XHTML, CSS, or any TypeScript file a Web Socket connection tells the browser tab running the browsertest.xhtml file refresh.  If a text file located in the test/samples_parsed directory tree is updated the validation build will execute on the command line.
-1. Runs the application in the browsertest.xhtml immediately upon page reload
+1. If the saved file is the XHTML, CSS, or any TypeScript file a Web Socket connection tells the browser tab running the demo/index.xhtml file refresh.  If a text file located in the test/samples_parsed directory tree is updated the validation build will execute on the command line.
+1. Runs the application in the demo/index.xhtml immediately upon page reload
 1. Scrolls to the bottom of the page if the parameter *scrolldown* is supplied.
 
 ### Running the Automation
