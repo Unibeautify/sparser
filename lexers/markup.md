@@ -31,7 +31,19 @@
 The markup lexer uses tag names, even if the tag is a template tag, as the stack values.
 
 ## markup options
-* **preserve_text** - Preserves text content from formatting or word wrapping.
-* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters of standard quoteed XML/HTML attributes.  The *none* value disables this option.
-* **tag_merge** - Merges start and end tag pairs, if these tags are adjacent or separated only by white space, into a single singleton tag.
-* **tagSort** - Sorts tags by tag name alphabetically amongst siblings under the same parent.
+* **preserve_text**: Whether text content should be preserved from manipulation, such as word wrap.
+   - type: boolean
+   - default: false
+* **quote_convert**: If quote characters should be converted from single quotes to double quotes or the opposite. This option does take into account escaped quote characters.
+   - type: string
+   - default: none
+   - values:
+      * *double*: Converts single quote characters to double quote characters.
+      * *none*: Ignores this option.
+      * *single*: Converts double quote characters to single quote characters.
+* **tag_merge**: If adjacent start and end tags in markup should be merged into one singleton tag.
+   - type: boolean
+   - default: false
+* **tag_sort**: Whether markup tags should be alphabetically sorted amonst their siblings.
+   - type: boolean
+   - default: false

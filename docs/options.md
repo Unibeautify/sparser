@@ -6,7 +6,7 @@ property   | value
 default    | false
 definition | Automatically correct sloppiness in code. If false missing syntax will be included starting with 'x', such as 'x;' for missing simicolons.
 label      | Correct
-lexer      | any
+lexer      | all
 type       | boolean
 use        | options.correct
 
@@ -16,7 +16,7 @@ property   | value
 default    | false
 definition | If line termination should be crlf (Windows) otherwise line termination is lf (Unix).
 label      | CRLF
-lexer      | any
+lexer      | all
 type       | boolean
 use        | options.crlf
 
@@ -42,7 +42,7 @@ property   | value
 default    | arrays
 definition | Defines the output format of the parser.
 label      | Output Format
-lexer      | any
+lexer      | all
 type       | string
 use        | options.format
 values | arrays, markdown, minimal, objects, table
@@ -60,7 +60,7 @@ property   | value
 default    | auto
 definition | The language to parse.  The value auto will result in language auto detection.
 label      | Language
-lexer      | any
+lexer      | all
 type       | string
 use        | options.language
 
@@ -70,7 +70,7 @@ property   | value
 default    | auto
 definition | The lexer used to perform the parsing.  The value auto will result in language auto detection.
 label      | Lexer
-lexer      | any
+lexer      | all
 type       | string
 use        | options.lexer
 
@@ -90,7 +90,7 @@ property   | value
 default    | false
 definition | Whether comments should be ignored from manipulation, such as word wrap.
 label      | Preserve Comment
-lexer      | any
+lexer      | all
 type       | boolean
 use        | options.preserve_comment
 
@@ -126,7 +126,7 @@ property   | value
 default    | 
 definition | The source code to parse.
 label      | Source
-lexer      | any
+lexer      | all
 type       | string
 use        | options.source
 
@@ -172,6 +172,6 @@ property   | value
 default    | 0
 definition | The character distance in which to apply word wrap. A value of less than 1 eliminates word wrap.
 label      | Wrap
-lexer      | any
+lexer      | all
 type       | number
 use        | options.wrap

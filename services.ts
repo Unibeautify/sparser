@@ -4,7 +4,7 @@
 
 /* This file exists to consolidate the various Node service offerings in
    this application. */
-import { Stats } from "fs";
+import { Stats, write } from "fs";
 import * as http from "http";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
@@ -29,13 +29,12 @@ interface directoryList extends Array<directoryItem> {
             return dirs.slice(0, dirs.length - 1).join(sep) + sep;
         }()),
         js:string = `${projectPath}js${sep}`,
-        libFiles:string[] = [`${js}language.js`, `${js}lexers`, `${js}options.js`, `${js}parse.js`],
+        libFiles:string[] = [`${js}lexers`, `${js}libs`],
         // node option default start
         options:any = {},
         version:any = {
             date: "",
-            number: "",
-            parse: ""
+            number: ""
         },
         // node option default end
         text:any     = {
@@ -255,7 +254,10 @@ interface directoryList extends Array<directoryItem> {
             require(`${js}parse.js`);
             return [];
         }()),
-        sparser:sparser = global.sparser,
+        sparser:sparser = (function node_setSparser():sparser {
+            require(`${js}parse.js`);
+            return global.sparser;
+        }()),
         apps:any = {};
     let verbose:boolean = false,
         errorflag:boolean = false,
@@ -375,7 +377,7 @@ interface directoryList extends Array<directoryItem> {
                 process.exit(1);
                 return "";
             }
-            if (filtered.length > 1) {
+            if (filtered.length > 1 && apps[arg] !== undefined) {
                 if (modeval() === true) {
                     return mode;
                 }
@@ -442,7 +444,10 @@ interface directoryList extends Array<directoryItem> {
                                                 process.exit(1);
                                                 return;
                                             }
-                                            if (stats.isDirectory() === true) {
+                                            if (stats.isFile() === true) {
+                                                require(valpath);
+                                                counts.items = counts.items + 1;
+                                            } else if (stats.isDirectory() === true) {
                                                 node_args_requireDir_dirwrapper(valpath);
                                             } else {
                                                 counts.items = counts.items + 1;
@@ -467,7 +472,7 @@ interface directoryList extends Array<directoryItem> {
             },
             readOptions = function node_args_readOptions():void {
                 const list:string[] = process.argv,
-                    def:optionDef = sparser.optionDef,
+                    def:optionDef = sparser.libs.optionDef,
                     keys:string[] = (command === "options")
                         ? Object.keys(def.mode)
                         : [],
@@ -606,8 +611,9 @@ interface directoryList extends Array<directoryItem> {
         const order = {
                 build: [
                     "npminstall",
-                    "optionsMarkdown",
-                    "typescript"
+                    "typescript",
+                    "libraries",
+                    "options_markdown"
                 ],
                 test: [
                     "lint",
@@ -700,6 +706,158 @@ interface directoryList extends Array<directoryItem> {
             },
             // These are all the parts of the execution cycle, but their order is dictated by the 'order' object.
             phases = {
+                // read JS files and combine them into fewer JS files
+                libraries: function node_apps_build_libraries():void {
+                    const opts:[string, string] = (function node_apps_build_libraries_modifyFile_read_buildDefault():[string, string] {
+                            const obj:any = {
+                                    lexer_options: {}
+                                },
+                                optkeys:string[] = Object.keys(sparser.libs.optionDef),
+                                keyslen:number = optkeys.length;
+                            let a:number = 0,
+                                b:number = 0,
+                                lexlen:number = 0;
+                            do {
+                                if (sparser.libs.optionDef[optkeys[a]].lexer[0] === "all") {
+                                    obj[optkeys[a]] = sparser.libs.optionDef[optkeys[a]].default;
+                                } else {
+                                    b = 0;
+                                    lexlen = sparser.libs.optionDef[optkeys[a]].lexer.length;
+                                    do {
+                                        if (obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]] === undefined) {
+                                            obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]] = {};
+                                        }
+                                        obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]][optkeys[a]] = sparser.libs.optionDef[optkeys[a]].default;
+                                        b = b + 1;
+                                    } while (b < lexlen);
+                                }
+                                a = a + 1;
+                            } while (a < keyslen);
+                            return [JSON.stringify(obj), ""];
+                        }()),
+                        write = function node_apps_build_libraries_write():void {
+                            const message:string = `${text.green}Files modified and combined for easy use.${text.none}`;
+                            parsefile = parsefile + libraries;
+                            node.fs.writeFile(`${js}parse.js`, `${parsefile}global.sparser=sparser;}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse(erp:Error) {
+                                if (erp !== null) {
+                                    apps.error([erp.toString()]);
+                                    return;
+                                }
+                                node.fs.writeFile(`${js}browser.js`, `${parsefile.replace("global.sparser", "window.sparser")}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeBrowser(erb:Error) {
+                                    if (erb !== null) {
+                                        apps.error([erb.toString()]);
+                                        return;
+                                    }
+                                    node.fs.writeFile(`${js}services.js`, servicefile, "utf8", function node_apps_build_libraries_appendFile_read_writeServices(ers:Error) {
+                                        if (ers !== null) {
+                                            apps.error([ers.toString()]);
+                                            return;
+                                        }
+                                        next(message);
+                                    });
+                                });
+                            });
+                        },
+                        appendFile = function node_apps_build_libraries_appendFile(filePath:string):void {
+                            node.fs.readFile(filePath, "utf8", function node_apps_build_libraries_appendFile_read(errr:Error, filedata:string):void {
+                                const filenames:string[] = filePath.split(sep),
+                                    filename:string = filenames[filenames.length - 1];
+                                if (errr !== null) {
+                                    apps.errout([errr.toString()]);
+                                    return;
+                                }
+                                if (filename !== "browser.js" && filename !== "all.js") {
+                                    filedata = filedata
+                                        .replace(/\/\*\s*global \w+(\s*,\s*\w+)*\s*\*\//, "");
+                                    if (filename === "parse.js") {
+                                        parsefile = filedata
+                                            .replace(/global\.sparser/g, "sparser")
+                                            .replace(/sparser\s*=\s*sparser;?\s*\}\(\)\);\s*$/, "")
+                                            .replace(/defaults\s*:\s*\{\},/, `defaults:${opts[0]},version:${opts[1]},`);
+                                    } else if (filename === "services.js") {
+                                        const split:string[] = [];
+                                        split[0] = filedata.slice(0, filedata.indexOf("// node option default start") + 28);
+                                        split[1] = `options=${opts[0]},version=${opts[1]},`
+                                        split[2] = filedata.slice(filedata.indexOf("// node option default end"));
+                                        servicefile = split.join(node.os.EOL);
+                                    } else {
+                                        filedata = filedata
+                                            .replace(/global\.sparser/g, "sparser")
+                                            .replace(/("|')use strict("|');/g, "")
+                                            .replace(/const\s+sparser\s*=\s*sparser\s*,\s*/, "const ");
+                                        libraries = libraries + filedata;
+                                    }
+                                }
+                                a = a + 1;
+                                if (a === filelen) {
+                                    write();
+                                }
+                            });
+                        },
+                        stat = function node_apps_build_libraries_libraryFiles_stat(pathitem:string) {
+                            node.fs.stat(pathitem, function node_apps_build_libraries_libraryFiles_stat_callback(errs:Error, stats:Stats):void {
+                                if (errs !== null) {
+                                    apps.errout([errs.toString()]);
+                                    return;
+                                }
+                                if (stats.isDirectory() === true) {
+                                    node.fs.readdir(pathitem, "utf8", function node_apps_build_libraries_libraryFiles_stat_callback_readdir(errd:Error, filelist:string[]):void {
+                                        if (errd !== null) {
+                                            apps.errout([errd.toString()]);
+                                            return;
+                                        }
+                                        filelen = filelen + (filelist.length - 1);
+                                        filelist.forEach(function node_apps_build_libraries_libraryFiles_stat_callback_readdir_each(value:string):void {
+                                            node_apps_build_libraries_libraryFiles_stat(pathitem + sep + value);
+                                        });
+                                    });
+                                } else if (stats.isFile() === true) {
+                                    if (pathitem.slice(pathitem.length - 3) === ".js") {
+                                        appendFile(pathitem);
+                                    } else {
+                                        a = a + 1;
+                                        if (a === filelen) {
+                                            write();
+                                        }
+                                    }
+                                }
+                            });
+                        };
+                    let a:number = 0,
+                        filelen: number = libFiles.length,
+                        parsefile:string = "",
+                        servicefile:string = "",
+                        libraries:string = ""
+                    heading("Merging files for simplified application access.");
+                    libFiles.push(`${js}services.js`);
+                    libFiles.push(`${js}parse.js`);
+                    (function node_apps_build_libraries_versionGather():void {
+                        node.child(`git log -1 --branches`, function node_apps_build_libraries_versionGather_child(err:Error, stderr:string):void {
+                            if (err !== null) {
+                                apps.errout([err.toString()]);
+                                return;
+                            }
+                            const date:string[] = stderr.slice(stderr.indexOf("Date:") + 12).split(" "),
+                                datestr:string = `${date[1]} ${date[0]} ${date[3]}`;
+                            let number:string = "";
+                            node.fs.readFile(`${projectPath}package.json`, "utf8", function node_apps_build_libraries_versionGather_child_readPackage(errp:Error, data:string):void {
+                                if (errp !== null) {
+                                    apps.errout([errp.toString()]);
+                                    return;
+                                }
+
+                                number = JSON.parse(data).version;
+                                // update information for display in current build
+                                version.date = datestr;
+                                version.number = number;
+                                opts[1] = `{date:"${datestr}",number:"${number}"}`;
+                                libFiles.forEach(function node_apps_build_libraries_libraryFiles_each(value:string) {
+                                    stat(value);
+                                });
+                            });
+                        })
+                    }());
+                },
                 // phase lint is merely a call to apps.lint
                 lint     : function node_apps_build_lint():void {
                     const callback = function node_apps_build_lint_callback(message:string):void {
@@ -737,17 +895,68 @@ interface directoryList extends Array<directoryItem> {
                     });
                 },
                 // phase optionsMarkdown builds a markdown file of options documentation
-                optionsMarkdown: function node_apps_build_optionsMarkdown():void {
-                    const def:optionDef = sparser.optionDef,
+                options_markdown: function node_apps_build_optionsMarkdown():void {
+                    const def:optionDef = sparser.libs.optionDef,
                         keys:string[] = Object.keys(def),
                         len:number = keys.length,
-                        doc:string[] = ["# Sparser Options"];
+                        doc:string[] = ["# Sparser Options"],
+                        lexers:lexerDoc = {},
+                        lexerWrite = function node_apps_build_optionsMarkdown_lexerWrite():void {
+                            const lexkeys:string[] = Object.keys(lexers);
+                            files = lexkeys.length + 1;
+                            lexkeys.forEach(function node_apps_build_optionsMarkdown_lexerWrite_each(lexname:string):void {
+                                node.fs.readFile(`${projectPath}lexers${sep + lexname}.md`, {
+                                    encoding: "utf8"
+                                }, function node_apps_build_optionsMarkdown_lexersWrite_each_read(er:Error, filedata:string):void {
+                                    if (er !== null) {
+                                        apps.errout([er.toString()]);
+                                        return;
+                                    }
+                                    const lex:string = (/# Lexer - \w+/).exec(filedata)[0].replace("# Lexer - ", ""),
+                                        lenx:number = lexers[lex].length,
+                                        output:string[] = [`## ${lex} options`];
+                                    let aa:number = 0,
+                                        bb:number = 0,
+                                        vallen:number = 0,
+                                        valkey:string[] = [];
+                                    filedata = filedata.slice(0, filedata.indexOf(`## ${lex} options`));
+                                    do {
+                                        output.push(`* **${lexers[lex][aa]}**: ${def[lexers[lex][aa]].definition}`);
+                                        output.push(`   - type: ${def[lexers[lex][aa]].type}`);
+                                        output.push(`   - default: ${def[lexers[lex][aa]].default}`);
+                                        if (def[lexers[lex][aa]].values !== undefined) {
+                                            output.push(`   - values:`);
+                                            bb = 0;
+                                            valkey = Object.keys(def[lexers[lex][aa]].values);
+                                            vallen = valkey.length;
+                                            do {
+                                                output.push(`      * *${valkey[bb]}*: ${def[lexers[lex][aa]].values[valkey[bb]]}`);
+                                                bb = bb + 1;
+                                            } while (bb < vallen);
+                                        }
+                                        aa = aa + 1;
+                                    } while (aa < lenx);
+                                    filedata = filedata + output.join("\n");
+                                    node.fs.writeFile(`${projectPath}lexers${sep + lex}.md`, filedata, "utf8", function node_apps_build_optionsMarkdown_lexersWrite_each_read_write(erw:Error):void {
+                                        if (erw !== null) {
+                                            apps.errout([erw.toString()]);
+                                            return;
+                                        }
+                                        files = files - 1;
+                                        if (files < 1) {
+                                            next(`${text.green}Options documentation successfully written to markdown file.${text.none}`);
+                                        }
+                                    });
+                                });
+                            });
+                        };
                     let a:number = 0,
                         b:number = 0,
+                        files:number = 0,
                         lenv:number = 0,
                         vals:string[] = [],
                         valstring:string[] = [];
-                    heading("Writing options documentation in markdown format");
+                    heading("Writing options documentation in markdown format.");
                     do {
                         doc.push("");
                         doc.push(`## ${keys[a]}`);
@@ -758,7 +967,7 @@ interface directoryList extends Array<directoryItem> {
                         doc.push(`label      | ${def[keys[a]].label}`);
                         doc.push(`lexer      | ${def[keys[a]].lexer.join(", ")}`);
                         doc.push(`type       | ${def[keys[a]].type}`);
-                        if (def[keys[a]].lexer[0] === "any") {
+                        if (def[keys[a]].lexer[0] === "all") {
                             doc.push(`use        | options.${keys[a]}`);
                         } else {
                             vals = [];
@@ -766,6 +975,10 @@ interface directoryList extends Array<directoryItem> {
                             lenv = def[keys[a]].lexer.length;
                             do {
                                 vals.push(`options.lexer_options.**${def[keys[a]].lexer[b]}**.${keys[a]}`);
+                                if (lexers[def[keys[a]].lexer[b]] === undefined) {
+                                    lexers[def[keys[a]].lexer[b]] = [];
+                                }
+                                lexers[def[keys[a]].lexer[b]].push(keys[a]);
                                 b = b + 1;
                             } while (b < lenv);
                             doc.push(`use        | ${vals.join(" \\| ")}`);
@@ -790,12 +1003,16 @@ interface directoryList extends Array<directoryItem> {
                         }
                         a = a + 1;
                     } while (a < len);
+                    lexerWrite();
                     node.fs.writeFile(`${projectPath}docs${sep}options.md`, doc.join("\n"), "utf8", function node_apps_build_optionsMarkdown_writeFile(err:Error) {
                         if (err !== null) {
                             apps.errout([err.toString()]);
                             return;
                         }
-                        next(`${text.green}Options documentation successfully written to markdown file.${text.none}`);
+                        files = files - 1;
+                        if (files < 1) {
+                            next(`${text.green}Options documentation successfully written to markdown file.${text.none}`);
+                        }
                     });
                 },
                 // phase simulation is merely a call to apps.simulation
@@ -1260,6 +1477,76 @@ interface directoryList extends Array<directoryItem> {
             error();
         }
     };
+    // set options from file naming convention
+    apps.fileOptions = function node_apps_fileOptions(filename:string):void {
+        const notes:string[] = filename.split("_"),
+            noteslen:number = notes.length;
+        let value:string = "",
+            numb:number = 0,
+            name:string = "",
+            b = 1;
+        {
+            const defkeys:string[] = Object.keys(sparser.libs.optionDef);
+            let keylen:number = defkeys.length;
+            do {
+                keylen = keylen - 1;
+                options[defkeys[keylen]] = sparser.libs.optionDef[defkeys[keylen]].default;
+            } while (keylen > 0);
+        }
+        options.language   = notes[2];
+        options.lexer      = notes[1];
+        options.mode       = notes[0];
+        if (noteslen > 1) {
+            do {
+                if (b < noteslen - 2 && notes[b].indexOf("-") < 0 && notes[b + 1].indexOf("-") < 0) {
+                    name = `${notes[b]}_${notes[b + 1]}_${notes[b + 2].replace(".txt", "")}`;
+                    if (name.indexOf("-") > 0) {
+                        name = name.slice(0, name.indexOf("-"));
+                    }
+                    if (options[name] !== undefined) {
+                        notes[b + 2] = `${notes[b]}_${notes[b + 1]}_${notes[b + 2]}`;
+                        b = b + 2;
+                    } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
+                        name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
+                        if (name.indexOf("-") > 0) {
+                            name = name.slice(0, name.indexOf("-"));
+                        }
+                        if (options[name] !== undefined) {
+                            notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
+                            b = b + 1;
+                        }
+                    }
+                } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
+                    name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
+                    if (name.indexOf("-") > 0) {
+                        name = name.slice(0, name.indexOf("-"));
+                    }
+                    if (options[name] !== undefined) {
+                        notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
+                        b = b + 1;
+                    }
+                }
+                notes[b] = notes[b].replace(".txt", "");
+                if (notes[b].indexOf("-") > 0 && options[notes[b].slice(0, notes[b].indexOf("-"))] !== undefined) {
+                    value = notes[b].slice(notes[b].indexOf("-") + 1);
+                    notes[b] = notes[b].slice(0, notes[b].indexOf("-"));
+                    numb = Number(value);
+                    if (value === "true" && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                        options[notes[b]] = true;
+                    } else if (value === "false" && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                        options[notes[b]] = false;
+                    } else if (isNaN(numb) === true) {
+                        options[notes[b]] = value;
+                    } else {
+                        options[notes[b]] = numb;
+                    }
+                } else if (options[notes[b]] !== undefined && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                    options[notes[b]] = true;
+                }
+                b = b + 1;
+            } while (b < noteslen);
+        }
+    };
     // http(s) get function
     apps.get = function node_apps_get(address:string, callback:Function|null):void {
         if (command === "get") {
@@ -1309,6 +1596,22 @@ interface directoryList extends Array<directoryItem> {
                 }
             });
         });
+    };
+    // help text
+    apps.help = function node_apps_help():void {
+        apps.log([
+            "",
+            "Welcome to Sparser.",
+            "",
+            "To see all the supported features try:",
+            "node js/services commands",
+            "",
+            "To see more detailed documentation for specific command supply the command name:",
+            "node js/services commands performance",
+            "",
+            "* Read the documentation             - cat readme.md",
+            "* Read about the lexers              - cat lexers/readme.md",
+        ], "");
     };
     // converting time durations into something people read
     apps.humantime = function node_apps_humantime(finished:boolean):string {
@@ -1706,7 +2009,7 @@ interface directoryList extends Array<directoryItem> {
             });
             if (verbose === true) {
                 console.log("");
-                console.log(`Sparser version ${text.angry + version.parse + text.none}`);
+                console.log(`Sparser version ${text.angry + version.number + text.none}`);
                 apps.humantime(true);
             }
         };
@@ -1731,7 +2034,7 @@ interface directoryList extends Array<directoryItem> {
     };
     // CLI documentation for supported Sparser options
     apps.options = function node_apps_options():void {
-        const def:optionDef = sparser.optionDef;
+        const def:optionDef = sparser.libs.optionDef;
         if (def[process.argv[0]] === undefined) {
             if (process.argv.length < 1) {
                 // all options in a list
@@ -1855,7 +2158,7 @@ interface directoryList extends Array<directoryItem> {
             }
             require(`${js}parse`);
             require(`${js}language`);
-            const lang = sparser.language.auto(filedata, "javascript"),
+            const lang = sparser.libs.language.auto(filedata, "javascript"),
                 options:parseOptions = {
                     correct: optionValue("correct", false),
                     crlf: optionValue("crlf", false),
@@ -2103,8 +2406,32 @@ interface directoryList extends Array<directoryItem> {
         apps.build(true);
     };
     apps.testprep = function node_apps_testprep():void {
-        options.format = "testprep";
-        console.log(sparser.parser(options));
+        verbose = true;
+        apps.fileOptions(process.argv[0]);
+        node.fs.readFile(node.path.resolve(process.argv[0]), {
+            encoding: "utf8"
+        }, function node_apps_testprep_read(er:Error, filedata:string):void {
+            if (er !== null) {
+                apps.errout([er.toString()]);
+                return;
+            }
+            const auto:[string, string, string] = sparser.libs.language.auto(filedata, "javascript");
+            options.source = filedata;
+            options.language = auto[0];
+            options.lexer = (function node_apps_testprep_lexer():string {
+                const sample:number = process.argv[0].indexOf("samples_code");
+                let addy:string = process.argv[0].replace(/\\/g, "/");
+                if (sample > 0) {
+                    addy = addy.slice(sample + 13);
+                    addy = addy.slice(0, addy.indexOf("/"));
+                    return addy;
+                }
+                return auto[1];
+            }());
+            options.format = "testprep";
+            console.log(sparser.parser(options));
+            apps.log([`${text.green}Test case generated!${text.none}`], "");
+        });
     };
     // unit test validation runner for Sparser mode commands
     apps.validation = function node_apps_validation(callback:Function):void {
@@ -2116,7 +2443,7 @@ interface directoryList extends Array<directoryItem> {
                 raw: false,
                 formatted: false
             },
-            def:optionDef = sparser.optionDef,
+            def:optionDef = sparser.libs.optionDef,
             raw:[string, string][] = [],
             formatted:[string, string][] = [],
             reset = function node_apps_validation_reset():void {

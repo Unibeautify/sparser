@@ -198,7 +198,7 @@
             if (checkboxes[0] !== undefined) {
                 options.lexer_options.markup.tagSort    = (checkboxes[0].checked === true);
             }
-            lang = sparser.language.auto(value, "javascript");
+            lang = sparser.libs.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
@@ -414,7 +414,7 @@
     if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
         if (acetest === true && editor !== undefined) {
             lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto" || options.lexer === "")
-                ? sparser.language.auto(parseCode, "javascript")
+                ? sparser.libs.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
             editor.setValue(parseCode);
             editor.getSession().setMode(`ace/mode/${lang[0]}`);

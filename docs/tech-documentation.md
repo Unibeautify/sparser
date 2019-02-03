@@ -9,7 +9,7 @@
       1. [Browser Embedding](#browser-embedding)
       1. [Node Embedding](#node-embedding)
    1. [Including New or Custom Lexers](#including-new-or-custom-lexers)
-1. [Framework](#framework)
+1. [Application](#application)
    1. [Definition of Terms](#definition-of-terms)
    1. [Architecture](#architecture)
    1. [global](#global)
@@ -17,9 +17,6 @@
    1. [parse Methods](#parse-methods)
    1. [Lexers](#lexers)
 1. [Ignore Code](#ignore-code)
-1. [Input](#input)
-   1. [Standard Options](#standard-options)
-   1. [Lexer Options](#lexer-options)
 1. [Output](#output)
    1. [begin](#begin)
    1. [ender](#ender)
@@ -77,20 +74,15 @@ You can pick and choose which lexer files to run through manual inclusion.  To i
 
 Here is a brief code example demonstrating how to initiate Sparser as an NPM dependency with all lexers:
 
-1. Ensure the necessary `lexerOptions` property is present on your options object
+1. Ensure the necessary `lexer_options` property is present on your options object
 1. Require Sparser
 1. Require the *lexers/all.js* file
 1. Call the function from the *lexers/all.js* file passing in options and a callback
 
 ```javascript
-options.lexerOptions = {};
+options.lexer_options = {};
 let sep = node.path.sep; // directory separator from node's path module
-require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}parse`);
-const all = require(`${projectPath}node_modules${sep}parse-framework${sep}js${sep}lexers${sep}all`);
-all(options, function node_apps_mode_allLexers() {
-    options.parsed = global.parseFramework.arrays(options);
-    console.log(options.parsed);
-});
+require(`${projectPath}node_modules${sep}sparser${sep}js${sep}parse`);
 ```
 
 ### Including New or Custom Lexers
@@ -98,7 +90,7 @@ Simply drop the new lexer file into the directory named *lexers*.  Specify the n
 
 The two mentioned steps are all that is required to integrate new parsing rules or new language support into Sparser.  It is important to note this only works if the consuming application loads the lexer file into its application.  **I recommend always reading all lexer files in the lexers directory.** For an example please see the *fs.readdir* instruction in the [js/runtimes/nodetest.js](js/runtimes/nodetest.js) file.
 
-## Framework
+## Application
 The application operates as a global object containing a few data properties and methods plus a collection of language specific rule files called *lexers*.
 
 ### Definition of Terms
@@ -119,19 +111,19 @@ The *global* object contains five key references.
 * **lexer** - An object storing the various available lexers.  This object must be manually populated in your run time.  Look into the *demo/index.xhtml* and *nodetest.js* files as examples.  Auto-population of this object from the files in the lexer directory does not occur because IO operations would break the environment agnostic nature of this application.
 * **parse** - An object containing various data properties and methods to reason about and populate the centralized parse data.
 * **parseerror** - A string storing an empty value by default.  When a lexer produces a parse error it will write an error message to this property.
-* **parser** - A small function to initiate execution of the framework.  This function is not intended to be referenced from within a lexer file.
+* **parser** - A small function to initiate execution of the application.  This function is not intended to be referenced from within a lexer file.
 
 ### parse Data Properties
 * **count** - A number, starting at -1, that always counts the number of data records minus one.  So long as lexers only populate or manipulate data records using the standard methods this number will always reflect an accurate number of records minus one.
-* **data** - The object serving as the parsed data storage.  This what gets returned from the framework.
+* **data** - The object serving as the parsed data storage.  This what gets returned from the application.
 * **datanames** - An array of the data record names, the 7 arrays.  When dynamically building or populating a record of data it is preferred to loop through the datanames to build the data record.  Please read the `parse.push` method as an example.
 * **lf** - The format for a line termination.  In Windows the default line terminator is the two text character sequence CRLF (carriage return and line feed) while in most other operating systems line termination is simply LF.  The `parse.lf` property contains the correct value, so it should always be referenced where line termination is required.
-* **linesSpace** - A number of white space values between one token and the next.  This number is used to pass the appropriate value between lexers for those languages that require more than one lexer and the value ultimately populates the *lines* record value. The framework resets the value of this property to *0* each time the `parse.push` and `parse.splice` methods are called on `parse.data`.
-* **options** - This is merely a placeholder for the options object that is passed into the framework so that the objects are available to the lexers.
+* **linesSpace** - A number of white space values between one token and the next.  This number is used to pass the appropriate value between lexers for those languages that require more than one lexer and the value ultimately populates the *lines* record value. The application resets the value of this property to *0* each time the `parse.push` and `parse.splice` methods are called on `parse.data`.
+* **options** - This is merely a placeholder for the options object that is passed into the application so that the objects are available to the lexers.
 * **structure** - An array of arrays where each child array stores two values.  The first of those two values is a categorical name that describes the current structure and the second value is the index where this structure starts.  The first index of `parse.structure` is always `[global, -1]`, which describes global scope.  The value -1 is associated with global scope since global scope starts before the first data record.  A new value is pushed into structure once a record is pushed into `parse.data` where *types* is *start*.  The final index of structure is popped out after a record with *types* *end* is added to `parse.data`.  Please be aware that this property is populated and popped from the `parse.push` method when `parse.data` is modified and the record types are *start*, *template_start*, *end* or *template_end*, which will cause interference if manually adjusting this property. **Only use the last index of structure when populating record values for begin and stack.**
 
 ### parse Methods
-Only use these method to populate or modify `parse.data`.  Any other means of changing the data breaks the framework.
+Only use these method to populate or modify `parse.data`.  Any other means of changing the data may not guarentee the integrity of the data model.
 
 * **concat** - Similar to the native array *concat* method.  This takes two arguments of which both are objects in *standard format*.  The object in the second argument will be added onto the object in the first argument.
 * **objectSort** - A method to sort immediate children of a given structure in certain languages.  In JavaScript this method will sort properties of an object literal (or similar storage) and just about everything in CSS like languages.
@@ -146,11 +138,11 @@ Only use these method to populate or modify `parse.data`.  Any other means of ch
    - **record** - An object in *record format*.
 
 ### Lexers
-The lexers are stored in the *lexers* directory and are referrenced from the global `global.parseFramework.lexers` object, for instance: `global.parseFramework.lexers.markup(source)`.  Each of the lexers receive a single argument of string data type.  This input is the string to parse.
+The lexers are stored in the *lexers* directory and are referrenced from the global `global.sparser.lexers` object, for instance: `global.sparser.lexers.markup(source)`.  Each of the lexers receive a single argument of string data type.  This input is the string to parse.
 
 Executing a different lexer from the starting lexer is simply a matter of calling the method and passing in the appropriate string to analyze.  This is necessary in the case of JavaScript or CSS embedded inline in HTML or with languages like JSX/TSX.  There is no need manage a return value or do anything.
 
-Simply executing the other lexer does everything you need and the framework appropriately manages all concerns of populating data and accounting for structure and nesting conditions.  This simplicity is necessary to ensure consistency in the *standard format* without corruption to the data in the parse object even when bouncing between the lexers recursively.  The framework easily addresses all these concerns by keeping all management centralized and far removed from the logic in the lexer files.
+Simply executing the other lexer does everything you need and the application appropriately manages all concerns of populating data and accounting for structure and nesting conditions.  This simplicity is necessary to ensure consistency in the *standard format* without corruption to the data in the parse object even when bouncing between the lexers recursively.  The application easily addresses all these concerns by keeping all management centralized and far removed from the logic in the lexer files.
 
 ## Ignore Code
 Parts of code can be ignored from parsing by sandwhiching that code between two comments.  The first comment must start with `parse-ignore-start` and the second comment must contain `parse-ignore-end`.  For example:
@@ -176,36 +168,6 @@ ignore some code
 ignore some code
 /* parse-ignore-end */
 ```
-
-## Input
-The *js/parse.js* file receives input from an options object.  The api is as follows:
-
-### Standard Options
-These options exist directly within the options object and exist universally to assist the framework.
-
-Name | Type | Default | Description
----|---|---|---
-**correct** | boolean | false | If code corrections to syntax should be applied... similar to ESLint's *fix* option
-**crlf** | boolean | false | If true line endings will be *\\r\\n* (Windows format) otherwise line endings will be *\\n*.  This is primarily useful in building out multiline comments.
-**language** | string | "javascript" | A lowercase name of a language for certain language specific features
-**lexer** | string | "script" | the lexer to start scanning the code
-**outputFormat** | string | "arrays" or "objects" | describes the format of the output.  The value *"arrays"* is the default which specifies an object containing 7 parallel arrays as described in the *Output* section.  The value *"objects"* instead creates an array of objects where each object property is named and described as the seven output arrays in the *Output* section.  If testing with the *nodetest.js* file on the command line the argument **--outputFormat** can be supplied to force the *"objects"* variation.
-**preserve_comment** | boolean | Preserves comments from formatting or word wrapping.
-**source** | string | "" (empty string) | the code to parse
-**wrap** | number | the number of characters before word wrapping occurs. This option is disabled if it receives a value of less than 1.
-
-### Lexer Options
-The options are available from the specified lexer and are specified as **options.lexerOptions[lexerName][optionName]** where *lexerName* refers to the name of the lexer and *optionName* refers to the actual option, for example: `options.lexerOptions.markup.tagSort`.
-
-Name | Type | Default | Lexers | Description
----|---|---|---|---
-**end_comma** | string | script | Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
-**objectSort** | boolean | false | script, style | If object properties should be sorted.  Supported in the *script* and *style* lexers
-**preserve_text** | boolean | false | Preserves text content from formatting or word wrapping.
-**quote_convert** | string | script, style | Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
-**tag_merge** | boolean | false | markup | If, in the markup lexer, tags pairs should be merged  into a single singleton type tag when an end tag immediately follows its start tag
-**tagSort** | boolean | false | markup | If tags should be alphabetically sorted in the markup lexer
-**varword** | string | script | Values: *list*, *each*, *none*. Whether variables should be declared as a list or individually each with their own respective *var*, *let*, or *const* keyword.  The value *none* disables this option.
 
 ## Universal Parse Model
 The default format for output that will be uniform for all operations.  The output will be an object storing 7 arrays.  An alternate output format is available if specifying an option named **outputFormat** with the value *objects*.  This alternate format will produce an array of objects where each object contains properties named and described as arrays below.  Essentially the alternate format simply inverts the object/array structure of the standard format.
@@ -340,9 +302,9 @@ The *types* array contains a string that describes the token value according to 
 ## Files
 ### Critical
 * **js** - A directory containing the JavaScript code built from the TypeScript build.
-* **language.ts** - A convenience utility to guess at the language of a submitted code sample. This utility is handy when executing the framework through one of the provided runtime utilities. For precision and stability I suggest **not** using this file if embedding this framework in another application or if running this application in any public facing production environment.  Instead specify the language and lexer option values manually or through some other setting from an external application.
+* **language.ts** - A convenience utility to guess at the language of a submitted code sample. This utility is handy when executing the application through one of the provided runtime utilities. For precision and stability I suggest **not** using this file if embedding this tool in another application or if running this application in any public facing production environment.  Instead specify the language and lexer option values manually or through some other setting from an external application.
 * **lexers** - A directory of language specific rules.
-* **parse.ts** - Contains all the framework code.
+* **parse.ts** - Contains the standard methods.
 * **runtimes** - A directory containing the node and browser run time files plus their dependencies. For additional information on the supplied automation environment tool please see [docs/developer.md](docs/developer.md).
 * **test** - A directory containing the unit test samples and the validation build file: [test/validate.ts](test/validate.ts).
 

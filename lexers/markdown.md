@@ -1,4 +1,4 @@
-# Lexers - markdown
+# Lexer - markdown
 
 Follows the markdown specification at https://github.github.com/gfm/
 

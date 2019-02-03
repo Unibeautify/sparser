@@ -1,7 +1,7 @@
 declare var ace: any;
 type codes = [string, number, number, number, number];
 type languageAuto = [string, string, string];
-type lexerValues = ["any"] | ("markdown" | "markup" | "script" | "style")[];
+type lexerValues = ["all"] | ("markdown" | "markup" | "script" | "style")[];
 type minimal = [number, number, string, number, string, string, string];
 interface attStore extends Array<[string, number]>{
     [index:number]: [string, number]
@@ -49,6 +49,9 @@ interface language {
 }
 interface lexer {
     [key:string]: (source: string) => data;
+}
+interface lexerDoc {
+    [key:string]: string[];
 }
 interface markupCount {
     end  : number;
@@ -137,9 +140,11 @@ interface spacer {
     end  : number;
 }
 interface sparser {
-    language           ?: language;
+    defaults            : {};
     lexers              : lexer;
-    optionDef          ?: optionDef;
+    libs                : {
+        [key:string]: any;
+    };
     parse               : parse;
     parser(parseOptions): data;
     parseerror          : string;

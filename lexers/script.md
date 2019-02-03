@@ -75,10 +75,27 @@ if (b[a] === "\n") {
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
 ## script options
-* **end_comma** - Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
-* **object_sort** - Sorts the named properties (keys) of object literals alphabetically.
-* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
-* **varword** - Whether variables should be declared as:
-   - *list*: a comma separated list
-   - *each*: separate declaration statements
-   - *none*: or left alone
+* **endcomma**: Whether terminal commas in objects and arrays should be added or eliminated.
+   - type: string
+   - default: none
+   - values:
+      * *always*: Adds terminal commas if they are missing.
+      * *never*: Removes terminal commas if they are present.
+      * *none*: Ignores this option.
+* **object_sort**: Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.
+   - type: boolean
+   - default: false
+* **quote_convert**: If quote characters should be converted from single quotes to double quotes or the opposite. This option does take into account escaped quote characters.
+   - type: string
+   - default: none
+   - values:
+      * *double*: Converts single quote characters to double quote characters.
+      * *none*: Ignores this option.
+      * *single*: Converts double quote characters to single quote characters.
+* **variable_list**: Whether consecutive variable declarations should be separate statements or a comma separated list. Use of this option respects the different types of declarations: var, const, let.
+   - type: string
+   - default: none
+   - values:
+      * *each*: Separates variable declarations into separate statements.
+      * *list*: Combines consecutive variable declaration statements into a single comma separated list.
+      * *none*: Ignores this option.

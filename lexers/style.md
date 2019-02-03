@@ -42,5 +42,13 @@ td {
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
 ## style options
-* **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
-* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
+* **object_sort**: Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.
+   - type: boolean
+   - default: false
+* **quote_convert**: If quote characters should be converted from single quotes to double quotes or the opposite. This option does take into account escaped quote characters.
+   - type: string
+   - default: none
+   - values:
+      * *double*: Converts single quote characters to double quote characters.
+      * *none*: Ignores this option.
+      * *single*: Converts double quote characters to single quote characters.

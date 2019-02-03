@@ -6,14 +6,14 @@
             default   : false,
             definition: "Automatically correct sloppiness in code. If false missing syntax will be included starting with 'x', such as 'x;' for missing simicolons.",
             label     : "Correct",
-            lexer     : ["any"],
+            lexer     : ["all"],
             type      : "boolean"
         },
         crlf         : {
             default   : false,
             definition: "If line termination should be crlf (Windows) otherwise line termination is lf (Unix).",
             label     : "CRLF",
-            lexer     : ["any"],
+            lexer     : ["all"],
             type      : "boolean"
         },
         endcomma: {
@@ -32,7 +32,7 @@
             default: "arrays",
             definition: "Defines the output format of the parser.",
             label: "Output Format",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "string",
             values: {
                 "arrays": "The output format is an object of arrays such that the same index of all the arrays represents one data record, for example: {begin:[],ender:[],lexer:[],lines[],stack:[],token:[],types:[]}.",
@@ -46,14 +46,14 @@
             default: "auto",
             definition: "The language to parse.  The value auto will result in language auto detection.",
             label: "Language",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "string"
         },
         lexer: {
             default: "auto",
             definition: "The lexer used to perform the parsing.  The value auto will result in language auto detection.",
             label: "Lexer",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "string"
         },
         object_sort: {
@@ -67,7 +67,7 @@
             default: false,
             definition: "Whether comments should be ignored from manipulation, such as word wrap.",
             label: "Preserve Comment",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "boolean"
         },
         preserve_text: {
@@ -93,7 +93,7 @@
             default: "",
             definition: "The source code to parse.",
             label: "Source",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "string"
         },
         tag_merge: {
@@ -126,9 +126,9 @@
             default: 0,
             definition: "The character distance in which to apply word wrap. A value of less than 1 eliminates word wrap.",
             label: "Wrap",
-            lexer: ["any"],
+            lexer: ["all"],
             type: "number"
         }
     };
-    global.sparser.optionDef  = optionDef;
+    global.sparser.libs.optionDef  = optionDef;
 }());

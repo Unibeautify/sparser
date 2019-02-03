@@ -6,7 +6,6 @@
 
 (function parse_init() {
     "use strict";
-    let sparser:sparser;
     const parser  = function parse_parser(parseOptions:parseOptions):any {
             parse.count      = -1;
             parse.data       = {
@@ -1336,38 +1335,14 @@
                 wordWrap();
                 return [output, a];
             }
+        },
+        sparser:sparser = {
+            defaults: {},
+            lexers: {},
+            libs: {},
+            parse: parse,
+            parser: parser,
+            parseerror: ""
         };
-    global.sparser = (global.sparser || {
-        lexers: {},
-        parse: parse,
-        parser: parser,
-        parseerror: ""
-    });
-    sparser = global.sparser;
-    sparser.parse   = parse;
-    sparser.parser  = parser;
-    
-    if (
-        global.process !== undefined &&
-        global.process.argv !== undefined &&
-        global.process.argv.length > 1 &&
-        global.process.argv[1].indexOf("nodetest") < 0 &&
-        global.process.argv[1].indexOf("validate") < 0 &&
-        global.process.argv[0].indexOf("services") < 0 &&
-        global.process.argv[1].indexOf("services") < 0 &&
-        global.process.cwd().indexOf("sparser") > -1
-    ) {
-        const path = require("path");
-        require(`${__dirname + path.sep}services`)();
-    } else if (global.process === undefined && location !== undefined && location.href.indexOf("nocomment") < 0) {
-        console.log("");
-        console.log("Welcome to Sparser.");
-        console.log("");
-        console.log("To see all the support features for Node.js:");
-        console.log("node js/services commands");
-        console.log("");
-        console.log("* Read the documentation             - cat readme.md");
-        console.log("* Read about the lexers              - cat lexers/readme.md");
-        console.log("");
-    }
+    global.sparser = sparser;
 }());
