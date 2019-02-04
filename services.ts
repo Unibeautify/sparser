@@ -161,7 +161,7 @@ interface directoryList extends Array<directoryItem> {
                 example: [
                     {
                         code: "sparser server",
-                        defined: "Launches the server on default port 9001 and web sockets on port 9002."
+                        defined: "Launches the server on default port 9999 and web sockets on port 10000."
                     },
                     {
                         code: "sparser server 8080",
@@ -708,7 +708,8 @@ interface directoryList extends Array<directoryItem> {
             phases = {
                 // read JS files and combine them into fewer JS files
                 libraries: function node_apps_build_libraries():void {
-                    const opts:[string, string] = (function node_apps_build_libraries_modifyFile_read_buildDefault():[string, string] {
+                    const libfiles:string[] = [],
+                        opts:[string, string] = (function node_apps_build_libraries_modifyFile_read_buildDefault():[string, string] {
                             const obj:any = {
                                     lexer_options: {}
                                 },
@@ -737,23 +738,30 @@ interface directoryList extends Array<directoryItem> {
                         }()),
                         write = function node_apps_build_libraries_write():void {
                             const message:string = `${text.green}Files modified and combined for easy use.${text.none}`;
-                            parsefile = parsefile + libraries;
+                            parsefile = parsefile + libfiles.join("");
                             node.fs.writeFile(`${js}parse.js`, `${parsefile}global.sparser=sparser;}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse(erp:Error) {
+                                const browserfile:string = `${parsefile.replace(/global\.sparser/g, "window.sparser")}window.sparser=sparser;}());`;
                                 if (erp !== null) {
                                     apps.error([erp.toString()]);
                                     return;
                                 }
-                                node.fs.writeFile(`${js}browser.js`, `${parsefile.replace("global.sparser", "window.sparser")}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeBrowser(erb:Error) {
+                                node.fs.writeFile(`${js}browser.js`, browserfile, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser(erb:Error) {
                                     if (erb !== null) {
                                         apps.error([erb.toString()]);
                                         return;
                                     }
-                                    node.fs.writeFile(`${js}services.js`, servicefile, "utf8", function node_apps_build_libraries_appendFile_read_writeServices(ers:Error) {
+                                    node.fs.writeFile(`${js}demo${sep}demo.js`, `${browserfile.replace(/\}\(\)\);\s*$/, "") + demofile}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo(ers:Error) {
                                         if (ers !== null) {
                                             apps.error([ers.toString()]);
                                             return;
                                         }
-                                        next(message);
+                                        node.fs.writeFile(`${js}services.js`, servicefile, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo_writeServices(ers:Error) {
+                                            if (ers !== null) {
+                                                apps.error([ers.toString()]);
+                                                return;
+                                            }
+                                            next(message);
+                                        });
                                     });
                                 });
                             });
@@ -768,8 +776,12 @@ interface directoryList extends Array<directoryItem> {
                                 }
                                 if (filename !== "browser.js" && filename !== "all.js") {
                                     filedata = filedata
-                                        .replace(/\/\*\s*global \w+(\s*,\s*\w+)*\s*\*\//, "");
-                                    if (filename === "parse.js") {
+                                        .replace(/\/\*\s*global \w+(\s*,\s*\w+)*\s*\*\//, "")
+                                        .replace(/^\s+/, "");
+                                    if (filename === "demo.js") {
+                                        demofile = filedata
+                                            .replace(/("|')use strict("|');/g, "");
+                                    } else if (filename === "parse.js") {
                                         parsefile = filedata
                                             .replace(/global\.sparser/g, "sparser")
                                             .replace(/sparser\s*=\s*sparser;?\s*\}\(\)\);\s*$/, "")
@@ -781,11 +793,10 @@ interface directoryList extends Array<directoryItem> {
                                         split[2] = filedata.slice(filedata.indexOf("// node option default end"));
                                         servicefile = split.join(node.os.EOL);
                                     } else {
-                                        filedata = filedata
+                                        libfiles.push(filedata
                                             .replace(/global\.sparser/g, "sparser")
                                             .replace(/("|')use strict("|');/g, "")
-                                            .replace(/const\s+sparser\s*=\s*sparser\s*,\s*/, "const ");
-                                        libraries = libraries + filedata;
+                                            .replace(/const\s+sparser\s*=\s*sparser\s*,\s*/, "const "));
                                     }
                                 }
                                 a = a + 1;
@@ -814,23 +825,20 @@ interface directoryList extends Array<directoryItem> {
                                 } else if (stats.isFile() === true) {
                                     if (pathitem.slice(pathitem.length - 3) === ".js") {
                                         appendFile(pathitem);
-                                    } else {
-                                        a = a + 1;
-                                        if (a === filelen) {
-                                            write();
-                                        }
                                     }
                                 }
                             });
                         };
                     let a:number = 0,
-                        filelen: number = libFiles.length,
+                        filelen: number = 0,
+                        demofile:string = "",
                         parsefile:string = "",
-                        servicefile:string = "",
-                        libraries:string = ""
+                        servicefile:string = "";
                     heading("Merging files for simplified application access.");
                     libFiles.push(`${js}services.js`);
                     libFiles.push(`${js}parse.js`);
+                    libFiles.push(`${js}demo${sep}demo.js`);
+                    filelen = libFiles.length;
                     (function node_apps_build_libraries_versionGather():void {
                         node.child(`git log -1 --branches`, function node_apps_build_libraries_versionGather_child(err:Error, stderr:string):void {
                             if (err !== null) {
@@ -1477,25 +1485,34 @@ interface directoryList extends Array<directoryItem> {
             error();
         }
     };
-    // set options from file naming convention
+    // set options from conventions on the file name
     apps.fileOptions = function node_apps_fileOptions(filename:string):void {
         const notes:string[] = filename.split("_"),
-            noteslen:number = notes.length;
+            noteslen:number = notes.length,
+            lang:[string, string, string] = sparser.libs.language.auto(options.source, "javascript");
         let value:string = "",
             numb:number = 0,
             name:string = "",
-            b = 1;
+            a:number = 0,
+            b:number = 1;
         {
             const defkeys:string[] = Object.keys(sparser.libs.optionDef);
             let keylen:number = defkeys.length;
             do {
                 keylen = keylen - 1;
-                options[defkeys[keylen]] = sparser.libs.optionDef[defkeys[keylen]].default;
+                if (defkeys[keylen] !== "source") {
+                    if (sparser.libs.optionDef[defkeys[keylen]].lexer[0] === "all") {
+                        options[defkeys[keylen]] = sparser.libs.optionDef[defkeys[keylen]].default;
+                    } else {
+                        a = sparser.libs.optionDef[defkeys[keylen]].lexer.length;
+                        do {
+                            a = a - 1;
+                            options.lexer_options[sparser.libs.optionDef[defkeys[keylen]].lexer[a]][defkeys[keylen]] = sparser.libs.optionDef[defkeys[keylen]].default;
+                        } while (a > 0);
+                    }
+                }
             } while (keylen > 0);
         }
-        options.language   = notes[2];
-        options.lexer      = notes[1];
-        options.mode       = notes[0];
         if (noteslen > 1) {
             do {
                 if (b < noteslen - 2 && notes[b].indexOf("-") < 0 && notes[b + 1].indexOf("-") < 0) {
@@ -1503,7 +1520,7 @@ interface directoryList extends Array<directoryItem> {
                     if (name.indexOf("-") > 0) {
                         name = name.slice(0, name.indexOf("-"));
                     }
-                    if (options[name] !== undefined) {
+                    if (sparser.libs.optionDef[name] !== undefined) {
                         notes[b + 2] = `${notes[b]}_${notes[b + 1]}_${notes[b + 2]}`;
                         b = b + 2;
                     } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
@@ -1511,7 +1528,7 @@ interface directoryList extends Array<directoryItem> {
                         if (name.indexOf("-") > 0) {
                             name = name.slice(0, name.indexOf("-"));
                         }
-                        if (options[name] !== undefined) {
+                        if (sparser.libs.optionDef[name] !== undefined) {
                             notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
                             b = b + 1;
                         }
@@ -1521,30 +1538,76 @@ interface directoryList extends Array<directoryItem> {
                     if (name.indexOf("-") > 0) {
                         name = name.slice(0, name.indexOf("-"));
                     }
-                    if (options[name] !== undefined) {
+                    if (sparser.libs.optionDef[name] !== undefined) {
                         notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
                         b = b + 1;
                     }
                 }
                 notes[b] = notes[b].replace(".txt", "");
-                if (notes[b].indexOf("-") > 0 && options[notes[b].slice(0, notes[b].indexOf("-"))] !== undefined) {
+                if (notes[b].indexOf("-") > 0 && sparser.libs.optionDef[notes[b].slice(0, notes[b].indexOf("-"))] !== undefined) {
                     value = notes[b].slice(notes[b].indexOf("-") + 1);
                     notes[b] = notes[b].slice(0, notes[b].indexOf("-"));
                     numb = Number(value);
                     if (value === "true" && sparser.libs.optionDef[notes[b]].type === "boolean") {
-                        options[notes[b]] = true;
+                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                            options[notes[b]] = true;
+                        } else {
+                            a = sparser.libs.optionDef[notes[b]].lexer.length;
+                            do {
+                                a = a - 1;
+                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = true;
+                            } while (a > 0);
+                        }
                     } else if (value === "false" && sparser.libs.optionDef[notes[b]].type === "boolean") {
-                        options[notes[b]] = false;
+                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                            options[notes[b]] = false;
+                        } else {
+                            a = sparser.libs.optionDef[notes[b]].lexer.length;
+                            do {
+                                a = a - 1;
+                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = false;
+                            } while (a > 0);
+                        }
                     } else if (isNaN(numb) === true) {
-                        options[notes[b]] = value;
+                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                            options[notes[b]] = value;
+                        } else {
+                            a = sparser.libs.optionDef[notes[b]].lexer.length;
+                            do {
+                                a = a - 1;
+                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = value;
+                            } while (a > 0);
+                        }
                     } else {
-                        options[notes[b]] = numb;
+                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                            options[notes[b]] = numb;
+                        } else {
+                            a = sparser.libs.optionDef[notes[b]].lexer.length;
+                            do {
+                                a = a - 1;
+                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = numb;
+                            } while (a > 0);
+                        }
                     }
-                } else if (options[notes[b]] !== undefined && sparser.libs.optionDef[notes[b]].type === "boolean") {
-                    options[notes[b]] = true;
+                } else if (sparser.libs.optionDef[notes[b]] !== undefined && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                    if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                        options[notes[b]] = true;
+                    } else {
+                        a = sparser.libs.optionDef[notes[b]].lexer.length;
+                        do {
+                            a = a - 1;
+                            options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = true;
+                        } while (a > 0);
+                    }
                 }
                 b = b + 1;
             } while (b < noteslen);
+        }
+        if (options.language === "auto") {
+            options.language = lang[0];
+        }
+        if (options.lexer === "auto") {
+            options.lexer = lang[1];
         }
     };
     // http(s) get function
@@ -2223,16 +2286,18 @@ interface directoryList extends Array<directoryItem> {
         }
         let timeStore:number = 0;
         const port:number = (isNaN(Number(process.argv[0])))
-                ? 9001
+                ? 9999
                 : Number(process.argv[0]),
             server = node.http.createServer(function node_apps_server_create(request, response):void {
                 let quest:number = request.url.indexOf("?"),
                     uri:string = (quest > 0)
                         ? request.url.slice(0, quest)
                         : request.url,
-                    file:string = projectPath + uri.slice(1).replace(/\//g, node.path.sep);
+                    file:string = projectPath + uri.slice(1).replace(/\//g, sep);
                 if (uri === "/") {
-                    file = `${projectPath + node.path.sep}index.xhtml`;
+                    file = `${projectPath}index.xhtml`;
+                } else if (uri === "/demo/") {
+                    file = `${projectPath}demo${sep}index.xhtml`;
                 }
                 if (request.url.indexOf("favicon.ico") < 0 && request.url.indexOf("images/apple") < 0) {
                     node.fs.readFile(file, "utf8", function node_apps_server_create_readFile(err:Error, data:string):void {
@@ -2436,237 +2501,235 @@ interface directoryList extends Array<directoryItem> {
     // unit test validation runner for Sparser mode commands
     apps.validation = function node_apps_validation(callback:Function):void {
         require(`${js}parse`);
-        let count_raw = 0,
-            count_formatted = 0;
-        const all = require(`${js}lexers${sep}all`),
-            flag = {
-                raw: false,
-                formatted: false
+        const files  = {
+                code  : [],
+                parsed: []
             },
-            def:optionDef = sparser.libs.optionDef,
-            raw:[string, string][] = [],
-            formatted:[string, string][] = [],
-            reset = function node_apps_validation_reset():void {
-                const key:string[] = Object.keys(def),
-                    len:number = key.length;
-                let a:number = 0;
-                do {
-                    options[key[a]] = def[key[a]].default;
-                    a = a + 1;
-                } while (a < len);
-                options.correct      = true;
-                options.diff_context = 4;
-                options.end_comma    = "none";
-                options.lexer_options = {};
-                options.lexer_options[options.lexer] = {};
-                options.lexer_options[options.lexer].objectSort = true;
-                options.mode         = "diff";
-                options.new_line     = true;
-                options.object_sort  = true;
-                options.preserve     = 2;
-                options.read_method  = "screen";
-                options.vertical     = true;
-                options.wrap         = 80;
+            count  = {
+                code  : 0,
+                lexer : 0,
+                parsed: 0
             },
-            compare = function node_apps_validation_compare():void {
-                const len:number = (raw.length > formatted.length)
-                        ? raw.length
-                        : formatted.length,
-                    sort = function node_apps_validation_compare_sort(a:[string, string], b:[string, string]):number {
-                        if (a[0] > b[0]) {
-                            return 1;
-                        }
-                        return -1;
-                    };
-                let a:number = 0,
-                    b:number = 0,
-                    missing:number = 0,
+            total  = {
+                code  : 0,
+                lexer : 0,
+                parsed: 0
+            },
+            lexers:string[] = Object.keys(sparser.lexers),
+            compare = function services_validate_validation_coreunits_compare():void {
+                let len:number       = (files.code.length > files.parsed.length)
+                        ? files.code.length
+                        : files.parsed.length,
+                    a:number         = 0,
+                    str:string       = "",
+                    output:any,
                     filecount:number = 0,
-                    noteslen:number = 0,
-                    notes:string[] = [],
-                    output:data,
-                    str:string = "";
-                raw.sort(sort);
-                formatted.sort(sort);
-                if (command === "validation") {
-                    console.log("");
-                }
-                do {
-                    if (raw[a] === undefined || formatted[a] === undefined) {
-                        if (raw[a] === undefined && formatted[a] !== undefined) {
-                            console.log(`${text.angry}raw directory is missing file:${text.none} ${formatted[a][0]}`);
-                            formatted.splice(a, 1);
-                        } else if (formatted[a] === undefined && raw[a] !== undefined) {
-                            console.log(`${text.angry}formatted directory is missing file:${text.none} ${raw[a][0]}`);
-                            raw.splice(a, 1);
-                        }
-                    } else if (raw[a][0] === formatted[a][0]) {
-                        let value:string = "",
-                            numb:number = 0,
-                            name:string = "";
-                        reset();
-                        notes = raw[a][0].split("_");
-                        noteslen = notes.length;
-                        options.language   = notes[2];
-                        options.lexer      = notes[1];
-                        options.mode       = notes[0];
-                        options.source     = raw[a][1];
-                        if (noteslen > 3) {
-                            b = 3;
-                            do {
-                                if (b < noteslen - 2 && notes[b].indexOf("-") < 0 && notes[b + 1].indexOf("-") < 0) {
-                                    name = `${notes[b]}_${notes[b + 1]}_${notes[b + 2].replace(".txt", "")}`;
-                                    if (name.indexOf("-") > 0) {
-                                        name = name.slice(0, name.indexOf("-"));
-                                    }
-                                    if (options[name] !== undefined) {
-                                        notes[b + 2] = `${notes[b]}_${notes[b + 1]}_${notes[b + 2]}`;
-                                        b = b + 2;
-                                    } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
-                                        name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
-                                        if (name.indexOf("-") > 0) {
-                                            name = name.slice(0, name.indexOf("-"));
-                                        }
-                                        if (options[name] !== undefined) {
-                                            notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
-                                            b = b + 1;
-                                        }
-                                    }
-                                } else if (b < noteslen - 1 && notes[b].indexOf("-") < 0) {
-                                    name = `${notes[b]}_${notes[b + 1].replace(".txt", "")}`;
-                                    if (name.indexOf("-") > 0) {
-                                        name = name.slice(0, name.indexOf("-"));
-                                    }
-                                    if (options[name] !== undefined) {
-                                        notes[b + 1] = `${notes[b]}_${notes[b + 1]}`;
-                                        b = b + 1;
-                                    }
-                                }
-                                notes[b] = notes[b].replace(".txt", "");
-                                if (notes[b].indexOf("-") > 0 && options[notes[b].slice(0, notes[b].indexOf("-"))] !== undefined) {
-                                    value = notes[b].slice(notes[b].indexOf("-") + 1);
-                                    notes[b] = notes[b].slice(0, notes[b].indexOf("-"));
-                                    numb = Number(value);
-                                    if (value === "true" && def[notes[b]].type === "boolean") {
-                                        options[notes[b]] = true;
-                                    } else if (value === "false" && def[notes[b]].type === "boolean") {
-                                        options[notes[b]] = false;
-                                    } else if (isNaN(numb) === true) {
-                                        options[notes[b]] = value;
-                                    } else {
-                                        options[notes[b]] = numb;
-                                    }
-                                } else if (options[notes[b]] !== undefined && def[notes[b]].type === "boolean") {
-                                    options[notes[b]] = true;
-                                }
-                                b = b + 1;
-                            } while (b < noteslen);
-                        }
-                        output = sparser.parser(options);
-                        str = (sparser.parseerror === "")
-                            ? JSON.stringify(output)
-                            : sparser.parseerror;
-                        if (str === formatted[a][1]) {
-                            filecount = filecount + 1;
-                            console.log(`${apps.humantime(false) + text.green}Pass ${filecount}:${text.none} ${formatted[a][0]}`);
+                    currentlex:string = "",
+                    empty:number = 0,
+                    missing:number = 0;
+                const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
+                        const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
+                        console.log("");
+                        console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
+                        currentlex = lex;
+                    },
+                    completeText = function services_validate_validation_coreunits_compare_completeText():void {
+                        console.log("");
+                        if (missing < 1 && empty < 1) {
+                            console.log(`${text.green}Test units evaluated without failure!${text.none}`);
                         } else {
-                            const diffview = require(`${js}test${sep}diffview.js`);
-                            console.log(`${apps.humantime(false) + text.angry}Fail: ${text.cyan + raw[a][0] + text.none}`);
-                            console.log("");
-                            console.log(`Diff output colors: ${text.angry + text.underline}red = generated${text.none} and ${text.green + text.underline}green = saved file${text.none}`);
-                            reset();
-                            options.context      = 2;
-                            options.diff         = formatted[a][1];
-                            options.diff_format  = "text";
-                            options.language     = "text";
-                            options.mode         = "diff";
-                            options.source       = output;
-                            options.source_label = raw[a][1];
-                            apps.errout([diffview(options)[0], "", `${text.angry}Validation test failure${text.none}`, `Failed on file ${text.cyan + text.bold + raw[a][0] + text.none}`, ""]);
+                            let pe:string = (empty > 1)
+                                    ? "s are"
+                                    : " is",
+                                pm:string = (missing > 1)
+                                    ? "s"
+                                    : "";
+                            if (missing < 1) {
+                                console.log(`${text.green}Test units passed, but ${text.angry + empty} file${pe} empty.${text.none}`);
+                            } else if (empty < 1) {
+                                console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm}.${text.none}`);
+                            } else {
+                                console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm} and ${empty} file${pe} empty.${text.none}`);
+                            }
+                        }
+                        callback();
+                    },
+                    comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
+                        filecount = filecount + 1;
+                        console.log(`${apps.humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
+                        if (a === len - 1) {
+                            completeText();
                             return;
                         }
-                    } else {
-                        missing = missing + 1;
-                        if (raw[a][0] < formatted[a][0]) {
-                            console.log(`${text.angry}formatted directory is missing file:${text.none} ${raw[a][0]}`);
-                            raw.splice(a, 1);
+                    },
+                    diffFiles  = function services_validate_validation_coreunits_compare_diffFiles(sampleSource:recordList, sampleDiff:recordList):boolean {
+                        let report:[string, number, number],
+                            total:number  = 0;
+                        const beautify = function services_validate_validation_coreunits_compare_beautify(item:recordList) {
+                                const outputString:string[] = ["["],
+                                    len:number = item.length - 1;
+                                let x:number = 0;
+                                if (len > 0) {
+                                    do {
+                                        outputString.push(`${JSON.stringify(item[x])},`);
+                                        x = x + 1;
+                                    } while (x < len);
+                                }
+                                outputString.push(JSON.stringify(item[len]));
+                                outputString.push("]");
+                                return outputString.join(node.os.EOL);
+                            },
+                            diff_options = {
+                                context: 2,
+                                diff: beautify(sampleDiff),
+                                diff_format: "text",
+                                language: "text",
+                                source: beautify(sampleSource),
+                                source_label: files.code[a][1]
+                            };
+                        require(`${js}test${sep}diffview.js`);
+                        report          = sparser.libs.diffview(diff_options);
+                        total           = report[1];console.log(report);
+                        if (total < 1) {
+                            comparePass();
+                            return false;
+                        }
+                        console.log(`${apps.humantime(false) + text.angry}Fail: ${text.cyan + files.code[a][0] + text.none}`);
+                        console.log("");
+                        console.log(`Diff output colors: ${text.angry + text.underline}red = generated${text.none} and ${text.green + text.underline}green = saved file${text.none}`);
+                        diff_options.diff         = files.parsed[a][1];
+                        diff_options.source       = output;
+                        apps.errout([
+                            sparser.libs.diffview(diff_options)[0],
+                            "",
+                            `${text.angry}Validation test failure${text.none}`,
+                            `Failed on file ${text.cyan + text.bold + files.code[a][0] + text.none}`,
+                            ""
+                        ]);
+                        return true;
+                    };
+                files.code   = sparser.parse.safeSort(files.code, "ascend", false);
+                files.parsed = sparser.parse.safeSort(files.parsed, "ascend", false);
+                lexer();
+                do {
+                    if (files.code[a][0].indexOf(currentlex) !== 0) {
+                        lexer();
+                    }
+                    if (files.code[a] === undefined || files.parsed[a] === undefined) {
+                        if (files.code[a] === undefined) {
+                            console.log(`${text.yellow}samples_code directory is missing file:${text.none} ${files.parsed[a][0]}`);
+                            files.parsed.splice(a, 1);
                         } else {
-                            console.log(`${text.angry}raw directory is missing file:${text.none} ${formatted[a][0]}`);
-                            formatted.splice(a, 1);
+                            console.log(`${text.yellow}samples_parse directory is missing file:${text.none} ${files.code[a][0]}`);
+                            files.code.splice(a, 1);
+                        }
+                        len = (files.code.length > files.parsed.length)
+                            ? files.code.length
+                            : files.parsed.length;
+                        a   = a - 1;
+                    } else if (files.code[a][0] === files.parsed[a][0]) {
+                        if (files.parsed[a][1].replace(/^\s+$/, "") === "") {
+                            empty = empty + 1;
+                            console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
+                        } else if (files.code[a][1].replace(/^\s+$/, "") === "") {
+                            empty = empty + 1;
+                            console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
+                        } else {
+                            options.source = files.code[a][1];
+                            apps.fileOptions(files.code[a][0]);
+                            options.lexer = currentlex;
+                            options.format = "testprep";
+                            output        = sparser.parser(options);
+                            str                  = (sparser.parseerror === "")
+                                ? output
+                                : sparser.parseerror;
+                            if (str === files.parsed[a][1]) {
+                                comparePass();
+                            } else {
+                                if (sparser.parseerror === "") {
+                                    if (diffFiles(output, JSON.parse(files.parsed[a][1])) === true) {
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        if (files.code[a][0] < files.parsed[a][0]) {
+                            missing = missing + 1;
+                            console.log(`${text.yellow}Parsed samples directory is missing file:${text.none} ${files.code[a][0]}`);
+                            files.code.splice(a, 1);
+                        } else {
+                            missing = missing + 1;
+                            console.log(`${text.yellow}Code samples directory is missing file:${text.none} ${files.parsed[a][0]}`);
+                            files.parsed.splice(a, 1);
+                        }
+                        len = (files.code.length > files.parsed.length)
+                            ? files.code.length
+                            : files.parsed.length;
+                        a   = a - 1;
+                        if (a === len - 1) {
+                            completeText();
+                            return;
                         }
                     }
                     a = a + 1;
                 } while (a < len);
-                if (a === len) {
-                    if (command === "validation") {
-                        verbose = true;
-                        if (missing > 0) {
-                            let plural:string = (missing === 1)
-                                ? " is"
-                                : "s are";
-                            apps.log([`${text.green + text.bold + filecount + text.none} files passed, but ${text.angry + missing} file${plural} missing${text.none}.`], "");
-                        } else {
-                            apps.log([`${text.green}All ${filecount} files passed.${text.none}`], "");
-                        }
-                    } else {
-                        let msg:string = "";
-                        console.log("");
-                        if (missing > 0) {
-                            let plural:string = (missing === 1)
-                                ? " is"
-                                : "s are";
-                            msg = `${text.green + text.bold + filecount + text.none} files passed, but ${text.angry + missing} file${plural} missing${text.none}.`;
-                        } else {
-                            msg = `${text.green}All ${filecount} files passed.${text.none}`;
-                        }
-                        callback(msg);
-                    }
-                }
             },
-            readDir = function node_apps_validation_readDir(type:string):void {
-                const dir:string = `${projectPath}tests${sep + type}`;
-                node.fs.readdir(dir, function node_apps_validation_readDir_reading(err:Error, list:string[]) {
+            readDir = function node_apps_validation_readDir(type:string, lexer:string):void {
+                const dirpath:string = `${projectPath}test${sep}samples_${type + sep + lexer + sep}`;
+                node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
                     if (err !== null) {
-                        apps.errout([err.toString()]);
+                        if (err.toString().indexOf("no such file or directory") > 0) {
+                            apps.errout([`The directory ${dirpath} ${text.angry}doesn't exist${text.none}. Provide the necessary test samples for ${text.cyan + lexer + text.none}.`]);
+                            return;
+                        }
+                        apps.errout([`Error reading from directory ${dirpath}`, err.toString()]);
                         return;
                     }
-                    const pusher = function node_apps_validation_readDir_reading_pusher(value:string, index:number, arr:string[]) {
-                        node.fs.readFile(dir + sep + value, "utf8", function node_apps_validation_readDir_reading_pusher_readFile(er:Error, fileData:string) {
-                            if (er !== null) {
-                                apps.errout([er.toString()]);
-                                return;
-                            }
-                            if (type === "raw") {
-                                raw.push([value, fileData]);
-                                count_raw = count_raw + 1;
-                                if (count_raw === arr.length) {
-                                    flag.raw = true;
-                                    if (flag.formatted === true) {
-                                        compare();
-                                    }
+                    if (list === undefined) {
+                        if (total[type] === 0) {
+                            apps.errout([`No files of type ${type} for lexer ${lexer}.`]);
+                            return;
+                        }
+                        apps.errout([`undefined returned when reading files from ${dirpath}`]);
+                        return;
+                    }
+                    const pusher = function services_validate_validation_coreunits_readDir_callback_pusher(val) {
+                        node.fs.readFile(
+                            dirpath + val,
+                            "utf8",
+                            function services_validate_validation_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
+                                count[type] = count[type] + 1;
+                                if (erra !== null && erra !== undefined) {
+                                    apps.errout([`Error reading file: ${projectPath}test${sep}samples_${type + sep + lexer + sep + val}`]);
+                                    return;
                                 }
-                            } else if (type === "formatted") {
-                                formatted.push([value, fileData]);
-                                count_formatted = count_formatted + 1;
-                                if (count_formatted === arr.length) {
-                                    flag.formatted = true;
-                                    if (flag.raw === true) {
-                                        compare();
-                                    }
+                                files[type].push([lexer + sep + val, fileData.replace(/\r\n/g, "\n")]);
+                                if (count.lexer === total.lexer && count.code === total.code && count.parsed === total.parsed) {
+                                    compare();
                                 }
                             }
-                        });
+                        );
                     };
+                    total[type] = total[type] + list.length;
+                    if (err !== null) {
+                        apps.errout([`Error reading from directory: ${dirpath}`]);
+                        return;
+                    }
                     list.forEach(pusher);
                 });
             };
         if (command === "validation") {
-            verbose = true;
+            callback = function node_apps_validation_callback():void {
+                verbose = true;
+                apps.log([""], "");
+            };
         }
-        all(options, function node_apps_validation_allLexers() {
-            options.format = "objects";
-            readDir("raw");
-            readDir("formatted");
+        total.lexer = lexers.length;
+        lexers.forEach(function services_validate_validation_coreunits_lexers(value:string) {
+            count.lexer = count.lexer + 1;
+            readDir("code", value);
+            readDir("parsed", value);
         });
     };
     // runs apps.log

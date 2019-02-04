@@ -1,12 +1,12 @@
 /*jslint browser:true */
 /*eslint-env browser*/
-/*global ace, global, performance, window*/
+/*global ace, performance, window*/
 
 (function web() {
     "use strict";
     let editor:any,
         lang:[string, string, string] = ["", "", ""];
-    const sparser:sparser = global.sparser,
+    const sparser:sparser = window.sparser,
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input:HTMLTextAreaElement   = document.getElementsByTagName("textarea")[0],
@@ -42,7 +42,7 @@
                 builder = function web_handler_builder():void {
                     let a:number         = 0,
                         body      = document.createElement("thead");
-                    const len:number       = global.sparser.parse.count + 1,
+                    const len:number       = window.sparser.parse.count + 1,
                         table     = document.createElement("table"),
                         cell      = function web_handler_builder_cell(data:htmlCellBuilder):void {
                             const el = document.createElement(data.type);
@@ -192,11 +192,11 @@
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
             if (checkboxes[1] !== undefined) {
-                options.lexer_options.script.objectSort = (checkboxes[1].checked === true);
-                options.lexer_options.style.objectSort  = (checkboxes[1].checked === true);
+                options.lexer_options.script.object_sort = (checkboxes[1].checked === true);
+                options.lexer_options.style.object_sort  = (checkboxes[1].checked === true);
             }
             if (checkboxes[0] !== undefined) {
-                options.lexer_options.markup.tagSort    = (checkboxes[0].checked === true);
+                options.lexer_options.markup.tag_sort    = (checkboxes[0].checked === true);
             }
             lang = sparser.libs.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
@@ -255,13 +255,13 @@
                             } else if (values === "false") {
                                 options.lexer_options.style.no_lead_zero = false;
                             }
-                        } else if (name === "objectsort") {
+                        } else if (name === "objectsort" || name === "object_sort") {
                             if (values === "true") {
-                                options.lexer_options.script.objectSort = true;
-                                options.lexer_options.style.objectSort = true;
+                                options.lexer_options.script.object_sort = true;
+                                options.lexer_options.style.object_sort = true;
                             } else if (values === "false") {
-                                options.lexer_options.script.objectSort = false;
-                                options.lexer_options.style.objectSort = false;
+                                options.lexer_options.script.object_sort = false;
+                                options.lexer_options.style.object_sort = false;
                             }
                         } else if (name === "preserve_comment" || name === "preservecomment") {
                             if (values === "true") {
@@ -277,9 +277,9 @@
                             }
                         } else if (name === "tagsort") {
                             if (values === "true") {
-                                options.lexer_options.markup.tagSort = true;
+                                options.lexer_options.markup.tag_sort = true;
                             } else if (values === "false") {
-                                options.lexer_options.markup.tagSort = false;
+                                options.lexer_options.markup.tag_sort = false;
                             }
                         } else if (name === "tag_merge" || name === "tagmerge") {
                             if (values === "true") {
@@ -287,9 +287,9 @@
                             } else if (values === "false") {
                                 options.lexer_options.markup.tag_merge = false;
                             }
-                        } else if (name === "var_word" || name === "varword") {
+                        } else if (name === "variable_list" || name === "variablelist") {
                             if (values === "list" || values === "each" || values === "none") {
-                                options.lexer_options.script.varword = values;
+                                options.lexer_options.script.variable_list = values;
                             }
                         }
                     } while (aa > 0);

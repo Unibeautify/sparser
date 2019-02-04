@@ -87,7 +87,7 @@ interface parse {
     datanames                                                       : string[];
     lineNumber                                                      : number;
     linesSpace                                                      : number;
-    objectSort(data : data)                                         : void;
+    object_sort(data : data)                                         : void;
     parseOptions                                                    : parseOptions;
     pop(data : data)                                                : record;
     push(data : data, record : record, structure : string)          : void;
@@ -170,6 +170,9 @@ interface style_properties_last {
 }
 interface style_properties_removes extends Array<[number, string]> {
     [index:number]: [number, string];
+}
+interface Window {
+    sparser: any;
 }
 interface wrapConfig {
     chars     : string[];

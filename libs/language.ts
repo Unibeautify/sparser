@@ -80,8 +80,8 @@
             }
             return langmap[input];
         },
-        // * [0] = language value for ace mode
-        // * [1] = prettydiff language category (lexer) from [0]
+        // * [0] = language value
+        // * [1] = lexer value
         // * [2] = pretty formatting for text output to user
         auto: function language_auto(sample:string, defaultLang:string):languageAuto {
             let b:string[]           = [],

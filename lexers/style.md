@@ -42,6 +42,9 @@ td {
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
 ## style options
+* **no_lead_zero**: Whether the zero to the left of the decimal point should be removed from numbers between 0 and 1.
+   - type: boolean
+   - default: false
 * **object_sort**: Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.
    - type: boolean
    - default: false

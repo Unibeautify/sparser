@@ -133,7 +133,7 @@
                     if (record.stack === "method" && (data.token[record.begin - 1] === "function" || data.token[record.begin - 2] === "function")) {
                         return;
                     }
-                    if (options.lexer_options.script.varword === "list") {
+                    if (options.lexer_options.script.variable_list === "list") {
                         vart.index[vart.len] = parse.count;
                     }
                     ltoke = (options.correct === true)
@@ -312,7 +312,7 @@
                 // immediately follow
                 commaComment   = function lexer_script_commacomment():void {
                     let x:number = parse.count;
-                    if (data.stack[x] === "object" && options.lexer_options.script.objectSort === true) {
+                    if (data.stack[x] === "object" && options.lexer_options.script.object_sort === true) {
                         ltoke = ",";
                         ltype = "separator";
                         asifix();
@@ -423,7 +423,7 @@
                         asi(false);
                     }
                     if (vart.len > -1) {
-                        if (x === "}" && ((options.lexer_options.script.varword === "list" && vart.count[vart.len] === 0) || (data.token[parse.count] === "x;" && options.lexer_options.script.varword === "each"))) {
+                        if (x === "}" && ((options.lexer_options.script.variable_list === "list" && vart.count[vart.len] === 0) || (data.token[parse.count] === "x;" && options.lexer_options.script.variable_list === "each"))) {
                             vartpop();
                         }
                         vart.count[vart.len] = vart.count[vart.len] - 1;
@@ -453,8 +453,8 @@
                         if (parse.structure.length > 0 && parse.structure[parse.structure.length - 1][0] !== "object") {
                             asi(true);
                         }
-                        if (options.lexer_options.script.objectSort === true && parse.structure[parse.structure.length - 1][0] === "object") {
-                            parse.objectSort(data);
+                        if (options.lexer_options.script.object_sort === true && parse.structure[parse.structure.length - 1][0] === "object") {
+                            parse.object_sort(data);
                         }
                         if (ltype === "comment") {
                             ltoke = data.token[parse.count];
@@ -1834,7 +1834,7 @@
                     } else {
                         g = parse.count;
                         f = g;
-                        if (options.lexer_options.script.varword !== "none" && (output === "var" || output === "let" || output === "const")) {
+                        if (options.lexer_options.script.variable_list !== "none" && (output === "var" || output === "let" || output === "const")) {
                             if (data.types[g] === "comment") {
                                 do {
                                     g = g - 1;
@@ -1842,7 +1842,7 @@
                                     g > 0 && (data.types[g] === "comment")
                                 );
                             }
-                            if (options.lexer_options.script.varword === "list" && vart.len > -1 && vart.index[vart.len] === g && output === vart.word[vart.len]) {
+                            if (options.lexer_options.script.variable_list === "list" && vart.len > -1 && vart.index[vart.len] === g && output === vart.word[vart.len]) {
                                 ltoke                = ",";
                                 ltype                = "separator";
                                 data.token[g]        = ltoke;
@@ -1863,7 +1863,7 @@
                                 .word
                                 .push(output);
                             g = f;
-                        } else if (vart.len > -1 && output !== vart.word[vart.len] && parse.count === vart.index[vart.len] && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && options.lexer_options.script.varword === "list") {
+                        } else if (vart.len > -1 && output !== vart.word[vart.len] && parse.count === vart.index[vart.len] && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && options.lexer_options.script.variable_list === "list") {
                             vartpop();
                         }
                         if (output === "from" && data.token[parse.count] === "x;" && data.token[parse.count - 1] === "}") {
@@ -2268,7 +2268,7 @@
                     }
                     if (ltype === "comment") {
                         commaComment();
-                    } else if (vart.len > -1 && vart.count[vart.len] === 0 && options.lexer_options.script.varword === "each") {
+                    } else if (vart.len > -1 && vart.count[vart.len] === 0 && options.lexer_options.script.variable_list === "each") {
                         asifix();
                         ltoke = ";";
                         ltype = "separator";
@@ -2317,7 +2317,7 @@
                             classy.pop();
                         }
                         if (vart.len > -1 && vart.count[vart.len] === 0) {
-                            if (options.lexer_options.script.varword === "each") {
+                            if (options.lexer_options.script.variable_list === "each") {
                                 vartpop();
                             } else {
                                 vart.index[vart.len] = parse.count + 1;
@@ -2358,7 +2358,7 @@
                 } else if (wordTest < 0 && c[a] !== "") {
                     wordTest = a;
                 }
-                if (vart.len > -1 && parse.count === vart.index[vart.len] + 1 && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && ltype !== "comment" && options.lexer_options.script.varword === "list") {
+                if (vart.len > -1 && parse.count === vart.index[vart.len] + 1 && data.token[vart.index[vart.len]] === ";" && ltoke !== vart.word[vart.len] && ltype !== "comment" && options.lexer_options.script.variable_list === "list") {
                     vartpop();
                 }
                 a = a + 1;

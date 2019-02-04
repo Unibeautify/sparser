@@ -1178,8 +1178,8 @@
                         if (b[a] === "}") {
                             margin_padding();
                         }
-                        if (options.lexer_options.style.objectSort === true && b[a] === "}") {
-                            parse.objectSort(data);
+                        if (options.lexer_options.style.object_sort === true && b[a] === "}") {
+                            parse.object_sort(data);
                         }
                         recordPush("");
                     }
@@ -1203,8 +1203,8 @@
                 }
                 a = a + 1;
             } while (a < len);
-            if (options.lexer_options.style.objectSort === true) {
-                parse.objectSort(data);
+            if (options.lexer_options.style.object_sort === true) {
+                parse.object_sort(data);
             }
 
             return data;

@@ -1375,5 +1375,5 @@
             ];
         }());
     };
-    return diffview;
+    global.sparser.libs.diffview = diffview;
 }());

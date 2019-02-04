@@ -47,3 +47,6 @@ The markup lexer uses tag names, even if the tag is a template tag, as the stack
 * **tag_sort**: Whether markup tags should be alphabetically sorted amonst their siblings.
    - type: boolean
    - default: false
+* **unformatted**: If tags in markup code should be preserved from any manner of alteration.
+   - type: boolean
+   - default: false

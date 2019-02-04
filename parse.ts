@@ -92,7 +92,7 @@
             }
             
             // fix begin values.  They must be reconsidered after reordering from object sort
-            if (parse.data.begin.length > 0 && (parse.parseOptions.lexer_options[parseOptions.lexer].objectSort === true || parse.parseOptions.lexer_options.markup.tagSort === true)) {
+            if (parse.data.begin.length > 0 && (parse.parseOptions.lexer_options[parseOptions.lexer].object_sort === true || parse.parseOptions.lexer_options.markup.tag_sort === true)) {
                 parse.sortCorrection(0, parse.count + 1);
             }
             if (parseOptions.format === "markdown") {
@@ -261,7 +261,7 @@
             }
             if (parseOptions.format === "testprep") {
                 let a:number = 0;
-                const data:string[] = ["["],
+                const data:string[] = [],
                     len = parse.count + 1;
                 if (sparser.parseerror !== "") {
                     return sparser.parseerror;
@@ -278,8 +278,7 @@
                     }));
                     a = a + 1;
                 } while (a < len);
-                data.push("]");
-                return data.join("\n");
+                return `[\n${data.join(",\n")}\n]`;
             }
             return parse.data;
         },
@@ -332,7 +331,7 @@
                 }
             },
             // the function that sorts object properties
-            objectSort: function parse_objectSort(data: data):void {
+            object_sort: function parse_objectSort(data: data):void {
                 let cc:number = parse.count,
                     global:boolean = (data.lexer[cc] === "style" && parse.structure[parse.structure.length - 1][0] === "global"),
                     dd:number = parse.structure[parse.structure.length - 1][1],
@@ -590,8 +589,8 @@
                     let a:number = parse.count;
                     const begin:number = data.begin[a];
                     if (
-                        (data.lexer[a] === "markup" && parse.parseOptions.lexer_options.markup.tagSort === true) ||
-                        ((data.lexer[a] === "script" || data.lexer[a] === "style") && parse.parseOptions.lexer_options[data.lexer[a]].objectSort === true)
+                        (data.lexer[a] === "markup" && parse.parseOptions.lexer_options.markup.tag_sort === true) ||
+                        ((data.lexer[a] === "script" || data.lexer[a] === "style") && parse.parseOptions.lexer_options[data.lexer[a]].object_sort === true)
                     ) {
                         // sorting can result in a token whose begin value is greater than either
                         // its current index or the index of the end token, which results in an endless loop
@@ -825,7 +824,7 @@
                 }
                 return ascend(array);
             },
-            // this functionality provides corrections to the "begin" and "ender" values after use of objectSort
+            // this functionality provides corrections to the "begin" and "ender" values after use of object_sort
             sortCorrection: function parse_sortCorrection(start:number, end:number):void {
                 let a:number = start,
                     endslen:number = -1;

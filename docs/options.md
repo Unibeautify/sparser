@@ -20,7 +20,7 @@ lexer      | all
 type       | boolean
 use        | options.crlf
 
-## endcomma
+## end_comma
 property   | value
 -----------|---
 default    | none
@@ -28,7 +28,7 @@ definition | Whether terminal commas in objects and arrays should be added or el
 label      | End Comma
 lexer      | script
 type       | string
-use        | options.lexer_options.**script**.endcomma
+use        | options.lexer_options.**script**.end_comma
 values | always, never, none
 
 ### Value Definitions
@@ -73,6 +73,16 @@ label      | Lexer
 lexer      | all
 type       | string
 use        | options.lexer
+
+## no_lead_zero
+property   | value
+-----------|---
+default    | false
+definition | Whether the zero to the left of the decimal point should be removed from numbers between 0 and 1.
+label      | No Lead Zero
+lexer      | style
+type       | boolean
+use        | options.lexer_options.**style**.no_lead_zero
 
 ## object_sort
 property   | value
@@ -149,6 +159,16 @@ label      | Tag Sort
 lexer      | markup
 type       | boolean
 use        | options.lexer_options.**markup**.tag_sort
+
+## unformatted
+property   | value
+-----------|---
+default    | false
+definition | If tags in markup code should be preserved from any manner of alteration.
+label      | Tag Unformatted
+lexer      | markup
+type       | boolean
+use        | options.lexer_options.**markup**.unformatted
 
 ## variable_list
 property   | value

@@ -126,7 +126,7 @@ The *global* object contains five key references.
 Only use these method to populate or modify `parse.data`.  Any other means of changing the data may not guarentee the integrity of the data model.
 
 * **concat** - Similar to the native array *concat* method.  This takes two arguments of which both are objects in *standard format*.  The object in the second argument will be added onto the object in the first argument.
-* **objectSort** - A method to sort immediate children of a given structure in certain languages.  In JavaScript this method will sort properties of an object literal (or similar storage) and just about everything in CSS like languages.
+* **object_sort** - A method to sort immediate children of a given structure in certain languages.  In JavaScript this method will sort properties of an object literal (or similar storage) and just about everything in CSS like languages.
 * **pop** - Takes a single object in *standard format* format as an argument pops off the last index of each array.  A *record format* object is returned as output.
 * **push** - Takes three arguments where the first is a *standard format* object and the second is an object in *record format*.  The third argument must be a string that describes the current structure.  This third argument is only used if the types value of the second argument is *start*.  In all cases an empty string can be supplied for the third argument.
 * **spacer** - Reasons about what whitespace between code tokens and populates the `parse.linesSpace` property.

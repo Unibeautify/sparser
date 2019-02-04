@@ -16,7 +16,7 @@
             lexer     : ["all"],
             type      : "boolean"
         },
-        endcomma: {
+        end_comma: {
             default: "none",
             definition: "Whether terminal commas in objects and arrays should be added or eliminated.",
             label: "End Comma",
@@ -55,6 +55,13 @@
             label: "Lexer",
             lexer: ["all"],
             type: "string"
+        },
+        no_lead_zero: {
+            default: false,
+            definition: "Whether the zero to the left of the decimal point should be removed from numbers between 0 and 1.",
+            label: "No Lead Zero",
+            lexer: ["style"],
+            type: "boolean"
         },
         object_sort: {
             default: false,
@@ -107,6 +114,13 @@
             default: false,
             definition: "Whether markup tags should be alphabetically sorted amonst their siblings.",
             label: "Tag Sort",
+            lexer: ["markup"],
+            type: "boolean"
+        },
+        unformatted: {
+            default: false,
+            definition: "If tags in markup code should be preserved from any manner of alteration.",
+            label: "Tag Unformatted",
             lexer: ["markup"],
             type: "boolean"
         },

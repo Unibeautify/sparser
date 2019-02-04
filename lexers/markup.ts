@@ -440,7 +440,7 @@
                             }
 
                             // sort the attributes
-                            if (options.lexer_options.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.lexer_options.markup.tag_sort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore, "", false);
                             }
 
@@ -2067,7 +2067,7 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (options.lexer_options.markup.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
+                    if (options.lexer_options.markup.tag_sort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
                         let bb:number          = 0,
                             d:number           = 0,
                             startStore:number  = 0,

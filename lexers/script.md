@@ -75,7 +75,7 @@ if (b[a] === "\n") {
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
 ## script options
-* **endcomma**: Whether terminal commas in objects and arrays should be added or eliminated.
+* **end_comma**: Whether terminal commas in objects and arrays should be added or eliminated.
    - type: string
    - default: none
    - values:
