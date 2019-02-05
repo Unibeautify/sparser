@@ -9,35 +9,25 @@
     const sparser:sparser = window.sparser,
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
-        input:HTMLTextAreaElement   = document.getElementsByTagName("textarea")[0],
+        input:HTMLTextAreaElement   = <HTMLTextAreaElement>document.getElementById("input"),
         dataarea:HTMLElement        = document.getElementById("data"),
+        datatext:HTMLTextAreaElement = <HTMLTextAreaElement>document.getElementById("datatext"),
         parseCode:string = (Object.keys(window).indexOf("localStorage") > -1)
             ? window.localStorage.getItem("parseCode")
+            : "",
+        opsStore:string = (Object.keys(window).indexOf("localStorage") > -1)
+            ? window.localStorage.getItem("opsStore")
             : "",
         textsize = (navigator.userAgent.indexOf("like Gecko") < 0 && navigator.userAgent.indexOf("Gecko") > 0 && navigator.userAgent.indexOf("Firefox") > 0)
             ? 13
             : 13.33,
-        options:parseOptions = {
-            correct         : false,
-            crlf            : false,
-            language        : "",
-            lexer           : "script",
-            lexer_options   : {},
-            format          : "arrays",
-            preserve_comment: false,
-            source          : "",
-            wrap            : 0
-        },
+        options:any = sparser.options,
         handler = function web_handler():void {
             let output:any,
                 startTime:number = 0;
             const value:string = (acetest === true)
                     ? editor.getValue()
                     : input.value,
-                checkboxes:[HTMLInputElement, HTMLInputElement] = [
-                    document.getElementsByTagName("input")[1],
-                    document.getElementsByTagName("input")[2]
-                ],
                 startTotal:number = Math.round(performance.now() * 1000),
                 builder = function web_handler_builder():void {
                     let a:number         = 0,
@@ -191,13 +181,6 @@
             if (editor !== undefined && (acetest === true || lang[0] !== "")) {
                 editor.getSession().setMode(`ace/mode/${lang[0]}`);
             }
-            if (checkboxes[1] !== undefined) {
-                options.lexer_options.script.object_sort = (checkboxes[1].checked === true);
-                options.lexer_options.style.object_sort  = (checkboxes[1].checked === true);
-            }
-            if (checkboxes[0] !== undefined) {
-                options.lexer_options.markup.tag_sort    = (checkboxes[0].checked === true);
-            }
             lang = sparser.libs.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
@@ -300,13 +283,21 @@
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             options.source = value;
             startTime = Math.round(performance.now() * 1000);
-            output = sparser.parser(options);
+            output = sparser.parser();
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
                 document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            builder();
+            if (options.format === "html") {
+                builder();
+            } else {
+                if (typeof output === "object") {
+                    datatext.value = JSON.stringify(output);
+                } else {
+                    datatext.value = output;
+                }
+            }
             (function web_handler_perfTotal():void {
                 const endTime:number = Math.round(performance.now() * 1000),
                     time:number = (endTime - startTotal) / 1000;
@@ -321,99 +312,132 @@
         backspace = function web_backspace(event) {
             const e = event || window.event,
                 f = e.srcElement || e.target;
-            if (e.keyCode === 8 && f.nodeName !== "textarea") {
+            if (e.keyCode === 8 && f.nodeName !== "textarea" && ((f.nodeName === "input" && f.type !== "text") || f.nodeName !== "input")) {
                 e.preventDefault();
                 return false;
             }
         },
-        height = function web_inputHeight(scale:number, offset:number):string {
-            const ff = (textsize === 13) // variability for Gecko
-                ? (scale === 10) // pull the output down to align to input
-                    ? -0.7
-                    : (offset < -4) // pull input down to eliminate a white bar
-                        ? -0.4
-                        : -0.6
-                : 0;
-            let height:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
-            if (height > window.innerHeight) {
-                height = window.innerHeight;
-            }
-            height = (height / scale) - (18.975 + offset + ff);
-            return `${height}em`;
+        optControls = function web_optControls() {
+
         },
-        aceHeight = function web_aceHeight() {
-            dataarea.style.height = height(10, 0);
+        height = function web_inputHeight(scale:number, offset:number):string {
+            const ff:number = (textsize === 13) // variability for Gecko
+                ? (scale === 10) // pull the output down to align to input
+                    ? -0.2
+                    : (offset < -4) // pull input down to eliminate a white bar
+                        ? 0
+                        : -0.2
+                : 0;
+            let heightn:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
+            if (heightn > window.innerHeight) {
+                heightn = window.innerHeight;
+            }
+            heightn = (heightn / scale) - (18.975 + offset + ff);
+            return `${heightn}em`;
+        },
+        aceHeight = function web_aceHeight():void {
             document.getElementById("input").style.height = height(12, -3.2);
             editor.setStyle(`height:${height(12, -3.2)}`);
             editor.resize();
         },
-        textHeight = function web_textHeight() {
-            dataarea.style.height = height(10, 0);
+        textHeight = function web_textHeight():void {
             input.style.height = height(textsize, -4.45);
+        },
+        htmlHeight = function web_htmlHeight():void {
+            dataarea.style.height = height(10, 0);
+        },
+        outHeight = function web_outHeight():void {
+            datatext.style.height = height(textsize, -4.45);
         };
-        if (typeof ace === "object") {
-            aceControl.onclick = function web_aceControl() {
-                if (aceControl.checked === true) {
-                    location.replace(location.href.replace(/ace=false&?/, "").replace(/\?$/, ""));
-                } else {
-                    if (location.href.indexOf("?") > 0) {
-                        location.replace(location.href.replace("?", "?ace=false&"));
-                    } else {
-                        location.replace(`${location.href}?ace=false`);
-                    }
-                }
-            };
-            if (location.href.indexOf("ace=false") > 0) {
-                aceControl.checked = false;
-                input.onkeyup = handler;
-                textHeight();
+    if (typeof ace === "object") {
+        aceControl.onclick = function web_aceControl() {
+            if (aceControl.checked === true) {
+                location.replace(location.href.replace(/ace=false&?/, "").replace(/\?$/, ""));
             } else {
-                const div:HTMLDivElement        = document.createElement("div"),
-                    parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
-                    attributes:NamedNodeMap = input.attributes,
-                    dollar:string     = "$",
-                    len:number        = attributes.length;
-                let a:number          = 0,
-                    edit:any       = {},
-                    textarea:HTMLTextAreaElement;
-                do {
-                    if (attributes[a].name !== "rows" && attributes[a].name !== "cols" && attributes[a].name !== "wrap") {
-                        div.setAttribute(attributes[a].name, attributes[a].value);
-                    }
-                    a = a + 1;
-                } while (a < len);
-                parent.removeChild(input.parentNode);
-                parent.appendChild(div);
-                edit = ace.edit(div);
-                textarea = div.getElementsByTagName("textarea")[0];
-                textarea.onkeyup = handler;
-                edit.setTheme("ace/theme/textmate");
-                edit.focus();
-                edit[`${dollar}blockScrolling`] = Infinity;
-                editor = edit;
-                aceHeight();
+                if (location.href.indexOf("?") > 0) {
+                    location.replace(location.href.replace("?", "?ace=false&"));
+                } else {
+                    location.replace(`${location.href}?ace=false`);
+                }
             }
-        } else {
+        };
+        if (location.href.indexOf("ace=false") > 0) {
             aceControl.checked = false;
             input.onkeyup = handler;
             textHeight();
+        } else {
+            const div:HTMLDivElement        = document.createElement("div"),
+                parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
+                attributes:NamedNodeMap = input.attributes,
+                dollar:string     = "$",
+                len:number        = attributes.length;
+            let a:number          = 0,
+                edit:any       = {},
+                textarea:HTMLTextAreaElement;
+            do {
+                if (attributes[a].name !== "rows" && attributes[a].name !== "cols" && attributes[a].name !== "wrap") {
+                    div.setAttribute(attributes[a].name, attributes[a].value);
+                }
+                a = a + 1;
+            } while (a < len);
+            parent.removeChild(input.parentNode);
+            parent.appendChild(div);
+            edit = ace.edit(div);
+            textarea = div.getElementsByTagName("textarea")[0];
+            textarea.onkeyup = handler;
+            edit.setTheme("ace/theme/textmate");
+            edit.focus();
+            edit[`${dollar}blockScrolling`] = Infinity;
+            editor = edit;
+            aceHeight();
         }
-        window.onresize = function web_fixHeight():void {
-            if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
-                aceHeight();
-            } else {
-                textHeight();
-            }
-    
-        };
+    } else {
+        aceControl.checked = false;
+        input.onkeyup = handler;
+        textHeight();
+    }
+    if (options.format === "html") {
+        htmlHeight();
+    } else {
+        outHeight();
+    }
+    window.onresize = function web_fixHeight():void {
+        if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
+            aceHeight();
+        } else {
+            textHeight();
+        }
+        if (options.format === "html") {
+            htmlHeight();
+        } else {
+            outHeight();
+        }
+    };
     document.onkeypress = backspace;
     document.onkeydown = backspace;
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
-    if (parseCode !== undefined && parseCode !== null && parseCode !== "") {
+    {
+        const select:HTMLCollectionOf<HTMLSelectElement> = document.getElementsByTagName("select"),
+            input:HTMLCollectionOf<HTMLInputElement> = document.getElementsByTagName("input"),
+            store:any = (typeof opsStore === "string")
+                ? JSON.parse(opsStore)
+                : null;
+        let a:number = 0,
+            name:string = "",
+            len:number = select.length;
+        do {
+            name = select[a].getAttribute("id").replace("option-", "");
+            if (sparser.libs.optionDef[name].lexer[0] === "all") {
+                
+            }
+            a = a + 1;
+        } while (a < len);
+    }
+    if (parseCode !== undefined && parseCode !== null) {
         if (acetest === true && editor !== undefined) {
-            lang   = (options.language === "auto" || options.language === "" || options.lexer === "auto" || options.lexer === "")
+            lang   = (options.language === "auto" || options.language === "")
                 ? sparser.libs.language.auto(parseCode, "javascript")
                 : [options.language, options.lexer, ""];
             editor.setValue(parseCode);
@@ -462,4 +486,5 @@
             }, 200);
         }
     }
+
 }());

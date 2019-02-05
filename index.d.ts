@@ -42,6 +42,12 @@ interface htmlCellBuilder {
     row:HTMLTableRowElement;
     className:string;
 }
+interface inject {
+    end: string;
+    file: string;
+    message: string;
+    start: string;
+}
 interface language {
     auto(sample : string, defaultLang : string): languageAuto;
     nameproper(input : string)                 : string;
@@ -87,8 +93,7 @@ interface parse {
     datanames                                                       : string[];
     lineNumber                                                      : number;
     linesSpace                                                      : number;
-    object_sort(data : data)                                         : void;
-    parseOptions                                                    : parseOptions;
+    object_sort(data : data)                                        : void;
     pop(data : data)                                                : record;
     push(data : data, record : record, structure : string)          : void;
     references                                                      : string[][];
@@ -99,21 +104,6 @@ interface parse {
     structure                                                       : Array <[string, number]>;
     wrapCommentBlock(config: wrapConfig)                            : [string, number];
     wrapCommentLine(config: wrapConfig)                             : [string, number];
-}
-interface parseOptions {
-    correct         : boolean;
-    crlf            : boolean;
-    language        : string;
-    lexer           : string;
-    lexer_options    : {
-        [key: string]: {
-            [key: string]: any;
-        };
-    };
-    format          : "arrays" | "markdown" | "minimal" | "objects" | "table" | "testprep";
-    preserve_comment: boolean;
-    source          : string;
-    wrap            : number;
 }
 interface readDirectory {
     callback: Function;
@@ -140,14 +130,15 @@ interface spacer {
     end  : number;
 }
 interface sparser {
-    defaults            : {};
     lexers              : lexer;
     libs                : {
         [key:string]: any;
     };
+    options             : any;
     parse               : parse;
-    parser(parseOptions): data;
+    parser()            : data;
     parseerror          : string;
+    version             : version;
 }
 interface splice {
     data   : data;
@@ -170,6 +161,10 @@ interface style_properties_last {
 }
 interface style_properties_removes extends Array<[number, string]> {
     [index:number]: [number, string];
+}
+interface version {
+    date: string;
+    number: string;
 }
 interface Window {
     sparser: any;

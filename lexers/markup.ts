@@ -16,7 +16,7 @@
                     index: -1,
                     start: 0
                 },
-                options:parseOptions       = parse.parseOptions,
+                options:any            = sparser.options,
                 b:string[]             = source.split(""),
                 c:number             = b.length,
                 recordPush = function lexer_markup_recordPush(target, record, structure):void {

@@ -6,7 +6,7 @@
 
 (function parse_init() {
     "use strict";
-    const parser  = function parse_parser(parseOptions:parseOptions):any {
+    const parser  = function parse_parser():any {
             parse.count      = -1;
             parse.data       = {
                 begin: [],
@@ -31,7 +31,6 @@
             parse.structure  = [
                 ["global", -1]
             ];
-            parse.parseOptions    = parseOptions;
 
             parse.structure.pop = function parse_structure_pop(): [string, number] {
                 const len:number = parse.structure.length - 1,
@@ -43,21 +42,21 @@
                 }
                 return arr;
             };
-            if (sparser.lexers[parseOptions.lexer] === undefined) {
-                sparser.parseerror = `Lexer "${parseOptions.lexer}" isn't available.`;
+            if (sparser.lexers[sparser.options.lexer] === undefined) {
+                sparser.parseerror = `Lexer "${sparser.options.lexer}" isn't available.`;
             }
-            if (typeof sparser.lexers[parseOptions.lexer] === "function") {
+            if (typeof sparser.lexers[sparser.options.lexer] === "function") {
                 sparser.parseerror = "";
                 // reset references data if sparser is used on multiple files
                 parse.references = [[]];
-                parseOptions.lexer_options = (parseOptions.lexer_options || {});
+                sparser.options.lexer_options = (sparser.options.lexer_options || {});
                 Object.keys(sparser.lexers).forEach(function parse_lexers(value) {
-                    parseOptions.lexer_options[value] = (parseOptions.lexer_options[value] || {});
+                    sparser.options.lexer_options[value] = (sparser.options.lexer_options[value] || {});
                 });
                 // This line parses the code using a lexer file
-                sparser.lexers[parseOptions.lexer](`${parseOptions.source} `);
+                sparser.lexers[sparser.options.lexer](`${sparser.options.source} `);
             } else {
-                sparser.parseerror = `Specified lexer, ${parseOptions.lexer}, is not a function.`;
+                sparser.parseerror = `Specified lexer, ${sparser.options.lexer}, is not a function.`;
             }
 
             // validate that all the data arrays are the same length
@@ -78,24 +77,12 @@
                     a = a + 1;
                 } while (a < c - 1);
             }());
-
-            if (parse.parseOptions.lexer_options === undefined) {
-                parse.parseOptions.lexer_options = {};
-                parse.parseOptions.lexer_options[parseOptions.lexer] = {};
-                parse.parseOptions.lexer_options.markup = {};
-            }
-            if (parse.parseOptions.lexer_options[parseOptions.lexer] === undefined) {
-                parse.parseOptions.lexer_options[parseOptions.lexer] = {};
-            }
-            if (parse.parseOptions.lexer_options.markup === undefined) {
-                parse.parseOptions.lexer_options.markup = {};
-            }
             
             // fix begin values.  They must be reconsidered after reordering from object sort
-            if (parse.data.begin.length > 0 && (parse.parseOptions.lexer_options[parseOptions.lexer].object_sort === true || parse.parseOptions.lexer_options.markup.tag_sort === true)) {
+            if (parse.data.begin.length > 0 && (sparser.options.lexer_options[sparser.options.lexer].object_sort === true || sparser.options.lexer_options.markup.tag_sort === true)) {
                 parse.sortCorrection(0, parse.count + 1);
             }
-            if (parseOptions.format === "markdown") {
+            if (sparser.options.format === "markdown") {
                 let a:number = 0;
                 const data:string[] = [],
                     len:number = parse.count + 1,
@@ -120,7 +107,7 @@
                 } while (a < len);
                 return data.join("\n");
             }
-            if (parseOptions.format === "minimal") {
+            if (sparser.options.format === "minimal") {
                 let a:number = 0;
                 const data:minimal[] = [],
                     len = parse.count + 1;
@@ -138,7 +125,7 @@
                 } while (a < len);
                 return data;
             }
-            if (parseOptions.format === "objects") {
+            if (sparser.options.format === "objects") {
                 let a:number = 0;
                 const data:record[] = [],
                     len = parse.count + 1;
@@ -156,7 +143,7 @@
                 } while (a < len);
                 return data;
             }
-            if (parseOptions.format === "table") {
+            if (sparser.options.format === "table") {
                 let a:number = 0,
                     b:number = 0,
                     c:number = 0,
@@ -259,7 +246,7 @@
                 } while (a < len);
                 return data.join("\n");
             }
-            if (parseOptions.format === "testprep") {
+            if (sparser.options.format === "testprep") {
                 let a:number = 0;
                 const data:string[] = [],
                     len = parse.count + 1;
@@ -301,20 +288,6 @@
             lineNumber: 1,
             // stores the 'lines' value before the next token
             linesSpace: 0,
-            // the options object
-            parseOptions: {
-                correct: false,
-                crlf: false,
-                language: "auto",
-                lexer: "auto",
-                lexer_options: {
-                    script: {}
-                },
-                format: "arrays",
-                preserve_comment: false,
-                source: "",
-                wrap: 0
-            },
             // stores the declared variable names for the script lexer.  This must be stored outside the script lexer since some languages recursive use of the script lexer
             references: [[]],
             // stores the stack and begin values by stacking depth
@@ -589,8 +562,8 @@
                     let a:number = parse.count;
                     const begin:number = data.begin[a];
                     if (
-                        (data.lexer[a] === "markup" && parse.parseOptions.lexer_options.markup.tag_sort === true) ||
-                        ((data.lexer[a] === "script" || data.lexer[a] === "style") && parse.parseOptions.lexer_options[data.lexer[a]].object_sort === true)
+                        (data.lexer[a] === "markup" && sparser.options.lexer_options.markup.tag_sort === true) ||
+                        ((data.lexer[a] === "script" || data.lexer[a] === "style") && sparser.options.lexer_options[data.lexer[a]].object_sort === true)
                     ) {
                         // sorting can result in a token whose begin value is greater than either
                         // its current index or the index of the end token, which results in an endless loop
@@ -971,7 +944,7 @@
                     twrap:number = 0;
                 const build:string[] = [],
                     second:string[]  = [],
-                    lf:"\r\n"|"\n" = (parse.parseOptions.crlf === true)
+                    lf:"\r\n"|"\n" = (sparser.options.crlf === true)
                         ? "\r\n"
                         : "\n",
                     sanitize = function parse_wrapCommentBlock_sanitize(input:string) {
@@ -981,7 +954,7 @@
                     regEnd:RegExp = new RegExp(`\\s*${config.terminator.replace(regEsc, sanitize)}$`),
                     regIgnore:RegExp = new RegExp(`^(${config.opening.replace(regEsc, sanitize)}\\s*parse-ignore-start)`),
                     regStart:RegExp = new RegExp(`(${config.opening.replace(regEsc, sanitize)}\\s*)`),
-                    wrap:number = parse.parseOptions.wrap,
+                    wrap:number = sparser.options.wrap,
                     emptyLines = function parse_wrapCommentBlock_emptyLines() {
                         if ((/^\s+$/).test(lines[b + 1]) === true || lines[b + 1] === "") {
                             do {
@@ -1047,7 +1020,7 @@
                     output = build.join("").replace(/\s+$/, "");
                     return [output, a];
                 }
-                if (a === config.end || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || parse.parseOptions.preserve_comment === true) {
+                if (a === config.end || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || sparser.options.preserve_comment === true) {
                     return [output, a];
                 }
                 b = config.start;
@@ -1204,7 +1177,7 @@
                     b:number = 0,
                     output:string = "",
                     build:string[] = [];
-                const wrap:number = parse.parseOptions.wrap,
+                const wrap:number = sparser.options.wrap,
                     recurse = function parse_wrapCommentLine_recurse():void {
                         let line:string = "";
                         do {
@@ -1322,7 +1295,7 @@
                     output = build.join("").replace(/\s+$/, "");
                     return [output, a];
                 }
-                if (output === "//" || output.slice(0, 6) === "//    " || parse.parseOptions.preserve_comment === true) {
+                if (output === "//" || output.slice(0, 6) === "//    " || sparser.options.preserve_comment === true) {
                     return [output, a];
                 }
                 output = output.replace(/(\/\/\s*)/, "// ");
@@ -1336,12 +1309,16 @@
             }
         },
         sparser:sparser = {
-            defaults: {},
             lexers: {},
             libs: {},
+            options: {},
             parse: parse,
             parser: parser,
-            parseerror: ""
+            parseerror: "",
+            version: {
+                date: "",
+                number: ""
+            }
         };
     global.sparser = sparser;
 }());

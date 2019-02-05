@@ -18,7 +18,7 @@
                 comment:[string, number];
             const parse:parse          = sparser.parse,
                 data:data           = parse.data,
-                options:parseOptions        = parse.parseOptions,
+                options:any         = sparser.options,
                 sourcemap:[number, string]      = [
                     0, ""
                 ],

@@ -30,13 +30,11 @@ interface directoryList extends Array<directoryItem> {
         }()),
         js:string = `${projectPath}js${sep}`,
         libFiles:string[] = [`${js}lexers`, `${js}libs`],
-        // node option default start
-        options:any = {},
-        version:any = {
-            date: "",
-            number: ""
-        },
-        // node option default end
+        sparser:sparser = (function node_setSparser():sparser {
+            require(`${js}parse.js`);
+            return global.sparser;
+        }()),
+        options:any = sparser.options,
         text:any     = {
             angry    : "\u001b[1m\u001b[31m",
             blue     : "\u001b[34m",
@@ -134,7 +132,7 @@ interface directoryList extends Array<directoryItem> {
                         defined: "List all options and their definitions to the shell."
                     },
                     {
-                        code: "sparser options mode",
+                        code: "sparser options performance",
                         defined: "Writes details about the specified option to the shell."
                     },
                     {
@@ -147,11 +145,11 @@ interface directoryList extends Array<directoryItem> {
                 description: "Executes the Sparser application 11 times.  The first execution is dropped and the remaining 10 are averaged.  Specify a complete Sparser terminal command.",
                 example: [
                         {
-                        code: "sparser performance beautify source:\"js/services.js\" method_chain:3",
+                        code: "sparser performance parse source:\"js/services.js\" method_chain:3",
                         defined: "Just specify the actual command to execute.  Sparser will execute the provided command as though the 'performance' command weren't there."
                     },
                     {
-                        code: "sparser performance base64 js/services.js",
+                        code: "sparser performance lint js/lexers",
                         defined: "The command to test may be any command supported by Sparser's terminal services."
                     }
                 ]
@@ -180,7 +178,7 @@ interface directoryList extends Array<directoryItem> {
                 description: "Builds the application and then runs all the test commands",
                 example: [{
                     code: "sparser test",
-                    defined: "After building the code, it will lint the JavaScript output, test Node.js commands as simulations, and validate the Sparser modes against test samples."
+                    defined: "After building the code, it will lint the JavaScript output, test Node.js commands as simulations, and validate the Sparser code units against test samples."
                 }]
             },
             testprep: {
@@ -254,10 +252,6 @@ interface directoryList extends Array<directoryItem> {
             require(`${js}parse.js`);
             return [];
         }()),
-        sparser:sparser = (function node_setSparser():sparser {
-            require(`${js}parse.js`);
-            return global.sparser;
-        }()),
         apps:any = {};
     let verbose:boolean = false,
         errorflag:boolean = false,
@@ -265,8 +259,7 @@ interface directoryList extends Array<directoryItem> {
             let comkeys:string[] = Object.keys(commands),
                 filtered:string[] = [],
                 a:number = 0,
-                b:number = 0,
-                mode:string = "";
+                b:number = 0;
             if (process.argv[2] === undefined) {
                 console.log("");
                 console.log("Sparser requires a command. Try:");
@@ -286,57 +279,6 @@ interface directoryList extends Array<directoryItem> {
                 commandFilter = function node_command_commandFilter(item:string):boolean {
                     if (item.indexOf(arg.slice(0, a)) === 0) {
                         return true;
-                    }
-                    return false;
-                },
-                modeval = function node_command_modeval():boolean {
-                    let a:number = 0,
-                        diff:boolean = false,
-                        source:boolean = false;
-                    const len:number = process.argv.length;
-                    if (len > 0) {
-                        do {
-                            if (process.argv[a].indexOf("mode") === 0) {
-                                if (process.argv[a].indexOf("beautify") > 0) {
-                                    mode = "beautify";
-                                } else if (process.argv[a].indexOf("diff") > 0) {
-                                    mode = "diff";
-                                } else if (process.argv[a].indexOf("minify") > 0) {
-                                    mode = "minify";
-                                } else if (process.argv[a].indexOf("parse") > 0) {
-                                    mode = "parse";
-                                } else {
-                                    return false;
-                                }
-                                console.log("");
-                                console.log(`${boldarg} is not a supported command. Sparser is assuming command ${text.bold + text.cyan + mode + text.none}.`);
-                                console.log("");
-                                return true;
-                            }
-                            if (process.argv[a].replace(/\s+/g, "").indexOf("source:") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source=") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source\"") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("source'") === 0) {
-                                source = true;
-                            } else if (process.argv[a].replace(/\s+/g, "").indexOf("diff:") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff=") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff\"") === 0 || process.argv[a].replace(/\s+/g, "").indexOf("diff'") === 0) {
-                                diff = true;
-                            }
-                            a = a + 1;
-                        } while (a < len);
-                        if (source === true || arg.replace(/\s+/g, "").indexOf("source:") === 0 || arg.replace(/\s+/g, "").indexOf("source=") === 0 || arg.replace(/\s+/g, "").indexOf("source\"") === 0 || arg.replace(/\s+/g, "").indexOf("source'") === 0) {
-                            if (source === false) {
-                                process.argv.push(arg);
-                            }
-                            if (diff === true || arg.replace(/\s+/g, "").indexOf("diff:") === 0 || arg.replace(/\s+/g, "").indexOf("diff=") === 0 || arg.replace(/\s+/g, "").indexOf("diff\"") === 0 || arg.replace(/\s+/g, "").indexOf("diff'") === 0) {
-                                if (diff === false) {
-                                    process.argv.push(arg);
-                                }
-                                mode = "diff";
-                            } else {
-                                mode = "beautify";
-                            }
-                            console.log("");
-                            console.log(`No supported command found.  Sparser is assuming command ${text.bold + text.cyan + mode + text.none}.`);
-                            console.log("");
-                            return true;
-                        }
                     }
                     return false;
                 };
@@ -365,9 +307,6 @@ interface directoryList extends Array<directoryItem> {
             } while (filtered.length > 1 && a < len);
 
             if (filtered.length < 1 || (filtered[0] === "debug" && filtered.length < 2)) {
-                if (modeval() === true) {
-                    return mode;
-                }
                 console.log(`Command ${boldarg} is not a supported command.`);
                 console.log("");
                 console.log("Please try:");
@@ -378,9 +317,6 @@ interface directoryList extends Array<directoryItem> {
                 return "";
             }
             if (filtered.length > 1 && apps[arg] !== undefined) {
-                if (modeval() === true) {
-                    return mode;
-                }
                 console.log(`Command '${boldarg}' is ambiguous as it could refer to any of: [${text.cyan + filtered.join(", ") + text.none}]`);
                 process.exit(1);
                 return "";
@@ -473,12 +409,8 @@ interface directoryList extends Array<directoryItem> {
             readOptions = function node_args_readOptions():void {
                 const list:string[] = process.argv,
                     def:optionDef = sparser.libs.optionDef,
-                    keys:string[] = (command === "options")
-                        ? Object.keys(def.mode)
-                        : [],
-                    obj = (command === "options")
-                        ? def.mode
-                        : options,
+                    keys:string[] = Object.keys(def),
+                    obj = options,
                     optionName = function node_args_optionName(bindArgument:boolean):void {
                         if (a === 0 || options[list[a]] === undefined) {
                             if (keys.indexOf(list[a]) < 0 && options[list[a]] === undefined) {
@@ -613,6 +545,7 @@ interface directoryList extends Array<directoryItem> {
                     "npminstall",
                     "typescript",
                     "libraries",
+                    "demo",
                     "options_markdown"
                 ],
                 test: [
@@ -625,6 +558,9 @@ interface directoryList extends Array<directoryItem> {
                 ? "test"
                 : "build",
             orderlen:number = order[type].length,
+            def:optionDef = sparser.libs.optionDef,
+            optkeys:string[] = Object.keys(def),
+            keyslen:number = optkeys.length,
             heading = function node_apps_build_heading(message:string):void {
                 if (firstOrder === true) {
                     console.log("");
@@ -704,31 +640,148 @@ interface directoryList extends Array<directoryItem> {
                 order[type].splice(0, 1);
                 phases[phase]();
             },
+            injection = function node_apps_build_injection(inject:inject):string {
+                const thirds:[string, string, string] = [
+                    inject.file.slice(0, inject.file.indexOf(inject.start) + inject.start.length) + node.os.EOL,
+                    inject.message,
+                    inject.file.slice(inject.file.indexOf(inject.end))
+                ];
+                return thirds.join("");
+            },
             // These are all the parts of the execution cycle, but their order is dictated by the 'order' object.
             phases = {
+                // add version and option data to the demo tool html
+                demo: function node_apps_build_demo():void {
+                    heading("Adding version and options to the demo tool");
+                    node.fs.readFile(`${projectPath}demo${sep}index.xhtml`, "utf8", function node_apps_build_demo_read(er:Error, html:string):void {
+                        const opts:string[] = ["<ul>"];
+                        let a:number = 0,
+                            b:number = 0,
+                            optName:string = "",
+                            opt:option,
+                            vals:string[] = [],
+                            vallen:number = 0,
+                            select:boolean = false;
+                        if (er !== null) {
+                            apps.errout([er.toString()]);
+                            return;
+                        }
+                        do {
+                            optName = optkeys[a];
+                            if (optName !== "source") {
+                                opt = def[optName];
+                                opts.push(`<li id="${optName}">`);
+                                if (opt.type === "boolean") {
+                                    opts.push(`<h3>${opt.label}</h3>`);
+                                    if (opt.default === true) {
+                                        opts.push(`<span><input type="radio" id="option-false-${optName}" name="option-${optName}" value="false"/> <label for="option-false-${optName}">false</label></span>`);
+                                        opts.push(`<span><input type="radio" checked="checked" id="option-true-${optName}" name="option-${optName}" value="true"/> <label for="option-true-${optName}">true</label></span>`);
+                                    } else {
+                                        opts.push(`<span><input type="radio" checked="checked" id="option-false-${optName}" name="option-${optName}" value="false"/> <label for="option-false-${optName}">false</label></span>`);
+                                        opts.push(`<span><input type="radio" id="option-true-${optName}" name="option-${optName}" value="true"/> <label for="option-true-${optName}">true</label></span>`);
+                                    }
+                                    select = false;
+                                } else {
+                                    opts.push(`<h3><label for="option-${optName}" class="label">${opt.label}</label></h3>`);
+                                    if (opt.type === "number" || (opt.type === "string" && opt.values === undefined)) {
+                                        opts.push(`<input type="text" id="option-${optName}" value="${opt.default}" data-type="${opt.type}"/>`);
+                                        select = false;
+                                    } else {
+                                        opts.push(`<select id="option-${optName}">`);
+                                        if (optName === "format") {
+                                            opts.push("<option data-description=\"html\" selected=\"selected\">html</option>");
+                                        }
+                                        vals = Object.keys(opt.values);
+                                        vallen = vals.length;
+                                        b = 0;
+                                        do {
+                                            opts.push(`<option data-description="${opt.values[vals[b]].replace(/"/g, "&quot;")}" ${
+                                                (opt.default === vals[b] && optName !== "format")
+                                                    ? "selected=\"selected\""
+                                                    : ""
+                                            }>${vals[b]}</option>`);
+                                            b = b + 1;
+                                        } while (b < vallen);
+                                        opts.push(`</select>`);
+                                        select = true;
+                                    }
+                                }
+                                opts.push("<table><tbody>");
+                                opts.push(`<tr><th>Name</th><td class="option-name">${optName}</td></tr>`);
+                                opts.push(`<tr><th>Type</th><td>${def[optName].type}</td></tr>`);
+                                opts.push(`<tr><th>Default</th><td>${def[optName].default.toString()}</td></tr>`);
+                                opts.push("<tr><th>Usage</th><td class=\"option-usage\">");
+                                if (def[optName].lexer[0] === "all") {
+                                    opts.push(`options.${optName}`);
+                                } else {
+                                    b = 0;
+                                    vallen = def[optName].lexer.length;
+                                    if (vallen < 2) {
+                                        opts.push(`options.lexer_options.<strong>${def[optName].lexer[b]}</strong>.${optName}`);
+                                    } else {
+                                        vals = [];
+                                        do {
+                                            vals.push(`<span>options.lexer_options.<strong>${def[optName].lexer[b]}</strong>.${optName}</span>`);
+                                            b = b + 1;
+                                        } while (b < vallen);
+                                        opts.push(vals.join(""));
+                                    }
+                                }
+                                opts.push("</td></tr>");
+                                opts.push(`<tr><th>Description</th><td class="option-description">${opt.definition.replace(/"/g, "&quot;")}`);
+                                if (select === true) {
+                                    if (optName === "format") {
+                                        opts.push(` <span>&bullet; <strong>html</strong> &#8212; Renders the output into an HTML table. This option value is only available in this demo tool.</span>`);
+                                    } else if (opt.values[String(opt.default)].indexOf("example: ") > 0) {
+                                        opts.push(` <span>&bullet; <strong>${opt.default}</strong> &#8212; ${opt.values[String(opt.default)].replace("example: ", "example: <code>").replace(/\.$/, "</code>.")}</span>`);
+                                    } else {
+                                        opts.push(` <span>&bullet; <strong>${opt.default}</strong> &#8212; ${opt.values[String(opt.default)]}</span>`);
+                                    }
+                                }
+                                opts.push("</td></tr></tbody></table>");
+                                opts.push(`</li>`);
+                            }
+                            a = a + 1;
+                        } while (a < keyslen);
+                        opts.push("</ul>");
+                        html = injection({
+                            end: "<!-- option data end -->",
+                            file: html.replace(/<p\s+class="version">\d+\.\d+\.\d+<\/p>/, `<p class="version">${sparser.version.number}</p>`),
+                            message: opts.join(""),
+                            start: "<!-- option data start -->"
+                        });
+                        node.fs.writeFile(`${projectPath}demo${sep}index.xhtml`, html, {
+                            encoding: "utf8"
+                        }, function node_apps_build_demo_read_write(erw:Error):void {
+                            if (erw !== null) {
+                                apps.errout([erw.toString()]);
+                                return;
+                            }
+                            next("Demo tool updated with currention options and version number.");
+                        });
+                    });
+                },
                 // read JS files and combine them into fewer JS files
                 libraries: function node_apps_build_libraries():void {
                     const libfiles:string[] = [],
                         opts:[string, string] = (function node_apps_build_libraries_modifyFile_read_buildDefault():[string, string] {
                             const obj:any = {
                                     lexer_options: {}
-                                },
-                                optkeys:string[] = Object.keys(sparser.libs.optionDef),
-                                keyslen:number = optkeys.length;
+                                };
                             let a:number = 0,
                                 b:number = 0,
                                 lexlen:number = 0;
                             do {
-                                if (sparser.libs.optionDef[optkeys[a]].lexer[0] === "all") {
-                                    obj[optkeys[a]] = sparser.libs.optionDef[optkeys[a]].default;
+                                if (def[optkeys[a]].lexer[0] === "all") {
+                                    obj[optkeys[a]] = def[optkeys[a]].default;
                                 } else {
                                     b = 0;
-                                    lexlen = sparser.libs.optionDef[optkeys[a]].lexer.length;
+                                    lexlen = def[optkeys[a]].lexer.length;
                                     do {
-                                        if (obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]] === undefined) {
-                                            obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]] = {};
+                                        if (obj.lexer_options[def[optkeys[a]].lexer[b]] === undefined) {
+                                            obj.lexer_options[def[optkeys[a]].lexer[b]] = {};
                                         }
-                                        obj.lexer_options[sparser.libs.optionDef[optkeys[a]].lexer[b]][optkeys[a]] = sparser.libs.optionDef[optkeys[a]].default;
+                                        obj.lexer_options[def[optkeys[a]].lexer[b]][optkeys[a]] = def[optkeys[a]].default;
                                         b = b + 1;
                                     } while (b < lexlen);
                                 }
@@ -755,13 +808,7 @@ interface directoryList extends Array<directoryItem> {
                                             apps.error([ers.toString()]);
                                             return;
                                         }
-                                        node.fs.writeFile(`${js}services.js`, servicefile, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo_writeServices(ers:Error) {
-                                            if (ers !== null) {
-                                                apps.error([ers.toString()]);
-                                                return;
-                                            }
-                                            next(message);
-                                        });
+                                        next(message);
                                     });
                                 });
                             });
@@ -785,13 +832,8 @@ interface directoryList extends Array<directoryItem> {
                                         parsefile = filedata
                                             .replace(/global\.sparser/g, "sparser")
                                             .replace(/sparser\s*=\s*sparser;?\s*\}\(\)\);\s*$/, "")
-                                            .replace(/defaults\s*:\s*\{\},/, `defaults:${opts[0]},version:${opts[1]},`);
-                                    } else if (filename === "services.js") {
-                                        const split:string[] = [];
-                                        split[0] = filedata.slice(0, filedata.indexOf("// node option default start") + 28);
-                                        split[1] = `options=${opts[0]},version=${opts[1]},`
-                                        split[2] = filedata.slice(filedata.indexOf("// node option default end"));
-                                        servicefile = split.join(node.os.EOL);
+                                            .replace(/options\s*:\s*\{\},/, `options:${opts[0]},`)
+                                            .replace(/version\s*:\s*\{(\s*((date)|(number))\s*:\s*("|'){2}\s*,?\s*){2}\}/, `version:${opts[1]}`);
                                     } else {
                                         libfiles.push(filedata
                                             .replace(/global\.sparser/g, "sparser")
@@ -805,7 +847,7 @@ interface directoryList extends Array<directoryItem> {
                                 }
                             });
                         },
-                        stat = function node_apps_build_libraries_libraryFiles_stat(pathitem:string) {
+                        stat = function node_apps_build_libraries_libraryFiles_stat(pathitem:string):void {
                             node.fs.stat(pathitem, function node_apps_build_libraries_libraryFiles_stat_callback(errs:Error, stats:Stats):void {
                                 if (errs !== null) {
                                     apps.errout([errs.toString()]);
@@ -832,10 +874,8 @@ interface directoryList extends Array<directoryItem> {
                     let a:number = 0,
                         filelen: number = 0,
                         demofile:string = "",
-                        parsefile:string = "",
-                        servicefile:string = "";
+                        parsefile:string = "";
                     heading("Merging files for simplified application access.");
-                    libFiles.push(`${js}services.js`);
                     libFiles.push(`${js}parse.js`);
                     libFiles.push(`${js}demo${sep}demo.js`);
                     filelen = libFiles.length;
@@ -856,8 +896,8 @@ interface directoryList extends Array<directoryItem> {
 
                                 number = JSON.parse(data).version;
                                 // update information for display in current build
-                                version.date = datestr;
-                                version.number = number;
+                                sparser.version.date = datestr;
+                                sparser.version.number = number;
                                 opts[1] = `{date:"${datestr}",number:"${number}"}`;
                                 libFiles.forEach(function node_apps_build_libraries_libraryFiles_each(value:string) {
                                     stat(value);
@@ -904,10 +944,7 @@ interface directoryList extends Array<directoryItem> {
                 },
                 // phase optionsMarkdown builds a markdown file of options documentation
                 options_markdown: function node_apps_build_optionsMarkdown():void {
-                    const def:optionDef = sparser.libs.optionDef,
-                        keys:string[] = Object.keys(def),
-                        len:number = keys.length,
-                        doc:string[] = ["# Sparser Options"],
+                    const doc:string[] = ["# Sparser Options"],
                         lexers:lexerDoc = {},
                         lexerWrite = function node_apps_build_optionsMarkdown_lexerWrite():void {
                             const lexkeys:string[] = Object.keys(lexers);
@@ -967,32 +1004,32 @@ interface directoryList extends Array<directoryItem> {
                     heading("Writing options documentation in markdown format.");
                     do {
                         doc.push("");
-                        doc.push(`## ${keys[a]}`);
+                        doc.push(`## ${optkeys[a]}`);
                         doc.push("property   | value");
                         doc.push("-----------|---");
-                        doc.push(`default    | ${def[keys[a]].default}`);
-                        doc.push(`definition | ${def[keys[a]].definition}`);
-                        doc.push(`label      | ${def[keys[a]].label}`);
-                        doc.push(`lexer      | ${def[keys[a]].lexer.join(", ")}`);
-                        doc.push(`type       | ${def[keys[a]].type}`);
-                        if (def[keys[a]].lexer[0] === "all") {
-                            doc.push(`use        | options.${keys[a]}`);
+                        doc.push(`default    | ${def[optkeys[a]].default}`);
+                        doc.push(`definition | ${def[optkeys[a]].definition}`);
+                        doc.push(`label      | ${def[optkeys[a]].label}`);
+                        doc.push(`lexer      | ${def[optkeys[a]].lexer.join(", ")}`);
+                        doc.push(`type       | ${def[optkeys[a]].type}`);
+                        if (def[optkeys[a]].lexer[0] === "all") {
+                            doc.push(`use        | options.${optkeys[a]}`);
                         } else {
                             vals = [];
                             b = 0;
-                            lenv = def[keys[a]].lexer.length;
+                            lenv = def[optkeys[a]].lexer.length;
                             do {
-                                vals.push(`options.lexer_options.**${def[keys[a]].lexer[b]}**.${keys[a]}`);
-                                if (lexers[def[keys[a]].lexer[b]] === undefined) {
-                                    lexers[def[keys[a]].lexer[b]] = [];
+                                vals.push(`options.lexer_options.**${def[optkeys[a]].lexer[b]}**.${optkeys[a]}`);
+                                if (lexers[def[optkeys[a]].lexer[b]] === undefined) {
+                                    lexers[def[optkeys[a]].lexer[b]] = [];
                                 }
-                                lexers[def[keys[a]].lexer[b]].push(keys[a]);
+                                lexers[def[optkeys[a]].lexer[b]].push(optkeys[a]);
                                 b = b + 1;
                             } while (b < lenv);
                             doc.push(`use        | ${vals.join(" \\| ")}`);
                         }
-                        if (def[keys[a]].values !== undefined) {
-                            vals = Object.keys(def[keys[a]].values);
+                        if (def[optkeys[a]].values !== undefined) {
+                            vals = Object.keys(def[optkeys[a]].values);
                             valstring = [`values | ${vals[0]}`];
                             b = 1;
                             lenv = vals.length;
@@ -1005,12 +1042,12 @@ interface directoryList extends Array<directoryItem> {
                             doc.push("");
                             doc.push("### Value Definitions");
                             do {
-                                doc.push(`* **${vals[b]}** - ${def[keys[a]].values[vals[b]].replace("example: ", "example: `").replace(/.$/, "`.")}`);
+                                doc.push(`* **${vals[b]}** - ${def[optkeys[a]].values[vals[b]].replace("example: ", "example: `").replace(/.$/, "`.")}`);
                                 b = b + 1;
                             } while (b < lenv);
                         }
                         a = a + 1;
-                    } while (a < len);
+                    } while (a < keyslen);
                     lexerWrite();
                     node.fs.writeFile(`${projectPath}docs${sep}options.md`, doc.join("\n"), "utf8", function node_apps_build_optionsMarkdown_writeFile(err:Error) {
                         if (err !== null) {
@@ -1198,7 +1235,7 @@ interface directoryList extends Array<directoryItem> {
                         callback: function node_apps_directory_startPath_callback(result:string[]|directoryList) {
                             const output:string[] = [];
                             if (verbose === true) {
-                                apps.wrapit(output, `Pretty Diff found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
+                                apps.wrapit(output, `Sparser found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
                             }
                             apps.log(output, JSON.stringify(result));
                         },
@@ -1220,7 +1257,7 @@ interface directoryList extends Array<directoryItem> {
                     if (process.argv.length < 1) {
                         apps.errout([
                             "No path supplied for the directory command. For an example please see:",
-                            `    ${text.cyan}prettydiff commands directory${text.none}`
+                            `    ${text.cyan}sparser commands directory${text.none}`
                         ]);
                         return "";
                     }
@@ -1413,11 +1450,9 @@ interface directoryList extends Array<directoryItem> {
             debug = function node_apps_errout_debug():void {
                 const stack:string = new Error().stack,
                     source:string = options.source,
-                    diff:string = options.diff,
                     totalmem:number = node.os.totalmem(),
                     freemem:number = node.os.freemem();
                 delete options.source;
-                delete options.diff;
                 console.log("");
                 console.log("---");
                 console.log("");
@@ -1451,22 +1486,11 @@ interface directoryList extends Array<directoryItem> {
                 console.log(cli);
                 console.log("```");
                 console.log("");
-                if (command === "beautify" || command === "diff" || command === "minify" || command === "parse") {
-                    console.log(`${text.green}## Source Sample${text.none}`);
-                    console.log("```");
-                    console.log(source);
-                    console.log("```");
-                    console.log("");
-                } else {
-                    delete options.parsed;
-                }
-                if (command === "diff") {
-                    console.log(`${text.green}## Diff Sample${text.none}`);
-                    console.log("```");
-                    console.log(diff);
-                    console.log("```");
-                    console.log("");
-                }
+                console.log(`${text.green}## Source Sample${text.none}`);
+                console.log("```");
+                console.log(source);
+                console.log("```");
+                console.log("");
                 console.log(`${text.green}## Options${text.none}`);
                 console.log("```");
                 console.log(options);
@@ -1618,7 +1642,7 @@ interface directoryList extends Array<directoryItem> {
         if (address === undefined) {
             apps.errout([
                 "The get command requires an address in http/https scheme.",
-                `Please execute ${text.cyan}prettydiff commands get${text.none} for examples.`
+                `Please execute ${text.cyan}sparser commands get${text.none} for examples.`
             ]);
             return;
         }
@@ -1630,7 +1654,7 @@ interface directoryList extends Array<directoryItem> {
             apps.errout([
                 `Address: ${text.angry + address + text.none}`,
                 "The get command requires an address in http/https scheme.",
-                `Please execute ${text.cyan}prettydiff commands get${text.none} for examples.`
+                `Please execute ${text.cyan}sparser commands get${text.none} for examples.`
             ]);
             return;
         }
@@ -1827,13 +1851,18 @@ interface directoryList extends Array<directoryItem> {
         return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
     };
     // provides a detailed list of supported languages by available lexer
-    apps.inventory = function services_action_inventory():void {
+    apps.inventory = function services_apps_inventory():void {
+        const textwrap:string[] = [];
+        console.log("");
         console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
         console.log("");
-        console.log(apps.wrapit("A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.", 0));
-        node.fs.readdir(`${js}lexers`, function services_action_inventory_readdir(err, files) {
+        apps.wrapit(textwrap,"A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.");
+        textwrap.forEach(function services_apps_inventory(value:string):void {
+            console.log(value);
+        });
+        node.fs.readdir(`${projectPath}lexers`, function services_action_inventory_readdir(err, files) {
             if (err !== null) {
-                return apps.errout(err);
+                return apps.errout([err.toString()]);
             }
             const langs = {};
             let index:number = files.length;
@@ -1845,11 +1874,11 @@ interface directoryList extends Array<directoryItem> {
                 }
             } while (index > 0);
             files.forEach(function services_action_inventory_readdir_each(filename) {
-                node.fs.readFile(`${js}lexers${sep + filename}`, {
+                node.fs.readFile(`${projectPath}lexers${sep + filename}`, {
                     encoding: "utf8"
                 }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
                     if (errf !== null) {
-                        return apps.errout(errf);
+                        return apps.errout([errf.toString()]);
                     }
                     langs[filename] = {
                         keys: [],
@@ -1996,7 +2025,7 @@ interface directoryList extends Array<directoryItem> {
                     lens:number = 0,
                     comm:string = "";
                 if (len < 1) {
-                    apps.errout([`Please run the build: ${text.cyan}prettydiff build${text.none}`]);
+                    apps.errout([`Please run the build: ${text.cyan}sparser build${text.none}`]);
                     return;
                 }
                 do {
@@ -2045,7 +2074,7 @@ interface directoryList extends Array<directoryItem> {
         if (command === "commands") {
             output.push("");
             output.push("For examples and usage instructions specify a command name, for example:");
-            output.push(`globally installed - ${text.green}prettydiff commands hash${text.none}`);
+            output.push(`globally installed - ${text.green}sparser commands hash${text.none}`);
             output.push(`locally installed - ${text.green}node js/services commands hash${text.none}`);
             output.push("");
             output.push(`Commands are tested using the ${text.green}simulation${text.none} command.`);
@@ -2072,7 +2101,7 @@ interface directoryList extends Array<directoryItem> {
             });
             if (verbose === true) {
                 console.log("");
-                console.log(`Sparser version ${text.angry + version.number + text.none}`);
+                console.log(`Sparser version ${text.angry + sparser.version.number + text.none}`);
                 apps.humantime(true);
             }
         };
@@ -2183,32 +2212,10 @@ interface directoryList extends Array<directoryItem> {
         if (process.argv[0] === undefined) {
             return apps.errout([`The ${text.angry}performance${text.none} command requires a relative path to a file`]);
         }
-        const optionValue = function node_apps_performance_optionValue(name:string, defaultValue:string|number|boolean, ):any {
-                if (process.argv.join("").indexOf(`${name}:`) > -1) {
-                    let argNumb:number = process.argv.length;
-                    do {
-                        argNumb = argNumb - 1;
-                        if (process.argv[argNumb].indexOf(`${name}:`) === 0) {
-                            if (defaultValue === true || defaultValue === false) {
-                                return process.argv[argNumb].replace(`${name}:`, "") === "true";
-                            }
-                            if (typeof defaultValue === "number") {
-                                return Number(process.argv[argNumb].replace(`${name}:`, ""));
-                            }
-                            return process.argv[argNumb].replace(`${name}:`, "");
-                        }
-                    } while (argNumb > 0);
-                    if (defaultValue === true || defaultValue === false) {
-                        return process.argv[argNumb].replace(`${name}:`, "") === "true";
-                    }
-                    if (typeof defaultValue === "number") {
-                        return Number(process.argv[argNumb].replace(`${name}:`, ""));
-                    }
-                    return process.argv[argNumb].replace(`${name}:`, "");
-                }
-                return defaultValue;
-            },
-            sourcePath:string = node.path.normalize(optionValue("source", process.argv[3]));
+        const sourcePath:string = (process.argv.length > 1)
+            ? node.path.normalize(process.argv[1])
+            : "";
+        apps.fileOptions(sourcePath);
         node.fs.readFile(sourcePath, {
             encoding: "utf8"
         }, function node_apps_performance_readFile(errfile, filedata) {
@@ -2219,63 +2226,48 @@ interface directoryList extends Array<directoryItem> {
                 }
                 return apps.errout([errfile]);
             }
-            require(`${js}parse`);
-            require(`${js}language`);
+            let index:number = 11,
+                total:number = 0,
+                low:number = 0,
+                high:number = 0,
+                start:[number, number],
+                end:[number, number];
             const lang = sparser.libs.language.auto(filedata, "javascript"),
-                options:parseOptions = {
-                    correct: optionValue("correct", false),
-                    crlf: optionValue("crlf", false),
-                    language: lang[0],
-                    lexer: lang[1],
-                    lexer_options: {},
-                    format: "arrays",
-                    preserve_comment: false,
-                    source: filedata,
-                    wrap: optionValue("wrap", 0)
-                };
-            require(`${js}lexers${sep}all`)(options, function node_apps_performance_readFile_lexers() {
-                let index:number = 11,
-                    total:number = 0,
-                    low:number = 0,
-                    high:number = 0,
-                    start:[number, number],
-                    end:[number, number];
-                const store:number[] = [],
-                    output:data = sparser.parser(options),
-                    interval = function node_apps_performance_readFile_readdir_interval():void {
-                        index = index - 1;
-                        if (index > -1) {
-                            start = process.hrtime();
-                            sparser.parser(options);
-                            end = process.hrtime(start);
-                            store.push((end[0] * 1e9) + end[1]);
-                            // specifying a delay between intervals allows for garbage collection without interference to the performance testing
-                            setTimeout(node_apps_performance_readFile_readdir_interval, 400);
-                        } else {
-                            console.log("");
-                            store.forEach(function node_apps_performance_readFile_readdir_total(value:number, index:number) {
-                                if (index > 0) {
-                                    console.log(`${text.yellow + index + text.none}: ${value}`);
-                                    total = total + value;
-                                    if (value > high) {
-                                        high = value;
-                                    } else if (value < low) {
-                                        low = value;
-                                    }
-                                } else {
-                                    console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
+                store:number[] = [],
+                output:data = sparser.parser(),
+                interval = function node_apps_performance_readFile_readdir_interval():void {
+                    index = index - 1;
+                    if (index > -1) {
+                        start = process.hrtime();
+                        sparser.parser();
+                        end = process.hrtime(start);
+                        store.push((end[0] * 1e9) + end[1]);
+                        // specifying a delay between intervals allows for garbage collection without interference to the performance testing
+                        setTimeout(node_apps_performance_readFile_readdir_interval, 400);
+                    } else {
+                        console.log("");
+                        store.forEach(function node_apps_performance_readFile_readdir_total(value:number, index:number) {
+                            if (index > 0) {
+                                console.log(`${text.yellow + index + text.none}: ${value}`);
+                                total = total + value;
+                                if (value > high) {
+                                    high = value;
+                                } else if (value < low) {
+                                    low = value;
                                 }
-                            });
-                            console.log("");
-                            console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
-                            console.log(`[${text.cyan + apps.commas(filedata.length) + text.none}] Character size`);
-                            console.log(`[${text.cyan + apps.commas(output.token.length) + text.none}] Token length`);
-                            console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
-                            console.log("");
-                        }
-                    };
-                interval();
-            });
+                            } else {
+                                console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
+                            }
+                        });
+                        console.log("");
+                        console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
+                        console.log(`[${text.cyan + apps.commas(filedata.length) + text.none}] Character size`);
+                        console.log(`[${text.cyan + apps.commas(output.token.length) + text.none}] Token length`);
+                        console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
+                        console.log("");
+                    }
+                };
+            interval();
         });
     };
     // runs services: http, web sockets, and file system watch.  Allows rapid testing with automated rebuilds
@@ -2404,7 +2396,7 @@ interface directoryList extends Array<directoryItem> {
                     timeStore = date.valueOf();
                     return timeStore;
                 };
-            if ((extension === "ts" || extension === "css") && timeStore < Date.now() - 1000) {
+            if (extension === "ts" && timeStore < Date.now() - 1000) {
                 let start:number,
                     compile:number,
                     duration = function node_apps_server_watch_duration(length:number):void {
@@ -2462,6 +2454,8 @@ interface directoryList extends Array<directoryItem> {
                     ws.broadcast("reload");
                     return;
                 });
+            } else if (extension === "css" || extension === "xhtml") {
+                ws.broadcast("reload");
             }
         });
         server.on("error", serverError);
@@ -2494,11 +2488,11 @@ interface directoryList extends Array<directoryItem> {
                 return auto[1];
             }());
             options.format = "testprep";
-            console.log(sparser.parser(options));
+            console.log(sparser.parser());
             apps.log([`${text.green}Test case generated!${text.none}`], "");
         });
     };
-    // unit test validation runner for Sparser mode commands
+    // unit test validation runner for Sparser code units
     apps.validation = function node_apps_validation(callback:Function):void {
         require(`${js}parse`);
         const files  = {
@@ -2639,7 +2633,7 @@ interface directoryList extends Array<directoryItem> {
                             apps.fileOptions(files.code[a][0]);
                             options.lexer = currentlex;
                             options.format = "testprep";
-                            output        = sparser.parser(options);
+                            output        = sparser.parser();
                             str                  = (sparser.parseerror === "")
                                 ? output
                                 : sparser.parseerror;

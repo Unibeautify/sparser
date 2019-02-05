@@ -8,7 +8,7 @@
                 ltoke:string       = "";
             const parse:parse     = sparser.parse,
                 data:data        = parse.data,
-                options:parseOptions     = parse.parseOptions,
+                options:any = sparser.options,
                 colors:string[]      = [],
                 colorNames  = {
                     aliceblue           : 0.9288006825347457,

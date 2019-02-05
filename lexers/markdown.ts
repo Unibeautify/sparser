@@ -11,7 +11,7 @@
                 stack:string[] = [];
             const parse: parse    = sparser.parse,
                 data   : data     = parse.data,
-                options: parseOptions  = parse.parseOptions,
+                options: any      = sparser.options,
                 lines  : string[] = (options.crlf === true)
                     // eslint-disable-next-line
                     ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
