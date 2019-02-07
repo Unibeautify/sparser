@@ -1,3 +1,5 @@
+import { IpcNetConnectOpts } from "net";
+
 /*jslint browser:true */
 /*eslint-env browser*/
 /*global ace, performance, window*/
@@ -5,23 +7,29 @@
 (function web() {
     "use strict";
     let editor:any,
+        options:any = window.sparser.options,
         lang:[string, string, string] = ["", "", ""];
     const sparser:sparser = window.sparser,
+        def:optionDef = sparser.libs.optionDef,
+        query:{} = {},
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input:HTMLTextAreaElement   = <HTMLTextAreaElement>document.getElementById("input"),
         dataarea:HTMLElement        = document.getElementById("data"),
         datatext:HTMLTextAreaElement = <HTMLTextAreaElement>document.getElementById("datatext"),
-        parseCode:string = (Object.keys(window).indexOf("localStorage") > -1)
-            ? window.localStorage.getItem("parseCode")
-            : "",
-        opsStore:string = (Object.keys(window).indexOf("localStorage") > -1)
-            ? window.localStorage.getItem("opsStore")
-            : "",
         textsize = (navigator.userAgent.indexOf("like Gecko") < 0 && navigator.userAgent.indexOf("Gecko") > 0 && navigator.userAgent.indexOf("Firefox") > 0)
             ? 13
             : 13.33,
-        options:any = sparser.options,
+        // eliminate page navigation by clicking the backspace key
+        backspace = function web_backspace(event) {
+            const e = event || window.event,
+                f = e.srcElement || e.target;
+            if (e.keyCode === 8 && f.nodeName !== "textarea" && ((f.nodeName === "input" && f.type !== "text") || f.nodeName !== "input")) {
+                e.preventDefault();
+                return false;
+            }
+        },
+        // sparser event handler
         handler = function web_handler():void {
             let output:any,
                 startTime:number = 0;
@@ -152,11 +160,6 @@
                             tr.setAttribute("class", "header");
                             parent.appendChild(tr);
                         };
-                    
-                    if (sparser.lexers[options.lexer] === undefined) {
-                        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                        return;
-                    }
                     header(body);
                     table.appendChild(body);
                     body = document.createElement("tbody");
@@ -174,114 +177,25 @@
                     dataarea.innerHTML = "";
                     dataarea.appendChild(table);
                 };
-            options.lexer_options = {};
             Object.keys(sparser.lexers).forEach(function web_handler_lexers(value):void {
                 options.lexer_options[value] = {};
             });
-            if (editor !== undefined && (acetest === true || lang[0] !== "")) {
-                editor.getSession().setMode(`ace/mode/${lang[0]}`);
-            }
             lang = sparser.libs.language.auto(value, "javascript");
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
-            if (Object.keys(window).indexOf("localStorage") > -1) {
-                localStorage.setItem("parseCode", value);
-            }
-            {
-                const params:string[] = (location.href.indexOf("?") > 0)
-                    ? location.href.split("?")[1].split("&")
-                    : [];
-                if (params.length > 1) {
-                    let aa:number = params.length,
-                        name:string = "",
-                        values:string = "";
-                    do {
-                        aa = aa - 1;
-                        name = params[aa].slice(0, params[aa].indexOf("=")).toLowerCase();
-                        values = (params[aa].indexOf("=") > 0)
-                            ? params[aa].slice(params[aa].indexOf("=") + 1)
-                            : "";
-                        if (options[params[aa]] !== undefined && typeof options[params[aa]] === "boolean") {
-                            options[params[aa]] = true;
-                        } else if (options[name] !== undefined && values !== "") {
-                            if (typeof options[name] === "boolean") {
-                                if (values === "true") {
-                                    options[name] = true;
-                                } else if (values === "false") {
-                                    options[name] = false;
-                                }
-                            } else if (typeof options[name] === "number" && isNaN(Number(values)) === false) {
-                                options[name] = Number(values);
-                            } else {
-                                options[name] = values;
-                                if (name === "language") {
-                                    lang[0] = values;
-                                    lang[2] = values;
-                                } else if (name === "lexer") {
-                                    lang[1] = values;
-                                }
-                            }
-                        } else if (name === "quote_convert" || name === "quoteconvert") {
-                            if (values === "single" || values === "double") {
-                                options.lexer_options.markup.quote_convert = values;
-                                options.lexer_options.script.quote_convert = values;
-                                options.lexer_options.style.quote_convert = values;
-                            }
-                        } else if (name === "end_comma" || name === "endcomma") {
-                            if (values === "always" || values === "never") {
-                                options.lexer_options.script.end_comma = values;
-                            }
-                        } else if (name === "noleadzero" || name === "no_lead_zero") {
-                            if (values === "true") {
-                                options.lexer_options.style.no_lead_zero = true;
-                            } else if (values === "false") {
-                                options.lexer_options.style.no_lead_zero = false;
-                            }
-                        } else if (name === "objectsort" || name === "object_sort") {
-                            if (values === "true") {
-                                options.lexer_options.script.object_sort = true;
-                                options.lexer_options.style.object_sort = true;
-                            } else if (values === "false") {
-                                options.lexer_options.script.object_sort = false;
-                                options.lexer_options.style.object_sort = false;
-                            }
-                        } else if (name === "preserve_comment" || name === "preservecomment") {
-                            if (values === "true") {
-                                options.preserve_comment = true;
-                            } else {
-                                options.preserve_comment = false;
-                            }
-                        } else if (name === "preserve_text" || name === "preservetext") {
-                            if (values === "true") {
-                                options.lexer_options.markup.preserve_text = true;
-                            } else {
-                                options.lexer_options.markup.preserve_text = false;
-                            }
-                        } else if (name === "tagsort") {
-                            if (values === "true") {
-                                options.lexer_options.markup.tag_sort = true;
-                            } else if (values === "false") {
-                                options.lexer_options.markup.tag_sort = false;
-                            }
-                        } else if (name === "tag_merge" || name === "tagmerge") {
-                            if (values === "true") {
-                                options.lexer_options.markup.tag_merge = true;
-                            } else if (values === "false") {
-                                options.lexer_options.markup.tag_merge = false;
-                            }
-                        } else if (name === "variable_list" || name === "variablelist") {
-                            if (values === "list" || values === "each" || values === "none") {
-                                options.lexer_options.script.variable_list = values;
-                            }
-                        }
-                    } while (aa > 0);
+            if (options.language === "auto") {
+                options.language                       = lang[0];
+                if (editor !== undefined && (acetest === true || lang[0] !== "")) {
+                    editor.getSession().setMode(`ace/mode/${lang[0]}`);
                 }
             }
-            options.language                       = lang[0];
-            options.lexer                          = lang[1];
+            if (options.lexer === "auto") {
+                options.lexer                          = lang[1];
+            }
             document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
             options.source = value;
+            localStorage.setItem("demo", JSON.stringify(options));
             startTime = Math.round(performance.now() * 1000);
             output = sparser.parser();
             (function web_handler_perfParse() {
@@ -289,6 +203,11 @@
                     time = (endTime - startTime) / 1000;
                 document.getElementById("timeparse").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
+            if (sparser.parseerror !== "") {
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return;
+            }
+            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             if (options.format === "html") {
                 builder();
             } else {
@@ -303,52 +222,292 @@
                     time:number = (endTime - startTotal) / 1000;
                 document.getElementById("timetotal").getElementsByTagName("span")[0].innerHTML = time + " milliseconds.";
             }());
-            if (sparser.parseerror !== "") {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        },
+        // toggle display of options
+        toggleOptions = function web_toggleOptions():void {
+            const toggle:HTMLInputElement = <HTMLInputElement>document.getElementById("toggle-options"),
+                opts:HTMLElement = document.getElementById("options");
+            if (toggle.checked === true) {
+                opts.style.display = "block";
             } else {
-                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
+                opts.style.display = "none";
             }
+            localStorage.setItem("toggle-options", toggle.checked.toString());
         },
-        backspace = function web_backspace(event) {
-            const e = event || window.event,
-                f = e.srcElement || e.target;
-            if (e.keyCode === 8 && f.nodeName !== "textarea" && ((f.nodeName === "input" && f.type !== "text") || f.nodeName !== "input")) {
-                e.preventDefault();
-                return false;
+        // maintain state by centeralizing interactions and storing options in localStorage
+        optControls = function web_optControls(event:Event) {
+            const node:HTMLElement = <HTMLElement>event.srcElement || <HTMLElement>event.target,
+                sel:HTMLSelectElement = (node.nodeName.toLowerCase() === "select")
+                    ? <HTMLSelectElement>node
+                    : null,
+                input:HTMLInputElement = (node.nodeName.toLowerCase() === "input")
+                    ? <HTMLInputElement>node
+                    : null,
+                id:string = node.getAttribute("id").replace(/option-(((false)|(true))-)?/, ""),
+                lex:string[] = def[id].lexer,
+                type:string = def[id].type,
+                lexlen:number = lex.length,
+                value:string = (sel === null)
+                    ? input.value
+                    : sel[sel.selectedIndex].innerHTML;
+            let a:number = 0,
+                bool:boolean = false;
+            if (type === "number" && isNaN(Number(value)) === true) {
+                return;
             }
-        },
-        optControls = function web_optControls() {
-
-        },
-        height = function web_inputHeight(scale:number, offset:number):string {
-            const ff:number = (textsize === 13) // variability for Gecko
-                ? (scale === 10) // pull the output down to align to input
-                    ? -0.2
-                    : (offset < -4) // pull input down to eliminate a white bar
-                        ? 0
-                        : -0.2
-                : 0;
-            let heightn:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
-            if (heightn > window.innerHeight) {
-                heightn = window.innerHeight;
+            if (type === "boolean") {
+                if (value === "true") {
+                    bool = true;
+                } else if (value !== "false") {
+                    return;
+                }
             }
-            heightn = (heightn / scale) - (18.975 + offset + ff);
-            return `${heightn}em`;
+            if (def[id].values !== undefined && def[id].values[value] === undefined) {
+                if (id !== "format" || (id === "format" && value !== "html")) {
+                    return;
+                }
+            }
+            if (lex[0] === "all") {
+                options[id] = value;
+            } else {
+                do {
+                    options.lexer_options[lex[a]][id] = value;
+                    a = a + 1;
+                } while (a < lexlen);
+            }
+            if (id === "format") {
+                const data:HTMLElement = document.getElementById("data"),
+                    dataparent:HTMLElement = <HTMLElement>data.parentNode,
+                    text:HTMLElement = document.getElementById("datatext"),
+                    textparent:HTMLElement = <HTMLElement>text.parentNode;
+                if (value === "html") {
+                    dataparent.style.display = "block";
+                    textparent.style.display = "none";
+                    height.html();
+                } else {
+                    dataparent.style.display = "none";
+                    textparent.style.display = "block";
+                    height.textout();
+                }
+            }
+            localStorage.setItem("demo", JSON.stringify(options));
         },
-        aceHeight = function web_aceHeight():void {
-            document.getElementById("input").style.height = height(12, -3.2);
-            editor.setStyle(`height:${height(12, -3.2)}`);
-            editor.resize();
-        },
-        textHeight = function web_textHeight():void {
-            input.style.height = height(textsize, -4.45);
-        },
-        htmlHeight = function web_htmlHeight():void {
-            dataarea.style.height = height(10, 0);
-        },
-        outHeight = function web_outHeight():void {
-            datatext.style.height = height(textsize, -4.45);
+        // math for vertically scalling the input and output areas
+        height = {
+            // actives height scaling for the ace editor
+            ace: function web_height_ace():void {
+                document.getElementById("input").style.height = height.math(12, -3.2);
+                editor.setStyle(`height:${height.math(12, -3.2)}`);
+                editor.resize();
+            },
+            // actives height scaling for the html table output
+            html: function web_height_html():void {
+                dataarea.style.height = height.math(10, 0);
+            },
+            math: function web_height_math(scale:number, offset:number):string {
+                const ff:number = (textsize === 13) // variability for Gecko
+                    ? (scale === 10) // pull the output down to align to input
+                        ? -0.2
+                        : (offset < -4) // pull input down to eliminate a white bar
+                            ? 0
+                            : -0.2
+                    : 0;
+                let heightn:number = Math.max(document.documentElement.scrollHeight, document.getElementsByTagName("body")[0].scrollHeight);
+                if (heightn > window.innerHeight) {
+                    heightn = window.innerHeight;
+                }
+                heightn = (heightn / scale) - (18.975 + offset + ff);
+                return `${heightn}em`;
+            },
+            // actives height scaling for the textarea input
+            textin: function web_height_textin():void {
+                input.style.height = height.math(textsize, -4.45);
+            },
+            // activates height scaling for the textarea output
+            textout: function web_height_textout():void {
+                datatext.style.height = height.math(textsize, -4.45);
+            }
         };
+    window.onresize = function web_fixHeight():void {
+        if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
+            height.ace();
+        } else {
+            height.textin();
+        }
+        if (options.format === "html") {
+            height.html();
+        } else {
+            height.textout();
+        }
+    };
+    document.onkeypress = backspace;
+    document.onkeydown = backspace;
+    window.onerror = function web_onerror(msg:string, source:string):void {
+        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
+    };
+    { // evaluate query string of the URI for option assignment
+        const params:string[] = (location.href.indexOf("?") > 0)
+            ? location.href.split("?")[1].split("&")
+            : [];
+        if (params.length > 1) {
+            let aa:number = params.length,
+                type:string = "",
+                pair:string[] = [];
+            if (params[aa - 1].indexOf("#") > 0) {
+                params[aa - 1] = params[aa - 1].split("#")[0];
+            }
+            do {
+                aa = aa - 1;
+                pair = params[aa].split("=");
+                if (def[pair[0]] !== undefined) {
+                    type = def[pair[0]].type;
+                    if (type === "boolean") {
+                        if (pair.length === 1 || pair[1] === "true") {
+                            query[pair[0]] = true;
+                        } else if (pair[1] === "false") {
+                            query[pair[0]] = false;
+                        }
+                    } else if (type === "number" && isNaN(Number(pair[1])) === false) {
+                        query[pair[0]] = Number(pair[1]);
+                    } else if (type === "string" && pair.length === 2) {
+                        if (def[pair[0]].values === undefined) {
+                            query[pair[0]] = pair[1];
+                        } else if (def[pair[0]].values[pair[1]] !== undefined) {
+                            query[pair[0]] = pair[1];
+                        }
+                    }
+                }
+            } while (aa > 0);
+        }
+    }
+    { // set option defaults and event handlers
+        const select:HTMLCollectionOf<HTMLSelectElement> = document.getElementsByTagName("select"),
+            input:HTMLCollectionOf<HTMLInputElement> = document.getElementsByTagName("input"),
+            lexkeys:string[] = Object.keys(options.lexer_options),
+            lexlen:number = lexkeys.length,
+            inputValues = function web_inputValues(node:HTMLInputElement):void {
+                let b:number = 0;
+                const name:string = node.getAttribute("id").replace(/option-(((false)|(true))-)?/, ""),
+                    saved:string = (function web_selectValues_saved():string {
+                        let c:number = 0;
+                        if (options[name] !== undefined) {
+                            return options[name];
+                        }
+                        if (options.lexer !== "auto" && options.lexer !== "" && options.lexer_options[options.lexer] !== undefined && options.lexer_options[options.lexer][name] !== undefined) {
+                            return options.lexer_options[options.lexer][name];
+                        }
+                        do {
+                            if (options.lexer_options[lexkeys[c]][name] !== undefined) {
+                                return options.lexer_options[lexkeys[c]][name];
+                            }
+                            c = c + 1;
+                        } while (c < lexlen);
+                    }()),
+                    value:string = (query[name] === undefined)
+                        ? (saved === "")
+                            ? def[name].default
+                            : saved
+                        : query[name];
+                if (node.type === "text") {
+                    node.onkeyup = optControls;
+                    node.value = value;
+                } else {
+                    node.onclick = optControls;
+                    if (value === "false" && node.getAttribute("id").indexOf("option-false-") === 0) {
+                        node.checked = true;
+                    } else if (value === "true" && node.getAttribute("id").indexOf("option-true-") === 0) {
+                        node.checked = true;
+                    }
+                }
+                if (def[name].lexer[0] === "all") {
+                    options[name] = value;
+                } else {
+                    b = def[name].lexer.length;
+                    do {
+                        b = b - 1;
+                        options.lexer_options[def[name].lexer[b]][name] = value;
+                    } while (b > 0);
+                }
+            },
+            selectValues = function web_selectValues(node:HTMLSelectElement):void {
+                let b:number = 0;
+                const opts:HTMLCollectionOf<HTMLOptionElement> = node.getElementsByTagName("option"),
+                    olen:number = opts.length,
+                    name:string = node.getAttribute("id").replace("option-", ""),
+                    saved:string = (function web_selectValues_saved():string {
+                        let c:number = 0;
+                        if (options[name] !== undefined) {
+                            return options[name];
+                        }
+                        if (options.lexer !== "auto" && options.lexer !== "" && options.lexer_options[options.lexer] !== undefined && options.lexer_options[options.lexer][name] !== undefined) {
+                            return options.lexer_options[options.lexer][name];
+                        }
+                        do {
+                            if (options.lexer_options[lexkeys[c]][name] !== undefined) {
+                                return options.lexer_options[lexkeys[c]][name];
+                            }
+                            c = c + 1;
+                        } while (c < lexlen);
+                    }()),
+                    value:string = (query[name] === undefined)
+                        ? (saved === "")
+                            ? def[name].default
+                            : saved
+                        : query[name];
+                node.onchange = optControls;
+                do {
+                    if (opts[b].innerHTML === value) {
+                        node.selectedIndex = b;
+                        break;
+                    }
+                    b = b + 1;
+                } while (b < olen);
+                if (def[name].lexer[0] === "all") {
+                    options[name] = value;
+                } else {
+                    b = def[name].lexer.length;
+                    do {
+                        b = b - 1;
+                        options.lexer_options[def[name].lexer[b]][name] = value;
+                    } while (b > 0);
+                }
+                if (name === "format") {
+                    const data:HTMLElement = document.getElementById("data"),
+                        dataparent:HTMLElement = <HTMLElement>data.parentNode,
+                        text:HTMLElement = document.getElementById("datatext"),
+                        textparent:HTMLElement = <HTMLElement>text.parentNode;
+                    if (value === "html") {
+                        dataparent.style.display = "block";
+                        textparent.style.display = "none";
+                        height.html();
+                    } else {
+                        dataparent.style.display = "none";
+                        textparent.style.display = "block";
+                        height.textout();
+                    }
+                }
+            };
+        let a:number = 0,
+            len:number = select.length,
+            id:string = "";
+        if (localStorage.getItem("demo") !== null) {
+            options = JSON.parse(localStorage.getItem("demo"));
+            window.sparser.options = options;
+        }
+        do {
+            selectValues(select[a]);
+            a = a + 1;
+        } while (a < len);
+        a = 0;
+        len = input.length;
+        do {
+            id = input[a].getAttribute("id");
+            if (id.indexOf("ace") !== 0 && id.indexOf("toggle-") !== 0) {
+                inputValues(input[a]);
+            }
+            a = a + 1;
+        } while (a < len);
+    }
     if (typeof ace === "object") {
         aceControl.onclick = function web_aceControl() {
             if (aceControl.checked === true) {
@@ -364,7 +523,7 @@
         if (location.href.indexOf("ace=false") > 0) {
             aceControl.checked = false;
             input.onkeyup = handler;
-            textHeight();
+            height.textin();
         } else {
             const div:HTMLDivElement        = document.createElement("div"),
                 parent:HTMLElement     = <HTMLElement>input.parentNode.parentNode,
@@ -389,64 +548,21 @@
             edit.focus();
             edit[`${dollar}blockScrolling`] = Infinity;
             editor = edit;
-            aceHeight();
+            lang   = (options.language === "auto" || options.language === "")
+                ? sparser.libs.language.auto(options.source, "javascript")
+                : [options.language, options.lexer, ""];
+            editor.setValue(options.source);
+            editor.getSession().setMode(`ace/mode/${lang[0]}`);
+            editor.clearSelection();
+            height.ace();
         }
     } else {
         aceControl.checked = false;
         input.onkeyup = handler;
-        textHeight();
+        input.value = options.source;
+        height.textin();
     }
-    if (options.format === "html") {
-        htmlHeight();
-    } else {
-        outHeight();
-    }
-    window.onresize = function web_fixHeight():void {
-        if (typeof ace === "object" && location.href.indexOf("ace=false") < 0) {
-            aceHeight();
-        } else {
-            textHeight();
-        }
-        if (options.format === "html") {
-            htmlHeight();
-        } else {
-            outHeight();
-        }
-    };
-    document.onkeypress = backspace;
-    document.onkeydown = backspace;
-    window.onerror = function web_onerror(msg:string, source:string):void {
-        document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
-    };
-    {
-        const select:HTMLCollectionOf<HTMLSelectElement> = document.getElementsByTagName("select"),
-            input:HTMLCollectionOf<HTMLInputElement> = document.getElementsByTagName("input"),
-            store:any = (typeof opsStore === "string")
-                ? JSON.parse(opsStore)
-                : null;
-        let a:number = 0,
-            name:string = "",
-            len:number = select.length;
-        do {
-            name = select[a].getAttribute("id").replace("option-", "");
-            if (sparser.libs.optionDef[name].lexer[0] === "all") {
-                
-            }
-            a = a + 1;
-        } while (a < len);
-    }
-    if (parseCode !== undefined && parseCode !== null) {
-        if (acetest === true && editor !== undefined) {
-            lang   = (options.language === "auto" || options.language === "")
-                ? sparser.libs.language.auto(parseCode, "javascript")
-                : [options.language, options.lexer, ""];
-            editor.setValue(parseCode);
-            editor.getSession().setMode(`ace/mode/${lang[0]}`);
-            editor.clearSelection();
-        } else {
-            input.value = parseCode;
-        }
-    }
+    // web sockets
     if (location.href.indexOf("//localhost:") > 0) {
         let port:number = (function port():number {
             const uri = location.href;
@@ -486,5 +602,14 @@
             }, 200);
         }
     }
-
+    // toggle option display
+    {
+        const toggle:HTMLInputElement = <HTMLInputElement>document.getElementById("toggle-options"),
+            opts:HTMLElement = document.getElementById("options");
+        toggle.onclick = toggleOptions;
+        if (localStorage.getItem("toggle-options") === "true") {
+            toggle.checked = true;
+            opts.style.display = "block";
+        }
+    }
 }());
