@@ -607,7 +607,7 @@ import { IpcNetConnectOpts } from "net";
         const toggle:HTMLInputElement = <HTMLInputElement>document.getElementById("toggle-options"),
             opts:HTMLElement = document.getElementById("options");
         toggle.onclick = toggleOptions;
-        if (localStorage.getItem("toggle-options") === "true") {
+        if (localStorage.getItem("toggle-options") === "true" || location.href.indexOf("#options") === location.href.length - 8) {
             toggle.checked = true;
             opts.style.display = "block";
         }

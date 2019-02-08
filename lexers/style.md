@@ -41,6 +41,12 @@ td {
 
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
+## supported languages
+* [CSS](https://www.w3.org/Style/CSS/#news)
+* [LESS](http://lesscss.org/)
+* [PostCSS](https://postcss.org/)
+* [SCSS (Sass)](https://sass-lang.com/)
+
 ## style options
 * **no_lead_zero**: Whether the zero to the left of the decimal point should be removed from numbers between 0 and 1.
    - type: boolean

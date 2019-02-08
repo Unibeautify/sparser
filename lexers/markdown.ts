@@ -1676,6 +1676,6 @@
                 types: "end"
             }, "");
             return data;
-        }
+        };
     sparser.lexers.markdown = markdown;
 }());

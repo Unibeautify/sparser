@@ -37,7 +37,7 @@
     },
     "scripts": {
         "prepublishOnly": "node js/services validation",
-        "start": "node js/services build --browser",
+        "start": "node js/services build",
         "test": "node js/services validation"
     },
     "version": "1.0.1"

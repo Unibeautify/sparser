@@ -6,6 +6,7 @@
    this application. */
 import { Stats, write } from "fs";
 import * as http from "http";
+import { totalmem } from "os";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -757,7 +758,7 @@ interface directoryList extends Array<directoryItem> {
                                 apps.errout([erw.toString()]);
                                 return;
                             }
-                            next("Demo tool updated with currention options and version number.");
+                            next(`${text.green}Demo tool updated with currention options and version number.${text.none}`);
                         });
                     });
                 },
@@ -965,22 +966,26 @@ interface directoryList extends Array<directoryItem> {
                                         vallen:number = 0,
                                         valkey:string[] = [];
                                     filedata = filedata.slice(0, filedata.indexOf(`## ${lex} options`));
-                                    do {
-                                        output.push(`* **${lexers[lex][aa]}**: ${def[lexers[lex][aa]].definition}`);
-                                        output.push(`   - type: ${def[lexers[lex][aa]].type}`);
-                                        output.push(`   - default: ${def[lexers[lex][aa]].default}`);
-                                        if (def[lexers[lex][aa]].values !== undefined) {
-                                            output.push(`   - values:`);
-                                            bb = 0;
-                                            valkey = Object.keys(def[lexers[lex][aa]].values);
-                                            vallen = valkey.length;
-                                            do {
-                                                output.push(`      * *${valkey[bb]}*: ${def[lexers[lex][aa]].values[valkey[bb]]}`);
-                                                bb = bb + 1;
-                                            } while (bb < vallen);
-                                        }
-                                        aa = aa + 1;
-                                    } while (aa < lenx);
+                                    if (lenx > 0) {
+                                        do {
+                                            output.push(`* **${lexers[lex][aa]}**: ${def[lexers[lex][aa]].definition}`);
+                                            output.push(`   - type: ${def[lexers[lex][aa]].type}`);
+                                            output.push(`   - default: ${def[lexers[lex][aa]].default}`);
+                                            if (def[lexers[lex][aa]].values !== undefined) {
+                                                output.push(`   - values:`);
+                                                bb = 0;
+                                                valkey = Object.keys(def[lexers[lex][aa]].values);
+                                                vallen = valkey.length;
+                                                do {
+                                                    output.push(`      * *${valkey[bb]}*: ${def[lexers[lex][aa]].values[valkey[bb]]}`);
+                                                    bb = bb + 1;
+                                                } while (bb < vallen);
+                                            }
+                                            aa = aa + 1;
+                                        } while (aa < lenx);
+                                    } else {
+                                        output.push("This lexer does not currently support any lexer specific options.");
+                                    }
                                     filedata = filedata + output.join("\n");
                                     node.fs.writeFile(`${projectPath}lexers${sep + lex}.md`, filedata, "utf8", function node_apps_build_optionsMarkdown_lexersWrite_each_read_write(erw:Error):void {
                                         if (erw !== null) {
@@ -1851,65 +1856,107 @@ interface directoryList extends Array<directoryItem> {
         return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
     };
     // provides a detailed list of supported languages by available lexer
-    apps.inventory = function services_apps_inventory():void {
+    apps.inventory = function node_apps_inventory():void {
         const textwrap:string[] = [];
         console.log("");
         console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
         console.log("");
         apps.wrapit(textwrap,"A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.");
-        textwrap.forEach(function services_apps_inventory(value:string):void {
+        textwrap.forEach(function node_apps_inventory(value:string):void {
             console.log(value);
         });
-        node.fs.readdir(`${projectPath}lexers`, function services_action_inventory_readdir(err, files) {
+        if (command === "inventory") {
+            verbose = true;
+        }
+        node.fs.readdir(`${projectPath}lexers`, function node_app_inventory_readdir(err:Error, filelist:string[]):void {
             if (err !== null) {
                 return apps.errout([err.toString()]);
             }
-            const langs = {};
-            let index:number = files.length;
+            const list:{} = {},
+                files:string[] = [],
+                len:number = filelist.length;
+            let index:number = 0,
+                longest:number = 0,
+                total:number = 0;
             do {
-                index = index - 1;
-                if (files[index].indexOf(".ts") !== files[index].length - 3) {
-                    files.splice(index, 1);
-                    index = index + 1;
+                if (filelist[index].indexOf(".md") === filelist[index].length - 3 && filelist[index] !== "readme.md") {
+                    files.push(filelist[index]);
                 }
-            } while (index > 0);
-            files.forEach(function services_action_inventory_readdir_each(filename) {
+                index = index + 1;
+            } while (index < len);
+            index = 0;
+            files.forEach(function node_app_inventory_readdir_each(filename:string):void {
                 node.fs.readFile(`${projectPath}lexers${sep + filename}`, {
                     encoding: "utf8"
-                }, function services_action_inventory_readdir_each_readfile(errf, filedata) {
+                }, function node_app_inventory_readdir_each_readfile(errf:Error, filedata:string):void {
                     if (errf !== null) {
                         return apps.errout([errf.toString()]);
                     }
-                    langs[filename] = {
-                        keys: [],
-                        values: {}
-                    };
-                    const fragments:string[] = filedata.replace(/(options\.language\s*(((!|=)==)|=)\s*)/g, "options.language===").split("options.language===");
-                    if (fragments.length > 1) {
-                        fragments.forEach(function services_action_inventory_readdir_each_readfile_fragments(value) {
-                            if (value.charAt(0) === "\"" || value.charAt(0) === "'") {
-                                let quote:string = value.charAt(0);
-                                value = value.slice(1);
-                                value = value.slice(0, value.indexOf(quote));
-                                langs[filename].values[value] = "";
-                            }
-                        });
-                        langs[filename].keys = Object.keys(langs[filename].values);
-                    }
+                    const lex:string = (/# Lexer - \w+/).exec(filedata)[0].replace("# Lexer - ", ""),
+                        fragments:string[] = (function node_app_inventory_readdir_each_readfile_fragments():string[] {
+                            filedata = filedata.replace(/\r\n/g, "\n");
+                            filedata = filedata.slice(filedata.indexOf("## supported languages") + 22);
+                            filedata = filedata.replace(/\s+/, "");
+                            filedata = filedata.slice(0, filedata.indexOf("\n\n"));
+                            return filedata.split("\n");
+                        }());
+                    let a:number = 0;
+                    list[lex] = [];
+                    total = total + fragments.length;
+                    fragments.forEach(function node_app_inventory_readdir_each_readfile_fragments_each(lang:string):void {
+                        const name:string = lang.slice(lang.indexOf("[") + 1, lang.indexOf("](")),
+                            addy:string = lang.slice(lang.indexOf("](") + 2, lang.length - 1);
+                        if (name.length > longest) {
+                            longest = name.length;
+                        }
+                        list[lex].push([name, addy]);
+                    });
                     index = index + 1;
                     if (index === files.length) {
-                        const keys = Object.keys(langs).sort();
-                        console.log("");
-                        keys.forEach(function services_action_inventory_readdir_each_readfile_output(value) {
-                            console.log(`${text.angry}*${text.none} ${text.green + value + text.none}`);
-                            if (langs[value].keys.length > 0) {
-                                langs[value].keys.sort();
-                                langs[value].keys.forEach(function services_action_inventory_readdir_each_readfile_output_dedicated(dedval) {
-                                    console.log(`   ${text.angry}-${text.none} ${dedval}`);
-                                });
-                            }
-                        });
-                        console.log("");
+                        const keys:string[] = Object.keys(list),
+                            keylen:number = keys.length,
+                            output:string[] = [],
+                            pad = function node_app_inventory_readdir_each_readfile_fragments_each_pad(str:string, title:boolean, numb:boolean):string {
+                                const distance:number = (title === true)
+                                    ? longest + 3
+                                    : (numb === true)
+                                        ? total.toString().length
+                                        : longest;
+                                let c:number = 0,
+                                    namelen:number = 0,
+                                    space:string[] = [];
+                                namelen = str.length;
+                                if (namelen < distance) {
+                                    c = namelen;
+                                    space = [];
+                                    do {
+                                        space.push(" ");
+                                        c = c + 1;
+                                    } while (c < distance);
+                                    if (numb === true) {
+                                        return space.join(" ") + str;
+                                    }
+                                    return str + space.join("");
+                                }
+                                return str;
+                            };
+                        let b:number = 0,
+                            langlen:number = 0,
+                            count:number = 0;
+                        keys.sort();
+                        a = 0;
+                        do {
+                            output.push(`${text.angry}*${text.none} ${text.green + text.underline + pad(keys[a] + ".ts", true, false)}${text.none}`);
+                            b = 0;
+                            langlen = list[keys[a]].length;
+                            do {
+                                count = count + 1;
+                                output.push(`  ${text.angry + pad(count.toString(), false, true) + text.none} ${pad(list[keys[a]][b][0], false, false)} ${text.cyan + list[keys[a]][b][1] + text.none}`);
+                                b = b + 1;
+                            } while (b < langlen);
+                            a = a + 1;
+                        } while (a < keylen);
+                        apps.log(output, "");
                     }
                 });
             });
@@ -2510,7 +2557,7 @@ interface directoryList extends Array<directoryItem> {
                 parsed: 0
             },
             lexers:string[] = Object.keys(sparser.lexers),
-            compare = function services_validate_validation_coreunits_compare():void {
+            compare = function node_apps_validation_compare():void {
                 let len:number       = (files.code.length > files.parsed.length)
                         ? files.code.length
                         : files.parsed.length,
@@ -2521,13 +2568,13 @@ interface directoryList extends Array<directoryItem> {
                     currentlex:string = "",
                     empty:number = 0,
                     missing:number = 0;
-                const lexer     = function services_validate_validation_coreunits_compare_lexer():void {
+                const lexer     = function node_apps_validation_compare_lexer():void {
                         const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
                         console.log("");
                         console.log(`Tests for lexer - ${text.cyan + lex + text.none}`);
                         currentlex = lex;
                     },
-                    completeText = function services_validate_validation_coreunits_compare_completeText():void {
+                    completeText = function node_apps_validation_compare_completeText():void {
                         console.log("");
                         if (missing < 1 && empty < 1) {
                             console.log(`${text.green}Test units evaluated without failure!${text.none}`);
@@ -2548,7 +2595,7 @@ interface directoryList extends Array<directoryItem> {
                         }
                         callback();
                     },
-                    comparePass = function services_validate_validation_coreunits_compare_comparePass():void {
+                    comparePass = function node_apps_validation_compare_comparePass():void {
                         filecount = filecount + 1;
                         console.log(`${apps.humantime(false) + text.green}Pass ${filecount}:${text.none} ${files.parsed[a][0].replace(currentlex + sep, "")}`);
                         if (a === len - 1) {
@@ -2556,10 +2603,10 @@ interface directoryList extends Array<directoryItem> {
                             return;
                         }
                     },
-                    diffFiles  = function services_validate_validation_coreunits_compare_diffFiles(sampleSource:recordList, sampleDiff:recordList):boolean {
+                    diffFiles  = function node_apps_validation_compare_diffFiles(sampleSource:recordList, sampleDiff:recordList):boolean {
                         let report:[string, number, number],
                             total:number  = 0;
-                        const beautify = function services_validate_validation_coreunits_compare_beautify(item:recordList) {
+                        const beautify = function node_apps_validation_compare_beautify(item:recordList) {
                                 const outputString:string[] = ["["],
                                     len:number = item.length - 1;
                                 let x:number = 0;
@@ -2671,7 +2718,7 @@ interface directoryList extends Array<directoryItem> {
             },
             readDir = function node_apps_validation_readDir(type:string, lexer:string):void {
                 const dirpath:string = `${projectPath}test${sep}samples_${type + sep + lexer + sep}`;
-                node.fs.readdir(dirpath, function services_validate_validation_coreunits_readDir_callback(err, list) {
+                node.fs.readdir(dirpath, function node_apps_validation_readDir_callback(err, list) {
                     if (err !== null) {
                         if (err.toString().indexOf("no such file or directory") > 0) {
                             apps.errout([`The directory ${dirpath} ${text.angry}doesn't exist${text.none}. Provide the necessary test samples for ${text.cyan + lexer + text.none}.`]);
@@ -2688,11 +2735,11 @@ interface directoryList extends Array<directoryItem> {
                         apps.errout([`undefined returned when reading files from ${dirpath}`]);
                         return;
                     }
-                    const pusher = function services_validate_validation_coreunits_readDir_callback_pusher(val) {
+                    const pusher = function node_apps_validation_readDir_callback_pusher(val) {
                         node.fs.readFile(
                             dirpath + val,
                             "utf8",
-                            function services_validate_validation_coreunits_readDir_callback_pusher_readFile(erra, fileData) {
+                            function node_apps_validation_readDir_callback_pusher_readFile(erra, fileData) {
                                 count[type] = count[type] + 1;
                                 if (erra !== null && erra !== undefined) {
                                     apps.errout([`Error reading file: ${projectPath}test${sep}samples_${type + sep + lexer + sep + val}`]);
@@ -2720,7 +2767,7 @@ interface directoryList extends Array<directoryItem> {
             };
         }
         total.lexer = lexers.length;
-        lexers.forEach(function services_validate_validation_coreunits_lexers(value:string) {
+        lexers.forEach(function node_apps_validation_lexers(value:string) {
             count.lexer = count.lexer + 1;
             readDir("code", value);
             readDir("parsed", value);
