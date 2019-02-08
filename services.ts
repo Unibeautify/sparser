@@ -2125,7 +2125,7 @@ interface directoryList extends Array<directoryItem> {
             output.push(`locally installed - ${text.green}node js/services commands hash${text.none}`);
             output.push("");
             output.push(`Commands are tested using the ${text.green}simulation${text.none} command.`);
-        } else if (command === "options") {
+        } else if (command === "options" && process.argv[0] === undefined) {
             output.push(`${text.green + lenn + text.none} matching option${plural}.`);
         }
         apps.log(output, "");
@@ -2253,6 +2253,8 @@ interface directoryList extends Array<directoryItem> {
                 property: "eachkey"
             });
         }
+        verbose = true;
+        apps.log([""], "");
     };
     // a performance application for testing the speed of the parser
     apps.performance = function node_apps_performance():void {

@@ -1,0 +1,3 @@
+{"vendorItemId":"AMD-17830-148","upc":"784626944169","manufacturerItemId":"C5350015","purchaseOrderlineNumber":14,"itemTitle":"PUMPKIN","packageCount":1,"packageLabel":"Bolt","itemsPerPackage":"1","
+
+itemLabel":"yard","cost":87}

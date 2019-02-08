@@ -2208,7 +2208,43 @@
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
                     ltoke = generic(c[a], c[a]);
-                    if (options.language === "json" || (parse.structure[parse.structure.length - 1][0] === "object" && nextchar(1, false) === ":" && (data.token[parse.count] === "," || data.token[parse.count] === "{"))) {
+                    if (options.language === "json") {
+                        ltype = "string";
+                        ltoke = ltoke
+                            .replace(/\u0000/g, "\\u0000")
+                            .replace(/\u0001/g, "\\u0001")
+                            .replace(/\u0002/g, "\\u0002")
+                            .replace(/\u0003/g, "\\u0003")
+                            .replace(/\u0004/g, "\\u0004")
+                            .replace(/\u0005/g, "\\u0005")
+                            .replace(/\u0006/g, "\\u0006")
+                            .replace(/\u0007/g, "\\u0007")
+                            .replace(/\u0008/g, "\\u0008")
+                            .replace(/\u0009/g, "\\u0009")
+                            .replace(/\u000a/g, "\\u000a")
+                            .replace(/\u000b/g, "\\u000b")
+                            .replace(/\u000c/g, "\\u000c")
+                            .replace(/\u000d/g, "\\u000d")
+                            .replace(/\u000e/g, "\\u000e")
+                            .replace(/\u000f/g, "\\u000f")
+                            .replace(/\u0010/g, "\\u0010")
+                            .replace(/\u0011/g, "\\u0011")
+                            .replace(/\u0012/g, "\\u0012")
+                            .replace(/\u0013/g, "\\u0013")
+                            .replace(/\u0014/g, "\\u0014")
+                            .replace(/\u0015/g, "\\u0015")
+                            .replace(/\u0016/g, "\\u0016")
+                            .replace(/\u0017/g, "\\u0017")
+                            .replace(/\u0018/g, "\\u0018")
+                            .replace(/\u0019/g, "\\u0019")
+                            .replace(/\u001a/g, "\\u001a")
+                            .replace(/\u001b/g, "\\u001b")
+                            .replace(/\u001c/g, "\\u001c")
+                            .replace(/\u001d/g, "\\u001d")
+                            .replace(/\u001e/g, "\\u001e")
+                            .replace(/\u001f/g, "\\u001f");
+                        recordPush("");
+                    } else if (parse.structure[parse.structure.length - 1][0] === "object" && nextchar(1, false) === ":" && (data.token[parse.count] === "," || data.token[parse.count] === "{")) {
                         ltype = "string";
                         recordPush("");
                     } else if (ltoke.length > options.wrap && options.wrap > 0) {
