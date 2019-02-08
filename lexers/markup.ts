@@ -6,6 +6,8 @@
             let a:number             = 0,
                 list:number          = 0,
                 litag:number         = 0,
+                dtlist:number        = 0,
+                dttag:number         = 0,
                 sgmlflag:number      = 0,
                 cftransaction:boolean = false,
                 ext:boolean           = false;
@@ -1771,6 +1773,59 @@
                                     litag = litag - 1;
                                 }
                                 list = list - 1;
+                            } else if (tname === "dt") {
+                                //looks for HTML "li" tags that have no ending tag, which is valid in HTML
+                                if (dttag === dtlist && (dtlist !== 0 || (dtlist === 0 && parse.count > -1 && data.types[parse.count].indexOf("template") < 0))) {
+                                    let d:number  = parse.count,
+                                        ee:number = 1;
+                                    if (d > -1) {
+                                        do {
+                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
+                                                ee = ee - 1;
+                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
+                                                ee = ee + 1;
+                                            }
+                                            if (ee === -1 && (tagName(data.token[d]) === "dt" || (tagName(data.token[d + 1]) === "dt" && tagName(data.token[d]) === "dl"))) {
+                                                record.lines                 = data.lines[parse.count];
+                                                record.token                 = "</dt>";
+                                                record.types                 = "end";
+                                                recordPush(data, record, "");
+                                                record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                                record.lines                 = parse.linesSpace;
+                                                record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                                record.token                 = element;
+                                                record.types                 = ltype;
+                                                data.lines[parse.count - 1] = 0;
+                                                break;
+                                            }
+                                            if (ee < 0) {
+                                                break;
+                                            }
+                                            d = d - 1;
+                                        } while (d > -1);
+                                    }
+                                } else {
+                                    dttag = dttag + 1;
+                                }
+                            } else if (tname === "/dt" && dttag === dtlist) {
+                                dttag = dttag - 1;
+                            } else if (tname === "dl") {
+                                dtlist = dtlist + 1;
+                            } else if (tname === "/dl") {
+                                if (dttag === dtlist) {
+                                    record.lines                 = data.lines[parse.count];
+                                    record.token                 = "</dt>";
+                                    record.types                 = "end";
+                                    recordPush(data, record, "");
+                                    record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                    record.lines                 = parse.linesSpace;
+                                    record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                    record.token                 = element;
+                                    record.types                 = "end";
+                                    data.lines[parse.count - 1] = 0;
+                                    dttag = dttag - 1;
+                                }
+                                dtlist = dtlist - 1;
                             }
 
                             //generalized corrections for the handling of singleton tags
