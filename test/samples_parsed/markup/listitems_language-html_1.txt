@@ -1,0 +1,19 @@
+[
+{"begin":-1,"ender":-1,"lexer":"markup","lines":0,"stack":"global","token":"<!doctype html>","types":"sgml"},
+{"begin":-1,"ender":8,"lexer":"markup","lines":2,"stack":"global","token":"<ul>","types":"start"},
+{"begin":1,"ender":4,"lexer":"markup","lines":2,"stack":"ul","token":"<li>","types":"start"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"li","token":"ab","types":"content"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"li","token":"</li>","types":"end"},
+{"begin":1,"ender":7,"lexer":"markup","lines":0,"stack":"ul","token":"<li>","types":"start"},
+{"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"li","token":"cd","types":"content"},
+{"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"li","token":"</li>","types":"end"},
+{"begin":1,"ender":8,"lexer":"markup","lines":0,"stack":"ul","token":"</ul>","types":"end"},
+{"begin":-1,"ender":16,"lexer":"markup","lines":2,"stack":"global","token":"<dl>","types":"start"},
+{"begin":9,"ender":12,"lexer":"markup","lines":0,"stack":"dl","token":"<dt>","types":"start"},
+{"begin":10,"ender":12,"lexer":"markup","lines":0,"stack":"dt","token":"ef","types":"content"},
+{"begin":10,"ender":12,"lexer":"markup","lines":0,"stack":"dt","token":"</dt>","types":"end"},
+{"begin":9,"ender":15,"lexer":"markup","lines":0,"stack":"dl","token":"<dt>","types":"start"},
+{"begin":13,"ender":15,"lexer":"markup","lines":0,"stack":"dt","token":"gh","types":"content"},
+{"begin":13,"ender":15,"lexer":"markup","lines":0,"stack":"dt","token":"</dt>","types":"end"},
+{"begin":9,"ender":16,"lexer":"markup","lines":0,"stack":"dl","token":"</dl>","types":"end"}
+]
