@@ -1,5 +1,3 @@
-import { IpcNetConnectOpts } from "net";
-
 /*jslint browser:true */
 /*eslint-env browser*/
 /*global ace, performance, window*/
@@ -21,13 +19,24 @@ import { IpcNetConnectOpts } from "net";
             ? 13
             : 13.33,
         // eliminate page navigation by clicking the backspace key
-        backspace = function web_backspace(event) {
+        backspace = function web_backspace(event):boolean {
             const e = event || window.event,
                 f = e.srcElement || e.target;
             if (e.keyCode === 8 && f.nodeName !== "textarea" && ((f.nodeName === "input" && f.type !== "text") || f.nodeName !== "input")) {
                 e.preventDefault();
                 return false;
             }
+        },
+        saveOptions = function web_saveOptions():void {
+            const langEl:HTMLInputElement = <HTMLInputElement>document.getElementById("option-language"),
+                lexEl:HTMLInputElement = <HTMLInputElement>document.getElementById("option-lexer");
+            if (langEl.value === "auto") {
+                options.language = "auto";
+            }
+            if (lexEl.value === "auto") {
+                options.lexer = "auto";
+            }
+            localStorage.setItem("demo", JSON.stringify(options));
         },
         // sparser event handler
         handler = function web_handler():void {
@@ -176,28 +185,27 @@ import { IpcNetConnectOpts } from "net";
                     } while (a < len);
                     dataarea.innerHTML = "";
                     dataarea.appendChild(table);
-                };
-            Object.keys(sparser.lexers).forEach(function web_handler_lexers(value):void {
-                options.lexer_options[value] = {};
-            });
-            lang = sparser.libs.language.auto(value, "javascript");
+                },
+                element_language:HTMLInputElement = <HTMLInputElement>document.getElementById("option-language"),
+                element_lexer:HTMLInputElement = <HTMLInputElement>document.getElementById("option-lexer");
+            options.source = value;
+            saveOptions();
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
             if (options.language === "auto") {
-                options.language                       = lang[0];
+                lang = sparser.libs.language.auto(value, "javascript");
                 if (editor !== undefined && (acetest === true || lang[0] !== "")) {
                     editor.getSession().setMode(`ace/mode/${lang[0]}`);
                 }
+                document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
+            } else {
+                document.getElementById("language").getElementsByTagName("span")[0].innerHTML = options.language;
             }
-            if (options.lexer === "auto") {
-                options.lexer                          = lang[1];
-            }
-            document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
-            options.source = value;
-            localStorage.setItem("demo", JSON.stringify(options));
             startTime = Math.round(performance.now() * 1000);
             output = sparser.parser();
+            options.language = element_language.value;
+            options.lexer = element_lexer.value;
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
@@ -250,17 +258,12 @@ import { IpcNetConnectOpts } from "net";
                 value:string = (sel === null)
                     ? input.value
                     : sel[sel.selectedIndex].innerHTML;
-            let a:number = 0,
-                bool:boolean = false;
+            let a:number = 0;
             if (type === "number" && isNaN(Number(value)) === true) {
                 return;
             }
-            if (type === "boolean") {
-                if (value === "true") {
-                    bool = true;
-                } else if (value !== "false") {
-                    return;
-                }
+            if (type === "boolean" && value !== "true" && value !== "false") {
+                return;
             }
             if (def[id].values !== undefined && def[id].values[value] === undefined) {
                 if (id !== "format" || (id === "format" && value !== "html")) {
@@ -268,10 +271,30 @@ import { IpcNetConnectOpts } from "net";
                 }
             }
             if (lex[0] === "all") {
-                options[id] = value;
+                if (type === "number") {
+                    options[id] = Number(value);
+                } else if (type === "boolean") {
+                    if (value === "true") {
+                        options[id] = true;
+                    } else {
+                        options[id] = false;
+                    }
+                } else {
+                    options[id] = value;
+                }
             } else {
                 do {
-                    options.lexer_options[lex[a]][id] = value;
+                    if (type === "number") {
+                        options.lexer_options[lex[a]][id] = Number(value);
+                    } else if (type === "boolean") {
+                        if (value === "true") {
+                            options.lexer_options[lex[a]][id] = true;
+                        } else {
+                            options.lexer_options[lex[a]][id] = false;
+                        }
+                    } else {
+                        options.lexer_options[lex[a]][id] = value;
+                    }
                     a = a + 1;
                 } while (a < lexlen);
             }
@@ -290,7 +313,7 @@ import { IpcNetConnectOpts } from "net";
                     height.textout();
                 }
             }
-            localStorage.setItem("demo", JSON.stringify(options));
+            saveOptions();
         },
         // math for vertically scalling the input and output areas
         height = {
@@ -402,31 +425,35 @@ import { IpcNetConnectOpts } from "net";
                             }
                             c = c + 1;
                         } while (c < lexlen);
+                        return "";
                     }()),
-                    value:string = (query[name] === undefined)
-                        ? (saved === "")
-                            ? def[name].default
-                            : saved
+                    value:string|number|boolean = (query[name] === undefined)
+                        ? saved
                         : query[name];
                 if (node.type === "text") {
                     node.onkeyup = optControls;
-                    node.value = value;
+                    node.value = String(value);
                 } else {
                     node.onclick = optControls;
-                    if (value === "false" && node.getAttribute("id").indexOf("option-false-") === 0) {
+                    if (value === false && node.getAttribute("id").indexOf("option-false-") === 0) {
                         node.checked = true;
-                    } else if (value === "true" && node.getAttribute("id").indexOf("option-true-") === 0) {
+                    } else if (value === true && node.getAttribute("id").indexOf("option-true-") === 0) {
                         node.checked = true;
                     }
+                    return;
                 }
-                if (def[name].lexer[0] === "all") {
-                    options[name] = value;
-                } else {
-                    b = def[name].lexer.length;
-                    do {
-                        b = b - 1;
-                        options.lexer_options[def[name].lexer[b]][name] = value;
-                    } while (b > 0);
+                if (query[name] !== undefined) {
+                    if (def[name].lexer[0] === "all") {
+                        options[name] = query[name];
+                    } else {
+                        b = def[name].lexer.length;
+                        do {
+                            b = b - 1;
+                            if (options.lexer_options[def[name].lexer[b]][name] !== undefined) {
+                                options.lexer_options[def[name].lexer[b]][name] = query[name];
+                            }
+                        } while (b > 0);
+                    }
                 }
             },
             selectValues = function web_selectValues(node:HTMLSelectElement):void {
@@ -436,6 +463,9 @@ import { IpcNetConnectOpts } from "net";
                     name:string = node.getAttribute("id").replace("option-", ""),
                     saved:string = (function web_selectValues_saved():string {
                         let c:number = 0;
+                        if (name === "format") {
+                            return "html";
+                        }
                         if (options[name] !== undefined) {
                             return options[name];
                         }
@@ -448,11 +478,10 @@ import { IpcNetConnectOpts } from "net";
                             }
                             c = c + 1;
                         } while (c < lexlen);
+                        return "";
                     }()),
                     value:string = (query[name] === undefined)
-                        ? (saved === "")
-                            ? def[name].default
-                            : saved
+                        ? saved
                         : query[name];
                 node.onchange = optControls;
                 do {
@@ -462,14 +491,18 @@ import { IpcNetConnectOpts } from "net";
                     }
                     b = b + 1;
                 } while (b < olen);
-                if (def[name].lexer[0] === "all") {
-                    options[name] = value;
-                } else {
-                    b = def[name].lexer.length;
-                    do {
-                        b = b - 1;
-                        options.lexer_options[def[name].lexer[b]][name] = value;
-                    } while (b > 0);
+                if (query[name] !== undefined) {
+                    if (def[name].lexer[0] === "all") {
+                        options[name] = query[name];
+                    } else {
+                        b = def[name].lexer.length;
+                        do {
+                            b = b - 1;
+                            if (options.lexer_options[def[name].lexer[b]][name] !== undefined) {
+                                options.lexer_options[def[name].lexer[b]][name] = query[name];
+                            }
+                        } while (b > 0);
+                    }
                 }
                 if (name === "format") {
                     const data:HTMLElement = document.getElementById("data"),
@@ -490,6 +523,9 @@ import { IpcNetConnectOpts } from "net";
         let a:number = 0,
             len:number = select.length,
             id:string = "";
+        options.format = "html";
+        options.language = "auto";
+        options.lexer = "auto";
         if (localStorage.getItem("demo") !== null) {
             options = JSON.parse(localStorage.getItem("demo"));
             window.sparser.options = options;
@@ -507,6 +543,9 @@ import { IpcNetConnectOpts } from "net";
             }
             a = a + 1;
         } while (a < len);
+        if (localStorage.getItem("demo") === null) {
+            saveOptions();
+        }
     }
     if (typeof ace === "object") {
         aceControl.onclick = function web_aceControl() {

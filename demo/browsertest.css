@@ -27,12 +27,12 @@ td{border:#999 0.0833em solid;display:table-cell;min-width:3em;padding:0.2em 0.4
 .output p,
 .output ul,
 .output table{font-size:1.2em}
-.options {max-width:30em}
+.options {max-width:45em}
 .title{margin:0 0 0.5em;min-width:35em}
 .navigation{min-width:15em}
 .keybox ul{padding:0}
 .options ul,
-.navigation ul{list-style-position:inside;padding:0}
+.navigation ul{list-style-position:inside;margin:0;padding:0}
 .options li,
 .navigation li{padding:0.6em 0 0}
 .clear{clear:both;display:block;float:none;height:0.01em}

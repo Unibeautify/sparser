@@ -307,7 +307,7 @@
                     }
                     return output("xml");
                 };
-            if (sample === null) {
+            if (sample === null || sample.replace(/\s+/g, "") === "") {
                 return output("unknown");
             }
             if (

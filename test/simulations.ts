@@ -164,27 +164,59 @@
                 test: `${text.angry}* ${text.none + text.cyan}object_sort${text.none}: Where style properties should be sorted`
             },
             {
-                command: "performance hash browser-demo.js",
+                command: "parse tsconfig.json",
+                qualifier: "is",
+                test: `{"begin":[-1,0,0,0,3,3,3,3,3,3,3,3,0,0,0,0,15,15,15,15,0,0,0,0,23,23,23,23,0],"ender":[28,28,28,11,11,11,11,11,11,11,11,11,28,28,28,19,19,19,19,19,28,28,28,27,27,27,27,27,28],"lexer":["script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script","script"],"lines":[0,2,0,1,2,0,1,0,2,0,1,2,0,2,0,1,2,0,2,2,0,2,0,1,2,0,2,2,2],"stack":["global","object","object","object","object","object","object","object","object","object","object","object","object","object","object","object","array","array","array","array","object","object","object","object","array","array","array","array","object"],"token":["{","\\"compilerOptions\\"",":","{","\\"target\\"",":","\\"ES6\\"",",","\\"outDir\\"",":","\\"js\\"","}",",","\\"include\\"",":","[","\\"*.ts\\"",",","\\"**/*.ts\\"","]",",","\\"exclude\\"",":","[","\\"js\\"",",","\\"node_modules\\"","]","}"],"types":["start","string","operator","start","string","operator","string","separator","string","operator","string","end","separator","string","operator","start","string","separator","string","end","separator","string","operator","start","string","separator","string","end","end"]}`
+            },
+            {
+                command: "parse libs",
+                qualifier: "contains",
+                test: `"${projectPath.replace(/\\/g, "\\\\")}libs${sep.replace(/\\/g, "\\\\")}language.ts":{`
+            },
+            {
+                command: "parse libs 2",
+                qualifier: "contains",
+                test: `"${projectPath.replace(/\\/g, "\\\\")}libs${sep.replace(/\\/g, "\\\\")}options.ts":{`
+            },
+            {
+                command: "parse demo no_lead_zero:true",
+                qualifier: "contains",
+                test: ".title{margin:0 0 .5em;min-width:35em}"
+            },
+            {
+                artifact: `${projectPath}libstest.txt`,
+                command: `parse libs output:"libstest.txt"`,
+                file: `${projectPath}libstest.txt`,
+                qualifier: "file contains",
+                test: `"${projectPath.replace(/\\/g, "\\\\")}libs${sep.replace(/\\/g, "\\\\")}options.ts":{`
+            },
+            {
+                command: "performance parse tsconfig.json",
                 qualifier: "contains",
                 test: "] Character size"
             },
             {
-                command: "performance base64 browser-demo.js",
+                command: "performance parse jsconfig.json",
+                qualifier: "contains",
+                test: "is not a file or directory."
+            },
+            {
+                command: "performance parse parse.ts",
                 qualifier: "contains",
                 test: "] Milliseconds, \u00b1"
             },
             {
-                command: "performance beautify browser-demo.js",
+                command: "performance version",
                 qualifier: "contains",
-                test: "Pretty Diff version"
+                test: "Sparser version"
             },
             {
-                command: "performance build browser-demo.js",
+                command: "performance build",
                 qualifier: "contains",
                 test: "The performance tool cannot test the build command."
             },
             {
-                command: "performance performance browser-demo.js",
+                command: "performance performance",
                 qualifier: "contains",
                 test: "The performance tool cannot test itself."
             },

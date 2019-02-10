@@ -761,7 +761,11 @@ interface directoryList extends Array<directoryItem> {
                                 } else {
                                     opts.push(`<h3><label for="option-${optName}" class="label">${opt.label}</label></h3>`);
                                     if (opt.type === "number" || (opt.type === "string" && opt.values === undefined)) {
-                                        opts.push(`<input type="text" id="option-${optName}" value="${opt.default}" data-type="${opt.type}"/>`);
+                                        if (optName === "language" || optName === "lexer") {
+                                            opts.push(`<input type="text" id="option-${optName}" value="auto" data-type="${opt.type}"/>`);
+                                        } else {
+                                            opts.push(`<input type="text" id="option-${optName}" value="${opt.default}" data-type="${opt.type}"/>`);
+                                        }
                                         select = false;
                                     } else {
                                         opts.push(`<select id="option-${optName}">`);
@@ -1585,7 +1589,7 @@ interface directoryList extends Array<directoryItem> {
         if (writeflag !== "") {
             apps.remove(writeflag, error);
             writeflag = "";
-        } else if (process.argv.indexOf("debug") > -1) {
+        } else if (process.argv.indexOf("sparser_debug") > -1) {
             debug();
         } else {
             error();
@@ -2216,6 +2220,26 @@ interface directoryList extends Array<directoryItem> {
     };
     // verbose metadata printed to the shell about Sparser
     apps.log = function node_apps_log(output:string[]):void {
+        if (performance.test === true) {
+            performance.end = process.hrtime(performance.start);
+            const time = (performance.end[0] * 1e9) + performance.end[1];
+            performance.store.push(time);
+            if (performance.index > 0) {
+                if (performance.index < 10) {
+                    console.log(`${text.yellow + performance.index + text.none}:  ${time}`);
+                } else {
+                    console.log(`${text.yellow + performance.index + text.none}: ${time}`);
+                }
+            } else {
+                console.log(`${text.yellow}0:${text.none}  ${time} ${text.angry}(first run is ignored)${text.none}`);
+            }
+            options.diff = performance.diff;
+            options.source = performance.source;
+            performance.index = performance.index + 1;
+            // specifying a delay between intervals allows for garbage collection without interference to the performance testing
+            setTimeout(apps.performance, 400);
+            return;
+        }
         if (process.argv.indexOf("debug") > -1 || process.argv.indexOf("debug") > -1) {
             process.argv[2] = "debug";
             return apps.errout(["Debug statement requested."]);
@@ -2242,7 +2266,7 @@ interface directoryList extends Array<directoryItem> {
             if (process.argv.length < 1) {
                 // all options in a list
                 apps.lists({
-                    emptyline: true,
+                    emptyline: false,
                     heading: "Options",
                     obj: def,
                     property: "definition",
@@ -2304,7 +2328,7 @@ interface directoryList extends Array<directoryItem> {
                     apps.log([`${text.angry}Sparser has no options matching the query criteria.${text.none}`]);
                 } else {
                     apps.lists({
-                        emptyline: true,
+                        emptyline: false,
                         heading: "Options",
                         obj: output,
                         property: "definition",
@@ -2328,7 +2352,11 @@ interface directoryList extends Array<directoryItem> {
     // reads from a file and returns to standard output
     apps.parse = function node_apps_parse():void {
         if (process.argv.length < 1) {
-            apps.errout(["The parse command requires a file system path."]);
+            apps.errout([
+                "The parse command requires a file system path.",
+                "Please run this command for examples:",
+                `${text.cyan}node js/services commands parse${text.none}`
+            ]);
             return;
         }
         const path:string = (options.source === "")
@@ -2343,7 +2371,8 @@ interface directoryList extends Array<directoryItem> {
                         ? ""
                         : "s";
                 let a:number = 0,
-                    output:string = "";
+                    output:string = "",
+                    str:string = "";
                 do {
                     apps.fileOptions(keys[a]);
                     options.source = files[keys[a]];
@@ -2354,19 +2383,24 @@ interface directoryList extends Array<directoryItem> {
                 do {
                     a = a - 1;
                     if (process.argv[a].indexOf("output:") === 0) {
-                        output = process.argv[a].slice(7);
+                        output = node.path.normalize(process.argv[a].slice(7));
                         break;
                     }
                 } while (a > 0);
+                // if there is only 1 file then just return the parse table
+                str = (len === 1)
+                    ? JSON.stringify(files[keys[0]])
+                    : JSON.stringify(files);
+                performance.codeLength = str.length;
                 if (output === "") {
-                    log.push(JSON.stringify(files));
+                    log.push(str);
                     if (verbose === true) {
                         log.push("");
                         log.push(`Parse complete for ${text.green + text.bold + fcount + text.none} file${plural}!`);
                     }
                     apps.log(log);
                 } else {
-                    node.fs.writeFile(output, JSON.stringify(files), {
+                    node.fs.writeFile(output, str, {
                         encoding: "utf8"
                     }, function node_apps_parse_parseAll_write(erw:Error):void {
                         if (erw !== null) {
@@ -2462,7 +2496,8 @@ interface directoryList extends Array<directoryItem> {
         } else {
             let total:number = 0,
                 low:number = 0,
-                high:number = 0;
+                high:number = 0,
+                log:string[] = [];
             console.log("");
             performance.store.forEach(function node_apps_performance_total(value:number) {
                 total = total + value;
@@ -2475,10 +2510,11 @@ interface directoryList extends Array<directoryItem> {
             performance.test = false;
             verbose = true;
             command = "performance";
-            apps.log([
-                `[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`,
-                `[${text.cyan + apps.commas(performance.codeLength) + text.none}] Character size of task's output to terminal.`
-            ]);
+            log.push(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
+            if (performance.codeLength > 0) {
+                log.push(`[${text.cyan + apps.commas(performance.codeLength) + text.none}] Character size of task's output to terminal.`);
+            }
+            apps.log(log);
         }
     };
     // runs services: http, web sockets, and file system watch.  Allows rapid testing with automated rebuilds
@@ -2833,8 +2869,8 @@ interface directoryList extends Array<directoryItem> {
 
         let a:number = 0;
         if (command === "simulation") {
-            callback = function node_apps_lint_callback():void {
-                apps.log(["\u0007"]); // bell sound
+            callback = function node_apps_lint_callback(message:string):void {
+                apps.log([message, "\u0007"]); // bell sound
             };
             verbose = true;
             console.log("");
