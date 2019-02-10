@@ -1,8 +1,10 @@
 declare var ace: any;
 type codes = [string, number, number, number, number];
 type languageAuto = [string, string, string];
-type lexerValues = ["all"] | ("markdown" | "markup" | "script" | "style")[];
+type lexers = "markdown" | "markup" | "script" | "style";
+type lexerArray = Array<lexers>;
 type minimal = [number, number, string, number, string, string, string];
+type qualifier = "begins" | "contains" | "ends" | "file begins" | "file contains" | "file ends" | "file is" | "file not" | "file not contains" | "filesystem contains" | "filesystem not contains" | "is" | "not" | "not contains";
 interface attStore extends Array<[string, number]>{
     [index:number]: [string, number]
 }
@@ -64,11 +66,15 @@ interface markupCount {
     index: number;
     start: number;
 }
+interface nodeError extends Error {
+    code: string;
+}
 interface nodeLists {
     emptyline: boolean;
     heading: string;
     obj: any;
     property: "eachkey" | string;
+    total: boolean;
 }
 interface opcodes extends Array<codes> {
     [index: number]: codes;
@@ -77,7 +83,7 @@ interface option {
     default: boolean | number | string;
     definition: string;
     label: string;
-    lexer: lexerValues;
+    lexer: Array<"all"> | lexerArray;
     type: "boolean" | "number" | "string";
     values?: {
         [key: string]: string;
@@ -105,6 +111,16 @@ interface parse {
     wrapCommentBlock(config: wrapConfig)                            : [string, number];
     wrapCommentLine(config: wrapConfig)                             : [string, number];
 }
+interface performance {
+    codeLength: number;
+    diff: string;
+    end: [number, number];
+    index: number;
+    source: string;
+    start: [number, number];
+    store: number[];
+    test: boolean;
+}
 interface readDirectory {
     callback: Function;
     exclusions: string[];
@@ -123,6 +139,13 @@ interface record {
 }
 interface recordList extends Array<record>{
     [index:number]: record;
+}
+interface simulationItem {
+    artifact?: string;
+    command: string;
+    file?: string;
+    qualifier: qualifier;
+    test: string;
 }
 interface spacer {
     array: string[];

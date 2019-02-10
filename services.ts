@@ -4,9 +4,8 @@
 
 /* This file exists to consolidate the various Node service offerings in
    this application. */
-import { Stats, write } from "fs";
+import { Stats } from "fs";
 import * as http from "http";
-import { totalmem } from "os";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -81,6 +80,35 @@ interface directoryList extends Array<directoryItem> {
                     defined: "Generates markdown format report directly to standard output."
                 }]
             },
+            directory: {
+                description: "Traverses a directory in the local file system and generates a list.",
+                example: [
+                    {
+                        code: "prettydiff directory source:\"my/directory/path\"",
+                        defined: "Returns an array where each index is an array of [absolute path, type, parent index, file count, stat]. Type can refer to 'file', 'directory', or 'link' for symbolic links.  The parent index identify which index in the array is the objects containing directory and the file count is the number of objects a directory type object contains."
+                    },
+                    {
+                        code: "prettydiff directory source:\"my/directory/path\" shallow",
+                        defined: "Does not traverse child directories."
+                    },
+                    {
+                        code: "prettydiff directory source:\"my/directory/path\" listonly",
+                        defined: "Returns an array of strings where each index is an absolute path"
+                    },
+                    {
+                        code: "prettydiff directory source:\"my/directory/path\" symbolic",
+                        defined: "Identifies symbolic links instead of the object the links point to"
+                    },
+                    {
+                        code: "prettydiff directory source:\"my/directory/path\" ignore [.git, node_modules, \"program files\"]",
+                        defined: "Sets an exclusion list of things to ignore"
+                    },
+                    {
+                        code: "prettydiff directory source:\"my/path\" typeof",
+                        defined: "returns a string describing the artifact type"
+                    }
+                ]
+            },
             get: {
                 description: "Retrieve a resource via an absolute URI.",
                 example: [
@@ -137,8 +165,33 @@ interface directoryList extends Array<directoryItem> {
                         defined: "Writes details about the specified option to the shell."
                     },
                     {
-                        code: "sparser options api:any lexer:script values",
+                        code: "sparser options type:boolean lexer:script values",
                         defined: "The option list can be queried against key and value (if present) names. This example will return only options that work with the script lexer, takes specific values, and aren't limited to a certain API environment."
+                    }
+                ]
+            },
+            parse: {
+                description: "Parses a file and returns to standard output.",
+                example: [
+                    {
+                        code: "sparser parse tsconfig.json",
+                        defined: "Runs the parse job against a file system object returns to standard output."
+                    },
+                    {
+                        code: "sparser parse libs",
+                        defined: "The job can run against files in a directory."
+                    },
+                    {
+                        code: "sparser parse libs ignore [node_modules, .git, test, units]",
+                        defined: "Ignore file system objects by name using the ignore argument and a comma separated list in square braces."
+                    },
+                    {
+                        code: "sparser parse tsconfig.json format:output quote_convert:double",
+                        defined: "Options are accepted as separated arguments to the standard input."
+                    },
+                    {
+                        code: "sparser parse tsconfig.json format:output quote_convert:double output:filepath",
+                        defined: "Instead of standard output the result can be written to a file if using the 'output' argument. If there is nothing at the path specified a file will be created. If a file already exists at that location it will be overwritten. If something exists at the specified location that isn't a file an error will be thrown."
                     }
                 ]
             },
@@ -173,6 +226,13 @@ interface directoryList extends Array<directoryItem> {
                 example: [{
                     code: "sparser simulation",
                     defined: "Runs tests against the commands offered by the services file."
+                }]
+            },
+            sparser_debug: {
+                description: "Generates a debug statement in markdown format.",
+                example: [{
+                    code: "sparser sparser_debug",
+                    defined: "Produces a report directly to the shell that can be copied to anywhere else. This report contains environmental details."
                 }]
             },
             test: {
@@ -253,6 +313,16 @@ interface directoryList extends Array<directoryItem> {
             require(`${js}parse.js`);
             return [];
         }()),
+        performance:performance = {
+            codeLength: 0,
+            diff: "",
+            end: [0,0],
+            index: 0,
+            source: "",
+            start: [0,0],
+            store: [],
+            test: false
+        },
         apps:any = {};
     let verbose:boolean = false,
         errorflag:boolean = false,
@@ -410,11 +480,13 @@ interface directoryList extends Array<directoryItem> {
             readOptions = function node_args_readOptions():void {
                 const list:string[] = process.argv,
                     def:optionDef = sparser.libs.optionDef,
-                    keys:string[] = Object.keys(def),
+                    keys:string[] = (command === "options")
+                        ? Object.keys(def.format)
+                        : [],
                     obj = options,
                     optionName = function node_args_optionName(bindArgument:boolean):void {
                         if (a === 0 || options[list[a]] === undefined) {
-                            if (keys.indexOf(list[a]) < 0 && options[list[a]] === undefined) {
+                            if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
                                 list.splice(a, 1);
                                 len = len - 1;
                                 a = a - 1;
@@ -562,6 +634,7 @@ interface directoryList extends Array<directoryItem> {
             def:optionDef = sparser.libs.optionDef,
             optkeys:string[] = Object.keys(def),
             keyslen:number = optkeys.length,
+            // a short title for each build/test phase
             heading = function node_apps_build_heading(message:string):void {
                 if (firstOrder === true) {
                     console.log("");
@@ -573,6 +646,7 @@ interface directoryList extends Array<directoryItem> {
                 console.log(text.cyan + message + text.none);
                 console.log("");
             },
+            // indicates how long each phase took
             sectionTimer = function node_apps_build_sectionTime(input:string):void {
                 let now:string[] = input.replace(`${text.cyan}[`, "").replace(`]${text.none} `, "").split(":"),
                     numb:[number, number] = [(Number(now[0]) * 3600) + (Number(now[1]) * 60) + Number(now[2].split(".")[0]), Number(now[2].split(".")[1])],
@@ -624,6 +698,7 @@ interface directoryList extends Array<directoryItem> {
                 times[2] = `${times[2]}.${str}`;
                 console.log(`${text.cyan + text.bold}[${times.join(":")}]${text.none} ${text.green}Total section time.${text.none}`);
             },
+            // the transtion to the next phase or completion
             next = function node_apps_build_next(message:string):void {
                 let phase = order[type][0],
                     time:string = apps.humantime(false);
@@ -634,13 +709,14 @@ interface directoryList extends Array<directoryItem> {
                 if (order[type].length < 1) {
                     verbose = true;
                     heading(`${text.none}All ${text.green + text.bold + type + text.none} tasks complete... Exiting clean!\u0007`);
-                    apps.log([""], "");
+                    apps.log([""]);
                     process.exit(0);
                     return;
                 }
                 order[type].splice(0, 1);
                 phases[phase]();
             },
+            // if content should be injected between two points of a file
             injection = function node_apps_build_injection(inject:inject):string {
                 const thirds:[string, string, string] = [
                     inject.file.slice(0, inject.file.indexOf(inject.start) + inject.start.length) + node.os.EOL,
@@ -1163,7 +1239,8 @@ interface directoryList extends Array<directoryItem> {
                 emptyline: false,
                 heading: "Commands",
                 obj: commands,
-                property: "description"
+                property: "description",
+                total: true
             });
         } else {
             // specificly mentioned option
@@ -1184,7 +1261,7 @@ interface directoryList extends Array<directoryItem> {
                 output.push("");
                 a = a + 1;
             } while (a < len);
-            apps.log(output, "");
+            apps.log(output);
         }
     };
     // converts numbers into a string of comma separated triplets
@@ -1242,7 +1319,7 @@ interface directoryList extends Array<directoryItem> {
                             if (verbose === true) {
                                 apps.wrapit(output, `Sparser found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
                             }
-                            apps.log(output, JSON.stringify(result));
+                            apps.log([JSON.stringify(result), output]);
                         },
                         exclusions: exclusions,
                         path: "",
@@ -1358,7 +1435,7 @@ interface directoryList extends Array<directoryItem> {
                                 return;
                             }
                             if (type === true) {
-                                apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`], "");
+                                apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`]);
                                 return;
                             }
                             apps.errout([angrypath]);
@@ -1369,7 +1446,7 @@ interface directoryList extends Array<directoryItem> {
                     }
                     if (stat === undefined) {
                         if (type === true) {
-                            apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`], "");
+                            apps.log([`Requested artifact, ${text.cyan + startPath + text.none}, ${text.angry}is missing${text.none}.`]);
                             return;
                         }
                         apps.errout([angrypath]);
@@ -1377,7 +1454,7 @@ interface directoryList extends Array<directoryItem> {
                     }
                     if (stat.isDirectory() === true) {
                         if (type === true) {
-                            apps.log(["directory"], "");
+                            apps.log(["directory"]);
                             return;
                         }
                         if ((args.recursive === true || dirtest === false) && exclusions.indexOf(filepath.replace(startPath + sep, "")) < 0) {
@@ -1388,18 +1465,18 @@ interface directoryList extends Array<directoryItem> {
                         }
                     } else if (stat.isSymbolicLink() === true) {
                         if (type === true) {
-                            apps.log(["symbolicLink"], "");
+                            apps.log(["symbolicLink"]);
                             return;
                         }
                         populate("link");
                     } else if (stat.isFile() === true || stat.isBlockDevice() === true || stat.isCharacterDevice() === true) {
                         if (type === true) {
                             if (stat.isBlockDevice() === true) {
-                                apps.log(["blockDevice"], "");
+                                apps.log(["blockDevice"]);
                             } else if (stat.isCharacterDevice() === true) {
-                                apps.log(["characterDevice"], "");
+                                apps.log(["characterDevice"]);
                             } else {
-                                apps.log(["file"], "");
+                                apps.log(["file"]);
                             }
                             return;
                         }
@@ -1408,11 +1485,11 @@ interface directoryList extends Array<directoryItem> {
                     } else {
                         if (type === true) {
                             if (stat.isFIFO() === true) {
-                                apps.log(["FIFO"], "");
+                                apps.log(["FIFO"]);
                             } else if (stat.isSocket() === true) {
-                                apps.log(["socket"], "");
+                                apps.log(["socket"]);
                             } else {
-                                apps.log(["unknown"], "");
+                                apps.log(["unknown"]);
                             }
                             return;
                         }
@@ -1577,45 +1654,47 @@ interface directoryList extends Array<directoryItem> {
                     value = notes[b].slice(notes[b].indexOf("-") + 1);
                     notes[b] = notes[b].slice(0, notes[b].indexOf("-"));
                     numb = Number(value);
-                    if (value === "true" && sparser.libs.optionDef[notes[b]].type === "boolean") {
-                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
-                            options[notes[b]] = true;
+                    if (notes[b] !== "source") {
+                        if (value === "true" && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                            if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                                options[notes[b]] = true;
+                            } else {
+                                a = sparser.libs.optionDef[notes[b]].lexer.length;
+                                do {
+                                    a = a - 1;
+                                    options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = true;
+                                } while (a > 0);
+                            }
+                        } else if (value === "false" && sparser.libs.optionDef[notes[b]].type === "boolean") {
+                            if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                                options[notes[b]] = false;
+                            } else {
+                                a = sparser.libs.optionDef[notes[b]].lexer.length;
+                                do {
+                                    a = a - 1;
+                                    options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = false;
+                                } while (a > 0);
+                            }
+                        } else if (isNaN(numb) === true) {
+                            if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                                options[notes[b]] = value;
+                            } else {
+                                a = sparser.libs.optionDef[notes[b]].lexer.length;
+                                do {
+                                    a = a - 1;
+                                    options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = value;
+                                } while (a > 0);
+                            }
                         } else {
-                            a = sparser.libs.optionDef[notes[b]].lexer.length;
-                            do {
-                                a = a - 1;
-                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = true;
-                            } while (a > 0);
-                        }
-                    } else if (value === "false" && sparser.libs.optionDef[notes[b]].type === "boolean") {
-                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
-                            options[notes[b]] = false;
-                        } else {
-                            a = sparser.libs.optionDef[notes[b]].lexer.length;
-                            do {
-                                a = a - 1;
-                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = false;
-                            } while (a > 0);
-                        }
-                    } else if (isNaN(numb) === true) {
-                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
-                            options[notes[b]] = value;
-                        } else {
-                            a = sparser.libs.optionDef[notes[b]].lexer.length;
-                            do {
-                                a = a - 1;
-                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = value;
-                            } while (a > 0);
-                        }
-                    } else {
-                        if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
-                            options[notes[b]] = numb;
-                        } else {
-                            a = sparser.libs.optionDef[notes[b]].lexer.length;
-                            do {
-                                a = a - 1;
-                                options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = numb;
-                            } while (a > 0);
+                            if (sparser.libs.optionDef[notes[b]].lexer[0] === "all") {
+                                options[notes[b]] = numb;
+                            } else {
+                                a = sparser.libs.optionDef[notes[b]].lexer.length;
+                                do {
+                                    a = a - 1;
+                                    options.lexer_options[sparser.libs.optionDef[notes[b]].lexer[a]][notes[b]] = numb;
+                                } while (a > 0);
+                            }
                         }
                     }
                 } else if (sparser.libs.optionDef[notes[b]] !== undefined && sparser.libs.optionDef[notes[b]].type === "boolean") {
@@ -1682,7 +1761,7 @@ interface directoryList extends Array<directoryItem> {
                     return;
                 }
                 if (command === "get") {
-                    apps.log([""], file.toString());
+                    apps.log([file.toString()]);
                 } else if (callback !== null) {
                     callback(file);
                 }
@@ -1696,14 +1775,14 @@ interface directoryList extends Array<directoryItem> {
             "Welcome to Sparser.",
             "",
             "To see all the supported features try:",
-            "node js/services commands",
+            `${text.cyan}node js/services commands${text.none}`,
             "",
             "To see more detailed documentation for specific command supply the command name:",
-            "node js/services commands performance",
+            `${text.cyan}node js/services commands performance${text.none}`,
             "",
             "* Read the documentation             - cat readme.md",
             "* Read about the lexers              - cat lexers/readme.md",
-        ], "");
+        ]);
     };
     // converting time durations into something people read
     apps.humantime = function node_apps_humantime(finished:boolean):string {
@@ -1856,8 +1935,11 @@ interface directoryList extends Array<directoryItem> {
         return `${text.cyan}[${hourString}:${minuteString}:${secondString}]${text.none} `;
     };
     // provides a detailed list of supported languages by available lexer
-    apps.inventory = function node_apps_inventory():void {
-        const textwrap:string[] = [];
+    apps.inventory = function node_apps_inventory(callback:Function):void {
+        const textwrap:string[] = [],
+            list:{} = {};
+        let longest:number = 0,
+            total:number = 0;
         console.log("");
         console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
         console.log("");
@@ -1867,17 +1949,61 @@ interface directoryList extends Array<directoryItem> {
         });
         if (command === "inventory") {
             verbose = true;
+            callback = function node_apps_inventory_callback():void {
+                const keys:string[] = Object.keys(list),
+                    keylen:number = keys.length,
+                    output:string[] = [],
+                    pad = function node_app_inventory_readdir_each_readfile_fragments_each_pad(str:string, title:boolean, numb:boolean):string {
+                        const distance:number = (title === true)
+                            ? longest + 3
+                            : (numb === true)
+                                ? total.toString().length
+                                : longest;
+                        let c:number = 0,
+                            namelen:number = 0,
+                            space:string[] = [];
+                        namelen = str.length;
+                        if (namelen < distance) {
+                            c = namelen;
+                            space = [];
+                            do {
+                                space.push(" ");
+                                c = c + 1;
+                            } while (c < distance);
+                            if (numb === true) {
+                                return space.join(" ") + str;
+                            }
+                            return str + space.join("");
+                        }
+                        return str;
+                    };
+                let a:number = 0,
+                    b:number = 0,
+                    langlen:number = 0,
+                    count:number = 0;
+                keys.sort();
+                a = 0;
+                do {
+                    output.push(`${text.angry}*${text.none} ${text.green + text.underline + pad(keys[a] + ".ts", true, false)}${text.none}`);
+                    b = 0;
+                    langlen = list[keys[a]].length;
+                    do {
+                        count = count + 1;
+                        output.push(`  ${text.angry + pad(count.toString(), false, true) + text.none} ${pad(list[keys[a]][b][0], false, false)} ${text.cyan + list[keys[a]][b][1] + text.none}`);
+                        b = b + 1;
+                    } while (b < langlen);
+                    a = a + 1;
+                } while (a < keylen);
+                apps.log(output);
+            };
         }
         node.fs.readdir(`${projectPath}lexers`, function node_app_inventory_readdir(err:Error, filelist:string[]):void {
             if (err !== null) {
                 return apps.errout([err.toString()]);
             }
-            const list:{} = {},
-                files:string[] = [],
+            const files:string[] = [],
                 len:number = filelist.length;
-            let index:number = 0,
-                longest:number = 0,
-                total:number = 0;
+            let index:number = 0;
             do {
                 if (filelist[index].indexOf(".md") === filelist[index].length - 3 && filelist[index] !== "readme.md") {
                     files.push(filelist[index]);
@@ -1900,7 +2026,6 @@ interface directoryList extends Array<directoryItem> {
                             filedata = filedata.slice(0, filedata.indexOf("\n\n"));
                             return filedata.split("\n");
                         }());
-                    let a:number = 0;
                     list[lex] = [];
                     total = total + fragments.length;
                     fragments.forEach(function node_app_inventory_readdir_each_readfile_fragments_each(lang:string):void {
@@ -1913,50 +2038,7 @@ interface directoryList extends Array<directoryItem> {
                     });
                     index = index + 1;
                     if (index === files.length) {
-                        const keys:string[] = Object.keys(list),
-                            keylen:number = keys.length,
-                            output:string[] = [],
-                            pad = function node_app_inventory_readdir_each_readfile_fragments_each_pad(str:string, title:boolean, numb:boolean):string {
-                                const distance:number = (title === true)
-                                    ? longest + 3
-                                    : (numb === true)
-                                        ? total.toString().length
-                                        : longest;
-                                let c:number = 0,
-                                    namelen:number = 0,
-                                    space:string[] = [];
-                                namelen = str.length;
-                                if (namelen < distance) {
-                                    c = namelen;
-                                    space = [];
-                                    do {
-                                        space.push(" ");
-                                        c = c + 1;
-                                    } while (c < distance);
-                                    if (numb === true) {
-                                        return space.join(" ") + str;
-                                    }
-                                    return str + space.join("");
-                                }
-                                return str;
-                            };
-                        let b:number = 0,
-                            langlen:number = 0,
-                            count:number = 0;
-                        keys.sort();
-                        a = 0;
-                        do {
-                            output.push(`${text.angry}*${text.none} ${text.green + text.underline + pad(keys[a] + ".ts", true, false)}${text.none}`);
-                            b = 0;
-                            langlen = list[keys[a]].length;
-                            do {
-                                count = count + 1;
-                                output.push(`  ${text.angry + pad(count.toString(), false, true) + text.none} ${pad(list[keys[a]][b][0], false, false)} ${text.cyan + list[keys[a]][b][1] + text.none}`);
-                                b = b + 1;
-                            } while (b < langlen);
-                            a = a + 1;
-                        } while (a < keylen);
-                        apps.log(output, "");
+                        callback();
                     }
                 });
             });
@@ -1982,7 +2064,7 @@ interface directoryList extends Array<directoryItem> {
             if (command === "lint") {
                 verbose = true;
                 callback = function node_apps_lint_callback():void {
-                    apps.log([`Lint complete for ${lintpath}`], "");
+                    apps.log([`Lint complete for ${lintpath}`]);
                 };
             }
             (function node_apps_build_lint_getFiles():void {
@@ -2057,6 +2139,7 @@ interface directoryList extends Array<directoryItem> {
         // * lists.heading   - string  - a text heading to precede the list
         // * lists.obj       - object  - an object to traverse
         // * lists.property  - string  - The child property to read from or "eachkey" to
+        // * lists.total     - number  - To display a count
         // access a directly assigned primitive
         const keys:string[] = Object.keys(lists.obj).sort(),
             output:string[] = [],
@@ -2115,6 +2198,7 @@ interface directoryList extends Array<directoryItem> {
                     b = b + 1;
                 } while (b < len);
             };
+        output.push("");
         output.push(`${text.underline + text.bold}Sparser - ${lists.heading + text.none}`);
         output.push("");
         displayKeys("", keys);
@@ -2125,50 +2209,30 @@ interface directoryList extends Array<directoryItem> {
             output.push(`locally installed - ${text.green}node js/services commands hash${text.none}`);
             output.push("");
             output.push(`Commands are tested using the ${text.green}simulation${text.none} command.`);
-        } else if (command === "options" && process.argv[0] === undefined) {
+        } else if (command === "options" && lists.total === true) {
             output.push(`${text.green + lenn + text.none} matching option${plural}.`);
         }
-        apps.log(output, "");
+        apps.log(output);
     };
     // verbose metadata printed to the shell about Sparser
-    apps.log = function node_apps_log(output:string[], code:string):void {
-        const conclusion = function node_apps_log_conclusion():void {
-            if (process.argv.indexOf("debug") > -1 || process.argv.indexOf("debug") > -1) {
-                process.argv[2] = "debug";
-                return apps.errout(["Debug statement requested."]);
-            }
-            if (verbose === true && (output.length > 1 || output[0] !== "")) {
-                console.log("");
-            }
-            if (output[output.length - 1] === "") {
-                output.pop();
-            }
-            output.forEach(function node_apps_log_each(value:string) {
-                console.log(value);
-            });
-            if (verbose === true) {
-                console.log("");
-                console.log(`Sparser version ${text.angry + sparser.version.number + text.none}`);
-                apps.humantime(true);
-            }
-        };
-        if (code !== "") {
-            if (options.output === "" || options.output === undefined) {
-                console.log(code);
-                conclusion();
-            } else {
-                const out:string = node.path.resolve(options.output);
-                node.fs.writeFile(out, code, function node_apps_output_writeFile(err:Error):void {
-                    if (err !== null) {
-                        apps.errout([err.toString()]);
-                        return;
-                    }
-                    output.push(`Wrote output to ${text.green + out + text.none} at ${text.green + apps.commas(code.length) + text.none} characters.`);
-                    conclusion();
-                });
-            }
-        } else if (code === "" || options.output === "") {
-            conclusion();
+    apps.log = function node_apps_log(output:string[]):void {
+        if (process.argv.indexOf("debug") > -1 || process.argv.indexOf("debug") > -1) {
+            process.argv[2] = "debug";
+            return apps.errout(["Debug statement requested."]);
+        }
+        if (verbose === true && (output.length > 1 || output[0] !== "")) {
+            console.log("");
+        }
+        if (output[output.length - 1] === "") {
+            output.pop();
+        }
+        output.forEach(function node_apps_log_each(value:string) {
+            console.log(value);
+        });
+        if (verbose === true) {
+            console.log("");
+            console.log(`Sparser version ${text.angry + sparser.version.number + text.none}`);
+            apps.humantime(true);
         }
     };
     // CLI documentation for supported Sparser options
@@ -2181,7 +2245,8 @@ interface directoryList extends Array<directoryItem> {
                     emptyline: true,
                     heading: "Options",
                     obj: def,
-                    property: "definition"
+                    property: "definition",
+                    total: true
                 });
             } else {
                 // queried list of options
@@ -2211,12 +2276,14 @@ interface directoryList extends Array<directoryItem> {
                     a:number = 0,
                     b:number = 0,
                     name:string = "",
-                    value:string = "";
+                    value:string = "",
+                    isArray:boolean = false;
                 do {
                     namevalue(process.argv[a]);
                     b = 0;
                     do {
-                        if (def[keys[b]][name] === undefined || (value !== "" && def[keys[b]][name] !== value)) {
+                        isArray = Array.isArray(def[keys[b]][name]);
+                        if (def[keys[b]][name] === undefined || (isArray === true && def[keys[b]][name].indexOf(value) < 0) || (isArray === false && value !== "" && def[keys[b]][name] !== value)) {
                             keys.splice(b, 1);
                             b = b - 1;
                             keylen = keylen - 1;
@@ -2234,13 +2301,14 @@ interface directoryList extends Array<directoryItem> {
                     a = a + 1;
                 } while (a < keylen);
                 if (keylen < 1) {
-                    apps.log([`${text.angry}Sparser has no options matching the query criteria.${text.none}`], "");
+                    apps.log([`${text.angry}Sparser has no options matching the query criteria.${text.none}`]);
                 } else {
                     apps.lists({
                         emptyline: true,
                         heading: "Options",
                         obj: output,
-                        property: "definition"
+                        property: "definition",
+                        total: true
                     });
                 }
             }
@@ -2250,74 +2318,168 @@ interface directoryList extends Array<directoryItem> {
                 emptyLine: false,
                 heading: `Option: ${text.green + process.argv[0] + text.none}`,
                 obj: def[process.argv[0]],
-                property: "eachkey"
+                property: "eachkey",
+                total: false
             });
         }
         verbose = true;
-        apps.log([""], "");
+        apps.log([""]);
     };
-    // a performance application for testing the speed of the parser
-    apps.performance = function node_apps_performance():void {
-        if (process.argv[0] === undefined) {
-            return apps.errout([`The ${text.angry}performance${text.none} command requires a relative path to a file`]);
+    // reads from a file and returns to standard output
+    apps.parse = function node_apps_parse():void {
+        if (process.argv.length < 1) {
+            apps.errout(["The parse command requires a file system path."]);
+            return;
         }
-        const sourcePath:string = (process.argv.length > 1)
-            ? node.path.normalize(process.argv[1])
-            : "";
-        apps.fileOptions(sourcePath);
-        node.fs.readFile(sourcePath, {
-            encoding: "utf8"
-        }, function node_apps_performance_readFile(errfile, filedata) {
-            if (errfile !== null) {
-                const errstring = errfile.toString();
-                if (errstring.indexOf("no such file or directory") > 0) {
-                    return apps.errout([`No file exists as the path specified: ${process.argv[1]}`]);
-                }
-                return apps.errout([errfile]);
-            }
-            let index:number = 11,
-                total:number = 0,
-                low:number = 0,
-                high:number = 0,
-                start:[number, number],
-                end:[number, number];
-            const lang = sparser.libs.language.auto(filedata, "javascript"),
-                store:number[] = [],
-                output:data = sparser.parser(),
-                interval = function node_apps_performance_readFile_readdir_interval():void {
-                    index = index - 1;
-                    if (index > -1) {
-                        start = process.hrtime();
-                        sparser.parser();
-                        end = process.hrtime(start);
-                        store.push((end[0] * 1e9) + end[1]);
-                        // specifying a delay between intervals allows for garbage collection without interference to the performance testing
-                        setTimeout(node_apps_performance_readFile_readdir_interval, 400);
-                    } else {
-                        console.log("");
-                        store.forEach(function node_apps_performance_readFile_readdir_total(value:number, index:number) {
-                            if (index > 0) {
-                                console.log(`${text.yellow + index + text.none}: ${value}`);
-                                total = total + value;
-                                if (value > high) {
-                                    high = value;
-                                } else if (value < low) {
-                                    low = value;
-                                }
-                            } else {
-                                console.log(`${text.yellow}0:${text.none} ${value} ${text.red}(first run is ignored)${text.none}`);
-                            }
-                        });
-                        console.log("");
-                        console.log(`[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`);
-                        console.log(`[${text.cyan + apps.commas(filedata.length) + text.none}] Character size`);
-                        console.log(`[${text.cyan + apps.commas(output.token.length) + text.none}] Token length`);
-                        console.log(`Parsed as ${text.cyan + lang[2] + text.none} with lexer ${text.cyan + lang[1] + text.none}.`);
-                        console.log("");
+        const path:string = (options.source === "")
+                ? process.argv[0]
+                : options.source,
+            files:{} = {},
+            parseAll = function node_apps_parse_parseAll():void {
+                const keys:string[] = Object.keys(files),
+                    len:number = keys.length,
+                    log:string[] = [],
+                    plural:string = (fcount === 1)
+                        ? ""
+                        : "s";
+                let a:number = 0,
+                    output:string = "";
+                do {
+                    apps.fileOptions(keys[a]);
+                    options.source = files[keys[a]];
+                    files[keys[a]] = sparser.parser();
+                    a = a + 1;
+                } while (a < len);
+                a = process.argv.length;
+                do {
+                    a = a - 1;
+                    if (process.argv[a].indexOf("output:") === 0) {
+                        output = process.argv[a].slice(7);
+                        break;
                     }
-                };
-            interval();
+                } while (a > 0);
+                if (output === "") {
+                    log.push(JSON.stringify(files));
+                    if (verbose === true) {
+                        log.push("");
+                        log.push(`Parse complete for ${text.green + text.bold + fcount + text.none} file${plural}!`);
+                    }
+                    apps.log(log);
+                } else {
+                    node.fs.writeFile(output, JSON.stringify(files), {
+                        encoding: "utf8"
+                    }, function node_apps_parse_parseAll_write(erw:Error):void {
+                        if (erw !== null) {
+                            apps.errout([erw.toString()]);
+                            return;
+                        }
+                        log.push("");
+                        log.push(`Parse complete for ${text.green + text.bold + fcount + text.none} file${plural} and successfully written to ${text.cyan + output + text.none}!`);
+                        verbose = true;
+                        apps.log(log);
+                    });
+                }
+            },
+            readFile = function node_apps_parse_readFile(filepath:string):void {
+                node.fs.readFile(filepath, "utf8", function node_apps_parse_readFile_read(er:Error, filedata:string):void {
+                    if (er !== null) {
+                        apps.errout([er.toString()]);
+                        return;
+                    }
+                    files[filepath] = filedata;
+                    count = count + 1;
+                    fcount = fcount + 1;
+                    if (count === total) {
+                        parseAll();
+                    }
+                });
+            };
+        let total:number = 0,
+            count:number = 0,
+            fcount:number = 0;
+        apps.directory({
+            callback: function node_apps_parse_callback(filelist:directoryList):void {
+                total = filelist.length;
+                if (total === 1 && filelist[0][1] !== "file") {
+                    apps.log([filelist[0], "Parse command received an empty directory."]);
+                } else {
+                    let a: number = 0;
+                    do {
+                        if (filelist[a][1] === "file") {
+                            readFile(filelist[a][0]);
+                        } else {
+                            count = count + 1;
+                            if (count === total) {
+                                parseAll();
+                            }
+                        }
+                        a = a + 1;
+                    } while (a < total);
+                }
+            },
+            exclusions: exclusions,
+            path: node.path.normalize(path),
+            recursive: true,
+            symbolic: true
         });
+    };
+    // handler for the performance command
+    apps.performance = function node_apps_performance():void {
+        if (performance.test === false) {
+            if (process.argv.length < 1) {
+                return apps.errout([
+                    `The ${text.angry}performance${text.none} command requires a Pretty Diff command to performance test.`,
+                    `Example: ${text.cyan}prettydiff performance ${text.bold}beautify js/services.js${text.none}`,
+                    "",
+                    `See available commands with ${text.cyan}prettydiff commands${text.none}`
+                ]);
+            }
+            command = process.argv[0];
+            if (command === "build") {
+                apps.errout(["The performance tool cannot test the build command.  This creates too much noise and potential for corruption."]);
+                return;
+            }
+            if (command === "performance") {
+                apps.errout(["The performance tool cannot test itself.  This creates an endless loop."]);
+                return;
+            }
+            if (commands[command] === undefined) {
+                apps.errout([`Command ${text.angry + command + text.none} is not defined.`]);
+                return;
+            }
+            console.log("");
+            console.log(`${text.bold}Pretty Diff - Performance Test Tool${text.none}`);
+            console.log(`There is a ${text.cyan}400ms delay between intervals${text.none} to allow for garbage collection to complete before adversely impacting the next test cycle.`);
+            console.log("");
+            performance.source = options.source;
+            performance.test = true;
+            verbose = false;
+            process.argv.splice(0, 1);
+        }
+        if (performance.index < 11) {
+            performance.start = process.hrtime();
+            apps[command]();
+        } else {
+            let total:number = 0,
+                low:number = 0,
+                high:number = 0;
+            console.log("");
+            performance.store.forEach(function node_apps_performance_total(value:number) {
+                total = total + value;
+                if (value > high) {
+                    high = value;
+                } else if (value < low) {
+                    low = value;
+                }
+            });
+            performance.test = false;
+            verbose = true;
+            command = "performance";
+            apps.log([
+                `[${text.bold + text.green + (total / 1e7) + text.none}] Milliseconds, \u00b1${text.cyan + ((((high - low) / total) / 2) * 100).toFixed(2) + text.none}%`,
+                `[${text.cyan + apps.commas(performance.codeLength) + text.none}] Character size of task's output to terminal.`
+            ]);
+        }
     };
     // runs services: http, web sockets, and file system watch.  Allows rapid testing with automated rebuilds
     apps.server = function node_apps_server():void {
@@ -2510,10 +2672,194 @@ interface directoryList extends Array<directoryItem> {
         server.on("error", serverError);
         server.listen(port);
     };
+    // simulates running the various commands of this services.ts file
+    apps.simulation = function node_apps_simulation(callback:Function):void {
+        const tests:simulationItem[] = require(`${js}test${sep}simulations.js`),
+            len:number = tests.length,
+            cwd:string = __dirname.replace(/(\/|\\)js$/, ""),
+            increment = function node_apps_simulation_increment(irr:string):void {
+                const interval = function node_apps_simulation_increment_interval():void {
+                    a = a + 1;
+                    if (a < len) {
+                        wrapper();
+                    } else {
+                        console.log("");
+                        callback(`${text.green}Successfully completed all ${text.cyan + len + text.green} simulation tests.${text.none}`);
+                    }
+                };
+                if (irr !== "") {
+                    console.log(`${apps.humantime(false) + text.underline}Test ${a + 1} ignored (${text.angry + irr + text.none + text.underline}):${text.none} ${tests[a].command}`);
+                } else {
+                    console.log(`${apps.humantime(false) + text.green}Passed simulation ${a + 1}: ${text.none + tests[a].command}`);
+                }
+                if (tests[a].artifact === "" || tests[a].artifact === undefined) {
+                    interval();
+                } else {
+                    apps.remove(tests[a].artifact, function node_apps_simulation_wrapper_remove():void {
+                        interval();
+                    });
+                }
+            },
+            errout = function node_apps_simulation_errout(message:string, stdout:string) {
+                apps.errout([
+                    `Simulation test string ${text.angry + tests[a].command + text.none} ${message}:`,
+                    tests[a].test,
+                    "",
+                    "",
+                    `${text.green}Actual output:${text.none}`,
+                    stdout
+                ]);
+            },
+            wrapper = function node_apps_simulation_wrapper():void {
+                node.child(`node js/services ${tests[a].command}`, {cwd: cwd, maxBuffer: 2048 * 500}, function node_apps_simulation_wrapper_child(errs:nodeError, stdout:string, stderror:string|Buffer) {
+                    if (tests[a].artifact === "" || tests[a].artifact === undefined) {
+                        writeflag = "";
+                    } else {
+                        tests[a].artifact = node.path.resolve(tests[a].artifact);
+                        writeflag = tests[a].artifact;
+                    }
+                    if (errs !== null) {
+                        if (errs.toString().indexOf("getaddrinfo ENOTFOUND") > -1) {
+                            increment("no internet connection");
+                            return;
+                        }
+                        if (errs.toString().indexOf("certificate has expired") > -1) {
+                            increment("TLS certificate expired on HTTPS request");
+                            return;
+                        }
+                        if (stdout === "") {
+                            apps.errout([errs.toString()]);
+                            return;
+                        }
+                    }
+                    if (stderror !== "") {
+                        apps.errout([stderror]);
+                        return;
+                    }
+                    if (typeof stdout === "string") {
+                        stdout = stdout.replace(/\s+$/, "").replace(/^\s+/, "").replace(/\s\d+(\.\d+)*\s/g, " XXXX ");
+                    }
+                    if (tests[a].qualifier.indexOf("file") === 0) {
+                        if (tests[a].artifact === "" || tests[a].artifact === undefined) {
+                            apps.errout([`Tests ${text.cyan + tests[a].command + text.none} uses ${text.angry + tests[a].qualifier + text.none} as a qualifier but does not mention an artifact to remove.`]);
+                            return;
+                        }
+                        if (tests[a].qualifier.indexOf("file ") === 0) {
+                            tests[a].file = node.path.resolve(tests[a].file);
+                            node.fs.readFile(tests[a].file, "utf8", function node_apps_simulation_wrapper_file(err:Error, dump:string) {
+                                if (err !== null) {
+                                    apps.errout([err.toString()]);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file begins" && dump.indexOf(tests[a].test) !== 0) {
+                                    errout(`is not starting in file: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file contains" && dump.indexOf(tests[a].test) < 0) {
+                                    errout(`is not anywhere in file: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file ends" && dump.indexOf(tests[a].test) === dump.length - tests[a].test.length) {
+                                    errout(`is not at end of file: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file is" && dump !== tests[a].test) {
+                                    errout(`does not match the file: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file not" && dump === tests[a].test) {
+                                    errout(`matches this file, but shouldn't: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "file not contains" && dump.indexOf(tests[a].test) > -1) {
+                                    errout(`is contained in this file, but shouldn't be: ${text.green + tests[a].file + text.none}`, dump);
+                                    return;
+                                }
+                                increment("");
+                            });
+                        } else if (tests[a].qualifier.indexOf("filesystem ") === 0) {
+                            tests[a].test = node.path.resolve(tests[a].test);
+                            node.fs.stat(tests[a].test, function node_apps_simulation_wrapper_filesystem(ers:Error) {
+                                if (ers !== null) {
+                                    if (tests[a].qualifier === "filesystem contains" && ers.toString().indexOf("ENOENT") > -1) {
+                                        apps.errout([
+                                            `Simulation test string ${text.angry + tests[a].command + text.none} does not see this address in the local file system:`,
+                                            text.cyan + tests[a].test + text.none
+                                        ]);
+                                        return;
+                                    }
+                                    apps.errout([ers.toString()]);
+                                    return;
+                                }
+                                if (tests[a].qualifier === "filesystem not contains") {
+                                    apps.errout([
+                                        `Simulation test string ${text.angry + tests[a].command + text.none} sees the following address in the local file system, but shouldn't:`,
+                                        text.cyan + tests[a].test + text.none
+                                    ]);
+                                    return;
+                                }
+                                increment("");
+                            });
+                        }
+                    } else {
+                        if (tests[a].qualifier === "begins" && (typeof stdout !== "string" || stdout.indexOf(tests[a].test) !== 0)) {
+                            errout("does not begin with the expected output", stdout);
+                            return;
+                        }
+                        if (tests[a].qualifier === "contains" && (typeof stdout !== "string" || stdout.indexOf(tests[a].test) < 0)) {
+                            errout("does not contain the expected output", stdout);
+                            return;
+                        }
+                        if (tests[a].qualifier === "ends" && (typeof stdout !== "string" || stdout.indexOf(tests[a].test) !== stdout.length - tests[a].test.length)) {
+                            errout("does not end with the expected output", stdout);
+                            return;
+                        }
+                        if (tests[a].qualifier === "is" && stdout !== tests[a].test) {
+                            errout("does not match the expected output", stdout);
+                            return;
+                        }
+                        if (tests[a].qualifier === "not" && stdout === tests[a].test) {
+                            errout("must not be this output", stdout);
+                            return;
+                        }
+                        if (tests[a].qualifier === "not contains" && (typeof stdout !== "string" || stdout.indexOf(tests[a].test) > -1)) {
+                            errout("must not contain this output", stdout)
+                            return;
+                        }
+                        increment("");
+                    }
+                });
+            };
+
+        let a:number = 0;
+        if (command === "simulation") {
+            callback = function node_apps_lint_callback():void {
+                apps.log(["\u0007"]); // bell sound
+            };
+            verbose = true;
+            console.log("");
+            console.log(`${text.underline + text.bold}Pretty Diff - services.ts simulation tests${text.none}`);
+            console.log("");
+        }
+        wrapper();
+    };
+    // for testing the debug report generation
+    // * the debug report is a markdown report for posting online
+    // to aid with troubleshooting a defect
+    apps.sparser_debug = function node_apps_debug():void {
+        process.argv.push("sparser_debug");
+        apps.errout(["Debug Command"]);
+    };
+    // run the test suite using the build application
     apps.test = function node_apps_test():void {
         apps.build(true);
     };
+    // runs the parser and outputs results beautified for a text comparison to the stored code unit
     apps.testprep = function node_apps_testprep():void {
+        if (process.argv.length < 1) {
+            apps.errout(["No file path provided."]);
+            return;
+        }
         verbose = true;
         apps.fileOptions(process.argv[0]);
         node.fs.readFile(node.path.resolve(process.argv[0]), {
@@ -2538,7 +2884,7 @@ interface directoryList extends Array<directoryItem> {
             }());
             options.format = "testprep";
             console.log(sparser.parser());
-            apps.log([`${text.green}Test case generated!${text.none}`], "");
+            apps.log([`${text.green}Test case generated!${text.none}`]);
         });
     };
     // unit test validation runner for Sparser code units
@@ -2765,7 +3111,7 @@ interface directoryList extends Array<directoryItem> {
         if (command === "validation") {
             callback = function node_apps_validation_callback():void {
                 verbose = true;
-                apps.log([""], "");
+                apps.log([""]);
             };
         }
         total.lexer = lexers.length;
@@ -2778,7 +3124,7 @@ interface directoryList extends Array<directoryItem> {
     // runs apps.log
     apps.version = function ():void {
         verbose = true;
-        apps.log([""], "");
+        apps.log([""]);
     };
     // performs word wrap when printing text to the shell
     apps.wrapit = function node_apps_lists_wrapit(outputArray:string[], string:string):void {
@@ -2839,7 +3185,7 @@ interface directoryList extends Array<directoryItem> {
                     }
                     outputArray.push(string.slice(0, wrapper).replace(/ $/, ""));
                     string = string.slice(wrapper + 1);
-                    if (string.length + indent.length > wrap) {
+                    if (string.length + indent.length > wrap && string.replace(/\s+/g, "").length < wrap) {
                         string = indent + string;
                         node_apps_options_wrapit_formLine();
                     } else if (string !== "") {
