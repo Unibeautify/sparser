@@ -1,6 +1,6 @@
+/*global ace, performance, window*/
 /*jslint browser:true */
 /*eslint-env browser*/
-/*global ace, performance, window*/
 
 (function web() {
     "use strict";
@@ -524,8 +524,6 @@
             len:number = select.length,
             id:string = "";
         options.format = "html";
-        options.language = "auto";
-        options.lexer = "auto";
         if (localStorage.getItem("demo") !== null) {
             options = JSON.parse(localStorage.getItem("demo"));
             window.sparser.options = options;

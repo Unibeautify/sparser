@@ -45,8 +45,12 @@
             };
             if (sparser.options.language === "auto" || sparser.options.lexer === "auto") {
                 let lang:[string, string, string] = sparser.libs.language.auto(sparser.options.source, "javascript");
-                sparser.options.language = lang[0];
-                sparser.options.lexer = lang[1];
+                if (sparser.options.language === "auto") {
+                    sparser.options.language = lang[0];
+                }
+                if (sparser.options.lexer === "auto") {
+                    sparser.options.lexer = lang[1];
+                }
             }
             if (typeof sparser.lexers[sparser.options.lexer] === "function") {
                 sparser.parseerror = "";
@@ -59,8 +63,6 @@
                 // This line parses the code using a lexer file
                 sparser.lexers[sparser.options.lexer](`${sparser.options.source} `);
                 // restore language and lexer values
-                sparser.options.language = langstore[0];
-                sparser.options.lexer = langstore[1];
             } else {
                 sparser.parseerror = `Specified lexer, ${sparser.options.lexer}, is not a function.`;
             }
@@ -273,6 +275,8 @@
                 } while (a < len);
                 return `[\n${data.join(",\n")}\n]`;
             }
+            sparser.options.language = langstore[0];
+            sparser.options.lexer = langstore[1];
             return parse.data;
         },
         parse:parse = {

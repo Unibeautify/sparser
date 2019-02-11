@@ -484,8 +484,8 @@ interface directoryList extends Array<directoryItem> {
                         ? Object.keys(def.format)
                         : [],
                     obj = options,
-                    optionName = function node_args_optionName(bindArgument:boolean):void {
-                        if (a === 0 || options[list[a]] === undefined) {
+                    optionName = function node_args_readOptions_optionName(bindArgument:boolean):void {
+                        if (a === 0 || def[list[a]] === undefined) {
                             if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
                                 list.splice(a, 1);
                                 len = len - 1;
@@ -500,6 +500,20 @@ interface directoryList extends Array<directoryItem> {
                         }
                         list.splice(0, 0, list[a]);
                         list.splice(a + 1, 1);
+                    },
+                    assign = function node_args_readOptions_assign(value:string|number|boolean):void {
+                        let b:number = def[name].lexer.length;
+                        if (def[name].lexer[0] === "all") {
+                            options[name] = value;
+                        } else {
+                            do {
+                                b = b - 1;
+                                options.lexer_options[def[name].lexer[b]][name] = value;
+                            } while (b > 0);
+                        }
+                        list.splice(list.indexOf(name + split + value), 1);
+                        len = len - 1;
+                        def[name].default = value;
                     };
                 let split:string = "",
                     value:string = "",
@@ -568,17 +582,17 @@ interface directoryList extends Array<directoryItem> {
                                     list.splice(a, 1);
                                     len = len - 1;
                                 }
-                            } else if (options[name] !== undefined) {
+                            } else if (def[name] !== undefined) {
                                 if (value === "true" && def[name].type === "boolean") {
-                                    options[name] = true;
+                                    assign(true);
                                 } else if (value === "false" && def[name].type === "boolean") {
-                                    options[name] = false;
+                                    assign(false);
                                 } else if (isNaN(Number(value)) === false && def[name].type === "number") {
-                                    options[name] = Number(value);
+                                    assign(Number(value));
                                 } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
-                                    options[name] = value;
+                                    assign(value);
                                 } else if (def[name].values === undefined) {
-                                    options[name] = value;
+                                    assign(value);
                                 }
                             }
                         } else if (command === "options") {
@@ -601,7 +615,6 @@ interface directoryList extends Array<directoryItem> {
             dirstotal:number = 0;
         options.api = "node";
         options.binary_check = (
-            // eslint-disable-next-line
             /\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u000b|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001c|\u001d|\u001e|\u001f|\u007f|\u0080|\u0081|\u0082|\u0083|\u0084|\u0085|\u0086|\u0087|\u0088|\u0089|\u008a|\u008b|\u008c|\u008d|\u008e|\u008f|\u0090|\u0091|\u0092|\u0093|\u0094|\u0095|\u0096|\u0097|\u0098|\u0099|\u009a|\u009b|\u009c|\u009d|\u009e|\u009f/g
         );
         libFiles.forEach(function node_args_each(value:string) {
@@ -609,7 +622,7 @@ interface directoryList extends Array<directoryItem> {
         });
     }());
 
-    // build system
+    // build/test system
     apps.build = function node_apps_build(test:boolean):void {
         let firstOrder:boolean = true,
             sectionTime:[number, number] = [0, 0];
@@ -884,7 +897,7 @@ interface directoryList extends Array<directoryItem> {
                                         apps.error([erb.toString()]);
                                         return;
                                     }
-                                    node.fs.writeFile(`${js}demo${sep}demo.js`, `${browserfile.replace(/\}\(\)\);\s*$/, "") + demofile}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo(ers:Error) {
+                                    node.fs.writeFile(`${js}demo${sep}demo.js`, `/*global ace, performance, window\u002a/${browserfile.replace(/\}\(\)\);\s*$/, "") + demofile}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo(ers:Error) {
                                         if (ers !== null) {
                                             apps.error([ers.toString()]);
                                             return;
@@ -1598,8 +1611,7 @@ interface directoryList extends Array<directoryItem> {
     // set options from conventions on the file name
     apps.fileOptions = function node_apps_fileOptions(filename:string):void {
         const notes:string[] = filename.split("_"),
-            noteslen:number = notes.length,
-            lang:[string, string, string] = sparser.libs.language.auto(options.source, "javascript");
+            noteslen:number = notes.length;
         let value:string = "",
             numb:number = 0,
             name:string = "",
@@ -1714,12 +1726,6 @@ interface directoryList extends Array<directoryItem> {
                 }
                 b = b + 1;
             } while (b < noteslen);
-        }
-        if (options.language === "auto") {
-            options.language = lang[0];
-        }
-        if (options.lexer === "auto") {
-            options.lexer = lang[1];
         }
     };
     // http(s) get function
@@ -2101,10 +2107,10 @@ interface directoryList extends Array<directoryItem> {
                                     console.log(`${apps.humantime(false) + text.green}Lint ${filesLinted} passed:${text.none} ${val}`);
                                     if (filesRead === filesLinted) {
                                         console.log("");
-                                        if (callback !== undefined) {
-                                            callback(`${text.green}Lint complete for ${filesLinted} files!${text.none}`);
+                                        if (callback === undefined) {
+                                            console.log(`${text.green}Lint complete for ${text.cyan + text.bold + filesLinted + text.none + text.green} files!${text.none}`);
                                         } else {
-                                            console.log(`${text.green}Lint complete for ${filesLinted} files!${text.none}`);
+                                            callback(`${text.green}Lint complete for ${text.cyan + text.bold + filesLinted + text.none + text.green} files!${text.none}`);
                                         }
                                         return;
                                     }
@@ -2353,7 +2359,7 @@ interface directoryList extends Array<directoryItem> {
     apps.parse = function node_apps_parse():void {
         if (process.argv.length < 1) {
             apps.errout([
-                "The parse command requires a file system path.",
+                `The parse command requires a ${text.angry}file system path${text.none}.`,
                 "Please run this command for examples:",
                 `${text.cyan}node js/services commands parse${text.none}`
             ]);
@@ -2516,6 +2522,114 @@ interface directoryList extends Array<directoryItem> {
             }
             apps.log(log);
         }
+    };
+    // similar to posix "rm -rf" command
+    apps.remove = function node_apps_remove(filepath:string, callback:Function):void {
+        const numb:any = {
+                dirs: 0,
+                file: 0,
+                link: 0,
+                size: 0
+            },
+            removeItems = function node_apps_remove_removeItems(filelist:directoryList):void {
+                let a:number = 0;
+                const len:number = filelist.length,
+                    destroy = function node_apps_remove_removeItems_destroy(item:directoryItem) {
+                        const type:"rmdir"|"unlink" = (item[1] === "directory")
+                            ? "rmdir"
+                            : "unlink";
+                        node.fs[type](item[0], function node_apps_remove_removeItems_destroy_callback(er:nodeError):void {
+                            if (verbose === true && er !== null && er.toString().indexOf("no such file or directory") < 0) {
+                                if (er.code === "ENOTEMPTY") {
+                                    node_apps_remove_removeItems_destroy(item);
+                                    return;
+                                }
+                                apps.errout([er.toString()]);
+                                return;
+                            }
+                            if (item[0] === filelist[0][0]) {
+                                callback();
+                            } else {
+                                filelist[item[2]][3] = filelist[item[2]][3] - 1;
+                                if (filelist[item[2]][3] < 1) {
+                                    node_apps_remove_removeItems_destroy(filelist[item[2]]);
+                                }
+                            }
+                        });
+                    };
+                if (filelist.length < 1) {
+                    callback();
+                    return;
+                }
+                do {
+                    if (command === "remove") {
+                        if (filelist[a][1] === "file") {
+                            numb.file = numb.file + 1;
+                            numb.size = numb.size + filelist[a][4].size;
+                        } else if (filelist[a][1] === "directory") {
+                            numb.dirs = numb.dirs + 1;
+                        } else if (filelist[a][1] === "link") {
+                            numb.link = numb.link + 1;
+                        }
+                    }
+                    if ((filelist[a][1] === "directory" && filelist[a][3] === 0) || filelist[a][1] !== "directory") {
+                        destroy(filelist[a]);
+                    }
+                    a = a + 1;
+                } while (a < len);
+            };
+        if (command === "remove") {
+            if (process.argv.length < 1) {
+                apps.errout([
+                    "Command remove requires a filepath",
+                    `${text.cyan}prettydiff remove ../jsFiles${text.none}`
+                ]);
+                return;
+            }
+            filepath = node.path.resolve(process.argv[0]);
+            callback = function node_apps_remove_callback() {
+                const out = ["Pretty Diff removed "];
+                verbose = true;
+                console.log("");
+                out.push(text.angry);
+                out.push(String(numb.dirs));
+                out.push(text.none);
+                out.push(" director");
+                if (numb.dirs === 1) {
+                    out.push("y, ");
+                } else {
+                    out.push("ies, ");
+                }
+                out.push(text.angry);
+                out.push(String(numb.file));
+                out.push(text.none);
+                out.push(" file");
+                if (numb.dirs !== 1) {
+                    out.push("s");
+                }
+                out.push(", ");
+                out.push(text.angry);
+                out.push(String(numb.link));
+                out.push(text.none);
+                out.push(" symbolic link");
+                if (numb.symb !== 1) {
+                    out.push("s");
+                }
+                out.push(" at ");
+                out.push(text.angry);
+                out.push(apps.commas(numb.size));
+                out.push(text.none);
+                out.push(" bytes.");
+                apps.log([out.join(""), `Removed ${text.cyan + filepath + text.none}`], "", "");
+            };
+        }
+        apps.directory({
+            callback: removeItems,
+            exclusions: [],
+            path: filepath,
+            recursive: true,
+            symbolic: true
+        });
     };
     // runs services: http, web sockets, and file system watch.  Allows rapid testing with automated rebuilds
     apps.server = function node_apps_server():void {
@@ -2720,7 +2834,11 @@ interface directoryList extends Array<directoryItem> {
                         wrapper();
                     } else {
                         console.log("");
-                        callback(`${text.green}Successfully completed all ${text.cyan + len + text.green} simulation tests.${text.none}`);
+                        if (callback === undefined) {
+                            console.log(`${text.green}Successfully completed all ${text.cyan + text.bold + len + text.none + text.green} simulation tests.${text.none}`);
+                        } else {
+                            callback(`${text.green}Successfully completed all ${text.cyan + text.bold + len + text.none + text.green} simulation tests.${text.none}`);
+                        }
                     }
                 };
                 if (irr !== "") {
@@ -2977,7 +3095,11 @@ interface directoryList extends Array<directoryItem> {
                                 console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm} and ${empty} file${pe} empty.${text.none}`);
                             }
                         }
-                        callback();
+                        if (callback === undefined) {
+                            console.log(`${text.green}Lint complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
+                        } else {
+                            callback(`${text.green}Lint complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
+                        }
                     },
                     comparePass = function node_apps_validation_compare_comparePass():void {
                         filecount = filecount + 1;
@@ -3014,7 +3136,7 @@ interface directoryList extends Array<directoryItem> {
                             };
                         require(`${js}test${sep}diffview.js`);
                         report          = sparser.libs.diffview(diff_options);
-                        total           = report[1];console.log(report);
+                        total           = report[1];
                         if (total < 1) {
                             comparePass();
                             return false;

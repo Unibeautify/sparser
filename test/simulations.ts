@@ -8,8 +8,7 @@
 
 (function simulations() {
     "use strict";
-    const eol = require("os").EOL,
-        sep:string = require("path").sep,
+    const sep:string = require("path").sep,
         projectPath:string = (function node_project() {
             const dirs:string[] = __dirname.split(sep);
             return dirs.slice(0, dirs.length - 2).join(sep) + sep;
@@ -181,7 +180,7 @@
             {
                 command: "parse demo no_lead_zero:true",
                 qualifier: "contains",
-                test: ".title{margin:0 0 .5em;min-width:35em}"
+                test: `".title","{","margin",":","0 XXXX .5em",";","min-width",":","35em","x;","}"`
             },
             {
                 artifact: `${projectPath}libstest.txt`,
