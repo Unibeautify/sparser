@@ -632,7 +632,8 @@ interface directoryList extends Array<directoryItem> {
                     "typescript",
                     "libraries",
                     "demo",
-                    "options_markdown"
+                    "options_markdown",
+                    "inventory"
                 ],
                 test: [
                     "lint",
@@ -855,6 +856,63 @@ interface directoryList extends Array<directoryItem> {
                         });
                     });
                 },
+                // document the current inventory of supported languages
+                inventory: function node_apps_build_inventory():void {
+                    const nexttest:any = {
+                        readme: false,
+                        index: true
+                    };
+                    heading("Gathering inventory of supported languages...");
+                    apps.inventory(function node_apps_build_inventory_callback(list:inventory) {
+                        const keys:string[] = Object.keys(list),
+                            keylen:number = keys.length;
+                        keys.sort();
+                        node.fs.readFile(`${projectPath}readme.md`, "utf8", function node_apps_build_inventory_readme(err:Error, filedata:string):void {
+                            const inv:string[] = ["A list of supplied lexers and their various dedicated language support as indicated through use of logic with *options.language*. Other languages may be supported without dedicated logic."];
+                            let a:number = 0,
+                                b:number = 0,
+                                count:number = 0,
+                                langlen:number = 0;
+                            if (err !== null) {
+                                apps.errout([err.toString()]);
+                                return;
+                            }
+                            inv.push("");
+                            do {
+                                inv.push(`* **${keys[a]}**`);
+                                b = 0;
+                                langlen = list[keys[a]].length;
+                                do {
+                                    inv.push(`   - [${list[keys[a]][b][0]}](${list[keys[a]][b][1]})`);
+                                    count = count + 1;
+                                    b = b + 1;
+                                } while (b < langlen);
+                                a = a + 1;
+                            } while (a < keylen);
+                            inv.push("");
+                            inv.push(`*${count} total languages.*`);
+                            inv.push("");
+                            inv.push("");
+                            node.fs.writeFile(`${projectPath}readme.md`, injection({
+                                end: "## Build",
+                                file: filedata,
+                                message: inv.join(node.os.EOL),
+                                start: "## Supported Languages"
+                            }), {
+                                encoding: "utf8"
+                            }, function node_apps_build_inventory_readme_write(erw:Error) {
+                                if (erw !== null) {
+                                    apps.errout([erw.toString()]);
+                                    return;
+                                }
+                                nexttest.readme = true;
+                                if (nexttest.index === true) {
+                                    next(`${text.green}Inventory of supported languages written to readme.md and html.${text.none}`);
+                                };
+                            });
+                        });
+                    });
+                },
                 // read JS files and combine them into fewer JS files
                 libraries: function node_apps_build_libraries():void {
                     const libfiles:string[] = [],
@@ -902,7 +960,13 @@ interface directoryList extends Array<directoryItem> {
                                             apps.error([ers.toString()]);
                                             return;
                                         }
-                                        next(message);
+                                        node.fs.writeFile(`${projectPath}readme.md`, readme, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo_writeReadme(erm:Error) {
+                                            if (erm !== null) {
+                                                apps.error([erm.toString()]);
+                                                return;
+                                            }
+                                            next(message);
+                                        });
                                     });
                                 });
                             });
@@ -920,8 +984,9 @@ interface directoryList extends Array<directoryItem> {
                                         .replace(/\/\*\s*global \w+(\s*,\s*\w+)*\s*\*\//, "")
                                         .replace(/^\s+/, "");
                                     if (filename === "demo.js") {
-                                        demofile = filedata
-                                            .replace(/("|')use strict("|');/g, "");
+                                        demofile = filedata.replace(/("|')use strict("|');/g, "");
+                                    } else if (filename === "readme.md") {
+                                        readme = filedata.replace(/##\s+Version\s+\d+\.\d+\.\d+/, `## Version ${sparser.version.number}`);
                                     } else if (filename === "parse.js") {
                                         parsefile = filedata
                                             .replace(/global\.sparser/g, "sparser")
@@ -959,7 +1024,7 @@ interface directoryList extends Array<directoryItem> {
                                         });
                                     });
                                 } else if (stats.isFile() === true) {
-                                    if (pathitem.slice(pathitem.length - 3) === ".js") {
+                                    if (pathitem.slice(pathitem.length - 3) === ".js" || pathitem === `${projectPath}readme.md`) {
                                         appendFile(pathitem);
                                     }
                                 }
@@ -968,10 +1033,12 @@ interface directoryList extends Array<directoryItem> {
                     let a:number = 0,
                         filelen: number = 0,
                         demofile:string = "",
-                        parsefile:string = "";
+                        parsefile:string = "",
+                        readme:string = "";
                     heading("Merging files for simplified application access.");
                     libFiles.push(`${js}parse.js`);
                     libFiles.push(`${js}demo${sep}demo.js`);
+                    libFiles.push(`${projectPath}readme.md`);
                     filelen = libFiles.length;
                     (function node_apps_build_libraries_versionGather():void {
                         node.child(`git log -1 --branches`, function node_apps_build_libraries_versionGather_child(err:Error, stderr:string):void {
@@ -993,7 +1060,7 @@ interface directoryList extends Array<directoryItem> {
                                 sparser.version.date = datestr;
                                 sparser.version.number = number;
                                 opts[1] = `{date:"${datestr}",number:"${number}"}`;
-                                libFiles.forEach(function node_apps_build_libraries_libraryFiles_each(value:string) {
+                                libFiles.forEach(function node_apps_build_libraries_libraryFiles_each(value:string):void {
                                     stat(value);
                                 });
                             });
@@ -1100,6 +1167,11 @@ interface directoryList extends Array<directoryItem> {
                         vals:string[] = [],
                         valstring:string[] = [];
                     heading("Writing options documentation in markdown format.");
+                    doc.push("Options with a lexer value of *all* are assigned directly to the options object, such as `options.format`. All other options are assigned to an object named after the respective lexer under the `lexer_options` object, example: `options.lexer_options.style.no_lead_zero`.");
+                    doc.push("");
+                    doc.push("All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: `end_comma`.");
+                    doc.push("");
+                    doc.push("The options object is directly available from the *sparser* object. This means the options are centrally stored and externally available.  Here is an example in the browser, `window.sparser.options`.  The means to externally adjust options are by assigning directly to that object, such as `window.sparser.options.format = \"objects\"`.");
                     do {
                         doc.push("");
                         doc.push(`## ${optkeys[a]}`);
@@ -1124,11 +1196,11 @@ interface directoryList extends Array<directoryItem> {
                                 lexers[def[optkeys[a]].lexer[b]].push(optkeys[a]);
                                 b = b + 1;
                             } while (b < lenv);
-                            doc.push(`use        | ${vals.join(" \\| ")}`);
+                            doc.push(`use        | ${vals.join(", ")}`);
                         }
                         if (def[optkeys[a]].values !== undefined) {
                             vals = Object.keys(def[optkeys[a]].values);
-                            valstring = [`values | ${vals[0]}`];
+                            valstring = [`values     | ${vals[0]}`];
                             b = 1;
                             lenv = vals.length;
                             do {
@@ -1140,7 +1212,11 @@ interface directoryList extends Array<directoryItem> {
                             doc.push("");
                             doc.push("### Value Definitions");
                             do {
-                                doc.push(`* **${vals[b]}** - ${def[optkeys[a]].values[vals[b]].replace("example: ", "example: `").replace(/.$/, "`.")}`);
+                                if (def[optkeys[a]].values[vals[b]].indexOf("example: ") > 0) {
+                                    doc.push(`* **${vals[b]}** - ${def[optkeys[a]].values[vals[b]].replace("example: ", "example: `").replace(/.$/, "`.")}`);
+                                } else {
+                                    doc.push(`* **${vals[b]}** - ${def[optkeys[a]].values[vals[b]]}`);
+                                }
                                 b = b + 1;
                             } while (b < lenv);
                         }
@@ -1947,16 +2023,9 @@ interface directoryList extends Array<directoryItem> {
     // provides a detailed list of supported languages by available lexer
     apps.inventory = function node_apps_inventory(callback:Function):void {
         const textwrap:string[] = [],
-            list:{} = {};
+            list:inventory = {};
         let longest:number = 0,
             total:number = 0;
-        console.log("");
-        console.log(`${text.underline}Inventory of mentioned languages${text.none}`);
-        console.log("");
-        apps.wrapit(textwrap,"A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.");
-        textwrap.forEach(function node_apps_inventory(value:string):void {
-            console.log(value);
-        });
         if (command === "inventory") {
             verbose = true;
             callback = function node_apps_inventory_callback():void {
@@ -1993,6 +2062,13 @@ interface directoryList extends Array<directoryItem> {
                     count:number = 0;
                 keys.sort();
                 a = 0;
+                output.push(`${text.underline}Inventory of mentioned languages${text.none}`);
+                output.push("");
+                apps.wrapit(textwrap,"A list of supplied lexers and their various dedicated language support as indicated through use of logic with 'options.language'. Other languages may be supported without dedicated logic.");
+                textwrap.forEach(function node_apps_inventory(value:string):void {
+                    output.push(value);
+                });
+                output.push("");
                 do {
                     output.push(`${text.angry}*${text.none} ${text.green + text.underline + pad(keys[a] + ".ts", true, false)}${text.none}`);
                     b = 0;
@@ -2004,6 +2080,8 @@ interface directoryList extends Array<directoryItem> {
                     } while (b < langlen);
                     a = a + 1;
                 } while (a < keylen);
+                output.push("");
+                output.push(`${count} total langauges.`);
                 apps.log(output);
             };
         }
@@ -2048,7 +2126,7 @@ interface directoryList extends Array<directoryItem> {
                     });
                     index = index + 1;
                     if (index === files.length) {
-                        callback();
+                        callback(list);
                     }
                 });
             });

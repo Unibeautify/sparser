@@ -50,6 +50,9 @@ interface inject {
     message: string;
     start: string;
 }
+interface inventory {
+    [key:string]: [[string, string]?]
+}
 interface language {
     auto(sample : string, defaultLang : string): languageAuto;
     nameproper(input : string)                 : string;
@@ -149,8 +152,8 @@ interface simulationItem {
 }
 interface spacer {
     array: string[];
-    index: number;
     end  : number;
+    index: number;
 }
 interface sparser {
     lexers              : lexer;

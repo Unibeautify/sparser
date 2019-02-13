@@ -1,12 +1,12 @@
-# Sparser
+# Sparser - https://sparser.io
 
 [![Greenkeeper badge](https://badges.greenkeeper.io/Unibeautify/sparser.svg)](https://greenkeeper.io/)
 
-## Version 2.5.4
-Play around with this application [in your browser](https://sparser/demo/).
+## License
+Creative Commons Zero v1.0 Universal (cc0-1.0)
 
-### Todo
-* add advanced analytics and reporting of parse errors
+## Version 1.0.1
+Play around with this application [in your browser](https://sparser/demo/).
 
 ## Contents
 1. [Overview](#overview)
@@ -20,18 +20,70 @@ Play around with this application [in your browser](https://sparser/demo/).
 1. [FAQ](#faq)
 
 ## Overview
-The idea is to parse any and all languages into a normalized format that can be interpreted and consumed by anything. **A universal parser of everything for everybody.** The parser comprises a simplified data format and a couple of methods in an object.  The language specific rules are stored in separate files called *lexers* that operate in accordance to the standard format using the standard methods.
+A simplified uniform parser tree capable of describing every programming language. This provides two immediate benefits:
+1. All languages are described using an identical data structure.
+2. An entire file can be described in a single parse tree even if comprised of various different languages.
 
-## Standard Format
+### Standard Format
 I call the standard output format the **[Universal Parse Model](docs/tech-documentation.md#universal-parse-model)**.  It is a simple means to describe any structured programming language.
 
 Before diving into this application it might help to have a quick background in [what parsers are and their related terminology](docs/parsers.md).
 
-## Technical Documentation
+### Technical Documentation
 Please review the [technical documentation](docs/tech-documentation.md) to learn how to execute, embed, format input, and interpret output.
 
-## Build
+## Supported Languages
+A list of supplied lexers and their various dedicated language support as indicated through use of logic with *options.language*. Other languages may be supported without dedicated logic.
 
+* **markdown**
+   - [markdown](https://spec.commonmark.org/)
+* **markup**
+   - [Apache Velocity](http://velocity.apache.org/)
+   - [ASP Inline Expression](https://support.microsoft.com/en-us/help/976112/introduction-to-asp-net-inline-expressions-in-the-net-framework)
+   - [CFML (ColdFusion Markup Language)](https://www.adobe.com/products/coldfusion-family.html)
+   - [Django Inline HTML](https://docs.djangoproject.com/en/2.1/topics/forms/)
+   - [Dust.js](http://www.dustjs.com/)
+   - [EEX Elixir Templates](https://hexdocs.pm/eex/EEx.html)
+   - [EJS (Embedded JavaScript) Templates](https://www.ejs.co/)
+   - [ERB (Embedded Ruby)](http://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html)
+   - [FreeMarker](https://freemarker.apache.org/)
+   - [Genshi](https://genshi.edgewall.org/)
+   - [Handlebars](http://handlebarsjs.com/)
+   - [HTL (HTML Templating Language)](https://helpx.adobe.com/experience-manager/htl/using/getting-started.html)
+   - [HTML](https://www.w3.org/TR/html52/)
+   - [Jekyll](https://jekyllrb.com/docs/liquid/)
+   - [Jinja](http://jinja.pocoo.org/)
+   - [JSTL (Java Standard Tag Library)](https://github.com/eclipse-ee4j/jstl-api)
+   - [Liquid](https://shopify.github.io/liquid/)
+   - [Mustache](https://mustache.github.io/)
+   - [Nunjucks](https://mozilla.github.io/nunjucks/)
+   - [SGML](https://www.iso.org/standard/16387.html)
+   - [SilverStripe](https://docs.silverstripe.org/en/4/developer_guides/templates/syntax/)
+   - [Spacebars templates](http://blazejs.org/guide/spacebars.html)
+   - [ThymeLeaf](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
+   - [Underscore Templates (TPL)](https://underscorejs.org/#template)
+   - [Twig](https://twig.symfony.com/)
+   - [Vash](https://github.com/kirbysayshi/vash)
+   - [Volt](https://phalcon-php-framework-documentation.readthedocs.io/en/latest/reference/volt.html)
+   - [XML](https://www.w3.org/TR/REC-xml/)
+   - [XSLT](https://www.w3.org/standards/xml/transformation)
+* **script**
+   - [JavaScript / ECMAScript](https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
+   - [JSON](https://json.org/)
+   - [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
+   - [React JSX](https://reactjs.org/docs/introducing-jsx.html)
+   - [TSS Titanium Style Sheets](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
+   - [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
+   - [TypeScript](https://www.typescriptlang.org/)
+* **style**
+   - [CSS](https://www.w3.org/Style/CSS/#news)
+   - [LESS](http://lesscss.org/)
+   - [PostCSS](https://postcss.org/)
+   - [SCSS (Sass)](https://sass-lang.com/)
+
+*41 total languages.*
+
+## Build
 ### Dependencies
 This application is written in TypeScript, which requires NodeJS and a global installation of TypeScript.  The optional validation build also requires ESLint.  First, let's install these:
 
@@ -55,18 +107,21 @@ npm install sparser
 cd node_modules/sparser
 ```
 
+Please note the NPM package contains both the TypeScript and the built JavaScript files, so it is ready to execute immediately without any additional build or compile step.
+
 ### TypeScript Build
 Finally, we need to run the TypeScript build to convert the code from TypeScript to JavaScript:
 
 ```bash
+tsc --pretty
 node js/services build
 ```
 
-### Validation Build
-If you wish to run the optional validation build it can be run this way:
+### Tests
+If you wish to run the test suite:
 
 ```bash
-node js/services validation
+node js/services test
 ```
 
 Or simply:
@@ -74,32 +129,3 @@ Or simply:
 ```bash
 npm test
 ```
-
-## Contributing
-Contributing is simple and this project needs lots of help.  Here are some suggestions to get you started:
-
-* If contributing code ensure that you provide a healthy serving of unit test code samples and pass the validation build.  I am not emotionally tied to code style concerns.  I tried to add as many of my preferred code style opinions to the ESLint validation rules, so as long as contributing code passes the validation build and includes enough coverage from unit test samples I will accept it.
-* If you wish to contribute new language support or write a new lexer file please see the [lexer readme](lexers/readme.md) to get started.
-* QA and user acceptance is always a huge concern.  If you notice a defect please open a [github issue](https://github.com/Unibeautify/sparser/issues/new).  I cannot be aware of all user concerns or edge cases and so feedback from users is absolutely critical to building a quality application.
-
-## FAQ
-
-### Why a table instead of a tree like other parsers?
-Arrays are faster to access at execution time potentially allowing consumers to write much faster applications.  Arrays are also simple to reason about and manipulate both directly in the code and at execution time.
-
-Most importantly, though, is this allows a simplified standard format that is easy to maintain, document, and consume.  If you don't like the lexers provided then write your own and submit a pull request.
-
-### How fast does it parse JavaScript?
-Try it yourself:
-
-1. get the [jQuery Mobile 1.4.2](code.jquery.com/mobile/1.4.2/jquery.mobile-1.4.2.min.js) file and save it to your local file system.
-1. Run the performance tool: `node js/services performance ../jquery.mobile-1.4.2.min.js`
-1. Compare the results against other parsers on the [Esprima Comparison page](esprima.org/test/compare.html).
-
-I find this application generally performs half as fast as the fastest JavaScript parser, Esprima, but makes up for it with wider language support and extensible tooling.
-
-### Why is the code so big?
-This parser supports many various dialects and languages.  For example, instead of just parsing for Handlebars tags inside HTML this parser will parse the entire code of handlebars tags and HTML tags in a single parse operation.  The parser supports this diversity of grammars in a way that can be easily scaled to allow more precise rules or support for additional grammars.
-
-### Why not just use Babel.js, Esprima, Acorn, or one of the various other parsers written in JavaScript?
-Babel.js is a transpiler that contains a parser.  The primary mission of the Babel project isn't to be a parser, but rather to take the latest and greatest features of JavaScript and produce output that can be used today.  The mission of this project it to parse every language for every environment, which is more than the JavaScript, JSX, and TypeScript supported by Babel.js and other parsers.  This parser doesn't transpile as it is just a parser.  That means this parser is capable of supporting a greater number of features and language dialects with far less maintenance effort due to a narrowed focus.  As an example, an earlier form of this parser introduced support for TypeScript a year before Babel with far less code and effort, because this project stops at being a parser.  In short, this parser scales faster and wider than many other parsers by doing less.

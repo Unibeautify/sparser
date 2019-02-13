@@ -1,4 +1,7 @@
 # Sparser Options
+Options with a lexer value of *all* are assigned directly to the options object, such as `options.format`. All other options are assigned to an object named after the respective lexer under the `lexer_options` object, example: `options.lexer_options.style.no_lead_zero`.
+
+All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: `end_comma`.
 
 ## correct
 property   | value
@@ -29,12 +32,12 @@ label      | End Comma
 lexer      | script
 type       | string
 use        | options.lexer_options.**script**.end_comma
-values | always, never, none
+values     | always, never, none
 
 ### Value Definitions
-* **always** - Adds terminal commas if they are missing`.
-* **never** - Removes terminal commas if they are present`.
-* **none** - Ignores this option`.
+* **always** - Adds terminal commas if they are missing.
+* **never** - Removes terminal commas if they are present.
+* **none** - Ignores this option.
 
 ## format
 property   | value
@@ -45,14 +48,14 @@ label      | Output Format
 lexer      | all
 type       | string
 use        | options.format
-values | arrays, markdown, minimal, objects, table
+values     | arrays, markdown, minimal, objects, table
 
 ### Value Definitions
 * **arrays** - The output format is an object of arrays such that the same index of all the arrays represents one data record, for example: `{begin:[],ender:[],lexer:[],lines[],stack:[],token:[],types:[]}`.
-* **markdown** - Generates the output in a markdown table`.
+* **markdown** - Generates the output in a markdown table.
 * **minimal** - The output format is an array of arrays which is structurally similar to the objects format but without key names, for example: `[[-1,-1,"script",0,"global","const","word"]`.
 * **objects** - The output format is an array of objects such that each array index is one data record, for example: `[{begin:-1,ender:-1,lexer:"script",lines:0,stack:"global",token:"const",types:"word"}]`.
-* **table** - Generates output that resembles a markdown table but padded for presentation in a terminal`.
+* **table** - Generates output that resembles a markdown table but padded for presentation in a terminal.
 
 ## language
 property   | value
@@ -92,7 +95,7 @@ definition | Where style properties should be sorted by type and then alphabetic
 label      | Object Sort
 lexer      | script, style
 type       | boolean
-use        | options.lexer_options.**script**.object_sort \| options.lexer_options.**style**.object_sort
+use        | options.lexer_options.**script**.object_sort, options.lexer_options.**style**.object_sort
 
 ## preserve_comment
 property   | value
@@ -122,13 +125,13 @@ definition | If quote characters should be converted from single quotes to doubl
 label      | Quote Convert
 lexer      | markup, script, style
 type       | string
-use        | options.lexer_options.**markup**.quote_convert \| options.lexer_options.**script**.quote_convert \| options.lexer_options.**style**.quote_convert
-values | double, none, single
+use        | options.lexer_options.**markup**.quote_convert, options.lexer_options.**script**.quote_convert, options.lexer_options.**style**.quote_convert
+values     | double, none, single
 
 ### Value Definitions
-* **double** - Converts single quote characters to double quote characters`.
-* **none** - Ignores this option`.
-* **single** - Converts double quote characters to single quote characters`.
+* **double** - Converts single quote characters to double quote characters.
+* **none** - Ignores this option.
+* **single** - Converts double quote characters to single quote characters.
 
 ## source
 property   | value
@@ -179,12 +182,12 @@ label      | Variable List
 lexer      | script
 type       | string
 use        | options.lexer_options.**script**.variable_list
-values | each, list, none
+values     | each, list, none
 
 ### Value Definitions
-* **each** - Separates variable declarations into separate statements`.
-* **list** - Combines consecutive variable declaration statements into a single comma separated list`.
-* **none** - Ignores this option`.
+* **each** - Separates variable declarations into separate statements.
+* **list** - Combines consecutive variable declaration statements into a single comma separated list.
+* **none** - Ignores this option.
 
 ## wrap
 property   | value
