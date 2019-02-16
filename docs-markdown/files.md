@@ -2,7 +2,7 @@
 This just a quick description of the project organization from a file system view.
 
 * **demo** - A directory containing the CSS, HTML, and JavaScript for the demo tool that works in a web browser.
-* **docs** - A directory containing all the non-lexer specific documentation.
+* **docs-markdown** - A directory containing all the non-lexer specific documentation in markdown format.
 * **lexers** - A directory containing every lexer file and the supporting documentation, in markdown format, for those lexers.
 * **libs** - A directory containing supporting libraries.
    - **language** - A tool comprised of many regular expression rules to autodetect languages from looking at a code sample string.

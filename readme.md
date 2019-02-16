@@ -25,12 +25,12 @@ A simplified uniform parser tree capable of describing every programming languag
 2. An entire file can be described in a single parse tree even if comprised of various different languages.
 
 ### Standard Format
-I call the standard output format the **[Universal Parse Model](docs/tech-documentation.md#universal-parse-model)**.  It is a simple means to describe any structured programming language.
+I call the standard output format the **[Universal Parse Model](docs-markdown/tech-documentation.md#universal-parse-model)**.  It is a simple means to describe any structured programming language.
 
-Before diving into this application it might help to have a quick background in [what parsers are and their related terminology](docs/parsers.md).
+Before diving into this application it might help to have a quick background in [what parsers are and their related terminology](docs-markdown/parsers.md).
 
 ### Technical Documentation
-Please review the [technical documentation](docs/tech-documentation.md) to learn how to execute, embed, format input, and interpret output.
+Please review the [technical documentation](docs-markdown/tech-documentation.md) to learn how to execute, embed, format input, and interpret output.
 
 ## Supported Languages
 A list of supplied lexers and their various dedicated language support as indicated through use of logic with *options.language*. Other languages may be supported without dedicated logic.

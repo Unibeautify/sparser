@@ -6,6 +6,7 @@
    this application. */
 import { Stats } from "fs";
 import * as http from "http";
+import { domainToASCII } from "url";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -633,6 +634,7 @@ interface directoryList extends Array<directoryItem> {
                     "libraries",
                     "demo",
                     "options_markdown",
+                    "options_html",
                     "inventory"
                 ],
                 test: [
@@ -1223,7 +1225,7 @@ interface directoryList extends Array<directoryItem> {
                         a = a + 1;
                     } while (a < keyslen);
                     lexerWrite();
-                    node.fs.writeFile(`${projectPath}docs${sep}options.md`, doc.join("\n"), "utf8", function node_apps_build_optionsMarkdown_writeFile(err:Error) {
+                    node.fs.writeFile(`${projectPath}docs-markdown${sep}options.md`, doc.join("\n"), "utf8", function node_apps_build_optionsMarkdown_writeFile(err:Error) {
                         if (err !== null) {
                             apps.errout([err.toString()]);
                             return;
@@ -1231,6 +1233,87 @@ interface directoryList extends Array<directoryItem> {
                         files = files - 1;
                         if (files < 1) {
                             next(`${text.green}Options documentation successfully written to markdown file.${text.none}`);
+                        }
+                    });
+                },
+                // phase optionsHTML builds options documentation in HTML format
+                options_html: function node_apps_build_optionsHTML():void {
+                    const doc:string[] = ["<h1>Sparser Options</h1>"],
+                        lexers:lexerDoc = {};
+                    let a:number = 0,
+                        b:number = 0,
+                        files:number = 0,
+                        lenv:number = 0,
+                        vals:string[] = [],
+                        valstring:string[] = [];
+                    heading("Writing options documentation in HTML format.");
+                    doc.push("<p>Options with a lexer value of <em>all</em> are assigned directly to the options object, such as <code>options.format</code>. All other options are assigned to an object named after the respective lexer under the <code>lexer_options</code> object, example: <code>options.lexer_options.style.no_lead_zero</code>.</p>");
+                    doc.push("<p>All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: <code>end_comma</code>.</p>");
+                    doc.push("<p>The options object is directly available from the <em>sparser</em> object. This means the options are centrally stored and externally available.  Here is an example in the browser, <code>window.sparser.options</code>.  The means to externally adjust options are by assigning directly to that object, such as <code>window.sparser.options.format = \"objects\"</code>.</p>");
+                    do {
+                        doc.push("");
+                        doc.push(`<h2>${optkeys[a]}</h2>`);
+                        doc.push("<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>");
+                        doc.push(`<tr><th>default</th><td>${def[optkeys[a]].default}</td></tr>`);
+                        doc.push(`<tr><th>definition</th><td>${def[optkeys[a]].definition}</td></tr>`);
+                        doc.push(`<tr><th>label</th><td>${def[optkeys[a]].label}</td></tr>`);
+                        doc.push(`<tr><th>lexer</th><td>${def[optkeys[a]].lexer.join(", ")}</td></tr>`);
+                        doc.push(`<tr><th>type</th><td>${def[optkeys[a]].type}</td></tr>`);
+                        if (def[optkeys[a]].lexer[0] === "all") {
+                            doc.push(`<tr><th>use</th><td><code>options.${optkeys[a]}</code></td></tr>`);
+                        } else {
+                            vals = [];
+                            b = 0;
+                            lenv = def[optkeys[a]].lexer.length;
+                            if (lenv > 1) {
+                                do {
+                                    vals.push(`<li><code>options.lexer_options.<strong>${def[optkeys[a]].lexer[b]}</strong>.${optkeys[a]}</code></li>`);
+                                    if (lexers[def[optkeys[a]].lexer[b]] === undefined) {
+                                        lexers[def[optkeys[a]].lexer[b]] = [];
+                                    }
+                                    lexers[def[optkeys[a]].lexer[b]].push(optkeys[a]);
+                                    b = b + 1;
+                                } while (b < lenv);
+                                doc.push(`<tr><th>use</th><td><ul>\n${vals.join("\n")}\n</ul></td></tr>`);
+                            } else {
+                                doc.push(`<tr><th>use</th><td><code>options.lexer_options.<strong>${def[optkeys[a]].lexer[0]}</strong>.${optkeys[a]}</code></td></tr>`);
+                            }
+                        }
+                        if (def[optkeys[a]].values !== undefined) {
+                            vals = Object.keys(def[optkeys[a]].values);
+                            valstring = [`<tr><th>values</th><td>${vals[0]}`];
+                            b = 1;
+                            lenv = vals.length;
+                            do {
+                                valstring.push(vals[b]);
+                                b = b + 1;
+                            } while (b < lenv);
+                            doc.push(`${valstring.join(", ")}</td></tr>`);
+                            doc.push("</tbody></table>");
+                            b = 0;
+                            doc.push("<h3>Value Definitions</h3><ul>");
+                            do {
+                                if (def[optkeys[a]].values[vals[b]].indexOf("example: ") > 0) {
+                                    doc.push(`<li><strong>${vals[b]}</strong> - ${def[optkeys[a]].values[vals[b]].replace("example: ", "example: <code>").replace(/\.$/, "</code>.")}</li>`);
+                                } else {
+                                    doc.push(`<li><strong>${vals[b]}</strong> - ${def[optkeys[a]].values[vals[b]]}</li>`);
+                                }
+                                b = b + 1;
+                            } while (b < lenv);
+                            doc.push("</ul>");
+                        } else {
+                            doc.push("</tbody></table>");
+                        }
+                        a = a + 1;
+                    } while (a < keyslen);
+                    node.fs.writeFile(`${projectPath}docs-html${sep}options.xhtml`, doc.join("\n"), "utf8", function node_apps_build_optionsHTML_writeFile(err:Error) {
+                        if (err !== null) {
+                            apps.errout([err.toString()]);
+                            return;
+                        }
+                        files = files - 1;
+                        if (files < 1) {
+                            next(`${text.green}Options documentation successfully written to HTML.${text.none}`);
                         }
                     });
                 },

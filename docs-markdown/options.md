@@ -3,6 +3,8 @@ Options with a lexer value of *all* are assigned directly to the options object,
 
 All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: `end_comma`.
 
+The options object is directly available from the *sparser* object. This means the options are centrally stored and externally available.  Here is an example in the browser, `window.sparser.options`.  The means to externally adjust options are by assigning directly to that object, such as `window.sparser.options.format = "objects"`.
+
 ## correct
 property   | value
 -----------|---

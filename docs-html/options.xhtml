@@ -1,0 +1,207 @@
+<h1>Sparser Options</h1>
+<p>Options with a lexer value of <em>all</em> are assigned directly to the options object, such as <code>options.format</code>. All other options are assigned to an object named after the respective lexer under the <code>lexer_options</code> object, example: <code>options.lexer_options.style.no_lead_zero</code>.</p>
+<p>All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: <code>end_comma</code>.</p>
+<p>The options object is directly available from the <em>sparser</em> object. This means the options are centrally stored and externally available.  Here is an example in the browser, <code>window.sparser.options</code>.  The means to externally adjust options are by assigning directly to that object, such as <code>window.sparser.options.format = "objects"</code>.</p>
+
+<h2>correct</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Automatically correct sloppiness in code. If false missing syntax will be included starting with 'x', such as 'x;' for missing simicolons.</td></tr>
+<tr><th>label</th><td>Correct</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.correct</code></td></tr>
+</tbody></table>
+
+<h2>crlf</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>If line termination should be crlf (Windows) otherwise line termination is lf (Unix).</td></tr>
+<tr><th>label</th><td>CRLF</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.crlf</code></td></tr>
+</tbody></table>
+
+<h2>end_comma</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>none</td></tr>
+<tr><th>definition</th><td>Whether terminal commas in objects and arrays should be added or eliminated.</td></tr>
+<tr><th>label</th><td>End Comma</td></tr>
+<tr><th>lexer</th><td>script</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>script</strong>.end_comma</code></td></tr>
+<tr><th>values</th><td>always, never, none</td></tr>
+</tbody></table>
+<h3>Value Definitions</h3><ul>
+<li><strong>always</strong> - Adds terminal commas if they are missing.</li>
+<li><strong>never</strong> - Removes terminal commas if they are present.</li>
+<li><strong>none</strong> - Ignores this option.</li>
+</ul>
+
+<h2>format</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>arrays</td></tr>
+<tr><th>definition</th><td>Defines the output format of the parser.</td></tr>
+<tr><th>label</th><td>Output Format</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.format</code></td></tr>
+<tr><th>values</th><td>arrays, markdown, minimal, objects, table</td></tr>
+</tbody></table>
+<h3>Value Definitions</h3><ul>
+<li><strong>arrays</strong> - The output format is an object of arrays such that the same index of all the arrays represents one data record, for example: <code>{begin:[],ender:[],lexer:[],lines[],stack:[],token:[],types:[]}</code>.</li>
+<li><strong>markdown</strong> - Generates the output in a markdown table.</li>
+<li><strong>minimal</strong> - The output format is an array of arrays which is structurally similar to the objects format but without key names, for example: <code>[[-1,-1,"script",0,"global","const","word"]]</li>
+<li><strong>objects</strong> - The output format is an array of objects such that each array index is one data record, for example: <code>[{begin:-1,ender:-1,lexer:"script",lines:0,stack:"global",token:"const",types:"word"}]</code>.</li>
+<li><strong>table</strong> - Generates output that resembles a markdown table but padded for presentation in a terminal.</li>
+</ul>
+
+<h2>language</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>auto</td></tr>
+<tr><th>definition</th><td>The language to parse.  The value auto will result in language auto detection.</td></tr>
+<tr><th>label</th><td>Language</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.language</code></td></tr>
+</tbody></table>
+
+<h2>lexer</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>auto</td></tr>
+<tr><th>definition</th><td>The lexer used to perform the parsing.  The value auto will result in language auto detection.</td></tr>
+<tr><th>label</th><td>Lexer</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.lexer</code></td></tr>
+</tbody></table>
+
+<h2>no_lead_zero</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Whether the zero to the left of the decimal point should be removed from numbers between 0 and 1.</td></tr>
+<tr><th>label</th><td>No Lead Zero</td></tr>
+<tr><th>lexer</th><td>style</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>style</strong>.no_lead_zero</code></td></tr>
+</tbody></table>
+
+<h2>object_sort</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.</td></tr>
+<tr><th>label</th><td>Object Sort</td></tr>
+<tr><th>lexer</th><td>script, style</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><ul>
+<li><code>options.lexer_options.<strong>script</strong>.object_sort</code></li>
+<li><code>options.lexer_options.<strong>style</strong>.object_sort</code></li>
+</ul></td></tr>
+</tbody></table>
+
+<h2>preserve_comment</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Whether comments should be ignored from manipulation, such as word wrap.</td></tr>
+<tr><th>label</th><td>Preserve Comment</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.preserve_comment</code></td></tr>
+</tbody></table>
+
+<h2>preserve_text</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Whether text content should be preserved from manipulation, such as word wrap.</td></tr>
+<tr><th>label</th><td>Preserve Text</td></tr>
+<tr><th>lexer</th><td>markup</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>markup</strong>.preserve_text</code></td></tr>
+</tbody></table>
+
+<h2>quote_convert</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>none</td></tr>
+<tr><th>definition</th><td>If quote characters should be converted from single quotes to double quotes or the opposite. This option does take into account escaped quote characters.</td></tr>
+<tr><th>label</th><td>Quote Convert</td></tr>
+<tr><th>lexer</th><td>markup, script, style</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><ul>
+<li><code>options.lexer_options.<strong>markup</strong>.quote_convert</code></li>
+<li><code>options.lexer_options.<strong>script</strong>.quote_convert</code></li>
+<li><code>options.lexer_options.<strong>style</strong>.quote_convert</code></li>
+</ul></td></tr>
+<tr><th>values</th><td>double, none, single</td></tr>
+</tbody></table>
+<h3>Value Definitions</h3><ul>
+<li><strong>double</strong> - Converts single quote characters to double quote characters.</li>
+<li><strong>none</strong> - Ignores this option.</li>
+<li><strong>single</strong> - Converts double quote characters to single quote characters.</li>
+</ul>
+
+<h2>source</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td></td></tr>
+<tr><th>definition</th><td>The source code to parse.</td></tr>
+<tr><th>label</th><td>Source</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.source</code></td></tr>
+</tbody></table>
+
+<h2>tag_merge</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>If adjacent start and end tags in markup should be merged into one singleton tag.</td></tr>
+<tr><th>label</th><td>Tag Merge</td></tr>
+<tr><th>lexer</th><td>markup</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>markup</strong>.tag_merge</code></td></tr>
+</tbody></table>
+
+<h2>tag_sort</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>Whether markup tags should be alphabetically sorted amonst their siblings.</td></tr>
+<tr><th>label</th><td>Tag Sort</td></tr>
+<tr><th>lexer</th><td>markup</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>markup</strong>.tag_sort</code></td></tr>
+</tbody></table>
+
+<h2>unformatted</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>false</td></tr>
+<tr><th>definition</th><td>If tags in markup code should be preserved from any manner of alteration.</td></tr>
+<tr><th>label</th><td>Tag Unformatted</td></tr>
+<tr><th>lexer</th><td>markup</td></tr>
+<tr><th>type</th><td>boolean</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>markup</strong>.unformatted</code></td></tr>
+</tbody></table>
+
+<h2>variable_list</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>none</td></tr>
+<tr><th>definition</th><td>Whether consecutive variable declarations should be separate statements or a comma separated list. Use of this option respects the different types of declarations: var, const, let.</td></tr>
+<tr><th>label</th><td>Variable List</td></tr>
+<tr><th>lexer</th><td>script</td></tr>
+<tr><th>type</th><td>string</td></tr>
+<tr><th>use</th><td><code>options.lexer_options.<strong>script</strong>.variable_list</code></td></tr>
+<tr><th>values</th><td>each, list, none</td></tr>
+</tbody></table>
+<h3>Value Definitions</h3><ul>
+<li><strong>each</strong> - Separates variable declarations into separate statements.</li>
+<li><strong>list</strong> - Combines consecutive variable declaration statements into a single comma separated list.</li>
+<li><strong>none</strong> - Ignores this option.</li>
+</ul>
+
+<h2>wrap</h2>
+<table><thead><tr><th>property</th><th>value</th></tr></thead><tbody>
+<tr><th>default</th><td>0</td></tr>
+<tr><th>definition</th><td>The character distance in which to apply word wrap. A value of less than 1 eliminates word wrap.</td></tr>
+<tr><th>label</th><td>Wrap</td></tr>
+<tr><th>lexer</th><td>all</td></tr>
+<tr><th>type</th><td>number</td></tr>
+<tr><th>use</th><td><code>options.wrap</code></td></tr>
+</tbody></table>
