@@ -2,6 +2,8 @@
 (function website():void {
     "use strict";
     const blob:HTMLElement = document.getElementById("blobs"),
+        svg_left:HTMLElement = document.getElementById("svg_left"),
+        svg_right:HTMLElement = document.getElementById("svg_right"),
         screen:HTMLElement = blob.getElementsByTagName("div")[0],
         blobs:number = 7,
         size:number = 100,
@@ -14,6 +16,10 @@
                 let styletext:string = style.innerHTML;
                 height = (window.innerHeight / 10);
                 width = (window.innerWidth / 10);
+                svg_left.style.width = `${(width - 100) / 2}em`;
+                svg_left.style.height = `${height}em`;
+                svg_right.style.width = `${(width - 100) / 2}em`;
+                svg_right.style.height = `${height}em`;
                 screen.style.height = `${height}em`;
                 screen.style.width = `${width}em`;
                 blob.style.height = `${height - size}em`;

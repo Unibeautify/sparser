@@ -860,14 +860,50 @@ interface directoryList extends Array<directoryItem> {
                 },
                 // document the current inventory of supported languages
                 inventory: function node_apps_build_inventory():void {
-                    const nexttest:any = {
-                        readme: false,
-                        index: true
-                    };
                     heading("Gathering inventory of supported languages...");
                     apps.inventory(function node_apps_build_inventory_callback(list:inventory) {
                         const keys:string[] = Object.keys(list),
-                            keylen:number = keys.length;
+                            keylen:number = keys.length,
+                            index = function node_apps_build_inventory_index():void {
+                                node.fs.readFile(`${projectPath}index.xhtml`, "utf8", function node_apps_build_inventory_website(erw:Error, filedata:string):void {
+                                    const inv:string[] = ["<ul>"];
+                                    let a:number = 0,
+                                        b:number = 0,
+                                        count:number = 0,
+                                        langlen:number = 0;
+                                    if (erw !== null) {
+                                        apps.errout([erw.toString()]);
+                                        return;
+                                    }
+                                    do {
+                                        inv.push(`<li><h3>${keys[a]}</h3><ul>`);
+                                        b = 0;
+                                        langlen = list[keys[a]].length;
+                                        do {
+                                            inv.push(`<li><a href="${list[keys[a]][b][1]}">${list[keys[a]][b][0]}</a></li>`);
+                                            count = count + 1;
+                                            b = b + 1;
+                                        } while (b < langlen);
+                                        inv.push("</ul></li>");
+                                        a = a + 1;
+                                    } while (a < keylen);
+                                    inv.push(`</ul> <p class="lang_total"><strong>${count}</strong> total languages.</p>`);
+                                    node.fs.writeFile(`${projectPath}index.xhtml`, injection({
+                                        end: "<!-- end html inventory -->",
+                                        file: filedata,
+                                        message: inv.join(" "),
+                                        start: "<h2>Currently Supported Languages by Processing Lexer</h2>"
+                                    }), {
+                                        encoding: "utf8"
+                                    }, function node_apps_build_inventory_website_write(erh:Error) {
+                                        if (erh !== null) {
+                                            apps.errout([erh.toString()]);
+                                            return;
+                                        }
+                                        next(`${text.green}Inventory of supported languages written to readme.md and html.${text.none}`);
+                                    });
+                                });
+                            };
                         keys.sort();
                         node.fs.readFile(`${projectPath}readme.md`, "utf8", function node_apps_build_inventory_readme(err:Error, filedata:string):void {
                             const inv:string[] = ["A list of supplied lexers and their various dedicated language support as indicated through use of logic with *options.language*. Other languages may be supported without dedicated logic."];
@@ -907,10 +943,7 @@ interface directoryList extends Array<directoryItem> {
                                     apps.errout([erw.toString()]);
                                     return;
                                 }
-                                nexttest.readme = true;
-                                if (nexttest.index === true) {
-                                    next(`${text.green}Inventory of supported languages written to readme.md and html.${text.none}`);
-                                };
+                                index();
                             });
                         });
                     });
