@@ -57,10 +57,8 @@
         #content li{font-family:"Palatino Linotype", Georgia, "Times New Roman", Times, serif;font-size:1.4em;letter-spacing:0.05em}
         #content li li{font-size:1em}
         #content h2 a{font-family:"Palatino Linotype", Georgia, "Times New Roman", Times, serif;font-size:0.56em;font-variant:none}
-        #content p{}
-        #content li{}
         #content li h3{font-size:1.4em;text-decoration:underline}
-        #content code{background:#ddd;border:0.1em solid #000;display:block;font-family:"Lucida Console", monospace;font-size:1.4em;padding:0.5em;white-space:pre}
+        #content code{background:#ddd;border:0.1em solid #ccc;display:block;font-family:"Lucida Console", monospace;font-size:1.4em;padding:0.5em;white-space:pre}
         #blobs{height:100%;left:0;position:fixed;top:0;width:100%}
         #blobs div{display:block;position:absolute}
         #blobs div span{border-radius:50%;display:block;opacity:0.25}
@@ -108,6 +106,15 @@ ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
 ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
 ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
+@media (max-width: 400px) {
+    #top_menu h1{display:none}
+    #top_menu li::after{content:"  |  "}
+    #content .section{background-size:100%;padding:0 0 5em}
+}
+@media (max-width: 700px) {
+    #content .section{background-size:15%}
+}
+
         </style>
     </head>
     <body>

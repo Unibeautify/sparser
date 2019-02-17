@@ -1,17 +1,14 @@
 /*eslint-env browser*/
 (function website():void {
     "use strict";
-    const blob:HTMLElement = document.getElementById("blobs"),
-        svg_left:HTMLElement = document.getElementById("svg_left"),
-        svg_right:HTMLElement = document.getElementById("svg_right"),
-        screen:HTMLElement = blob.getElementsByTagName("div")[0],
-        blobs:number = 7,
-        size:number = 100,
-        style:HTMLElement = document.getElementsByTagName("style")[0];
-    let height:number = (window.innerHeight / 10),
-        width:number = (window.innerWidth / 10);
-    {
-        let a:number = 0,
+    const  svg_left:HTMLElement = document.getElementById("svg_left"),
+        svg_right:HTMLElement = document.getElementById("svg_right");
+    if (window.innerWidth > 800) {
+        const blob:HTMLElement = document.getElementById("blobs"),
+            screen:HTMLElement = blob.getElementsByTagName("div")[0],
+            style:HTMLElement = document.getElementsByTagName("style")[0],
+            blobs:number = 7,
+            size:number = 100,
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML;
                 height = (window.innerHeight / 10);
@@ -28,7 +25,7 @@
                 styletext = styletext.replace(/bottom:\d+em/g, `bottom:${height}em`);
                 style.innerHTML = styletext;
             },
-            modifyBlob = function website_modifyBlob():void {
+            createBlob = function website_createBlob():void {
                 const rand:[number, number, number] = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)],
                     div:HTMLElement = document.createElement("div"),
                     inner:HTMLElement = document.createElement("span"),
@@ -69,14 +66,20 @@
                 inner.style.animationIterationCount = "infinite";
                 blob.appendChild(div);
             };
+        let width:number = (window.innerWidth / 10),
+            height:number = (window.innerHeight / 10),
+            a:number = 0;
         screen.style.position = "relative";
         screen.style.zIndex = "2";
-        resize();
         window.onresize = resize;
+        resize();
         do {
-            modifyBlob();
+            createBlob();
             a = a + 1;
         } while (a < blobs);
+    } else {
+        svg_left.parentNode.removeChild(svg_left);
+        svg_right.parentNode.removeChild(svg_right);
     }
     // web sockets
     if (location.href.indexOf("//localhost:") > 0) {
