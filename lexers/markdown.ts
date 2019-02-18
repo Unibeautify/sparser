@@ -219,17 +219,7 @@
                                             (/\s/).test(str[aa - 1]) === true ||
                                             aa === 0
                                         )
-                                    ) || (
-                                        quote === "**" && (
-                                            (/\s/).test(str[aa + 2]) === true ||
-                                            aa === bb - 2
-                                        )
-                                    ) || (
-                                        quote !== "" && (
-                                            (/\s/).test(str[aa + 1]) === true ||
-                                            aa === bb - 1
-                                        )
-                                    )
+                                    ) || quote !== ""
                                 )
                             ) {
                                 if (str[aa] === "~") {
@@ -722,15 +712,6 @@
                         } else {
                             do {
                                 text(lines[a], "multiline", false);
-                                parse.push(data, {
-                                    begin: parse.structure[parse.structure.length - 1][1],
-                                    ender: -1,
-                                    lexer: "markdown",
-                                    lines: 0,
-                                    stack: parse.structure[parse.structure.length - 1][0],
-                                    token: "<br/>",
-                                    types: "singleton"
-                                }, "");
                                 a = a + 1;
                             } while (a < x);
                             parse.pop(data);

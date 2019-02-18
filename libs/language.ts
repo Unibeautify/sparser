@@ -312,7 +312,7 @@
             }
             if (
                 ((/\n\s*#{1,6}\s+/).test(sample) === true || (/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) &&
-                ((/\[( |x|X)\]/).test(sample) === true || (/\s\*\*\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true || ((/-+\|(-+\|)+/).test(sample) === true && (/<!--/).test(sample) === false))
+                ((/\[( |x|X)\]/).test(sample) === true || (/\s\*\*?\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true || ((/-+\|(-+\|)+/).test(sample) === true && (/<!--/).test(sample) === false))
             ) {
                 return output("markdown");
             }

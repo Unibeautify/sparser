@@ -1,11 +1,14 @@
 # Sparser Options
+## Conventions
 Options with a lexer value of *all* are assigned directly to the options object, such as `options.format`. All other options are assigned to an object named after the respective lexer under the `lexer_options` object, example: `options.lexer_options.style.no_lead_zero`.
 
 All option names are lowercase complete English words.  An option name comprising multiple words contains a single underscore between each word, example: `end_comma`.
 
 The options object is directly available from the *sparser* object. This means the options are centrally stored and externally available.  Here is an example in the browser, `window.sparser.options`.  The means to externally adjust options are by assigning directly to that object, such as `window.sparser.options.format = "objects"`.
 
-## correct
+## Option List
+
+### correct
 property   | value
 -----------|---
 default    | false
@@ -15,7 +18,7 @@ lexer      | all
 type       | boolean
 use        | options.correct
 
-## crlf
+### crlf
 property   | value
 -----------|---
 default    | false
@@ -25,7 +28,7 @@ lexer      | all
 type       | boolean
 use        | options.crlf
 
-## end_comma
+### end_comma
 property   | value
 -----------|---
 default    | none
@@ -36,12 +39,12 @@ type       | string
 use        | options.lexer_options.**script**.end_comma
 values     | always, never, none
 
-### Value Definitions
+#### Value Definitions
 * **always** - Adds terminal commas if they are missing.
 * **never** - Removes terminal commas if they are present.
 * **none** - Ignores this option.
 
-## format
+### format
 property   | value
 -----------|---
 default    | arrays
@@ -52,14 +55,14 @@ type       | string
 use        | options.format
 values     | arrays, markdown, minimal, objects, table
 
-### Value Definitions
+#### Value Definitions
 * **arrays** - The output format is an object of arrays such that the same index of all the arrays represents one data record, for example: `{begin:[],ender:[],lexer:[],lines[],stack:[],token:[],types:[]}`.
 * **markdown** - Generates the output in a markdown table.
-* **minimal** - The output format is an array of arrays which is structurally similar to the objects format but without key names, for example: `[[-1,-1,"script",0,"global","const","word"]`.
+* **minimal** - The output format is an array of arrays which is structurally similar to the objects format but without key names, for example: `[[-1,-1,"script",0,"global","const","word"]]`.
 * **objects** - The output format is an array of objects such that each array index is one data record, for example: `[{begin:-1,ender:-1,lexer:"script",lines:0,stack:"global",token:"const",types:"word"}]`.
 * **table** - Generates output that resembles a markdown table but padded for presentation in a terminal.
 
-## language
+### language
 property   | value
 -----------|---
 default    | auto
@@ -69,7 +72,7 @@ lexer      | all
 type       | string
 use        | options.language
 
-## lexer
+### lexer
 property   | value
 -----------|---
 default    | auto
@@ -79,7 +82,7 @@ lexer      | all
 type       | string
 use        | options.lexer
 
-## no_lead_zero
+### no_lead_zero
 property   | value
 -----------|---
 default    | false
@@ -89,7 +92,7 @@ lexer      | style
 type       | boolean
 use        | options.lexer_options.**style**.no_lead_zero
 
-## object_sort
+### object_sort
 property   | value
 -----------|---
 default    | false
@@ -99,7 +102,7 @@ lexer      | script, style
 type       | boolean
 use        | options.lexer_options.**script**.object_sort, options.lexer_options.**style**.object_sort
 
-## preserve_comment
+### preserve_comment
 property   | value
 -----------|---
 default    | false
@@ -109,7 +112,7 @@ lexer      | all
 type       | boolean
 use        | options.preserve_comment
 
-## preserve_text
+### preserve_text
 property   | value
 -----------|---
 default    | false
@@ -119,7 +122,7 @@ lexer      | markup
 type       | boolean
 use        | options.lexer_options.**markup**.preserve_text
 
-## quote_convert
+### quote_convert
 property   | value
 -----------|---
 default    | none
@@ -130,12 +133,12 @@ type       | string
 use        | options.lexer_options.**markup**.quote_convert, options.lexer_options.**script**.quote_convert, options.lexer_options.**style**.quote_convert
 values     | double, none, single
 
-### Value Definitions
+#### Value Definitions
 * **double** - Converts single quote characters to double quote characters.
 * **none** - Ignores this option.
 * **single** - Converts double quote characters to single quote characters.
 
-## source
+### source
 property   | value
 -----------|---
 default    | 
@@ -145,7 +148,7 @@ lexer      | all
 type       | string
 use        | options.source
 
-## tag_merge
+### tag_merge
 property   | value
 -----------|---
 default    | false
@@ -155,7 +158,7 @@ lexer      | markup
 type       | boolean
 use        | options.lexer_options.**markup**.tag_merge
 
-## tag_sort
+### tag_sort
 property   | value
 -----------|---
 default    | false
@@ -165,7 +168,7 @@ lexer      | markup
 type       | boolean
 use        | options.lexer_options.**markup**.tag_sort
 
-## unformatted
+### unformatted
 property   | value
 -----------|---
 default    | false
@@ -175,7 +178,7 @@ lexer      | markup
 type       | boolean
 use        | options.lexer_options.**markup**.unformatted
 
-## variable_list
+### variable_list
 property   | value
 -----------|---
 default    | none
@@ -186,12 +189,12 @@ type       | string
 use        | options.lexer_options.**script**.variable_list
 values     | each, list, none
 
-### Value Definitions
+#### Value Definitions
 * **each** - Separates variable declarations into separate statements.
 * **list** - Combines consecutive variable declaration statements into a single comma separated list.
 * **none** - Ignores this option.
 
-## wrap
+### wrap
 property   | value
 -----------|---
 default    | 0

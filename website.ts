@@ -70,7 +70,7 @@
             height:number = (window.innerHeight / 10),
             a:number = 0;
         screen.style.position = "relative";
-        screen.style.zIndex = "2";
+        screen.style.zIndex = "4";
         window.onresize = resize;
         resize();
         do {

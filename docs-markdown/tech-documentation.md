@@ -1,7 +1,6 @@
 # Sparser - Technical Documentation
 
-## License
-Creative Commons Zero v1.0 Universal (cc0-1.0)
+## License: [Creative Commons Zero v1.0 Universal (cc0-1.0)](../license)
 
 ## Contents
 1. [Execution](#execution)
@@ -13,14 +12,6 @@ Creative Commons Zero v1.0 Universal (cc0-1.0)
       1. [Node Embedding](#node-embedding)
 1. [Ignore Code](#ignore-code)
 1. [Universal Parse Model](#universal-parse-model)
-   1. [begin](#begin)
-   1. [ender](#ender)
-   1. [lexer](#lexer)
-   1. [lines](#lines)
-   1. [stack](#stack)
-   1. [token](#token)
-   1. [types](#types)
-1. [Files](#files)
 
 See Also
 1. [Options](options.md)
@@ -37,7 +28,7 @@ global.sparser.options.source = "my code";
 global.sparser.parser();
 ```
 
-Execute the application by simply running this instruction, where the options are an object described in [Options](#options).
+Execute the application by simply running this instruction, where the options are an object described in [Options](options.md).
 
 ### Supplied Runtimes
 Sparser is intended for inclusion in other applications as an embedded utility.  To run Sparser immediately and experiment without any configuration some simple runtime interfaces are provided.
@@ -141,10 +132,10 @@ Consider the code `<a><b class="cat"></b></a>`.  The parsed output in the defaul
 
 If that parsed output were arranged as a table it would look something like:
 
-index | begin | ender | lexer    |  lines | stack    | token         | types
------ | ----- | ----- | -------- | ------ | -------- | ------------- | -----
-0     | -1    | 4     | "markup" | 0      | "global" | "&lt;a&gt;"   | "start"
-1     | 0     | 3     | "markup" | 0      | "a"      | "&lt;b &gt;"  | "start"
-2     | 1     | 3     | "markup" | 0      | "b"      | "class="cat"" | "attribute"
-3     | 1     | 3     | "markup" | 0      | "b"      | "&lt;/b&gt;"  | "end"
-4     | 0     | 4     | "markup" | 0      | "a"      | "&lt;/a&gt;"  | "end"
+index | begin | ender | lexer    |  lines | stack    | token             | types
+----- | ----- | ----- | -------- | ------ | -------- | ----------------- | -----
+0     | -1    | 4     | "markup" | 0      | "global" | "&lt;a&gt;"       | "start"
+1     | 0     | 3     | "markup" | 0      | "a"      | "&lt;b&gt;"       | "start"
+2     | 1     | 3     | "markup" | 0      | "b"      | "class=\\"cat\\"" | "attribute"
+3     | 1     | 3     | "markup" | 0      | "b"      | "&lt;/b&gt;"      | "end"
+4     | 0     | 4     | "markup" | 0      | "a"      | "&lt;/a&gt;"      | "end"

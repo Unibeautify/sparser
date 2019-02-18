@@ -1,4 +1,4 @@
-# Sparser Architecture
+# Sparser - Architecture
 Sparser is arranged as two objects.  An externally exposed object named **sparser** and an internally available object named **parse**.  The *sparser* parent object provides the interface to the application while the *parse* provides a tiny framework.
 
 ## Commonly Used Data Structures
