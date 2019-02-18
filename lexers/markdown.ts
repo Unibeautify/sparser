@@ -17,6 +17,13 @@
                     ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
                     // eslint-disable-next-line
                     : source.replace(/\u0000/g, "\ufffd").split("\n"),
+                frontspace = function lexer_markdown_frontspace(index:number):string {
+                    const space:string[]|null = (/^\s+/).exec(lines[index]);
+                    if (space === null) {
+                        return "";
+                    }
+                    return space[0];
+                },
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
@@ -654,6 +661,9 @@
                             if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
                                 return false;
                             }
+                            if (listtest(index) === true && parse.structure[parse.structure.length - 1][0] !== "blockquote") {
+                                return false;
+                            }
                             return true;
                         },
                         fixquote = function lexer_markdown_parabuild_fixquote() {
@@ -712,6 +722,15 @@
                         } else {
                             do {
                                 text(lines[a], "multiline", false);
+                                parse.push(data, {
+                                    begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    stack: parse.structure[parse.structure.length - 1][0],
+                                    token: "<br/>",
+                                    types: "singleton"
+                                }, "");
                                 a = a + 1;
                             } while (a < x);
                             parse.pop(data);
@@ -944,7 +963,7 @@
                             }
                             return xind;
                         };
-                    if ((/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
+                    if ((/^(\s*\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                         order = true;
                         ind = (/(^(\s*(\d+(\)|\.)))?\s*)/).exec(lines[a])[0].length;
                         sym = lines[a].replace(/^(\s*\d+)/, "").charAt(0);
@@ -1175,11 +1194,6 @@
                                     }
                                     parse.push(data, end, "");
                                 } else if (listtest(a) === true) {
-                                    record.begin = parse.structure[parse.structure.length - 1][1];
-                                    record.stack = parse.structure[parse.structure.length - 1][0];
-                                    record.token = "<li>";
-                                    record.types = "start";
-                                    parse.push(data, record, "li");
                                     list();
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
@@ -1283,11 +1297,13 @@
                                 }
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "multiline", false);
-                                record.begin = parse.structure[parse.structure.length - 1][1];
-                                record.stack = parse.structure[parse.structure.length - 1][0];
-                                record.token = "</li>";
-                                record.types = "end";
-                                parse.push(data, record, "");
+                                if (listtest(a + 1) === false || frontspace(a) === frontspace(a + 1)) {
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "</li>";
+                                    record.types = "end";
+                                    parse.push(data, record, "");
+                                }
                             } else {
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "<li>", false);
@@ -1640,7 +1656,7 @@
                     codeblock(true, false, false);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
-                } else if (listtest(a) === true && (a === 0 || lines[a - 1] === "")) {
+                } else if (listtest(a) === true) {
                     list();
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     parabuild();

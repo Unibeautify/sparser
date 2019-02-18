@@ -2,7 +2,8 @@ html{margin:0;padding:0}
 body{background:#eee;font-size:10px;margin:0;position:relative;overflow-x:hidden}
 h1{display:block;font-family:Garamond,Georgia,"Times New Roman",Times,serif;font-variant:small-caps;font-weight:normal;line-height:normal}
 h2,
-h3{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:small-caps;font-weight:normal;line-height:normal}
+h3,
+h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:small-caps;font-weight:normal;line-height:normal}
 #top_menu{background:#333;border-color:#000;border-style:node node solid;border-width:0 0 0.1em;box-shadow:0 0.25em 1em #666;color:#fff;padding:1em;position:fixed;width:100%;z-index:6}
 #top_menu ul{float:right;list-style-position:inside;margin:0 2em 0 0;padding:0}
 #top_menu li{border-color:#ddd;border-style:none solid none none;border-width:0 0.1em 0 0;display:inline-block;font-size:1.5em;list-style:none;padding:0 2em}
@@ -13,7 +14,8 @@ h3{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:
 #content h1{display:block;font-size:3.5em;margin:0;text-align:center}
 #content h1 span{display:block;font-size:2.95em;margin:0;text-decoration:underline}
 #content h2{font-size:2.5em;margin:1em 0 -0.5em}
-#content h3{font-size:1.6em}
+#content h3{font-size:2em}
+#content h4{font-size:1.6em}
 #content h3,
 #content li,
 #content ol,

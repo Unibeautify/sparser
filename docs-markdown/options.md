@@ -1,4 +1,4 @@
-# Sparser Options
+# Sparser - Options
 ## Conventions
 Options with a lexer value of *all* are assigned directly to the options object, such as `options.format`. All other options are assigned to an object named after the respective lexer under the `lexer_options` object, example: `options.lexer_options.style.no_lead_zero`.
 

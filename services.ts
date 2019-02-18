@@ -869,7 +869,7 @@ interface directoryList extends Array<directoryItem> {
                                         attribute = function node_apps_build_docshtml_readdir_convert_readfile_attribute():void {
                                             const index = doc.length - 1,
                                                 add = function node_apps_build_docshtml_readdir_convert_readfile_attribute_add(ending:string):string {
-                                                    return ` ${parse.token[b] + ending}`; 
+                                                    return ` ${parse.token[b].replace(/\.md"$/, ".xhtml\"") + ending}`; 
                                                 };
                                             doc[index] = doc[index].replace(/\/?>$/, add);
                                         };
@@ -885,13 +885,12 @@ interface directoryList extends Array<directoryItem> {
                                     len = parse.token.length - 1;
                                     doc.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html><html xml:lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>");
                                     doc.push("Sparser");
-                                    doc.push("</title> <link href=\"https://sparser.io\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"../website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1>");
-                                    doc.push("<span>Sparser</span>");
-                                    doc.push("</h1>\n<ul><li><a href=\"../demo/\">Demo</a></li><li><a href=\"tech-documentation.xhtml\">Documentation</a></li><li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li><li class=\"last\"><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1><span>Sparser</span>Options</h1>");
+                                    doc.push("</title> <link href=\"https://sparser.io\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"../website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1>Sparser</h1>\n<ul><li><a href=\"../demo/\">Demo</a></li><li><a href=\"tech-documentation.xhtml\">Documentation</a></li><li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li><li class=\"last\"><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1>");
+                                    doc.push("<span>Sparser</span></h1>");
                                     do {
                                         if (parse.stack[b] === "h1" && parse.types[b] === "content" && parse.token[b].indexOf(" - ") > 0) {
                                             doc[1] = parse.token[b];
-                                            doc[3] = `<span>Sparser</span>${parse.token[b].split(" - ")[1]}`;
+                                            doc[3] = `<span>Sparser</span>${parse.token[b].split(" - ")[1]}</h1>`;
                                         } else if (parse.token[b] === "</h1>") {
                                             b = b + 1;
                                             break;
@@ -917,7 +916,7 @@ interface directoryList extends Array<directoryItem> {
                                             } else if (parse.types[b] === "end" && parse.types[b + 1] === "content" && b < len - 1 && ".,;:?!)]}".indexOf(parse.token[b + 1].charAt(0)) < 0) {
                                                 doc.push(`${parse.token[b]} `);
                                             } else {
-                                                doc.push(parse.token[b]);
+                                                doc.push(parse.token[b].replace(/\\\\"/g, "\\\""));
                                             }
                                         }
                                         if ((/<\/\w\d?>/).test(parse.token[b]) === true) {
@@ -1236,7 +1235,7 @@ interface directoryList extends Array<directoryItem> {
                 },
                 // phase options_markdown builds a markdown file of options documentation
                 options_markdown: function node_apps_build_optionsMarkdown():void {
-                    const doc:string[] = ["# Sparser Options"],
+                    const doc:string[] = ["# Sparser - Options"],
                         lexers:lexerDoc = {},
                         lexerWrite = function node_apps_build_optionsMarkdown_lexerWrite():void {
                             const lexkeys:string[] = Object.keys(lexers);
