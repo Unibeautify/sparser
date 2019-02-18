@@ -75,7 +75,8 @@ ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
 ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
 #documentation code{background:#eee;display:inline-block;font-size:1em;padding:0}
-#documentation h2{font-variant:normal;margin:1em 0 0}
+#documentation h2{margin:1em 0 0}
+#option_list h3{font-variant:normal}
 #documentation th,
 #documentation td{white-space:normal}
 #documentation table{font-family:inherit;font-size:1.4em}

@@ -907,11 +907,17 @@ interface directoryList extends Array<directoryItem> {
                                         } else if (parse.token[b] === "<h2>") {
                                             if (parse.token[b - 1] === "</h1>") {
                                                 doc.push("<div class=\"section\"><h2>");
+                                            } else if (filename === "options.md") {
+                                                doc.push("</div><div class=\"section\" id=\"option_list\"><h2>");
                                             } else {
                                                 doc.push("</div><div class=\"section\"><h2>");
                                             }
                                         } else {
-                                            if (parse.types[b] === "start" && parse.types[b - 1] === "content" && b > 0 && "{[(".indexOf(parse.token[b - 1].charAt(parse.token[b - 1].length - 1)) < 0) {
+                                            if (filename === "options.md" && parse.token[b] === "<td>" && parse.token[b - 1] === "<tr>") {
+                                                doc.push("<th>");
+                                            } else if (filename === "options.md" && parse.token[b] === "</td>" && parse.token[b + 1] === "<td>") {
+                                                doc.push("</th>");
+                                            } else if (parse.types[b] === "start" && parse.types[b - 1] === "content" && b > 0 && "{[(".indexOf(parse.token[b - 1].charAt(parse.token[b - 1].length - 1)) < 0) {
                                                 doc.push(` ${parse.token[b]}`);
                                             } else if (parse.types[b] === "end" && parse.types[b + 1] === "content" && b < len - 1 && ".,;:?!)]}".indexOf(parse.token[b + 1].charAt(0)) < 0) {
                                                 doc.push(`${parse.token[b]} `);
