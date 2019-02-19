@@ -6,7 +6,7 @@
     if (window.innerWidth > 800) {
         const blob:HTMLElement = document.getElementById("blobs"),
             screen:HTMLElement = blob.getElementsByTagName("div")[0],
-            style:HTMLElement = document.getElementsByTagName("style")[0],
+            style:HTMLElement = document.createElement("style"),
             blobs:number = 7,
             size:number = 100,
             resize = function website_resize():void {
@@ -69,6 +69,8 @@
         let width:number = (window.innerWidth / 10),
             height:number = (window.innerHeight / 10),
             a:number = 0;
+        style.setAttribute("type", "text/css");
+        document.getElementsByTagName("head")[0].appendChild(style);
         screen.style.position = "relative";
         screen.style.zIndex = "4";
         window.onresize = resize;
