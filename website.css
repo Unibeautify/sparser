@@ -89,8 +89,10 @@ ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
 @media (max-width: 400px) {
     #top_menu h1{display:none}
     #top_menu li{padding:0 0.5em}
-    #content .section{background-size:100%;padding:0 0 5em}
+    #content{width:100%}
+    #content .section{background-size:60%;padding:0 0 5em}
 }
 @media (max-width: 700px) {
-    #content .section{background-size:15%}
+    #content{width:100%}
+    #content .section{background-size:60%}
 }

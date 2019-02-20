@@ -1010,22 +1010,41 @@
                         }
                         // an ordered list may not have unordered list items
                         if (order === true && (/^(\s{0,3}(\*|-|\+)\s)/).test(lines[a]) === true) {
-                            a = a - 1;
-                            break;
+                            if (frontspace(a) !== "") {
+                                lexer_markdown_list();
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
+                            } else {
+                                lines.splice(a, 0, "");
+                                b = b + 1;
+                                break;
+                            }
                         }
                         // an unordered list may not have ordered list items
                         if (order === false && (/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
-                            a = a - 1;
-                            break;
+                            if (frontspace(a) !== "") {
+                                lexer_markdown_list();
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
+                            } else {
+                                lines.splice(a, 0, "");
+                                b = b + 1;
+                                break;
+                            }
                         }
                         numb = lines[a];
                         lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
-                        //recursive list item: - - foo
-                        //console.log((space(a + 1, true) - ind)+" "+lines[a]);
+                        //recursive list item
                         
                         if (listtest(a) === true) {
                             parse.structure.push(["ul", parse.count - 3]);
-                            list();
+                            lexer_markdown_list();
                             record.begin = parse.structure[parse.structure.length - 1][1];
                             record.stack = parse.structure[parse.structure.length - 1][0];
                             record.token = "<li>";
@@ -1077,7 +1096,7 @@
                                 z = (lines[a + 1] === "")
                                     ? a + 2
                                     : a + 1;
-                                if (z !== b && codetest(z) === false && listtest(z) === false && (/^\s*>/).test(lines[a]) === false) {
+                                if (z !== b && codetest(z) === false && listtest(z) === false && (/^\s*>/).test(lines[a]) === false && lines[a + 1] !== "") {
                                     a = a - 1;
                                     break;
                                 }
@@ -1194,7 +1213,7 @@
                                     }
                                     parse.push(data, end, "");
                                 } else if (listtest(a) === true) {
-                                    list();
+                                    lexer_markdown_list();
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "</li>";
@@ -1297,7 +1316,7 @@
                                 }
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "multiline", false);
-                                if (listtest(a + 1) === false || frontspace(a) === frontspace(a + 1)) {
+                                if (listtest(a + 1) === false || a > b - 1 || frontspace(a) === frontspace(a + 1)) {
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "</li>";
@@ -1311,26 +1330,28 @@
                         }
                         a = a + 1;
                     } while (a < b);
-                    if (order === true) {
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            ender: -1,
-                            lexer: "markdown",
-                            lines: 0,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: "</ol>",
-                            types: "end"
-                        }, "");
-                    } else {
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            ender: -1,
-                            lexer: "markdown",
-                            lines: 0,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: "</ul>",
-                            types: "end"
-                        }, "");
+                    if (lines[a] === "" || listtest(a + 1) === false) {
+                        if (order === true) {
+                            parse.push(data, {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
+                                lexer: "markdown",
+                                lines: 0,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: "</ol>",
+                                types: "end"
+                            }, "");
+                        } else {
+                            parse.push(data, {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
+                                lexer: "markdown",
+                                lines: 0,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: "</ul>",
+                                types: "end"
+                            }, "");
+                        }
                     }
                 },
                 table     = function lexer_markdown_table():void {

@@ -1,0 +1,12 @@
+# Sparser - Architecture
+
+* **concat** -it is slow. This method takes the following two arguments:
+   1. type
+   1. object also of 
+* es the last ind
+
+
+1. 11 aaa
+* 11 bbb
+
+<!-- asdf -->
