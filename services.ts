@@ -885,7 +885,7 @@ interface directoryList extends Array<directoryItem> {
                                     len = parse.token.length - 1;
                                     doc.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html><html xml:lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n\n<!-- Automatically generated file. Do not manually alter! -->\n\n<head><title>");
                                     doc.push("Sparser");
-                                    doc.push("</title> <link href=\"https://sparser.io\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"../website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1>Sparser</h1>\n<ul><li><a href=\"../demo/\">Demo</a></li><li><a href=\"tech-documentation.xhtml\">Documentation</a></li><li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li><li class=\"last\"><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1>");
+                                    doc.push("</title> <link href=\"https://sparser.io\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"../website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1><a href=\"../\">Sparser</a></h1>\n<ul><li><a href=\"../demo/\">Demo</a></li><li><a href=\"tech-documentation.xhtml\">Documentation</a></li><li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li><li class=\"last\"><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1>");
                                     doc.push("<span>Sparser</span></h1>");
                                     do {
                                         if (parse.stack[b] === "h1" && parse.types[b] === "content" && parse.token[b].indexOf(" - ") > 0) {
@@ -1824,7 +1824,7 @@ interface directoryList extends Array<directoryItem> {
         }
     };
     // set options from conventions on the file name
-    apps.fileOptions = function node_apps_fileOptions(filename:string):void {
+    apps.fileNameOptions = function node_apps_fileNameOptions(filename:string):void {
         const notes:string[] = filename.split("_"),
             noteslen:number = notes.length;
         let value:string = "",
@@ -2597,7 +2597,7 @@ interface directoryList extends Array<directoryItem> {
                     output:string = "",
                     str:string = "";
                 do {
-                    apps.fileOptions(keys[a]);
+                    apps.fileNameOptions(keys[a]);
                     options.source = files[keys[a]];
                     files[keys[a]] = sparser.parser();
                     a = a + 1;
@@ -3232,7 +3232,7 @@ interface directoryList extends Array<directoryItem> {
             return;
         }
         verbose = true;
-        apps.fileOptions(process.argv[0]);
+        apps.fileNameOptions(process.argv[0]);
         node.fs.readFile(node.path.resolve(process.argv[0]), {
             encoding: "utf8"
         }, function node_apps_testprep_read(er:Error, filedata:string):void {
@@ -3400,7 +3400,7 @@ interface directoryList extends Array<directoryItem> {
                             console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
                         } else {
                             options.source = files.code[a][1];
-                            apps.fileOptions(files.code[a][0]);
+                            apps.fileNameOptions(files.code[a][0]);
                             options.lexer = currentlex;
                             options.format = "testprep";
                             output        = sparser.parser();

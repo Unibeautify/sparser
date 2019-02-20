@@ -1,17 +1,18 @@
 html{margin:0;padding:0}
-body{background:#eee;font-size:10px;margin:0;position:relative;overflow-x:hidden}
+body{background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJklEQVQImU3IsQ0AMAzDMJ/G0/K5OxQBMmiggm4z01zgjwWaC/QBC/ge8REic+MAAAAASUVORK5CYII=");font-size:10px;margin:0;position:relative;overflow-x:hidden}
 h1{display:block;font-family:Garamond,Georgia,"Times New Roman",Times,serif;font-variant:small-caps;font-weight:normal;line-height:normal}
 h2,
 h3,
 h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:small-caps;font-weight:normal;line-height:normal}
-#top_menu{background:#333;border-color:#000;border-style:node node solid;border-width:0 0 0.1em;box-shadow:0 0.25em 1em #666;color:#fff;padding:1em;position:fixed;width:100%;z-index:6}
+#top_menu{background:#333;border-color:#222;border-style:none none solid;border-width:0 0 0.1em;box-shadow:0 0.25em 1em #333;color:#fff;padding:1em;position:fixed;width:100%;z-index:6}
 #top_menu ul{float:right;list-style-position:inside;margin:0 2em 0 0;padding:0}
-#top_menu li{border-color:#ddd;border-style:none solid none none;border-width:0 0.1em 0 0;display:inline-block;font-size:1.5em;list-style:none;padding:0 2em}
+#top_menu li{border-color:#ddd;border-style:none solid none none;border-width:0 0.1em 0 0;display:inline-block;font-size:1.5em;list-style:none;padding:0 1em}
 #top_menu li.last{border-style:none}
 #top_menu h1{float:left;font-size:2em;margin:0}
-#top_menu a{color:#fff}
-#content{background:#fff;border-color:#666;border-style:none solid;border-width:0 0.1em;box-shadow:0.5em 0.5em 2em #666;margin:0 auto;max-width:100em;padding:5em 1em 1em;position:relative;z-index:5}
-#content h1{display:block;font-size:3.5em;margin:0;text-align:center}
+#top_menu a{color:#fff;font-variant:small-caps;letter-spacing:0.1em}
+#top_menu h1 a{text-decoration:none}
+#content{background:#fff;border-color:#333;border-style:none solid solid;border-width:0 0.1em 0.1em;box-shadow:0.5em 0.5em 2em #000;margin:0 auto;max-width:100em;padding:5em 1em 1em;position:relative;z-index:5}
+#content h1{display:block;font-size:3.5em;margin:0;text-align:center;text-shadow:#999 0.015em 0.015em 0.05em}
 #content h1 span{display:block;font-size:2.95em;margin:0;text-decoration:underline}
 #content h2{font-size:2.5em;margin:1em 0 -0.5em}
 #content h3{font-size:2em}
@@ -22,7 +23,7 @@ h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:
 #content p,
 #content ul{margin:1em 0 0}
 #content li,
-#content p{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:1.4em;letter-spacing:0.05em}
+#content p{font-family:Georgia,"Times New Roman",Times,serif;font-size:1.4em;letter-spacing:0.05em;line-height:1.8em}
 #content li li{font-size:1em}
 #content h2 a{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:0.56em;font-variant:none}
 #content li h3{font-size:1.4em;text-decoration:underline}
@@ -37,7 +38,7 @@ h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:
 #svg_left,
 #svg_right{display:block;position:relative;z-index:3}
 #svg_left svg,
-#svg_right svg{height:100%;opacity:0.05;position:absolute;width:100%}
+#svg_right svg{height:100%;opacity:0.075;position:absolute;width:100%}
 #svg_left{float:left}
 #svg_right{float:right}
 #svg_left svg{bottom:-0.5em;right:-17%;transform:scaleY(-1) rotate(180deg)}
