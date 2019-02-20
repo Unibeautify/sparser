@@ -1,7 +1,7 @@
 /*global global*/
 (function markdown_init() {
     "use strict";
-    const framework: parseFramework = global.parseFramework,
+    const sparser: sparser = global.sparser,
         markdown = function lexer_markdown(source : string): data {
             let a   : number   = 0,
                 b   : number   = 0,
@@ -9,20 +9,27 @@
                 bc2 : number   = 0,
                 quote:string   = "",
                 stack:string[] = [];
-            const parse: parse    = framework.parse,
+            const parse: parse    = sparser.parse,
                 data   : data     = parse.data,
-                options: parseOptions  = parse.parseOptions,
+                options: any      = sparser.options,
                 lines  : string[] = (options.crlf === true)
                     // eslint-disable-next-line
                     ? source.replace(/\u0000/g, "\ufffd").split("\r\n")
                     // eslint-disable-next-line
                     : source.replace(/\u0000/g, "\ufffd").split("\n"),
+                frontspace = function lexer_markdown_frontspace(index:number):string {
+                    const space:string[]|null = (/^\s+/).exec(lines[index]);
+                    if (space === null) {
+                        return "";
+                    }
+                    return space[0];
+                },
                 hr = function lexer_markdown_hr():void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<hr/>",
                         types: "singleton"
@@ -61,9 +68,9 @@
                         if (tag !== "multiline") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: tag,
                                 types: "start"
@@ -83,9 +90,9 @@
                                             if (content !== "") {
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 0,
-                                                    presv: false,
                                                     stack: parse.structure[parse.structure.length - 1][0],
                                                     token: content,
                                                     types: "content"
@@ -106,9 +113,9 @@
                                                 }
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
-                                                    presv: false,
                                                     stack: parse.structure[parse.structure.length - 1][0],
                                                     token: "<img/>",
                                                     types: "singleton"
@@ -117,9 +124,9 @@
                                                 if (content !== "") {
                                                     parse.push(data, {
                                                         begin: parse.structure[parse.structure.length - 1][1],
+                                                        ender: -1,
                                                         lexer: "markdown",
                                                         lines: 0,
-                                                        presv: false,
                                                         stack: parse.structure[parse.structure.length - 1][0],
                                                         token: "alt=\"" + content + "\"",
                                                         types: "attribute"
@@ -127,9 +134,9 @@
                                                 }
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
-                                                    presv: false,
                                                     stack: parse.structure[parse.structure.length - 1][0],
                                                     token: "src=\"",
                                                     types: "attribute"
@@ -138,18 +145,18 @@
                                             } else {
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 1,
-                                                    presv: false,
                                                     stack: parse.structure[parse.structure.length - 1][0],
                                                     token: "<a>",
                                                     types: "start"
                                                 }, "a");
                                                 parse.push(data, {
                                                     begin: parse.structure[parse.structure.length - 1][1],
+                                                    ender: -1,
                                                     lexer: "markdown",
                                                     lines: 0,
-                                                    presv: false,
                                                     stack: parse.structure[parse.structure.length - 1][0],
                                                     token: "href=\"",
                                                     types: "attribute"
@@ -165,9 +172,9 @@
                                 if (content !== "" && content.length > 1 && parse.structure[parse.structure.length - 1][0] !== "img") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: content,
                                         types: "content"
@@ -201,9 +208,9 @@
                                 if (parse.structure[parse.structure.length - 1][0] === "a") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: "</a>",
                                         types: "end"
@@ -219,17 +226,7 @@
                                             (/\s/).test(str[aa - 1]) === true ||
                                             aa === 0
                                         )
-                                    ) || (
-                                        quote === "**" && (
-                                            (/\s/).test(str[aa + 2]) === true ||
-                                            aa === bb - 2
-                                        )
-                                    ) || (
-                                        quote !== "" && (
-                                            (/\s/).test(str[aa + 1]) === true ||
-                                            aa === bb - 1
-                                        )
-                                    )
+                                    ) || quote !== ""
                                 )
                             ) {
                                 if (str[aa] === "~") {
@@ -251,9 +248,9 @@
                                     if (content !== "") {
                                         parse.push(data, {
                                             begin: parse.structure[parse.structure.length - 1][1],
+                                            ender: -1,
                                             lexer: "markdown",
                                             lines: 0,
-                                            presv: false,
                                             stack: parse.structure[parse.structure.length - 1][0],
                                             token: content,
                                             types: "content"
@@ -268,9 +265,9 @@
                                     stack.pop();
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: midtag,
                                         types: "end"
@@ -283,9 +280,9 @@
                                     if (content !== "") {
                                         parse.push(data, {
                                             begin: parse.structure[parse.structure.length - 1][1],
+                                            ender: -1,
                                             lexer: "markdown",
                                             lines: 0,
-                                            presv: false,
                                             stack: parse.structure[parse.structure.length - 1][0],
                                             token: content,
                                             types: "content"
@@ -300,9 +297,9 @@
                                     stack.push(quote);
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 1,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: "<" + midtag + ">",
                                         types: "start"
@@ -313,9 +310,9 @@
                                 if (content !== "") {
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: content,
                                         types: "content"
@@ -327,9 +324,9 @@
                                     stack.pop();
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 0,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: "</code>",
                                         types: "end"
@@ -340,9 +337,9 @@
                                     stack.push("`");
                                     parse.push(data, {
                                         begin: parse.structure[parse.structure.length - 1][1],
+                                        ender: -1,
                                         lexer: "markdown",
                                         lines: 1,
-                                        presv: false,
                                         stack: parse.structure[parse.structure.length - 1][0],
                                         token: "<code>",
                                         types: "start"
@@ -377,9 +374,9 @@
                         if (content !== "") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 1,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: content,
                                 types: "content"
@@ -391,9 +388,9 @@
                         if (tag !== "multiline") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: tagend,
                                 types: "end"
@@ -409,9 +406,9 @@
                     if (tag !== "multiline") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: tag,
                             types: "start"
@@ -422,9 +419,9 @@
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: item.replace(/^(\s+)/, "").replace(/(\s+)$/, ""),
                             types: "content"
@@ -433,9 +430,9 @@
                     if (tag !== "multiline") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: tagend,
                             types: "end"
@@ -494,9 +491,9 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: comment,
                         types: "comment"
@@ -505,18 +502,18 @@
                 code     = function lexer_markdown_code(codetext:string, language:string, fourspace:boolean):void {
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<p>",
                         types: "start"
                     }, "p");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<code>",
                         types: "start"
@@ -524,9 +521,9 @@
                     if (language !== "") {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "class=\"language-" + language + "\"",
                             types: "attribute"
@@ -542,9 +539,9 @@
                         }
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: codetext,
                             types: "content"
@@ -552,18 +549,18 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "</code>",
                         types: "end"
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "</p>",
                         types: "end"
@@ -664,6 +661,9 @@
                             if ((/^(\s*#{1,6}\s)/).test(lines[index]) === true) {
                                 return false;
                             }
+                            if (listtest(index) === true && parse.structure[parse.structure.length - 1][0] !== "blockquote") {
+                                return false;
+                            }
                             return true;
                         },
                         fixquote = function lexer_markdown_parabuild_fixquote() {
@@ -710,9 +710,9 @@
                         } while (x < b && test(x) === true);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: tag,
                             types: "start"
@@ -724,9 +724,9 @@
                                 text(lines[a], "multiline", false);
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "<br/>",
                                     types: "singleton"
@@ -739,9 +739,9 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: tag.replace("<", "</"),
                                 types: "end"
@@ -765,18 +765,18 @@
                     if (content === "" || (/^(#+)$/).test(content) === true) {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "<h" + hash.length + ">",
                             types: "start"
                         }, "h" + hash.length);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "</h" + hash.length + ">",
                             types: "end"
@@ -791,9 +791,9 @@
                     bc2 = bc1;
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<blockquote>",
                         types: "start"
@@ -829,36 +829,36 @@
                             if (a + 1 < x) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "<p>",
                                     types: "start"
                                 }, "p");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "<code>",
                                     types: "start"
                                 }, "code");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "</code>",
                                     types: "end"
                                 }, "");
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "</p>",
                                     types: "end"
@@ -888,9 +888,9 @@
                         do {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "</blockquote>",
                                 types: "end"
@@ -905,9 +905,9 @@
                         sym:string = lines[a].replace(/^(\s+)/, "").charAt(0),
                         record:record = {
                             begin: -1,
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: "",
                             token: "",
                             types: ""
@@ -963,15 +963,15 @@
                             }
                             return xind;
                         };
-                    if ((/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
+                    if ((/^(\s*\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
                         order = true;
                         ind = (/(^(\s*(\d+(\)|\.)))?\s*)/).exec(lines[a])[0].length;
                         sym = lines[a].replace(/^(\s*\d+)/, "").charAt(0);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "<ol>",
                             types: "start"
@@ -980,9 +980,9 @@
                         if (numb !== "1") {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "start=\"" + numb + "\"",
                                 types: "attribute"
@@ -992,9 +992,9 @@
                         ind = indlen(a);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "<ul>",
                             types: "start"
@@ -1010,22 +1010,41 @@
                         }
                         // an ordered list may not have unordered list items
                         if (order === true && (/^(\s{0,3}(\*|-|\+)\s)/).test(lines[a]) === true) {
-                            a = a - 1;
-                            break;
+                            if (frontspace(a) !== "") {
+                                lexer_markdown_list();
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
+                            } else {
+                                lines.splice(a, 0, "");
+                                b = b + 1;
+                                break;
+                            }
                         }
                         // an unordered list may not have ordered list items
                         if (order === false && (/^(\s{0,3}\d{1,9}(\)|\.)\s)/).test(lines[a]) === true) {
-                            a = a - 1;
-                            break;
+                            if (frontspace(a) !== "") {
+                                lexer_markdown_list();
+                                record.begin = parse.structure[parse.structure.length - 1][1];
+                                record.stack = parse.structure[parse.structure.length - 1][0];
+                                record.token = "</li>";
+                                record.types = "end";
+                                parse.push(data, record, "");
+                            } else {
+                                lines.splice(a, 0, "");
+                                b = b + 1;
+                                break;
+                            }
                         }
                         numb = lines[a];
                         lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
-                        //recursive list item: - - foo
-                        //console.log((space(a + 1, true) - ind)+" "+lines[a]);
+                        //recursive list item
                         
                         if (listtest(a) === true) {
                             parse.structure.push(["ul", parse.count - 3]);
-                            list();
+                            lexer_markdown_list();
                             record.begin = parse.structure[parse.structure.length - 1][1];
                             record.stack = parse.structure[parse.structure.length - 1][0];
                             record.token = "<li>";
@@ -1077,7 +1096,7 @@
                                 z = (lines[a + 1] === "")
                                     ? a + 2
                                     : a + 1;
-                                if (z !== b && codetest(z) === false && listtest(z) === false && (/^\s*>/).test(lines[a]) === false) {
+                                if (z !== b && codetest(z) === false && listtest(z) === false && (/^\s*>/).test(lines[a]) === false && lines[a + 1] !== "") {
                                     a = a - 1;
                                     break;
                                 }
@@ -1161,6 +1180,8 @@
                                     } else if (data.token[parse.count] === "</p>" && lines[a - 1] !== "") {
                                         parse.pop(data);
                                         parse.structure.push(["p", data.begin[parse.count]]);
+                                        record.begin = parse.structure[parse.structure.length - 1][1];
+                                        record.stack = parse.structure[parse.structure.length - 1][0];
                                         record.token = "<br/>";
                                         record.types = "singleton";
                                         parse.push(data, record, "");
@@ -1176,6 +1197,8 @@
                                         record.begin = parse.structure[parse.structure.length - 1][1];
                                         record.stack = parse.structure[parse.structure.length - 1][0];
                                         parse.push(data, record, "p");
+                                        record.begin = parse.structure[parse.structure.length - 1][1];
+                                        record.stack = parse.structure[parse.structure.length - 1][0];
                                         text(lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, ""), "multiline", false);
                                         record.token = "<br/>";
                                         record.types = "singleton";
@@ -1190,12 +1213,7 @@
                                     }
                                     parse.push(data, end, "");
                                 } else if (listtest(a) === true) {
-                                    record.begin = parse.structure[parse.structure.length - 1][1];
-                                    record.stack = parse.structure[parse.structure.length - 1][0];
-                                    record.token = "<li>";
-                                    record.types = "start";
-                                    parse.push(data, record, "li");
-                                    list();
+                                    lexer_markdown_list();
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "</li>";
@@ -1222,6 +1240,35 @@
                                 record.types = "start";
                                 parse.push(data, record, "li");
                                 if (checktest() === true) {
+                                    if (data.types[parse.structure[parse.structure.length - 2][1] + 1] !== "attribute") {
+                                        const index:number = parse.structure[parse.structure.length - 2][1] + 1;
+                                        parse.structure[parse.structure.length - 1][1] = parse.structure[parse.structure.length - 1][1] + 1;
+                                        if (parse.count > index) {
+                                            const parent:number = index - 1;
+                                            let aa:number = parse.count;
+                                            do {
+                                                aa = aa - 1;
+                                                if (data.begin[aa] !== parent) {
+                                                    data.begin[aa] = data.begin[aa] + 1;
+                                                }
+                                                data.ender[aa] = data.ender[aa] + 1;
+                                            } while (aa > index);
+                                        }
+                                        parse.splice({
+                                            data: data,
+                                            howmany: 0,
+                                            index: index,
+                                            record: {
+                                                begin: parse.structure[parse.structure.length - 2][1],
+                                                ender: -1,
+                                                lexer: "markdown",
+                                                lines: 0,
+                                                stack: parse.structure[parse.structure.length - 2][0],
+                                                token: "class=\"contains-task-list\"",
+                                                types: "attribute"
+                                            }
+                                        });
+                                    }
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
                                     record.token = "class=\"task-list-item\"";
@@ -1229,7 +1276,7 @@
                                     parse.push(data, record, "");
                                     record.begin = parse.structure[parse.structure.length - 1][1];
                                     record.stack = parse.structure[parse.structure.length - 1][0];
-                                    record.token = "input";
+                                    record.token = "<input/>";
                                     record.types = "singleton";
                                     parse.push(data, record, "");
                                     y = parse.count;
@@ -1245,22 +1292,6 @@
                                     parse.push(data, record, "");
                                     y = lines[a].indexOf("[x]");
                                     z = lines[a].indexOf("[ ]");
-                                    if (data.types[parse.structure[parse.structure.length - 2][1] + 1] !== "attribute") {
-                                        parse.splice({
-                                            data: data,
-                                            howmany: 0,
-                                            index: parse.structure[parse.structure.length - 2][1] + 1,
-                                            record: {
-                                                begin: parse.structure[parse.structure.length - 2][1],
-                                                lexer: "markdown",
-                                                lines: 0,
-                                                presv: false,
-                                                stack: parse.structure[parse.structure.length - 2][0],
-                                                token: "class=\"contains-task-list\"",
-                                                types: "attribute"
-}
-                                        });
-                                    }
                                     if (y > -1 && z > -1) {
                                         if (y < z) {
                                             lines[a] = lines[a].replace(/(\[x\]\s*)/, "");
@@ -1285,11 +1316,13 @@
                                 }
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "multiline", false);
-                                record.begin = parse.structure[parse.structure.length - 1][1];
-                                record.stack = parse.structure[parse.structure.length - 1][0];
-                                record.token = "</li>";
-                                record.types = "end";
-                                parse.push(data, record, "");
+                                if (listtest(a + 1) === false || a > b - 1 || frontspace(a) === frontspace(a + 1)) {
+                                    record.begin = parse.structure[parse.structure.length - 1][1];
+                                    record.stack = parse.structure[parse.structure.length - 1][0];
+                                    record.token = "</li>";
+                                    record.types = "end";
+                                    parse.push(data, record, "");
+                                }
                             } else {
                                 lines[a] = lines[a].replace(/^(\s*(\*|-|\+|(\d{1,9}\.))\s+)/, "");
                                 text(lines[a], "<li>", false);
@@ -1297,26 +1330,28 @@
                         }
                         a = a + 1;
                     } while (a < b);
-                    if (order === true) {
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            lexer: "markdown",
-                            lines: 0,
-                            presv: false,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: "</ol>",
-                            types: "end"
-                        }, "");
-                    } else {
-                        parse.push(data, {
-                            begin: parse.structure[parse.structure.length - 1][1],
-                            lexer: "markdown",
-                            lines: 0,
-                            presv: false,
-                            stack: parse.structure[parse.structure.length - 1][0],
-                            token: "</ul>",
-                            types: "end"
-                        }, "");
+                    if (lines[a] === "" || listtest(a + 1) === false) {
+                        if (order === true) {
+                            parse.push(data, {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
+                                lexer: "markdown",
+                                lines: 0,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: "</ol>",
+                                types: "end"
+                            }, "");
+                        } else {
+                            parse.push(data, {
+                                begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
+                                lexer: "markdown",
+                                lines: 0,
+                                stack: parse.structure[parse.structure.length - 1][0],
+                                token: "</ul>",
+                                types: "end"
+                            }, "");
+                        }
                     }
                 },
                 table     = function lexer_markdown_table():void {
@@ -1337,27 +1372,27 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<table>",
                         types: "start"
                     }, "table");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<thead>",
                         types: "start"
                     }, "thead");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<tr>",
                         types: "start"
@@ -1366,9 +1401,9 @@
                     do {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "<th>",
                             types: "start"
@@ -1376,9 +1411,9 @@
                         if ((/:-+:/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "style=\"text-align:center\"",
                                 types: "attribute"
@@ -1386,9 +1421,9 @@
                         } else if ((/:-+/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "style=\"text-align:left\"",
                                 types: "attribute"
@@ -1396,9 +1431,9 @@
                         } else if ((/-+:/).test(bar[c]) === true) {
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "style=\"text-align:right\"",
                                 types: "attribute"
@@ -1409,9 +1444,9 @@
                         stack = [];
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "</th>",
                             types: "end"
@@ -1420,31 +1455,31 @@
                     } while (c < d);
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "</tr>",
                         types: "end"
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "</thead>",
                         types: "end"
                     }, "");
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "<tbody>",
                         types: "start"
-                    }, "thead");
+                    }, "tbody");
                     a = a + 2;
                     d = bar.length;
                     do {
@@ -1458,9 +1493,9 @@
                             } else {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "</tbody>",
                                     types: "end"
@@ -1468,9 +1503,9 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "</table>",
                                 types: "end"
@@ -1484,9 +1519,9 @@
                             .split("|");
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "<tr>",
                             types: "start"
@@ -1501,9 +1536,9 @@
                             }
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "<td>",
                                 types: "start"
@@ -1511,9 +1546,9 @@
                             if ((/:-+:/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "style=\"text-align:center\"",
                                     types: "attribute"
@@ -1521,9 +1556,9 @@
                             } else if ((/:-+/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "style=\"text-align:left\"",
                                     types: "attribute"
@@ -1531,9 +1566,9 @@
                             } else if ((/-+:/).test(bar[c]) === true) {
                                 parse.push(data, {
                                     begin: parse.structure[parse.structure.length - 1][1],
+                                    ender: -1,
                                     lexer: "markdown",
                                     lines: 0,
-                                    presv: false,
                                     stack: parse.structure[parse.structure.length - 1][0],
                                     token: "style=\"text-align:right\"",
                                     types: "attribute"
@@ -1546,9 +1581,9 @@
                             stack = [];
                             parse.push(data, {
                                 begin: parse.structure[parse.structure.length - 1][1],
+                                ender: -1,
                                 lexer: "markdown",
                                 lines: 0,
-                                presv: false,
                                 stack: parse.structure[parse.structure.length - 1][0],
                                 token: "</td>",
                                 types: "end"
@@ -1557,9 +1592,9 @@
                         } while (c < d);
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "</tr>",
                             types: "end"
@@ -1572,9 +1607,9 @@
                     } else {
                         parse.push(data, {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markdown",
                             lines: 0,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "</tbody>",
                             types: "end"
@@ -1582,9 +1617,9 @@
                     }
                     parse.push(data, {
                         begin: parse.structure[parse.structure.length - 1][1],
+                        ender: -1,
                         lexer: "markdown",
                         lines: 0,
-                        presv: false,
                         stack: parse.structure[parse.structure.length - 1][0],
                         token: "</table>",
                         types: "end"
@@ -1593,9 +1628,9 @@
             b = lines.length;
             parse.push(data, {
                 begin: parse.structure[parse.structure.length - 1][1],
+                ender: -1,
                 lexer: "markdown",
                 lines: 0,
-                presv: false,
                 stack: parse.structure[parse.structure.length - 1][0],
                 token: "<body>",
                 types: "start"
@@ -1642,7 +1677,7 @@
                     codeblock(true, false, false);
                 } else if ((/^(\s*#{1,6}\s)/).test(lines[a]) === true) {
                     heading();
-                } else if (listtest(a) === true && (a === 0 || lines[a - 1] === "")) {
+                } else if (listtest(a) === true) {
                     list();
                 } else if (lines[a] !== "" && (/^(\s+)$/).test(lines[a]) === false) {
                     parabuild();
@@ -1651,14 +1686,14 @@
             } while (a < b);
             parse.push(data, {
                 begin: parse.structure[parse.structure.length - 1][1],
+                ender: -1,
                 lexer: "markdown",
                 lines: 0,
-                presv: false,
                 stack: parse.structure[parse.structure.length - 1][0],
                 token: "</body>",
                 types: "end"
             }, "");
             return data;
-        }
-    framework.lexer.markdown = markdown;
+        };
+    sparser.lexers.markdown = markdown;
 }());

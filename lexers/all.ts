@@ -13,13 +13,13 @@ const all = function lexers_all(options:any, callback:Function) {
             console.log(err);
             return process.exit(1);
         }
-        if (options.lexerOptions === undefined) {
-            options.lexerOptions = {};
+        if (options.lexer_options === undefined) {
+            options.lexer_options = {};
         }
         files.forEach(function nodetest_readdir_each(value:string) {
             if ((/(\.js)$/).test(value) === true) {
                 require(`${project}lexers${node.path.sep + value}`);
-                options.lexerOptions[value.replace(".js", "")] = {};
+                options.lexer_options[value.replace(".js", "")] = {};
             }
         });
         if (typeof callback === "function") {

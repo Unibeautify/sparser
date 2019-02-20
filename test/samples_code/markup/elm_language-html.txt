@@ -1,0 +1,36 @@
+<a>
+{{define "nav"}}
+<nav class="navbar navbar-default navbar-static-top" style="margin-bottom: 0;min-height:0">
+  <div class="navbar-default sidebar">
+    <div class="sidebar-nav navbar-collapse">
+      <ul id="side-menu" class="nav collapse in">
+        {{$actGame := .ActiveGame}} {{$actLang := .ActiveLang}} {{range $key,$game := .Games}}
+        <li><a href="#"><i class="fa fa-gamepad fa-fw"></i> {{$game.Display}}<span class="fa arrow"></span></a>
+          <ul class="nav nav-second-level collapse {{if $actGame}} {{if eq $actGame.ID $game.ID }}in{{end}}{{end}}">
+            <li><a href="/tool?game_id={{$game.ID}}"><i class="fa fa-wrench fa-fw"></i> å·¥å…·</a>
+            </li>
+            {{range $idx,$lang := $game.Langs}}
+            <li><a href="#"><i class="fa fa-language fa-fw"></i> {{$lang.ToDisplay}}<span class="fa arrow"></span></a>
+              <ul class="nav nav-third-level collapse {{if eq $actLang $lang}}in{{end}}">
+                <li><a href="/client?lang={{$lang}}&game_id={{$game.ID}}&mode=0">è®¾è®¡</a>
+                </li>
+                <li><a href="/client?lang={{$lang}}&game_id={{$game.ID}}&mode=1">æ’°å†™</a>
+                </li>
+                <li><a href="/client?lang={{$lang}}&game_id={{$game.ID}}&mode=2">å®¡é˜…</a>
+                </li>
+              </ul>
+            </li>
+            {{end}}
+          </ul>
+        </li>
+        {{end}}
+        <li>
+          <a href="/admin"><i class="fa fa-gears fa-fw"></i> ç®¡ç†
+</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{{end}}
+</a>

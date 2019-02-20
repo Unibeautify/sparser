@@ -1,23 +1,24 @@
 /*global global*/
 (function markup_init() {
     "use strict";
-    const framework:parseFramework = global.parseFramework,
+    const sparser:sparser = global.sparser,
         markup = function lexer_markup(source:string):data {
             let a:number             = 0,
-                linepreserve:number  = 0,
                 list:number          = 0,
                 litag:number         = 0,
+                dtlist:number        = 0,
+                dttag:number         = 0,
                 sgmlflag:number      = 0,
                 cftransaction:boolean = false,
                 ext:boolean           = false;
-            const parse:parse       = framework.parse,
+            const parse:parse       = sparser.parse,
                 data:data          = parse.data,
                 count:markupCount = {
                     end  : 0,
                     index: -1,
                     start: 0
                 },
-                options:parseOptions       = parse.parseOptions,
+                options:any            = sparser.options,
                 b:string[]             = source.split(""),
                 c:number             = b.length,
                 recordPush = function lexer_markup_recordPush(target, record, structure):void {
@@ -137,9 +138,9 @@
                         comm:[string, number]    = ["", 0];
                     const record:record          = {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markup",
                             lines: parse.linesSpace,
-                            presv: false,
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "",
                             types: ""
@@ -348,9 +349,9 @@
                                 ],
                                 store:string[]        = [];
                             const len:number          = attstore.length,
-                                qc:"none"|"double"|"single" = (options.lexerOptions.markup.quote_convert === undefined)
+                                qc:"none"|"double"|"single" = (options.lexer_options.markup.quote_convert === undefined)
                                     ? "none"
-                                    : options.lexerOptions.markup.quote_convert,
+                                    : options.lexer_options.markup.quote_convert,
                                 begin:number = parse.count,
                                 stack:string = tname.replace(/\/$/, ""),
                                 syntax:string       = "<{\"'=/",
@@ -441,11 +442,8 @@
                             }
 
                             // sort the attributes
-                            if (options.lexerOptions.markup.tagSort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                            if (options.lexer_options.markup.tag_sort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
                                 attstore     = parse.safeSort(attstore, "", false);
-                                record.presv = true;
-                            } else {
-                                record.presv = false;
                             }
 
                             // preparation for a coldfusion edge case
@@ -497,7 +495,7 @@
                                         if (options.language === "html") {
                                             record.token = attstore[ind][0].toLowerCase();
                                         } else if (options.language === "xml" || options.language === "coldfusion") {
-                                            if (options.lexerOptions.markup.quote_convert === "single") {
+                                            if (options.lexer_options.markup.quote_convert === "single") {
                                                 record.token = `${attstore[ind][0]}='${attstore[ind][0]}'`;
                                             } else {
                                                 record.token = `${attstore[ind][0]}="${attstore[ind][0]}"`;
@@ -520,7 +518,7 @@
                                             record.token = name + "={";
                                             record.types = "jsx_attribute_start";
                                             recordPush(data, record, "jsx_attribute");
-                                            framework.lexer.script(slice.slice(1, slice.length - 1));
+                                            sparser.lexers.script(slice.slice(1, slice.length - 1));
                                             record.begin = parse.count;
                                             if ((/\s\}$/).test(slice) === true) {
                                                 slice = slice.slice(0, slice.length - 1);
@@ -675,7 +673,6 @@
                                 if (b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a            = a + 6;
                                     earlyexit    = true;
-                                    record.presv = true;
                                     record.token = "{:else}";
                                     record.types = "template_else";
                                     recordPush(data, record, "");
@@ -735,7 +732,6 @@
                             if (b[a + 1] === "@" && b[a + 2] === "}" && b[a + 3] === "e" && b[a + 4] === "l" && b[a + 5] === "s" && b[a + 6] === "e" && b[a + 7] === "{" && b[a + 8] === "@" && b[a + 9] === "}") {
                                 a            = a + 9;
                                 earlyexit    = true;
-                                record.presv = true;
                                 record.token = "{@}else{@}";
                                 record.types = "template_else";
                                 recordPush(data, record, "");
@@ -777,7 +773,7 @@
                             end   = "\n";
                             ltype = "template";
                         }
-                        if (options.lexerOptions.markup.unformatted === true) {
+                        if (options.lexer_options.markup.unformatted === true) {
                             preserve = true;
                         }
                     }());
@@ -792,6 +788,7 @@
                         comm = parse.wrapCommentBlock({
                             chars: b,
                             end: c,
+                            lexer: "markup",
                             opening: start,
                             start: a,
                             terminator: end
@@ -801,7 +798,6 @@
                         if (element.replace(start, "").replace(/(^\s*)/, "").indexOf("parse-ignore-start") === 0) {
                             record.token = element;
                             record.types = "ignore";
-                            record.presv = true;
                             recordPush(data, record, "");
                             return;
                         }
@@ -897,9 +893,9 @@
                                     attstore.push([atty, lines]);
                                 }
                                 if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201c") > 0) {
-                                    framework.parseerror = `Quote looking character (\u201c, &#x201c) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201c, &#x201c) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 } else if (attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=\u201d") > 0) {
-                                    framework.parseerror = `Quote looking character (\u201d, &#x201d) used instead of actual quotes on line number ${parse.lineNumber}`;
+                                    sparser.parseerror = `Quote looking character (\u201d, &#x201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 }
                                 attribute = [];
                                 lines = (b[a] === "\n")
@@ -931,7 +927,7 @@
                                 }
                             }
                             if (ltype === "cdata" && b[a] === ">" && b[a - 1] === "]" && b[a - 2] !== "]") {
-                                framework.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
+                                sparser.parseerror = `CDATA tag ${lex.join("")} is not properly terminated with ]]>`;
                                 break;
                             }
                             if (ltype === "comment") {
@@ -989,7 +985,7 @@
                                             }
                                         }
                                         if (b[a] !== ">" && b[a + 1] === "<") {
-                                            framework.parseerror = `SGML tag ${lex.join("")} is missing termination with '[' or '>'.`
+                                            sparser.parseerror = `SGML tag ${lex.join("")} is missing termination with '[' or '>'.`
                                             break;
                                         }
                                     }
@@ -1006,7 +1002,7 @@
                                         break;
                                     }
                                     if (b[a] === "<" && options.language !== "coldfusion" && preserve === false && lex.length > 1 && end !== ">>" && end !== ">>>" && simple === true) {
-                                        framework.parseerror = `Parse error on line ${parse.lineNumber} on element: ${lex.join("")}`;
+                                        sparser.parseerror = `Parse error on line ${parse.lineNumber} on element: ${lex.join("")}`;
                                     }
                                     if (stest === true && (/\s/).test(b[a]) === false && b[a] !== lastchar) {
                                         //attribute start
@@ -1019,7 +1015,7 @@
                                                 if (b[a] === "\n") {
                                                     parse.lineNumber = parse.lineNumber + 1;
                                                 }
-                                                if (options.lexerOptions.markup.unformatted === true) {
+                                                if (options.lexer_options.markup.unformatted === true) {
                                                     lex.push(b[a]);
                                                 }
                                                 attribute.push(b[a]);
@@ -1190,7 +1186,7 @@
                                                                 jsxcount = 0;
                                                                 quote    = "";
                                                                 element  = attribute.join("");
-                                                                if (options.lexerOptions.markup.unformatted === false) {
+                                                                if (options.lexer_options.markup.unformatted === false) {
                                                                     if (options.language === "jsx") {
                                                                         if ((/^(\s*)$/).test(element) === false) {
                                                                             attstore.push([element, lines]);
@@ -1441,13 +1437,10 @@
                             } while (a < c);
                             record.token = lex.join("");
                             record.types = "ignore";
-                            record.presv = true;
                             recordPush(data, record, "");
                             return;
                         }
                     }
-
-                    record.presv = preserve;
                     record.token = element;
                     record.types = ltype;
                     tname        = tagName(element);
@@ -1541,10 +1534,10 @@
                                             }
                                         }
                                         if (bb === 0 && data.token[aa].toLowerCase().indexOf(vname) === 1) {
-                                            if (cftags[tname] !== undefined) {
-                                                data.types[aa] = "template_start";
-                                            } else {
+                                            if (cftags[tname] === undefined) {
                                                 data.types[aa] = "start";
+                                            } else {
+                                                data.types[aa] = "template_start";
                                             }
                                             count.start = count.start + 1;
                                             data.token[aa] = data
@@ -1567,7 +1560,7 @@
                                 tname !== "/span" &&
                                 tname !== "/div" &&
                                 tname !== "/script" &&
-                                options.lexerOptions.markup.tag_merge === true &&
+                                options.lexer_options.markup.tag_merge === true &&
                                 (options.language !== "html" || (options.language === "html" && tname !== "/li"))
                             ) {
                                 if (tname === "/" + tagName(data.token[parse.count]) && data.types[parse.count] === "start") {
@@ -1662,6 +1655,8 @@
                                 }
                                 record.token = element.replace(/\s+/, " ");
                                 record.types = "template";
+                                // The following madness is required because cfmodule may be a singleton or a block.
+                                // You don't know until you encounter the end tag
                                 if (tname === "cfmodule" && element.charAt(1) === "/") {
                                     let ss = parse.count,
                                         tt = 1;
@@ -1677,23 +1672,20 @@
                                         ss = ss - 1;
                                     } while (ss > -1);
                                     data.types[ss] = "template_start";
-                                    if (data.types[ss].indexOf("start") < 0) {
+                                    if (data.types[ss].indexOf("start") > -1) {
                                         count.start = count.start + 1;
                                     }
-                                    tt = ss + 1;
+                                    tt = Math.min(ss + 1, parse.count);
                                     struc = [["cfmodule", ss]];
                                     ss  = parse.count + 1;
                                     do {
                                         data.begin[tt] = struc[struc.length - 1][1];
                                         data.stack[tt] = struc[struc.length - 1][0];
-                                        if (data.types[tt] === "end" || data.types[tt] === "template_end") {
+                                        if (data.types[tt] === "end" || data.types[tt].indexOf("_end") > 0) {
                                             if (struc.length > 1) {
                                                 struc.pop();
                                             }
-                                        } else if (
-                                            data.lexer[tt] === "markup" &&
-                                            (data.types[tt] === "start" || data.types[tt] === "template_start")
-                                        ) {
+                                        } else if (data.types[tt] === "start" || data.types[tt].indexOf("_start") > 0) {
                                             struc.push([tagName(data.token[tt]), tt]);
                                         }
                                         tt = tt + 1;
@@ -1742,13 +1734,11 @@
                                             }
                                             if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
                                                 record.lines                 = data.lines[parse.count];
-                                                record.presv                 = false;
                                                 record.token                 = "</li>";
                                                 record.types                 = "end";
                                                 recordPush(data, record, "");
                                                 record.begin                 = parse.structure[parse.structure.length - 1][1];
                                                 record.lines                 = parse.linesSpace;
-                                                record.presv                 = preserve;
                                                 record.stack                 = parse.structure[parse.structure.length - 1][0];
                                                 record.token                 = element;
                                                 record.types                 = ltype;
@@ -1771,13 +1761,11 @@
                             } else if (tname === "/ul" || tname === "/ol") {
                                 if (litag === list) {
                                     record.lines                 = data.lines[parse.count];
-                                    record.presv                 = false;
                                     record.token                 = "</li>";
                                     record.types                 = "end";
                                     recordPush(data, record, "");
                                     record.begin                 = parse.structure[parse.structure.length - 1][1];
                                     record.lines                 = parse.linesSpace;
-                                    record.presv                 = preserve;
                                     record.stack                 = parse.structure[parse.structure.length - 1][0];
                                     record.token                 = element;
                                     record.types                 = "end";
@@ -1785,6 +1773,59 @@
                                     litag = litag - 1;
                                 }
                                 list = list - 1;
+                            } else if (tname === "dt") {
+                                //looks for HTML "li" tags that have no ending tag, which is valid in HTML
+                                if (dttag === dtlist && (dtlist !== 0 || (dtlist === 0 && parse.count > -1 && data.types[parse.count].indexOf("template") < 0))) {
+                                    let d:number  = parse.count,
+                                        ee:number = 1;
+                                    if (d > -1) {
+                                        do {
+                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
+                                                ee = ee - 1;
+                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
+                                                ee = ee + 1;
+                                            }
+                                            if (ee === -1 && (tagName(data.token[d]) === "dt" || (tagName(data.token[d + 1]) === "dt" && tagName(data.token[d]) === "dl"))) {
+                                                record.lines                 = data.lines[parse.count];
+                                                record.token                 = "</dt>";
+                                                record.types                 = "end";
+                                                recordPush(data, record, "");
+                                                record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                                record.lines                 = parse.linesSpace;
+                                                record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                                record.token                 = element;
+                                                record.types                 = ltype;
+                                                data.lines[parse.count - 1] = 0;
+                                                break;
+                                            }
+                                            if (ee < 0) {
+                                                break;
+                                            }
+                                            d = d - 1;
+                                        } while (d > -1);
+                                    }
+                                } else {
+                                    dttag = dttag + 1;
+                                }
+                            } else if (tname === "/dt" && dttag === dtlist) {
+                                dttag = dttag - 1;
+                            } else if (tname === "dl") {
+                                dtlist = dtlist + 1;
+                            } else if (tname === "/dl") {
+                                if (dttag === dtlist) {
+                                    record.lines                 = data.lines[parse.count];
+                                    record.token                 = "</dt>";
+                                    record.types                 = "end";
+                                    recordPush(data, record, "");
+                                    record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                    record.lines                 = parse.linesSpace;
+                                    record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                    record.token                 = element;
+                                    record.types                 = "end";
+                                    data.lines[parse.count - 1] = 0;
+                                    dttag = dttag - 1;
+                                }
+                                dtlist = dtlist - 1;
                             }
 
                             //generalized corrections for the handling of singleton tags
@@ -1908,7 +1949,6 @@
                                 atstring.push(value[0]);
                             });
                             preserve                = true;
-                            data.presv[parse.count] = true;
                             ltype                   = "ignore";
                             a                       = a + 1;
                             if (a < c) {
@@ -2060,15 +2100,17 @@
                             .replace(/^(\s*<!\[cdata\[)/i, "")
                             .replace(/(\]\]>\s*)$/, "");
                         record.token = "<![CDATA[";
+                        record.types = "cdata_start";
                         recordPush(data, record, "");
                         parse.structure.push(["cdata", parse.count]);
                         if (stack === "script") {
-                            framework.lexer.script(element);
+                            sparser.lexers.script(element);
                         } else {
-                            framework.lexer.style(element);
+                            sparser.lexers.style(element);
                         }
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.token = "]]>";
+                        record.types = "cdata_end";
                         recordPush(data, record, "");
                         parse.structure.pop();
                     } else if (record.types === "template_else") {
@@ -2080,18 +2122,18 @@
                     attributeRecord();
 
                     //sorts child elements
-                    if (options.lexerOptions.markup.tagSort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
+                    if (options.lexer_options.markup.tag_sort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
                         let bb:number          = 0,
                             d:number           = 0,
                             startStore:number  = 0,
                             jsxatt:boolean      = false,
                             endData:record;
                         const children:Array<[number, number]> = [],
-                            store       = {
+                            store:data       = {
                                 begin: [],
+                                ender: [],
                                 lexer: [],
                                 lines: [],
-                                presv: [],
                                 stack: [],
                                 token: [],
                                 types: []
@@ -2099,9 +2141,9 @@
                             storeRecord = function lexer_markup_tag_sorttag_storeRecord(index: number):record {
                                 const output:record = {
                                     begin: data.begin[index],
+                                    ender: data.ender[index],
                                     lexer: data.lexer[index],
                                     lines: data.lines[index],
-                                    presv: data.presv[index],
                                     stack: data.stack[index],
                                     token: data.token[index],
                                     types: data.types[index]
@@ -2194,9 +2236,9 @@
                         }
                         endData = {
                             begin: data.begin.pop(),
+                            ender: data.ender.pop(),
                             lexer: data.lexer.pop(),
                             lines: data.lines.pop(),
-                            presv: data.presv.pop(),
                             stack: data.stack.pop(),
                             token: data.token.pop(),
                             types: data.types.pop()
@@ -2230,9 +2272,9 @@
                         ),
                         record:record    = {
                             begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
                             lexer: "markup",
                             lines: liner,
-                            presv: (linepreserve > 0),
                             stack: parse.structure[parse.structure.length - 1][0],
                             token: "",
                             types: "content"
@@ -2285,7 +2327,7 @@
                                         quotes = quotes + 1;
                                     } else if (b[a] === "}" && jsxbrace === true) {
                                         if (quotes === 0) {
-                                            framework.lexer.script(
+                                            sparser.lexers.script(
                                                 lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                             );
                                             parse.structure[parse.structure.length - 1][1] + 1;
@@ -2315,7 +2357,7 @@
                                         if (lex.length < 1) {
                                             break;
                                         }
-                                        framework.lexer.script(
+                                        sparser.lexers.script(
                                             lex.join("").replace(/^(\s+)/, "").replace(/(\s+)$/, "")
                                         );
                                         break;
@@ -2339,11 +2381,11 @@
                                                 record.types = "comment";
                                                 recordPush(data, record, "");
                                                 outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
-                                                framework.lexer.script(outside);
+                                                sparser.lexers.script(outside);
                                                 record.token = "-->";
                                                 recordPush(data, record, "");
                                             } else {
-                                                framework.lexer.script(outside);
+                                                sparser.lexers.script(outside);
                                             }
                                             break;
                                         }
@@ -2369,11 +2411,11 @@
                                                 record.types = "comment";
                                                 recordPush(data, record, "");
                                                 outside = outside.replace(/^(<!--+)/, "").replace(/(--+>)$/, "");
-                                                framework.lexer.style(outside);
+                                                sparser.lexers.style(outside);
                                                 record.token = "-->";
                                                 recordPush(data, record, "");
                                             } else {
-                                                framework.lexer.style(outside);
+                                                sparser.lexers.style(outside);
                                             }
                                             break;
                                         }
@@ -2429,7 +2471,6 @@
                                     recordPush(data, record, "");
                                     record.token = "{:else}";
                                     record.types = "template_else";
-                                    record.presv = false;
                                     recordPush(data, record, "");
                                     break;
                                 }
@@ -2439,7 +2480,7 @@
                                 ltoke = lex.join("").replace(/\s+$/, "");
                                 liner = 0;
                                 record.token = ltoke;
-                                if (options.wrap > 0 && options.lexerOptions.markup.preserve_text !== true) {
+                                if (options.wrap > 0 && options.lexer_options.markup.preserve_text !== true) {
                                     let aa:number  = options.wrap,
                                         len:number = ltoke.length;
                                     const wrap:number = options.wrap,
@@ -2582,23 +2623,23 @@
                 }
                 a = a + 1;
             } while (a < c);
-            if (count.end !== count.start && framework.parseerror === "") {
+            if (count.end !== count.start && sparser.parseerror === "") {
                 if (count.end > count.start) {
                     let x:number = count.end - count.start,
                         plural:string = (x === 1)
                             ? ""
                             : "s";
-                    framework.parseerror = `${x} more end type${plural} than start types.`;
+                    sparser.parseerror = `${x} more end type${plural} than start types.`;
                 } else {
                     let x:number = count.start - count.end,
                         plural:string = (x === 1)
                             ? ""
                             : "s";
-                    framework.parseerror = `${x} more start type${plural} than end types.`;
+                    sparser.parseerror = `${x} more start type${plural} than end types.`;
                 }
             }
             return data;
         };
 
-    framework.lexer.markup = markup;
+    sparser.lexers.markup = markup;
 }());

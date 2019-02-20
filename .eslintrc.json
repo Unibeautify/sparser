@@ -21,6 +21,7 @@
             "never"
         ],
         "no-console": "error",
+        "no-control-regex": 0,
         "no-continue": "error",
         "no-else-return": "error",
         "no-empty": "error",

@@ -1,0 +1,6 @@
+[
+{"begin":-1,"ender":3,"lexer":"markup","lines":0,"stack":"global","token":"<a>","types":"start"},
+{"begin":0,"ender":3,"lexer":"markup","lines":3,"stack":"a","token":"some really long text that should wrap a\nfew times so that I can test text\nwrapping for markup in the parser with a\nbunch of words that dont really mean\nanything on their own but provide a\nnecessary amount of variability to test\nwith for the point of wrapping a few\ntimes with this long text that simply\nwon't easily end","types":"content"},
+{"begin":0,"ender":3,"lexer":"markup","lines":2,"stack":"a","token":"<!-- some really long text that should wrap a few times so that I can test text wrapping for markup in the parser with a bunch of words that dont really mean anything on their own but provide a necessary amount of variability to test with for the point of wrapping a few times with this long text that simply won't easily end -->","types":"comment"},
+{"begin":0,"ender":3,"lexer":"markup","lines":2,"stack":"a","token":"</a>","types":"end"}
+]

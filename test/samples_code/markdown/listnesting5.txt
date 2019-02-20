@@ -1,0 +1,8 @@
+# Sparser - Demo Tool
+
+1. turn on the local service
+   1. `node js/services server` - locally installed
+   1. `sparser server` - globally installed from NPM
+1. In the browser go to: *http://localhost:9999*
+
+The default port

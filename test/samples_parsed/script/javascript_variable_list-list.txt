@@ -1,0 +1,15 @@
+[
+{"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"var","types":"word"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"a","types":"reference"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"=","types":"operator"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"\"a\"","types":"string"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":",","types":"separator"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"b","types":"reference"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"=","types":"operator"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"\"b\"","types":"string"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":",","types":"separator"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"c","types":"reference"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"=","types":"operator"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"\"c\"","types":"string"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":";","types":"separator"}
+]

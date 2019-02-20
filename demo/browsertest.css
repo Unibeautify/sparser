@@ -1,0 +1,111 @@
+
+body{background:linear-gradient(to top, rgba(0,0,0,0.65) 0%,rgba(0,0,0,0) 100%);font-family:monospace;margin:1em;font-size:10px}
+li,
+p{font-size:1.2em}
+h1,
+h2{color:#26c;margin:0}
+h1 span{color:#c00}
+.version{color:#070;float:right;font-size:1.6em;font-weight:bold;margin-top:-1.2em}
+textarea#input{display:block;font-family:monospace;overflow:scroll;overflow-wrap:normal;white-space:pre}
+table{border-collapse:collapse;display:table}
+thead{display:table-header-group}
+tbody{display:table-row-group}
+thead th{background:#ddc}
+tbody th,
+tbody td[class="numb"]{text-align:right}
+tbody tr:hover{background:#ffa}
+tr{display:table-row}
+th,
+td{border:#999 0.0833em solid;display:table-cell;min-width:3em;padding:0.2em 0.4em;white-space:pre}
+
+.input{float:left;margin-right:1%;width:40%}
+.output{float:left;width:59%}
+.input p{margin:0}
+.input h2{font-size:1em}
+.input label,
+.output h2{display:block;font-size:1.8em;font-weight:bold;margin:0 0 0.5em}
+.output p,
+.output ul,
+.output table{font-size:1.2em}
+.options {max-width:45em}
+.title{margin:0 0 0.5em;min-width:35em}
+.navigation{min-width:15em}
+.keybox ul{padding:0}
+.options ul,
+.navigation ul{list-style-position:inside;margin:0;padding:0}
+.options li,
+.navigation li{padding:0.6em 0 0}
+.clear{clear:both;display:block;float:none;height:0.01em}
+.ace-control{display:inline-block;margin:0}
+#datatext,
+#data{overflow:scroll;width:100%}
+#data table{min-width:100%}
+
+.title,
+.keybox,
+.options,
+.navigation{background:#fff;border:0.1em solid #ccc;box-shadow:0.21em 0.21em 0.42em #ddd;float:left;height:12em;margin:0 1em 1em 0;padding:0.5em 0.5em 0;position:relative}
+#datatext,
+#data{border:0.1em solid #bbb;box-shadow:0.21em 0.21em 0.42em #888}
+#datatext{background:#eee;}
+#data{background:#ddd}
+#input{border:0.0715em solid #bbb;box-shadow:0.15em 0.15em 0.3em 0 #888}
+
+#input .ace_editor{background:#fff;border-color:#999}
+#input .ace-tm .ace_marker-layer .ace_selection,
+#input .ace-canvas .ace_marker-layer .ace_selection,
+#input .ace_selection.ace_start{background:#def}
+#input .ace_marker-layer .ace_start{background:#f99}
+#input .ace-tm .ace_marker-layer .ace_selected-word{background:#ff9}
+#input .ace_gutter{background:#ddd;border-color:#999}
+#input .readonly .ace_scroller{background:#eee}
+#input .ace_variable{color:#247284}
+#input .ace_comment{color:#375}
+#input .ace-tm .ace_support.ace_type,
+#input .ace-tm .ace_support.ace_class{color:#56d}
+#input .ace_editor,
+#input .ace_editor div{font-family:'Courier New',Courier,'Lucida Console',monospace;}
+#input .ace_gutter{border-right-style:solid;border-right-width:0.1em}
+#input div.ace_cursor{border-style:solid;border-width:0 0 0 0.2em}
+
+#options{background:#f8f8f8;border:0.0715em solid #bbb;box-shadow:0.15em 0.15em 0.3em 0 #888;margin-top:1em;padding:1em}
+#options ul{list-style-position:inside;padding:0}
+#options li{list-style:none;border-bottom:0.1em solid #bbb;margin:1em 0 0}
+#options td span{display:block}
+#options .option-usage span{padding:0 0 0.5em}
+#options .option-description span{padding:0.5em 0.5em 0}
+#options .option-description code{text-decoration:underline}
+#options .option-name{color:#c00;font-weight:bold}
+#options select,
+#options input{font-family:inherit;font-weight:bold}
+#options table{margin:1em 0}
+#options td,
+#options th{border-style:none}
+#options th{padding-right:2em;text-align:left;vertical-align:top}
+
+#errors span{color: #c00}
+tr[class="header"] th{background:#ccc;color:#000;text-align:left}
+tr[class="markdown"] td,
+tr[class="markdown"] th{border-color: #000;color:#333}
+tr[class="markdown odd"]{background: #e8e8e8}
+tr[class="markdown even"]{background: #f8f8f8}
+tr[class="markup"] td,
+tr[class="markup"] th{border-color: #933;color:#600}
+tr[class="markup odd"]{background: #fee}
+tr[class="markup even"]{background: #fdd}
+tr[class="script"] td,
+tr[class="script"] th{border-color: #060;color:#040}
+tr[class="script odd"]{background: #eefff8}
+tr[class="script even"]{background: #ded}
+tr[class="style"] td,
+tr[class="style"] th{border-color: #66f;color:#009}
+tr[class="style odd"]{background: #eef8ff}
+tr[class="style even"]{background: #ddeeff}
+ul[class="key"] li{list-style:none;white-space:pre}
+ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
+ul[class="key"] li[class="markup"]{background:#fee;color:#600}
+ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
+ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
+div[class="input"] label{display:inline-block}
+div[class="input"] #input{display:block;height:20em;width:100%;}
+div[class="input"] textarea{background:#f8f8f8}

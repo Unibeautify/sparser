@@ -55,15 +55,6 @@ The stack values are identified by either a known categorical term that describe
 * **object** - A regular object literal.
 * **paren** - Describes parenthsis groupings when other parenthsis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
 
-## script options
-* **end_comma** - Values: *none*, *always*, *never*.  Whether an ending comma should be added or removed from objects and arrays.  The *none* value disables this option.
-* **objectSort** - Sorts the named properties (keys) of object literals alphabetically.
-* **quote_convert** - Values: *none*, *double*, *single*.  Whether quotes should be converted to double quote or single quote characters.  The *none* value disables this option.
-* **varword** - Whether variables should be declared as:
-   - *list*: a comma separated list
-   - *each*: separate declaration statements
-   - *none*: or left alone
-
 ## Escaping code from the parser
 The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are line comments or a block comments.
 
@@ -81,4 +72,39 @@ if (b[a] === "\n") {
 }
 ```
 
-Code from the opening comment to the closing comment is parsed as a single token of types value *ignore* presv value *true*.
+Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
+
+## supported languages
+* [JavaScript / ECMAScript](https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
+* [JSON](https://json.org/)
+* [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
+* [React JSX](https://reactjs.org/docs/introducing-jsx.html)
+* [TSS Titanium Style Sheets](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
+* [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
+* [TypeScript](https://www.typescriptlang.org/)
+
+## script options
+* **end_comma**: Whether terminal commas in objects and arrays should be added or eliminated.
+   - type: string
+   - default: none
+   - values:
+      * *always*: Adds terminal commas if they are missing.
+      * *never*: Removes terminal commas if they are present.
+      * *none*: Ignores this option.
+* **object_sort**: Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.
+   - type: boolean
+   - default: false
+* **quote_convert**: If quote characters should be converted from single quotes to double quotes or the opposite. This option does take into account escaped quote characters.
+   - type: string
+   - default: none
+   - values:
+      * *double*: Converts single quote characters to double quote characters.
+      * *none*: Ignores this option.
+      * *single*: Converts double quote characters to single quote characters.
+* **variable_list**: Whether consecutive variable declarations should be separate statements or a comma separated list. Use of this option respects the different types of declarations: var, const, let.
+   - type: string
+   - default: none
+   - values:
+      * *each*: Separates variable declarations into separate statements.
+      * *list*: Combines consecutive variable declaration statements into a single comma separated list.
+      * *none*: Ignores this option.

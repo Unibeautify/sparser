@@ -1,0 +1,14 @@
+[
+{"begin":-1,"ender":-1,"lexer":"markup","lines":0,"stack":"global","token":"<Route/>","types":"singleton"},
+{"begin":0,"ender":-1,"lexer":"markup","lines":1,"stack":"route","token":"exact","types":"attribute"},
+{"begin":0,"ender":-1,"lexer":"markup","lines":1,"stack":"route","token":"path=\"/\"","types":"attribute"},
+{"begin":0,"ender":-1,"lexer":"markup","lines":1,"stack":"route","token":"component={Home}","types":"attribute"},
+{"begin":-1,"ender":11,"lexer":"markup","lines":2,"stack":"global","token":"<div>","types":"start"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"class=\"orbit\"","types":"attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"value=\"{{ siteName }}\"","types":"template_attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"{% if loop.first %}","types":"template_attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"checked","types":"attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"{% endif %}","types":"template_attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":1,"stack":"div","token":"data-orbit","types":"attribute"},
+{"begin":4,"ender":11,"lexer":"markup","lines":0,"stack":"div","token":"</div>","types":"end"}
+]

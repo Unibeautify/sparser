@@ -1,0 +1,15 @@
+[
+{"begin":-1,"ender":12,"lexer":"markup","lines":0,"stack":"global","token":"<test>","types":"start"},
+{"begin":0,"ender":6,"lexer":"markup","lines":2,"stack":"test","token":"<a>","types":"start"},
+{"begin":1,"ender":3,"lexer":"markup","lines":1,"stack":"a","token":"<c>","types":"start"},
+{"begin":2,"ender":3,"lexer":"markup","lines":0,"stack":"c","token":"</c>","types":"end"},
+{"begin":1,"ender":6,"lexer":"markup","lines":1,"stack":"a","token":"<d/>","types":"singleton"},
+{"begin":4,"ender":6,"lexer":"markup","lines":1,"stack":"d","token":"cat=\"meow\"","types":"attribute"},
+{"begin":1,"ender":6,"lexer":"markup","lines":0,"stack":"a","token":"</a>","types":"end"},
+{"begin":0,"ender":12,"lexer":"markup","lines":2,"stack":"test","token":"<b/>","types":"singleton"},
+{"begin":7,"ender":12,"lexer":"markup","lines":1,"stack":"b","token":"doggy=\"bark\"","types":"attribute"},
+{"begin":0,"ender":11,"lexer":"markup","lines":2,"stack":"test","token":"<x>","types":"start"},
+{"begin":9,"ender":11,"lexer":"markup","lines":1,"stack":"x","token":"<!-- comment 1-->","types":"comment"},
+{"begin":9,"ender":11,"lexer":"markup","lines":0,"stack":"x","token":"</x>","types":"end"},
+{"begin":0,"ender":12,"lexer":"markup","lines":2,"stack":"global","token":"</test>","types":"end"}
+]
