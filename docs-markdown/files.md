@@ -1,4 +1,6 @@
 # Sparser - Project Files
+
+## File and Directory List
 This just a quick description of the project organization from a file system view.
 
 * **demo** - A directory containing the CSS, HTML, and JavaScript for the demo tool that works in a web browser.

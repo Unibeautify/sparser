@@ -7,7 +7,7 @@
         const blob:HTMLElement = document.getElementById("blobs"),
             screen:HTMLElement = blob.getElementsByTagName("div")[0],
             style:HTMLElement = document.createElement("style"),
-            blobs:number = 7,
+            blobs:number = 4,
             size:number = 100,
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML;
@@ -75,10 +75,12 @@
         screen.style.zIndex = "4";
         window.onresize = resize;
         resize();
-        do {
-            createBlob();
-            a = a + 1;
-        } while (a < blobs);
+        if (blobs > 0) {
+            do {
+                createBlob();
+                a = a + 1;
+            } while (a < blobs);
+        }
     } else {
         svg_left.parentNode.removeChild(svg_left);
         svg_right.parentNode.removeChild(svg_right);

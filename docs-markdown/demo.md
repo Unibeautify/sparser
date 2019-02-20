@@ -1,9 +1,7 @@
 # Sparser - Demo Tool
 
-The application comes with a helpful file to execute in the browser, [demo/index.xhtml](demo/index.xthml).
-
 ## Direct Access (No Automation)
-This file provides direct access to the application by simply navigating to the file in your local filesystem, for example: `/Users/prettydiff/sparser/demo/`
+The application comes with a helpful file to execute in the browser, [demo/index.xhtml](demo/index.xthml). This file provides direct access to the application by simply navigating to the file in your local filesystem, for example: `/Users/username/sparser/demo/`
 
 ## Automated Environment
 Sometimes it is more convenient to have automation running in the background.  The provided service will perform these tasks in this order:
