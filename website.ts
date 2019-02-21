@@ -4,11 +4,14 @@
     const  svg_left:HTMLElement = document.getElementById("svg_left"),
         svg_right:HTMLElement = document.getElementById("svg_right");
     if (window.innerWidth > 800) {
+        let width:number = (window.innerWidth / 10),
+            height:number = (window.innerHeight / 10),
+            a:number = 0;
         const blob:HTMLElement = document.getElementById("blobs"),
             screen:HTMLElement = blob.getElementsByTagName("div")[0],
             style:HTMLElement = document.createElement("style"),
-            blobs:number = 4,
-            size:number = 100,
+            blobs:number = 3,
+            size:number = width / 3,
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML;
                 height = (window.innerHeight / 10);
@@ -66,9 +69,6 @@
                 inner.style.animationIterationCount = "infinite";
                 blob.appendChild(div);
             };
-        let width:number = (window.innerWidth / 10),
-            height:number = (window.innerHeight / 10),
-            a:number = 0;
         style.setAttribute("type", "text/css");
         document.getElementsByTagName("head")[0].appendChild(style);
         screen.style.position = "relative";

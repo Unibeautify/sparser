@@ -2045,7 +2045,7 @@
                                 "unless",
                                 "verbatim"
                             ];
-                            if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif") {
+                            if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif" || tname === "elsif") {
                                 record.types = "template_else";
                             } else {
                                 let namelen:number = names.length - 1;
