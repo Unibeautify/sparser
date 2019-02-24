@@ -1017,8 +1017,9 @@
                                                 }
                                                 if (options.lexer_options.markup.unformatted === true) {
                                                     lex.push(b[a]);
+                                                } else {
+                                                    attribute.push(b[a]);
                                                 }
-                                                attribute.push(b[a]);
 
                                                 if ((b[a] === "<" || b[a] === ">") && (quote === "" || quote === ">") && options.language !== "jsx") {
                                                     if (quote === "" && b[a] === "<") {
@@ -1197,8 +1198,6 @@
                                                                             attstore.push([element, lines]);
                                                                         }
                                                                     }
-                                                                } else if ((/^(\s+)$/).test(element) === false) {
-                                                                    attstore.push([element, lines]);
                                                                 }
                                                                 attribute = [];
                                                                 lines = 1;

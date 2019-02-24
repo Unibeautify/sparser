@@ -25,7 +25,8 @@ h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:
 #content li,
 #content p{font-family:Georgia,"Times New Roman",Times,serif;font-size:1.4em;letter-spacing:0.05em;line-height:1.8em}
 #content li li{font-size:1em}
-#content h2 a{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:0.56em;font-variant:none}
+#content h2 a,
+#content h2 span{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:0.56em;font-variant:none}
 #content li h3{font-size:1.4em;text-decoration:underline}
 #content code{background:#ddd;border:0.1em solid #ccc;display:block;font-family:"Lucida Console",monospace;font-size:1.4em;padding:0.5em;white-space:pre}
 #blobs{height:100%;left:0;position:fixed;top:0;width:100%}

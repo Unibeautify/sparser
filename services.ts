@@ -388,7 +388,7 @@ interface directoryList extends Array<directoryItem> {
                 process.exit(1);
                 return "";
             }
-            if (filtered.length > 1 && apps[arg] !== undefined) {
+            if (filtered.length > 1 && comkeys.indexOf(arg) < 0) {
                 console.log(`Command '${boldarg}' is ambiguous as it could refer to any of: [${text.cyan + filtered.join(", ") + text.none}]`);
                 process.exit(1);
                 return "";
@@ -991,7 +991,7 @@ interface directoryList extends Array<directoryItem> {
                                     inv.push(`</ul> <p class="lang_total"><strong>${count}</strong> total languages.</p>`);
                                     node.fs.writeFile(`${projectPath}index.xhtml`, injection({
                                         end: "<!-- end html inventory -->",
-                                        file: filedata,
+                                        file: filedata.replace(/Version:\s+<span><\/span>/, `Version: <span>${sparser.version.number}</span>`),
                                         message: inv.join(" "),
                                         start: "<h2>Currently Supported Languages by Processing Lexer</h2>"
                                     }), {
