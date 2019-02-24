@@ -1671,9 +1671,7 @@
                                         ss = ss - 1;
                                     } while (ss > -1);
                                     data.types[ss] = "template_start";
-                                    if (data.types[ss].indexOf("start") > -1) {
-                                        count.start = count.start + 1;
-                                    }
+                                    count.start = count.start + 1;
                                     tt = Math.min(ss + 1, parse.count);
                                     struc = [["cfmodule", ss]];
                                     ss  = parse.count + 1;

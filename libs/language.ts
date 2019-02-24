@@ -252,7 +252,7 @@
                         if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                             return output("jsp");
                         }
-                        if ((/\{(#|\?|\^|@|<|\+|~)/).test(sample) === true && (/\{\//).test(sample) === true) {
+                        if ((/\{(#|\?|\^|@|<|\+|~)/).test(sample) === true && (/\{\//).test(sample) === true && sample.indexOf("<![CDATA[") < 0) {
                             return output("dustjs");
                         }
                         return output("html");
