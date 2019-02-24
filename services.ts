@@ -991,7 +991,7 @@ interface directoryList extends Array<directoryItem> {
                                     inv.push(`</ul> <p class="lang_total"><strong>${count}</strong> total languages.</p>`);
                                     node.fs.writeFile(`${projectPath}index.xhtml`, injection({
                                         end: "<!-- end html inventory -->",
-                                        file: filedata.replace(/Version:\s+<span><\/span>/, `Version: <span>${sparser.version.number}</span>`),
+                                        file: filedata.replace(/Version:\s+<span>(\d+\.\d+\.\d+)?<\/span>/, `Version: <span>${sparser.version.number}</span>`),
                                         message: inv.join(" "),
                                         start: "<h2>Currently Supported Languages by Processing Lexer</h2>"
                                     }), {

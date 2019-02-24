@@ -138,6 +138,9 @@
                                 if ((/final\s+static/).test(sample) === true) {
                                     return output("java");
                                 }
+                                if ((/<\/\w+>/).test(sample) === true && (/<\w+((\s+\w)|>)/).test(sample) === true) {
+                                    return output("jsx");
+                                }
                                 return output("javascript");
                             }
                             return output("unknown");
