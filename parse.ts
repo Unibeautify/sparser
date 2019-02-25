@@ -510,7 +510,7 @@
                             }
 
                             // injecting the list delimiter
-                            if (commaTest === false && (style === true || dd < keylen - 1)) {
+                            if (commaTest === false && store.token[store.token.length - 1] !== "x;" && (style === true || dd < keylen - 1)) {
                                 ee = store.types.length - 1;
                                 if (store.types[ee] === "comment") {
                                     do {
