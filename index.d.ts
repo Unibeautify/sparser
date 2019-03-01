@@ -178,8 +178,8 @@ interface style_properties {
     removes: style_properties_removes;
 }
 interface style_properties_data {
-    margin: [string, string, string, string];
-    padding: [string, string, string, string]
+    margin: [string, string, string, string, boolean];
+    padding: [string, string, string, string, boolean]
 }
 interface style_properties_last {
     margin: number,

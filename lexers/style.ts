@@ -915,8 +915,8 @@
                     const lines:number = parse.linesSpace,
                         props:style_properties = {
                             data: {
-                                margin: ["", "", "", ""],
-                                padding: ["", "", "", ""]
+                                margin: ["", "", "", "", false],
+                                padding: ["", "", "", "", false]
                             },
                             last: {
                                 margin: 0,
@@ -927,8 +927,11 @@
                         begin:number = parse.structure[parse.structure.length - 1][1],
                         populate = function lexer_style_properties_populate(prop:"margin"|"padding"):void {
                             if (data.token[aa - 2] === prop) {
-                                const values:string[] = data.token[aa].split(" "),
+                                const values:string[] = data.token[aa].replace(/\s*!important\s*/g, "").split(" "),
                                     vlen:number = values.length;
+                                if (data.token[aa].indexOf("!important") > -1) {
+                                    props.data[prop[4]] = true;
+                                }
                                 if (vlen > 3) {
                                     if (props.data[prop][0] === "") {
                                         props.data[prop][0] = values[0];
@@ -1032,6 +1035,9 @@
                                         values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]}`;
                                     } else {
                                         values = `${props.data[prop][0]} ${props.data[prop][1]} ${props.data[prop][2]} ${props.data[prop][3]}`;
+                                    }
+                                    if (props.data[prop[4]] === true) {
+                                        values = `${values.replace(" !important", "")} !important`;
                                     }
                                     if (props.last[prop] > parse.count) {
                                         cc = (begin < 1)

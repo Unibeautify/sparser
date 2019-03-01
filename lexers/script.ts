@@ -27,6 +27,7 @@
                 c:string[]              = source.split(""),
                 brace:string[]          = [],
                 classy:number[]         = [],
+                datatype:boolean[]         = [false],
                 // identify variable declarations
                 vart           = {
                     count: [],
@@ -512,6 +513,7 @@
                     recordPush("");
                     if (ltoke === "}" && data.stack[parse.count] !== "object" && data.stack[parse.count] !== "class") {
                         references.pop();
+                        blockinsert();
                     }
                     if (insert === true) {
                         ltoke = (options.correct === true)
@@ -1404,6 +1406,7 @@
                         wordy:string = "",
                         stack:string = "";
                     brace.push(x);
+                    datatype.push(datatype[datatype.length - 1]);
                     if (wordTest > -1) {
                         word();
                         aa = parse.count;
@@ -1421,7 +1424,11 @@
                         ]);
                     }
                     ltoke = x;
-                    ltype = "start";
+                    if (datatype[datatype.length - 1] === true) {
+                        ltype = "type_start";
+                    } else {
+                        ltype = "start";
+                    }
                     if (x === "(" || x === "x(") {
                         asifix();
                     } else if (x === "{") {

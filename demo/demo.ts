@@ -6,15 +6,18 @@
     "use strict";
     let editor:any,
         options:any = window.sparser.options,
-        lang:[string, string, string] = ["", "", ""];
+        lang:[string, string, string] = ["", "", ""],
+        language:string = options.language,
+        lexer:string = options.lexer;
     const sparser:sparser = window.sparser,
         def:optionDef = sparser.libs.optionDef,
-        query:{} = {},
         acetest:boolean = (location.href.toLowerCase().indexOf("ace=false") < 0 && typeof ace === "object"),
         aceControl:HTMLInputElement = <HTMLInputElement>document.getElementById("aceControl"),
         input:HTMLTextAreaElement   = <HTMLTextAreaElement>document.getElementById("input"),
         dataarea:HTMLElement        = document.getElementById("data"),
         datatext:HTMLTextAreaElement = <HTMLTextAreaElement>document.getElementById("datatext"),
+        element_language:HTMLInputElement = <HTMLInputElement>document.getElementById("option-language"),
+        element_lexer:HTMLInputElement = <HTMLInputElement>document.getElementById("option-lexer"),
         textsize = (navigator.userAgent.indexOf("like Gecko") < 0 && navigator.userAgent.indexOf("Gecko") > 0 && navigator.userAgent.indexOf("Firefox") > 0)
             ? 13
             : 13.33,
@@ -28,15 +31,11 @@
             }
         },
         saveOptions = function web_saveOptions():void {
-            const langEl:HTMLInputElement = <HTMLInputElement>document.getElementById("option-language"),
-                lexEl:HTMLInputElement = <HTMLInputElement>document.getElementById("option-lexer");
-            if (langEl.value === "auto") {
-                options.language = "auto";
-            }
-            if (lexEl.value === "auto") {
-                options.lexer = "auto";
-            }
+            options.language = element_language.value;
+            options.lexer = element_lexer.value;
             localStorage.setItem("demo", JSON.stringify(options));
+            options.language = language;
+            options.lexer = lexer;
         },
         // sparser event handler
         handler = function web_handler():void {
@@ -186,26 +185,31 @@
                     dataarea.innerHTML = "";
                     dataarea.appendChild(table);
                 },
-                element_language:HTMLInputElement = <HTMLInputElement>document.getElementById("option-language"),
-                element_lexer:HTMLInputElement = <HTMLInputElement>document.getElementById("option-lexer");
+                lexVal = element_lexer.value.replace(/\s+/g, ""),
+                langVal = element_language.value.replace(/\s+/g, "");
             options.source = value;
+            language = options.language;
+            lexer = options.lexer;
             saveOptions();
+            lang = sparser.libs.language.auto(value, "javascript");
+            options.lexer = (lexVal === "" || lexVal === "auto")
+                ? lang[1]
+                : lexVal;
             if (options.lexer === "javascript") {
                 options.lexer = "script";
             }
-            if (options.language === "auto") {
-                lang = sparser.libs.language.auto(value, "javascript");
+            if (langVal === "" || langVal === "auto") {
                 if (editor !== undefined && (acetest === true || lang[0] !== "")) {
                     editor.getSession().setMode(`ace/mode/${lang[0]}`);
                 }
                 document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
+                options.language = lang[0];
+                options.lexer = lang[1];
             } else {
-                document.getElementById("language").getElementsByTagName("span")[0].innerHTML = options.language;
+                options.language = langVal;
             }
             startTime = Math.round(performance.now() * 1000);
             output = sparser.parser();
-            options.language = element_language.value;
-            options.lexer = element_lexer.value;
             (function web_handler_perfParse() {
                 const endTime = Math.round(performance.now() * 1000),
                     time = (endTime - startTime) / 1000;
@@ -368,50 +372,14 @@
     window.onerror = function web_onerror(msg:string, source:string):void {
         document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = msg + " " + source;
     };
-    { // evaluate query string of the URI for option assignment
-        const params:string[] = (location.href.indexOf("?") > 0)
-            ? location.href.split("?")[1].split("&")
-            : [];
-        if (params.length > 1) {
-            let aa:number = params.length,
-                type:string = "",
-                pair:string[] = [];
-            if (params[aa - 1].indexOf("#") > 0) {
-                params[aa - 1] = params[aa - 1].split("#")[0];
-            }
-            do {
-                aa = aa - 1;
-                pair = params[aa].split("=");
-                if (def[pair[0]] !== undefined) {
-                    type = def[pair[0]].type;
-                    if (type === "boolean") {
-                        if (pair.length === 1 || pair[1] === "true") {
-                            query[pair[0]] = true;
-                        } else if (pair[1] === "false") {
-                            query[pair[0]] = false;
-                        }
-                    } else if (type === "number" && isNaN(Number(pair[1])) === false) {
-                        query[pair[0]] = Number(pair[1]);
-                    } else if (type === "string" && pair.length === 2) {
-                        if (def[pair[0]].values === undefined) {
-                            query[pair[0]] = pair[1];
-                        } else if (def[pair[0]].values[pair[1]] !== undefined) {
-                            query[pair[0]] = pair[1];
-                        }
-                    }
-                }
-            } while (aa > 0);
-        }
-    }
     { // set option defaults and event handlers
         const select:HTMLCollectionOf<HTMLSelectElement> = document.getElementsByTagName("select"),
             input:HTMLCollectionOf<HTMLInputElement> = document.getElementsByTagName("input"),
             lexkeys:string[] = Object.keys(options.lexer_options),
             lexlen:number = lexkeys.length,
             inputValues = function web_inputValues(node:HTMLInputElement):void {
-                let b:number = 0;
                 const name:string = node.getAttribute("id").replace(/option-(((false)|(true))-)?/, ""),
-                    saved:string = (function web_selectValues_saved():string {
+                    saved:string|boolean = (function web_selectValues_saved():string|boolean {
                         let c:number = 0;
                         if (options[name] !== undefined) {
                             return options[name];
@@ -426,34 +394,18 @@
                             c = c + 1;
                         } while (c < lexlen);
                         return "";
-                    }()),
-                    value:string|number|boolean = (query[name] === undefined)
-                        ? saved
-                        : query[name];
+                    }());
                 if (node.type === "text") {
                     node.onkeyup = optControls;
-                    node.value = String(value);
+                    node.value = String(saved);
                 } else {
                     node.onclick = optControls;
-                    if (value === false && node.getAttribute("id").indexOf("option-false-") === 0) {
+                    if (saved === false && node.getAttribute("id").indexOf("option-false-") === 0) {
                         node.checked = true;
-                    } else if (value === true && node.getAttribute("id").indexOf("option-true-") === 0) {
+                    } else if (saved === true && node.getAttribute("id").indexOf("option-true-") === 0) {
                         node.checked = true;
                     }
                     return;
-                }
-                if (query[name] !== undefined) {
-                    if (def[name].lexer[0] === "all") {
-                        options[name] = query[name];
-                    } else {
-                        b = def[name].lexer.length;
-                        do {
-                            b = b - 1;
-                            if (options.lexer_options[def[name].lexer[b]][name] !== undefined) {
-                                options.lexer_options[def[name].lexer[b]][name] = query[name];
-                            }
-                        } while (b > 0);
-                    }
                 }
             },
             selectValues = function web_selectValues(node:HTMLSelectElement):void {
@@ -479,37 +431,21 @@
                             c = c + 1;
                         } while (c < lexlen);
                         return "";
-                    }()),
-                    value:string = (query[name] === undefined)
-                        ? saved
-                        : query[name];
+                    }());
                 node.onchange = optControls;
                 do {
-                    if (opts[b].innerHTML === value) {
+                    if (opts[b].innerHTML === saved) {
                         node.selectedIndex = b;
                         break;
                     }
                     b = b + 1;
                 } while (b < olen);
-                if (query[name] !== undefined) {
-                    if (def[name].lexer[0] === "all") {
-                        options[name] = query[name];
-                    } else {
-                        b = def[name].lexer.length;
-                        do {
-                            b = b - 1;
-                            if (options.lexer_options[def[name].lexer[b]][name] !== undefined) {
-                                options.lexer_options[def[name].lexer[b]][name] = query[name];
-                            }
-                        } while (b > 0);
-                    }
-                }
                 if (name === "format") {
                     const data:HTMLElement = document.getElementById("data"),
                         dataparent:HTMLElement = <HTMLElement>data.parentNode,
                         text:HTMLElement = document.getElementById("datatext"),
                         textparent:HTMLElement = <HTMLElement>text.parentNode;
-                    if (value === "html") {
+                    if (saved === "html") {
                         dataparent.style.display = "block";
                         textparent.style.display = "none";
                         height.html();
@@ -543,6 +479,54 @@
         } while (a < len);
         if (localStorage.getItem("demo") === null) {
             saveOptions();
+        }
+    }
+    { // evaluate query string of the URI for option assignment
+        const params:string[] = (location.href.indexOf("?") > 0)
+                ? location.href.split("?")[1].split("&")
+                : [],
+            assignValue = function assignValue(object:{}, name:string, value?:string):void {
+                const type = def[name].type;
+                if (type === "boolean") {
+                    if (value === undefined || value === "true") {
+                        object[name] = true;
+                    } else if (value === "false") {
+                        object[name] = false;
+                    }
+                } else if (type === "number" && isNaN(Number(value)) === false) {
+                    object[name] = Number(value);
+                } else if (type === "string" && value !== undefined) {
+                    if (def[name].values === undefined) {
+                        object[name] = value;
+                    } else if (def[name].values !== undefined) {
+                        object[name] = value;
+                    }
+                }
+            };
+        if (params.length > 1) {
+            let aa:number = params.length,
+                bb:number = 0,
+                lex:string = "",
+                pair:string[] = [];
+            if (params[aa - 1].indexOf("#") > 0) {
+                params[aa - 1] = params[aa - 1].split("#")[0];
+            }
+            do {
+                aa = aa - 1;
+                pair = params[aa].split("=");
+                if (def[pair[0]] !== undefined) {
+                    if (def[pair[0]].lexer[0] === "all") {
+                        assignValue(options, pair[0], pair[1]);
+                    } else {
+                        bb = def[pair[0]].lexer.length;
+                        do {
+                            bb = bb - 1;
+                            lex = def[pair[0]].lexer[bb];
+                            assignValue(options.lexer_options[lex][pair[0]], pair[0], pair[1]);
+                        } while (bb > 0);
+                    }
+                }
+            } while (aa > 0);
         }
     }
     if (typeof ace === "object") {

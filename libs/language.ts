@@ -141,6 +141,9 @@
                                 if ((/<\/\w+>/).test(sample) === true && (/<\w+((\s+\w)|>)/).test(sample) === true) {
                                     return output("jsx");
                                 }
+                                if ((/((var)|(let)|(const))\s+\w+\s*:\s*\w/).test(sample) === true || (/=\s*<\w+/).test(sample) === true) {
+                                    return output("typescript");
+                                }
                                 return output("javascript");
                             }
                             return output("unknown");
@@ -314,7 +317,7 @@
                 return output("unknown");
             }
             if (
-                ((/\n\s*#{1,6}\s+/).test(sample) === true || (/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) &&
+                ((/\n\s*#{1,6}\s+/).test(sample) === true || ((/\n\s*(\*|-|(\d+\.))\s/).test(sample) === true) && (/\/\*/).test(sample) === false) &&
                 ((/\[( |x|X)\]/).test(sample) === true || (/\s\*\*?\S\D/).test(sample) === true || (/\n\s*```/).test(sample) === true || ((/-+\|(-+\|)+/).test(sample) === true && (/<!--/).test(sample) === false))
             ) {
                 return output("markdown");

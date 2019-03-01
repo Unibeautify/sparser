@@ -1,0 +1,9 @@
+e.selectiveExtend=function(t,e,i){
+    if(!Array.isArray(t))throw new Error("Array with property names expected as first argument");
+    for(var o=2;o<arguments.length;o++)
+        for(var n=arguments[o],s=0;s<t.length;s++){
+            var r=t[s];
+            n&&n.hasOwnProperty(r)&&(e[r]=n[r])
+        }
+    return e
+}

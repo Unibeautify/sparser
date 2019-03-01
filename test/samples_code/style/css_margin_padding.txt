@@ -1,0 +1,5 @@
+.nav-item {
+    margin: 0 10px !important;
+    padding: 6px 12px !important;
+    padding-top: 3px !important;
+}
