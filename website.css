@@ -30,7 +30,8 @@ h4{display:block;font-family:Georgia,"Times New Roman",Times,serif;font-variant:
 #content h2 a,
 #content h2 span{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:0.56em;font-variant:none}
 #content li h3{font-size:1.4em;text-decoration:underline}
-#content code{background:#ddd;border:0.1em solid #ccc;display:block;font-family:"Lucida Console",monospace;font-size:1.4em;padding:0.5em;white-space:pre}
+#content p code{display:inline-block;font-size:1em}
+#content code{background:#eee;border:0.1em solid #ccc;display:block;font-family:"Lucida Console",monospace;font-size:1.4em;line-height:1em;padding:0.15em;white-space:pre}
 #blobs{height:100%;left:0;position:fixed;top:0;width:100%}
 #blobs div{display:block;position:absolute}
 #blobs div span{border-radius:50%;display:block;opacity:0.25}
@@ -80,7 +81,6 @@ ul[class="key"] li[class="markdown"]{background:#e8e8e8;color:#000}
 ul[class="key"] li[class="markup"]{background:#fee;color:#600}
 ul[class="key"] li[class="script"]{background:#eefff8;color:#040}
 ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
-#documentation code{background:#eee;display:inline-block;font-size:1em;padding:0}
 #documentation h2{margin:1em 0 0}
 #option_list h3{font-variant:normal}
 #documentation th,

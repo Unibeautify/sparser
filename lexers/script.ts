@@ -360,6 +360,9 @@
                                 namear:string   = (ar === true)
                                     ? "array"
                                     : "object";
+                            if (ar === true && (data.types[data.begin[parse.count] + 1] === "reference" || data.types[data.begin[parse.count] + 1] === "word")) {
+                                return;
+                            }
                             tempstore    = parse.pop(data);
                             if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "number") {
                                 arraylen                        = data.begin[parse.count] - 1;
