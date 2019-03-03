@@ -1,0 +1,8 @@
+function(){
+    return function(){
+        if(i){
+            for(k)if(n)return!0
+        }else for(d)if(f)return t;
+        return!t&&-1
+    }
+}

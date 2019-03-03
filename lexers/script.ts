@@ -145,9 +145,7 @@
                     parse.linesSpace = 0;
                     recordPush("");
                     parse.linesSpace = aa;
-                    if (next !== "}") {
-                        blockinsert();
-                    }
+                    blockinsert();
                 },
                 // fixes asi location if inserted after an inserted brace
                 asibrace       = function lexer_script_asibrace():void {
@@ -252,10 +250,6 @@
                     if (data.stack[parse.count] === "do" && next === "while" && data.token[parse.count] === "}") {
                         return;
                     }
-                    next = next.slice(0, 4);
-                    if (next === "else" && ltoke === "}" && data.stack[parse.count] === "if" && data.token[data.begin[parse.count]] !== "x{") {
-                        return;
-                    }
                     if (ltoke === ";" && data.token[g - 1] === "x{") {
                         name = data.token[data.begin[g - 2] - 1];
                         if (data.token[g - 2] === "do" || (data.token[g - 2] === ")" && "ifforwhilecatch".indexOf(name) > -1)) {
@@ -343,14 +337,15 @@
                 },
                 // operations for end types: ), ], }
                 end            = function lexer_script_end(x:string):void {
-                    let insert:boolean   = false;
+                    let insert:boolean   = false,
+                        newarr:boolean = false;
                     const next:string     = nextchar(1, false),
+                        count:number = (data.token[parse.count] === "(")
+                            ? parse.count
+                            : data.begin[parse.count],
                         newarray = function lexer_script_end_newarray():void {
-                            let bb:number       = 0,
-                                cc:number       = 0,
-                                arraylen:number = 0;
-                            const aa:number       = data.begin[parse.count],
-                                ar:boolean       = (data.token[data.begin[parse.count] - 1] === "Array"),
+                            let arraylen:number = 0;
+                            const ar:boolean       = (data.token[count - 1] === "Array"),
                                 startar:string  = (ar === true)
                                     ? "["
                                     : "{",
@@ -360,48 +355,24 @@
                                 namear:string   = (ar === true)
                                     ? "array"
                                     : "object";
-                            if (ar === true && (data.types[data.begin[parse.count] + 1] === "reference" || data.types[data.begin[parse.count] + 1] === "word")) {
-                                return;
+                            if (ar === true && data.types[parse.count] === "number") {
+                                arraylen                        = Number(data.token[parse.count]);
+                                tempstore                       = parse.pop(data);
                             }
-                            tempstore    = parse.pop(data);
-                            if (ar === true && data.token[parse.count - 1] === "(" && data.types[parse.count] === "number") {
-                                arraylen                        = data.begin[parse.count] - 1;
-                                tempstore                       = parse.pop(data);
-                                tempstore                       = parse.pop(data);
-                                tempstore                       = parse.pop(data);
-                                data.token[parse.count]        = "[";
-                                data.types[parse.count]        = "start";
-                                data.lines[parse.count]        = 0;
-                                data.stack[parse.count]        = "array";
-                                data.begin[parse.count]        = parse.count;
-                                parse.structure[parse.structure.length - 1] = ["array", parse.count];
+                            tempstore                       = parse.pop(data);
+                            tempstore                       = parse.pop(data);
+                            tempstore                       = parse.pop(data);
+                            parse.structure.pop();
+                            ltoke = startar;
+                            ltype = "start";
+                            recordPush(namear);
+                            if (arraylen > 0) {
                                 ltoke                           = ",";
                                 ltype                           = "separator";
                                 do {
                                     recordPush("");
                                     arraylen = arraylen - 1;
                                 } while (arraylen > 0);
-                            } else {
-                                data.token[aa]                  = startar;
-                                data.types[aa]                  = "start";
-                                cc                              = data.begin[aa];
-                                parse.splice({
-                                    data   : data,
-                                    howmany: 2,
-                                    index  : aa - 2
-                                });
-                                parse.structure[parse.structure.length - 1] = [
-                                    namear, aa - 2
-                                ];
-                                pstack                          = [namear, aa];
-                                bb                              = parse.count;
-                                do {
-                                    if (data.begin[bb] === cc) {
-                                        data.stack[bb] = namear;
-                                        data.begin[bb] = data.begin[bb] - 2;
-                                    }
-                                    bb = bb - 1;
-                                } while (bb > aa - 3);
                             }
                             ltoke = endar;
                             ltype = "end";
@@ -469,8 +440,9 @@
                     }
                     lword.pop();
                     pstack = parse.structure[parse.structure.length - 1];
-                    if (x === ")" && options.correct === true && (data.token[data.begin[parse.count] - 1] === "Array" || data.token[data.begin[parse.count] - 1] === "Object") && data.token[data.begin[parse.count] - 2] === "new") {
+                    if (x === ")" && options.correct === true && count - parse.count < 2 && (data.token[parse.count] === "(" || data.types[parse.count] === "number") && (data.token[count - 1] === "Array" || data.token[count - 1] === "Object") && data.token[count - 2] === "new") {
                         newarray();
+                        newarr = true;
                     }
                     if (brace[brace.length - 1] === "x{" && x === "}") {
                         blockinsert();
@@ -513,10 +485,12 @@
                             parse.pop(data);
                         }
                     }
-                    recordPush("");
-                    if (ltoke === "}" && data.stack[parse.count] !== "object" && data.stack[parse.count] !== "class") {
-                        references.pop();
-                        blockinsert();
+                    if (newarr === false) {
+                        recordPush("");
+                        if (ltoke === "}" && data.stack[parse.count] !== "object" && data.stack[parse.count] !== "class") {
+                            references.pop();
+                            blockinsert();
+                        }
                     }
                     if (insert === true) {
                         ltoke = (options.correct === true)

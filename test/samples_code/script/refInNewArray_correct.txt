@@ -28,22 +28,22 @@
         function(t,e,i){
             function(t,e,i){
                 o.prototype._getSortedGroupIds=function(){
-                    for(var o=new Array(t.length),n=0;n<t.length;n++)o[n]=t[n].id;
+                    for(var o=new Array(t.length),n=0;n<t.length;n++)u;
                 },
                 o.prototype._getRelevantData=function(t,e,i,o){
                     if(t.length>0)for(s=0;s<t.length;s++){
                         if(1==n.options.sort){
-                            var p=new Array(c-u);
-                            for(a=u;a<c;a++)h=n.itemsData[a],p[a-u]=h;
-                        }else e[t[s]]=n.itemsData
+                            var p=new Array(2);
+                            for(a=u;a<c;a++)h;
+                        }else m
                     }
                 },
                 o.prototype._applySampling=function(t,e){
                     if(t.length>0)for(var o=0;o<t.length;o++)if(i){
                         if(n.length>0){
-                            var a=this.body.util.toGlobalScreen(n[n.length-1].x)-this.body.util.toGlobalScreen(n[0].x),h=r/a;
-                            for(var d=new Array(r),l=0;l<r;l+=s){var u=Math.round(l/s);d[u]=n[l]}
-                        
+                            for(var d=new Array(r),l=0;l<r;l+=s){x}
+                        q = new Object();
+                        w = new Array();
                         }
                     }
                 }

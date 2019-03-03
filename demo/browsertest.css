@@ -4,7 +4,7 @@ li,
 p{font-size:1.2em}
 h1,
 h2{color:#26c;margin:0}
-h1 span{color:#c00}
+h1 a{color:#c00}
 .version{color:#070;float:right;font-size:1.6em;font-weight:bold;margin-top:-1.2em}
 textarea#input{display:block;font-family:monospace;overflow:scroll;overflow-wrap:normal;white-space:pre}
 table{border-collapse:collapse;display:table}

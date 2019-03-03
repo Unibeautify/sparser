@@ -359,7 +359,7 @@
 
                         if (style === true) {
                             if (data.token[xx].indexOf("@import") === 0 || data.token[yy].indexOf("@import") === 0) {
-                                // JavaScript's standard array sort is uses implementation specific algorithms.
+                                // JavaScript's standard array sort uses implementation specific algorithms.
                                 // This simple numeric trick forces conformance.
                                 if (xx < yy) {
                                     return -1;
@@ -1030,7 +1030,7 @@
                     output = build.join("").replace(/\s+$/, "");
                     return [output, a];
                 }
-                if (a === config.end || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || sparser.options.preserve_comment === true) {
+                if (a === config.end || wrap < 1 || (output.length <= wrap && output.indexOf("\n") < 0) || sparser.options.preserve_comment === true || (config.opening === "/*" && output.indexOf("\n") > 0 && output.replace("\n", "").indexOf("\n") > 0 && (/\n(?!(\s*\*))/).test(output) === false)) {
                     return [output, a];
                 }
                 b = config.start;

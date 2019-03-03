@@ -10,8 +10,13 @@
         const blob:HTMLElement = document.getElementById("blobs"),
             screen:HTMLElement = blob.getElementsByTagName("div")[0],
             style:HTMLElement = document.createElement("style"),
-            blobs:number = 3,
-            size:number = width / 3,
+            chrome:boolean = (navigator.userAgent.indexOf("Chrome") > 0),
+            blobs:number = (chrome === true)
+                ? 4
+                : 5,
+            size:number = (chrome === true)
+                ? width / 4
+                : width / 3,
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML;
                 height = (window.innerHeight / 10);
@@ -54,19 +59,21 @@
                 inner.style.height = `${size}em`;
                 inner.style.width = `${size}em`;
                 inner.style.filter = `blur(${size / 5}em)`;
-                if (a % 2 === 1) {
-                    style.innerHTML = `${style.innerHTML} @keyframes moving${a}{from{left:0}to{left:${width - size}em}}@keyframes inner${a}{0%,100%{bottom:0;animation-timing-function:ease-out}50%{bottom:${height - size}em;animation-timing-function:ease-in}}`;
-                } else {
-                    style.innerHTML = `${style.innerHTML} @keyframes moving${a}{from{left:${width - size}em}to{left:0}}@keyframes inner${a}{0%,100%{bottom:${height - size}em;animation-timing-function:ease-out}50%{bottom:0;animation-timing-function:ease-in}}`;
+                if (chrome === true) {
+                    if (a % 2 === 1) {
+                        style.innerHTML = `${style.innerHTML} @keyframes moving${a}{from{left:0}to{left:${width - size}em}}@keyframes inner${a}{0%,100%{bottom:0;animation-timing-function:ease-out}50%{bottom:${height - size}em;animation-timing-function:ease-in}}`;
+                    } else {
+                        style.innerHTML = `${style.innerHTML} @keyframes moving${a}{from{left:${width - size}em}to{left:0}}@keyframes inner${a}{0%,100%{bottom:${height - size}em;animation-timing-function:ease-out}50%{bottom:0;animation-timing-function:ease-in}}`;
+                    }
+                    div.style.animationName = `moving${a}`;
+                    div.style.animationTimingFunction = "linear";
+                    div.style.animationIterationCount = "infinite";
+                    div.style.animationDirection = "alternate";
+                    div.style.animationDuration = `${randa * 4}s`;
+                    inner.style.animationDuration = `${randb * 4}s`;
+                    inner.style.animationName = `inner${a}`;
+                    inner.style.animationIterationCount = "infinite";
                 }
-                div.style.animationName = `moving${a}`;
-                div.style.animationTimingFunction = "linear";
-                div.style.animationIterationCount = "infinite";
-                div.style.animationDirection = "alternate";
-                div.style.animationDuration = `${randa * 4}s`;
-                inner.style.animationDuration = `${randb * 4}s`;
-                inner.style.animationName = `inner${a}`;
-                inner.style.animationIterationCount = "infinite";
                 blob.appendChild(div);
             };
         style.setAttribute("type", "text/css");
