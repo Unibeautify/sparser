@@ -9,7 +9,7 @@
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"a","types":"reference"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"=","types":"operator"},
 {"begin":-1,"ender":21,"lexer":"script","lines":1,"stack":"global","token":"{","types":"start"},
-{"begin":9,"ender":21,"lexer":"script","lines":2,"stack":"object","token":"cat","types":"word"},
+{"begin":9,"ender":21,"lexer":"script","lines":2,"stack":"object","token":"cat","types":"property"},
 {"begin":9,"ender":21,"lexer":"script","lines":0,"stack":"object","token":":","types":"operator"},
 {"begin":9,"ender":21,"lexer":"script","lines":1,"stack":"object","token":"x","types":"reference"},
 {"begin":9,"ender":21,"lexer":"script","lines":0,"stack":"object","token":"+","types":"operator"},

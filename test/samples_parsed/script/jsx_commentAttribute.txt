@@ -26,7 +26,7 @@
 {"begin":8,"ender":33,"lexer":"markup","lines":1,"stack":"Person","token":"// end of line comment","types":"comment_attribute"},
 {"begin":8,"ender":32,"lexer":"markup","lines":2,"stack":"Person","token":"cat={","types":"jsx_attribute_start"},
 {"begin":25,"ender":30,"lexer":"script","lines":0,"stack":"jsx_attribute","token":"{","types":"start"},
-{"begin":26,"ender":30,"lexer":"script","lines":1,"stack":"object","token":"something","types":"word"},
+{"begin":26,"ender":30,"lexer":"script","lines":1,"stack":"object","token":"something","types":"property"},
 {"begin":26,"ender":30,"lexer":"script","lines":0,"stack":"object","token":":","types":"operator"},
 {"begin":26,"ender":30,"lexer":"script","lines":0,"stack":"object","token":"\"meow\"","types":"string"},
 {"begin":26,"ender":30,"lexer":"script","lines":1,"stack":"object","token":"}","types":"end"},

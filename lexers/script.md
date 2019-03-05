@@ -12,6 +12,7 @@ When option *correct* is true missing syntax characters are inserted, which can 
 * **generic** - Java and C# styled type generics as used in TypeScript
 * **operator** - JavaScript operators and other syntax characters not otherwise described here.
 * **number** - Numbers.
+* **property** - A named reference of an object.
 * **reference** - A word token type that is declared in the code sample.
 * **regex** - Regular expressions. Described as delimited by `/` characters but not in such a way that the first character could suggestion a division operator.
 * **separator** - Describes `,`, `.`, and `;`.
@@ -24,6 +25,9 @@ When option *correct* is true missing syntax characters are inserted, which can 
 * **template_string_end** - A template string that terminates with `${`.
 * **template_string_else** - A template string that starts with `}` and terminates with `${`.
 * **template_string_start** - A template string that starts with `}`.
+* **type** - A TypeScript data type declaration.
+* **type_end** - Closing out a TypeScript data type.
+* **type_start** - A starting structure of TypeScript data types.
 * **word** - A collection of characters that comprise a JavaScript keyword or reference not explicitly declared in the code sample.  This parser is less strict than a JavaScript compiler in that it does not, at this time, trap certain extended UTF8 control characters that aren't valid in identifiers.
 
 ## stack values
@@ -47,6 +51,7 @@ The stack values are identified by either a known categorical term that describe
 * **array** - Array, but it could also describe array notation structures referencing properties of object literals.
 * **attribute** - CSharp styled data attributes
 * **block** - A block not associated with a language keyword, as in a stand alone structure to provide independent block scope that cannot be referenced.
+* **data_type** - A TypeScript data type structure, for example: `let x:[string, number] = 0;`
 * **expression** - The logic that makes decisions, such as the logic part between an `if` keyword and its block.
 * **initializer** - Execution of containment around a reference called with `new` to invoke polyinstantiation.
 * **map** - A data structure that is similar to an object literal, but different.

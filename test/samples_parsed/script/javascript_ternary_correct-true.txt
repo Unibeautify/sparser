@@ -304,7 +304,7 @@
 {"begin":219,"ender":310,"lexer":"script","lines":0,"stack":"function","token":";","types":"separator"},
 {"begin":219,"ender":310,"lexer":"script","lines":2,"stack":"function","token":"return","types":"word"},
 {"begin":219,"ender":308,"lexer":"script","lines":1,"stack":"function","token":"{","types":"start"},
-{"begin":304,"ender":308,"lexer":"script","lines":0,"stack":"object","token":"forEach","types":"word"},
+{"begin":304,"ender":308,"lexer":"script","lines":0,"stack":"object","token":"forEach","types":"property"},
 {"begin":304,"ender":308,"lexer":"script","lines":0,"stack":"object","token":":","types":"operator"},
 {"begin":304,"ender":308,"lexer":"script","lines":1,"stack":"object","token":"a","types":"reference"},
 {"begin":304,"ender":308,"lexer":"script","lines":0,"stack":"object","token":"}","types":"end"},

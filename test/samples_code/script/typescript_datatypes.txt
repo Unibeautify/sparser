@@ -1,0 +1,10 @@
+let cc:number    = aa,
+    dd:number[]    = [0],
+    lines:[string, string, string],
+    xhr:XMLHttpRequest = new XMLHttpRequest(),
+    buttons:HTMLCollectionOf<HTMLButtonElement>,
+    xxx:mystery = (sommething)
+        ? cc
+        : lines,
+    lang:number = 0;
+var x = function xyz(first:number, source?:string[]):[number, string[]] {return};

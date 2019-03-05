@@ -91,13 +91,17 @@ ul[class="key"] li[class="style"]{background:#eef8ff;color:#009}
 #documentation code strong{color:#f00;font-weight:bold}
 @media (max-width: 400px) {
     #top_menu h1{display:none}
+    #top_menu {font-size:0.7em}
     #top_menu li{padding:0 0.5em}
-    #content{max-width:auto;width:100%}
-    #content .section{background-size:60%;padding:0 0 5em}
+    #content .section{background-size:40%;padding:0 0 5em}
+    h2 a{display:block}
 }
 @media (max-width: 700px) {
-    #content{max-width:auto;width:100%}
-    #content .section{background-size:60%}
+    #content{max-width:auto;padding:5em 2.5% 0;width:95%}
+    #content .section{background-size:20%}
+    #content table,
+    #content .section > code{display:block;overflow-x:scroll;width:100%}
+    #content ol{padding-right:1em}
 }
 @font-face{
     font-family:'Lora';font-style:normal;font-weight:400;

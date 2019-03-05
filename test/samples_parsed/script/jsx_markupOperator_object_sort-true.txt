@@ -6,7 +6,7 @@
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":".","types":"separator"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"Component","types":"word"},
 {"begin":-1,"ender":39,"lexer":"script","lines":1,"stack":"global","token":"{","types":"start"},
-{"begin":6,"ender":39,"lexer":"script","lines":2,"stack":"class","token":"render","types":"word"},
+{"begin":6,"ender":39,"lexer":"script","lines":2,"stack":"class","token":"render","types":"property"},
 {"begin":6,"ender":9,"lexer":"script","lines":0,"stack":"class","token":"(","types":"start"},
 {"begin":8,"ender":9,"lexer":"script","lines":0,"stack":"method","token":")","types":"end"},
 {"begin":6,"ender":38,"lexer":"script","lines":1,"stack":"class","token":"{","types":"start"},
