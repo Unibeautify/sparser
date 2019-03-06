@@ -141,7 +141,7 @@
                                 if ((/<\/\w+>/).test(sample) === true && (/<\w+((\s+\w)|>)/).test(sample) === true) {
                                     return output("jsx");
                                 }
-                                if ((/((var)|(let)|(const))\s+\w+\s*:\s*\w/).test(sample) === true || (/=\s*<\w+/).test(sample) === true) {
+                                if ((/((var)|(let)|(const))\s+\w+\s*:/).test(sample) === true || (/=\s*<\w+/).test(sample) === true) {
                                     return output("typescript");
                                 }
                                 return output("javascript");

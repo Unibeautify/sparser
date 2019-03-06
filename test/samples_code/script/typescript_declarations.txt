@@ -1,0 +1,15 @@
+const varindex:number[] = [-1], //index in current scope of last var, let, or const keyword
+                    list:boolean[]          = [], //stores comma status of current block
+                    level:number[] = (options.start > 0)
+                        ? Array(options.start).fill(0, 0, options.start)
+                        : [],
+                    ternary:number[]       = [], //used to identify ternary statments
+                    extraindent   = [
+                        []
+                    ], //stores token indexes where extra indentation occurs from ternaries and broken method chains
+                    arrbreak:boolean[]      = [], //array where a method break has occurred
+                    destruct:boolean[]      = [], //attempt to identify object destructuring
+                    itemcount:number[]      = [], //counts items in destructured lists
+                    assignlist:boolean[]    = [false], //are you in a list right now?
+                    wordlist:boolean[]      = [],
+                    count:number[][]        = []

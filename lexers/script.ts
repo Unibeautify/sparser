@@ -93,8 +93,17 @@
                         return;
                     }
                     if (record.token === "}" && (record.stack === "function" || record.stack === "if" || record.stack === "else" || record.stack === "for" || record.stack === "do" || record.stack === "while" || record.stack === "switch" || record.stack === "class" || record.stack === "try" || record.stack === "catch" || record.stack === "finally" || record.stack === "block")) {
-                        if (data.token[record.begin - 1] === ")") {
-                            aa = data.begin[record.begin - 1] - 1;
+                        if (record.stack === "function" && (data.stack[record.begin - 1] === "data_type" || data.types[record.begin - 1] === "type")) {
+                            aa = record.begin;
+                            do {
+                                aa = aa - 1;
+                            } while (aa > 0 && data.token[aa] !== ")" && data.stack[aa] !== "arguments");
+                            aa = data.begin[aa];
+                        } else {
+                            aa = data.begin[record.begin - 1];
+                        }
+                        if (data.token[aa] === "(") {
+                            aa = aa - 1;
                             if (data.token[aa - 1] === "function") {
                                 aa = aa - 1;
                             }
@@ -684,7 +693,8 @@
                         d:number           = 0,
                         next:string        = "",
                         output:string[]      = [];
-                    const syntaxnum:string   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
+                    const dt:boolean = datatype[datatype.length - 1],
+                        syntaxnum:string   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
                         syntax:string      = "=<>+-*?|^:&.,;%(){}[]~",
                         applyMarkup = function lexer_script_markup_applyMarkup():void {
                             if (ltoke === "(") {
@@ -710,6 +720,7 @@
                         return;
                     }
                     if (
+                        dt === false &&
                         nextchar(1, false) !== ">" && (
                         (c[a] !== "<" && syntaxnum.indexOf(c[a + 1]) > -1) ||
                         data.token[d] === "++" ||
@@ -738,15 +749,12 @@
                         let comma:boolean    = false,
                             e:number        = 1,
                             f:number        = 0;
-                        const generics:string[] = [
-                                "<",
-                                c[a + 1]
-                            ],
+                        const generics:string[] = ["<"],
                             jj:number = b;
                         if (c[a + 1] === "<") {
                             e = 2;
                         }
-                        d = a + 2;
+                        d = a + 1;
                         if (d < jj) {
                             do {
                                 generics.push(c[d]);
@@ -768,7 +776,7 @@
                                 } else if (c[d] === ">") {
                                     e = e - 1;
                                     if (e === 0 && f === 0) {
-                                        if ((/\s/).test(c[d - 1]) === true) {
+                                        if ((/\s/).test(c[d - 1]) === true && dt === false) {
                                             ltype = "operator";
                                             ltoke = operator();
                                             recordPush("");
@@ -782,7 +790,7 @@
                                         return recordPush("");
                                     }
                                 }
-                                if ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true)) {
+                                if (dt === false && ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true))) {
                                     ltype = "operator";
                                     ltoke = operator();
                                     recordPush("");
@@ -1071,7 +1079,7 @@
                                         if (data.token[g] === "?" && colon === false) {
                                             break;
                                         }
-                                        if (data.token[g] === ";" || data.token[g] === "x;" || data.token[g] === ".") {
+                                        if (data.token[g] === ";" || data.token[g] === "x;") {
                                             break;
                                         }
                                         if (data.token[g] === "var" || data.token[g] === "let" || data.token[g] === "const" || data.types[g] === "type") {
@@ -1436,7 +1444,7 @@
                         stack:string = "",
                         func:boolean = false;
                     brace.push(x);
-                    if (x === "{" && (data.types[parse.count] === "type" || data.types[parse.count] === "type_end" || data.types[parse.count] === "generic")) {
+                if (x === "{" && (data.types[parse.count] === "type" || data.types[parse.count] === "type_end" || data.types[parse.count] === "generic")) {
                         // this block determines if a function body follows a type annotation
                         let begin:number = 0;
                         if (data.types[parse.count] === "type_end") {
@@ -1459,6 +1467,9 @@
                             datatype.push(datatype[datatype.length - 1]);
                         }
                         aa = parse.count;
+                    
+                    } else if (x === "[" && data.types[parse.count] === "type_end") {
+                        datatype.push(true);
                     } else {
                         datatype.push(datatype[datatype.length - 1]);
                     }
@@ -1653,8 +1664,24 @@
                         } else if (ltoke === "{" && (data.token[aa] === "x}" || data.token[aa] === "}") && "if|else|for|while|function|class|switch|catch|finally".indexOf(data.stack[aa]) > -1) {
                             // ES6 block
                             stack = "block";
-                        } else if (data.types[aa] === "generic" || data.stack[aa] === "arguments") {
+                        } else if (data.stack[aa] === "arguments") {
                             stack = "function";
+                        } else if (data.types[aa] === "generic") {
+                            do {
+                                aa = aa - 1;
+                                if (data.token[aa] === "function" || data.stack[aa] === "arguments") {
+                                    stack = "function";
+                                    break;
+                                }
+                                if (data.token[aa] === "interface") {
+                                    stack = "map";
+                                    break;
+                                }
+                                if (data.token[aa] === ";") {
+                                    stack = "object";
+                                    break;
+                                }
+                            } while (aa > data.begin[parse.count]);
                         } else {
                             stack = "object";
                         }

@@ -1,0 +1,1 @@
+let coolRating: {[id:string]: number} = {};
