@@ -206,6 +206,7 @@
                 options.language = lang[0];
                 options.lexer = lang[1];
             } else {
+                document.getElementById("language").getElementsByTagName("span")[0].innerHTML = "";
                 options.language = langVal;
             }
             startTime = Math.round(performance.now() * 1000);

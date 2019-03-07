@@ -1840,16 +1840,33 @@
                                 index  : parse.count - 3
                             });
                         },
-                        hoisting = function lexer_script_word_hoisting(index:number, ref:string):void {
+                        hoisting = function lexer_script_word_hoisting(index:number, ref:string, samescope:boolean):void {
+                            const begin:number = data.begin[parse.count];
+                            let parent:number = 0;
                             do {
-                                if (data.token[index] === ref) {
-                                    data.types[index] = "reference";
-                                }
-                                if (data.token[index - 1] === "{" && data.stack[index] === "function") {
-                                    return;
+                                if (data.token[index] === ref && data.types[index] === "word") {
+                                    if (samescope === true) {
+                                        // the simple state is for hoisted references, var and function declarations
+                                        data.types[index] = "reference";
+                                    } else if (data.begin[index] > begin && data.token[data.begin[index]] === "{" && data.stack[index] !== "object" && data.stack[index] !== "class" && data.stack[index] !== "data_type") {
+                                        // the complex state is for non-hoisted references living in prior functions of the same parent scope
+                                        if (data.stack[index] === "function") {
+                                            data.types[index] = "reference";
+                                        } else {
+                                            // this looping is necessary to determine if there is a function between the reference and the declared scope
+                                            parent = data.begin[index];
+                                            do {
+                                                if (data.stack[parent] === "function") {
+                                                    data.types[index] = "reference";
+                                                    break;
+                                                }
+                                                parent = data.begin[parent];
+                                            } while (parent > begin);
+                                        }
+                                    }
                                 }
                                 index = index - 1;
-                            } while (index > 0);
+                            } while (index > begin);
                         };
                     do {
                         lex.push(c[f]);
@@ -2012,8 +2029,12 @@
                         } else if (references.length > 0 && (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
                             ltype = "reference";
                             references[references.length - 1].push(output);
-                            if ((options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow") && (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end"))) {
-                                hoisting(parse.count, output);
+                            if (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow") {
+                                if (tokel === "var" || (tokel === "function" && data.types[parse.count - 1] !== "operator" && data.types[parse.count - 1] !== "start" && data.types[parse.count - 1] !== "end")) {
+                                    hoisting(parse.count, output, true);
+                                } else {
+                                    hoisting(parse.count, output, false);
+                                }
                             }
                         } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && ltype !== "operator") {
                             ltype = "reference";
@@ -2037,10 +2058,11 @@
                             if (references.length > 0 && data.token[d] === "var" && (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow")) {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
-                                hoisting(d, output);
+                                hoisting(d, output, true);
                             } else if (references.length > 0 && data.token[d] === "let" || data.token[d] === "const") {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
+                                hoisting(d, output, false);
                             } else {
                                 ltype = "word";
                             }
