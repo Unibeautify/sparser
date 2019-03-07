@@ -608,9 +608,7 @@
                                     ltype    = "template";
                                 }
                             } else if (b[a + 1] === "%") {
-                                if (b[a + 2] !== "=") {
-                                    preserve = true;
-                                }
+                                preserve = true;
                                 if (b[a + 2] === "-" && b[a + 3] === "-") {
                                     end     = "--%>";
                                     ltype = "comment";
@@ -1482,10 +1480,11 @@
                     } else if (element.slice(0, 2) === "<%" && element.slice(element.length - 2) === "%>") {
                         if ((/^(<%\s+end\s+-?%>)$/).test(element) === true) {
                             ltype = "template_end";
-                        } else if (((/\sdo\s/).test(element) === true && element.indexOf("-%>") === element.length - 3) || (/^(<%(%|-)?\s*if)/).test(element) === true) {
+                        } else if (((/\sdo\s/).test(element) === true && (/\s-?%>$/).test(element) === true) || (/^(<%(%|-|=)?\s*if)/).test(element) === true) {
                             ltype = "template_start";
                         }
                     }
+                    record.types = ltype;
 
                     //update a flag for subatomic parsing in SGML tags
                     if (end !== "]>" && sgmlflag > 0 && element.charAt(element.length - 1) !== "[" && (element.slice(element.length - 2) === "]>" || (/^(<!((doctype)|(notation))\s)/i).test(element) === true)) {
