@@ -80,6 +80,7 @@ if (b[a] === "\n") {
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
 ## supported languages
+* [Flow](https://flow.org/)
 * [JavaScript / ECMAScript](https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
 * [JSON](https://json.org/)
 * [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)

@@ -1841,7 +1841,7 @@
                             });
                         },
                         hoisting = function lexer_script_word_hoisting(index:number, ref:string, samescope:boolean):void {
-                            const begin:number = data.begin[parse.count];
+                            const begin:number = data.begin[index];
                             let parent:number = 0;
                             do {
                                 if (data.token[index] === ref && data.types[index] === "word") {

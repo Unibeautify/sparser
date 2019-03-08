@@ -68,6 +68,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [XML](https://www.w3.org/TR/REC-xml/)
    - [XSLT](https://www.w3.org/standards/xml/transformation)
 * **script**
+   - [Flow](https://flow.org/)
    - [JavaScript / ECMAScript](https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
    - [JSON](https://json.org/)
    - [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
@@ -81,7 +82,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [PostCSS](https://postcss.org/)
    - [SCSS (Sass)](https://sass-lang.com/)
 
-*41 total languages.*
+*42 total languages.*
 
 ## Build
 ### Dependencies
