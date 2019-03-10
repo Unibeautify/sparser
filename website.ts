@@ -17,10 +17,14 @@
             size:number = (chrome === true)
                 ? width / 4
                 : width / 3,
+            content:HTMLElement = document.getElementById("content"),
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML;
                 height = (window.innerHeight / 10);
                 width = (window.innerWidth / 10);
+                if (content.clientHeight < height - 6.1) {
+                    content.style.height = `${height - 6.1}em`;
+                }
                 svg_left.style.width = `${(width - 100) / 2}em`;
                 svg_left.style.height = `${height}em`;
                 svg_right.style.width = `${(width - 100) / 2}em`;
@@ -80,6 +84,9 @@
         document.getElementsByTagName("head")[0].appendChild(style);
         screen.style.position = "relative";
         screen.style.zIndex = "4";
+        if (content.clientHeight < height - 6.1) {
+            content.style.height = `${height - 6.1}em`;
+        }
         window.onresize = resize;
         resize();
         if (blobs > 0) {

@@ -15,8 +15,7 @@
         "test": "test"
     },
     "eslintIgnore": [
-        "js/browser.js",
-        "js/browsertest.js"
+        "js/browser.js"
     ],
     "homepage": "https://sparser.io/",
     "keywords": [
@@ -40,5 +39,5 @@
         "start": "node js/services build",
         "test": "node js/services test"
     },
-    "version": "1.0.9"
+    "version": "1.0.10"
 }
