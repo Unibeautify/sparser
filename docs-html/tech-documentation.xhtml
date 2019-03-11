@@ -55,10 +55,19 @@ global.sparser.parser();]]></code></p>
 <p><code class="language-xml"><![CDATA[<!-- parse-ignore-start --> some code to ignore <!-- parse-ignore-end -->]]></code></p>
 <p><code class="language-javascript"><![CDATA[// parse-ignore-start
 ignore some code
-// parse-ignore-end]]></code></p>
-<p>/* parse-ignore-start* /<br/>ignore some code<br/>// parse-ignore-end</p>
-<p>// parse-ignore-start<br/>ignore some code<br/>/* parse-ignore-end* /</p>
-<p>/* parse-ignore-start <em>/<br/>ignore some code<br/>/</em> parse-ignore-end* /</p>
+// parse-ignore-end
+
+/* parse-ignore-start */
+ignore some code
+// parse-ignore-end
+
+// parse-ignore-start
+ignore some code
+/* parse-ignore-end */
+
+/* parse-ignore-start */
+ignore some code
+/* parse-ignore-end */]]></code></p>
 </div><div class="section"><h2>Universal Parse Model</h2>
 <p>Sparser supports several different formats of data structure for output as defined by the <strong>format</strong> option. All these formats represent the data equally, but shape the data in a way a user may find more comfortable to access. The following explanation will use examples in the default <em>arrays</em> format type.</p>
 <h3>Data Types</h3>

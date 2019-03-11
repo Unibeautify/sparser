@@ -584,8 +584,7 @@
                         cchar:string = (tilde === true)
                             ? "~"
                             : "`",
-                        len:number = lines[a].split(cchar).length - 1,
-                        endgate:RegExp = new RegExp("^((\\s{0," + indentstr + "})?\\s*" + cchar + "{" + len + ",}\\s*)$"),
+                        endgate:RegExp = (/^\s{0,3}`{3}/),
                         codes:string[] = [];
                     if (ticks === true) {
                         a = a + 1;
@@ -598,21 +597,19 @@
                         if (lines[a] === undefined) {
                             break;
                         }
-                        if (lines[a] !== "") {
-                            if (ticks === true) {
-                                if (endgate.test(lines[a]) === true && (/^(\u0020{4})/).test(lines[a]) === false) {
-                                    break;
-                                }
-                                codes.push(lines[a].replace(indent, ""));
-                            } else {
-                                codes.push(lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""));
-                                if (lines[a + 1] !== "" && codetest(a + 1) === false) {
-                                    break;
-                                }
-                                if (lines[a + 1] === "" && codetest(a + 2) === false) {
-                                    a = a + 1;
-                                    break;
-                                }
+                        if (ticks === true) {
+                            if (endgate.test(lines[a]) === true) {
+                                break;
+                            }
+                            codes.push(lines[a].replace(indent, ""));
+                        } else if (lines[a] !== "") {
+                            codes.push(lines[a].replace(/^(\u0020{4})/, "").replace(/^(\s*\t)/, ""));
+                            if (lines[a + 1] !== "" && codetest(a + 1) === false) {
+                                break;
+                            }
+                            if (lines[a + 1] === "" && codetest(a + 2) === false) {
+                                a = a + 1;
+                                break;
                             }
                         } else {
                             if (codetest(a + 1) === false) {
