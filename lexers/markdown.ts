@@ -451,7 +451,7 @@
                     return ((/^(\u0020{4,}\s*\S)/).test(lines[index]) === true || (/^(\s*\t\s*\S)/).test(lines[index]) === true);
                 },
                 codeblocktest = function lexer_markdown_codeblocktest(index:number):boolean {
-                    return (/^(\s*((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[index]);
+                    return (/^(\s{0,3}((`{3,})|(~{3,}))+(\S+)?\s*)$/).test(lines[index]);
                 },
                 listtest = function lexer_markdown_listtest(index:number):boolean {
                     const listy:RegExp = (/^(\s*(\*|-|\+|(\d{1,9}(\)|\.))))/);
@@ -576,15 +576,19 @@
                             }
                             return inumb;
                         }()),
-                        indent:RegExp = new RegExp("^(\\s{0," + indentstr + "})"),
+                        indent:RegExp = new RegExp(`^(\\s{0,${indentstr}})`),
+                        open:string = (function lexer_markdown_codeblock_open():string {
+                            const op:string = lines[a].replace(/^\s*/, "");
+                            let aa:number = 0;
+                            do {
+                                aa = aa + 1;
+                            } while (op.charAt(aa) === op.charAt(0));
+                            return op.slice(0, aa);
+                        }()),
                         language:string = (ticks === true)
                             ? lines[a].replace(/(\s*((`+)|(~+))\s*)/, "").replace(/(\s*)/g, "")
                             : "",
-                        tilde:boolean = (/^(\s*`)/).test(lines[a]) === false,
-                        cchar:string = (tilde === true)
-                            ? "~"
-                            : "`",
-                        endgate:RegExp = (/^\s{0,3}`{3}/),
+                        endgate:RegExp = new RegExp(`^\\s{0,3}${open.charAt(0)}{${open.length},}\\s*$`),
                         codes:string[] = [];
                     if (ticks === true) {
                         a = a + 1;
