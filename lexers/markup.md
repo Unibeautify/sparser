@@ -30,18 +30,20 @@
 ## stack values
 The markup lexer uses tag names, even if the tag is a template tag, as the stack values.
 
+<!-- Everything below this line is dynamically generated! -->
+
 ## supported languages
-* [Apache Velocity](http://velocity.apache.org/)
+* [Apache Velocity](https://velocity.apache.org/)
 * [ASP Inline Expression](https://support.microsoft.com/en-us/help/976112/introduction-to-asp-net-inline-expressions-in-the-net-framework)
 * [CFML (ColdFusion Markup Language)](https://www.adobe.com/products/coldfusion-family.html)
 * [Django Inline HTML](https://docs.djangoproject.com/en/2.1/topics/forms/)
-* [Dust.js](http://www.dustjs.com/)
+* [Dust.js](https://www.dustjs.com/)
 * [EEX Elixir Templates](https://hexdocs.pm/eex/EEx.html)
 * [EJS (Embedded JavaScript) Templates](https://www.ejs.co/)
-* [ERB (Embedded Ruby)](http://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html)
+* [ERB (Embedded Ruby)](https://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html)
 * [FreeMarker](https://freemarker.apache.org/)
 * [Genshi](https://genshi.edgewall.org/)
-* [Handlebars](http://handlebarsjs.com/)
+* [Handlebars](https://handlebarsjs.com/)
 * [HTL (HTML Templating Language)](https://helpx.adobe.com/experience-manager/htl/using/getting-started.html)
 * [HTML](https://www.w3.org/TR/html52/)
 * [Jekyll](https://jekyllrb.com/docs/liquid/)

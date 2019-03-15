@@ -52,7 +52,7 @@ The stack values are identified by either a known categorical term that describe
 * **block** - A block not associated with a language keyword, as in a stand alone structure to provide independent block scope that cannot be referenced.
 * **data_type** - A TypeScript data type structure, for example: `let x:[string, number] = 0;`
 * **expression** - The logic that makes decisions, such as the logic part between an `if` keyword and its block.
-* **initializer** - Execution of containment around a reference called with `new` to invoke polyinstantiation.
+* **initializer** - Execution of containment around a reference called with `new` to invoke poly-instantiation.
 * **map** - A data structure that is similar to an object literal, but different.
 * **method** - Function arguments at the function's reference. Delimited by parenthesis.
 * **notation** - A TSX data structure.  TSX is TypeScript adapted to the syntax of JSX.
@@ -78,13 +78,15 @@ if (b[a] === "\n") {
 
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
 
+<!-- Everything below this line is dynamically generated! -->
+
 ## supported languages
 * [Flow](https://flow.org/)
 * [JavaScript / ECMAScript](https://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf)
 * [JSON](https://json.org/)
 * [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
 * [React JSX](https://reactjs.org/docs/introducing-jsx.html)
-* [TSS Titanium Style Sheets](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
+* [TSS (Titanium Style Sheets)](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
 * [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
 * [TypeScript](https://www.typescriptlang.org/)
 

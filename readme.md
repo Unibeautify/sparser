@@ -5,7 +5,7 @@
 ## License
 Creative Commons Zero v1.0 Universal (cc0-1.0)
 
-## Version 1.0.12
+## Version 1.0.13
 Play around with this application [in your browser](https://sparser/demo/).
 
 ## Contents
@@ -38,17 +38,17 @@ A list of supplied lexers and their various dedicated language support as indica
 * **markdown**
    - [markdown](https://spec.commonmark.org/)
 * **markup**
-   - [Apache Velocity](http://velocity.apache.org/)
+   - [Apache Velocity](https://velocity.apache.org/)
    - [ASP Inline Expression](https://support.microsoft.com/en-us/help/976112/introduction-to-asp-net-inline-expressions-in-the-net-framework)
    - [CFML (ColdFusion Markup Language)](https://www.adobe.com/products/coldfusion-family.html)
    - [Django Inline HTML](https://docs.djangoproject.com/en/2.1/topics/forms/)
-   - [Dust.js](http://www.dustjs.com/)
+   - [Dust.js](https://www.dustjs.com/)
    - [EEX Elixir Templates](https://hexdocs.pm/eex/EEx.html)
    - [EJS (Embedded JavaScript) Templates](https://www.ejs.co/)
-   - [ERB (Embedded Ruby)](http://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html)
+   - [ERB (Embedded Ruby)](https://ruby-doc.org/stdlib-1.9.3/libdoc/erb/rdoc/ERB.html)
    - [FreeMarker](https://freemarker.apache.org/)
    - [Genshi](https://genshi.edgewall.org/)
-   - [Handlebars](http://handlebarsjs.com/)
+   - [Handlebars](https://handlebarsjs.com/)
    - [HTL (HTML Templating Language)](https://helpx.adobe.com/experience-manager/htl/using/getting-started.html)
    - [HTML](https://www.w3.org/TR/html52/)
    - [Jekyll](https://jekyllrb.com/docs/liquid/)
@@ -73,7 +73,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [JSON](https://json.org/)
    - [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
    - [React JSX](https://reactjs.org/docs/introducing-jsx.html)
-   - [TSS Titanium Style Sheets](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
+   - [TSS (Titanium Style Sheets)](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
    - [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
    - [TypeScript](https://www.typescriptlang.org/)
 * **style**

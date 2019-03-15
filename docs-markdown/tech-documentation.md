@@ -14,12 +14,13 @@
 1. [Universal Parse Model](#universal-parse-model)
 
 ### See Also
-1. [Options](options.md)
 1. [Architecture](architecture.md)
 1. [Automation](automation.md)
 1. [Demo Tool](demo.md)
-1. [Introduction to Parsers](parsers.md)
 1. [Project Files](files.md)
+1. [Language Support](language-support.md)
+1. [Options](options.md)
+1. [Introduction to Parsers](parsers.md)
 
 For [lexer specific documentation](lexers) please review the markdown files in the lexer directory.
 

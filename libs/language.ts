@@ -264,13 +264,14 @@
                         return output("coldfusion");
                     }
                     if (
-                        (/^(\s*<!doctype\u0020html>)/i).test(sample) === true ||
+                        (/^(\s*<!doctype\s+html>)/i).test(sample) === true ||
                         (/^(\s*<html)/i).test(sample) === true ||
                         (
                             (/<form\s/i).test(sample) === true &&
                             (/<label\s/i).test(sample) === true &&
                             (/<input\s/i).test(sample) === true
                         ) ||
+                        (/<((img)|(IMG))(\s+\w+=("|')?\S+("|')?)*\s+src\s*=/).test(sample) === true ||
                         (
                             (/^(\s*<!DOCTYPE\s+((html)|(HTML))\s+PUBLIC\s+)/).test(sample) === true &&
                             (/XHTML\s+1\.1/).test(sample) === false &&

@@ -10,10 +10,10 @@
 * **semi** - Describes a `;` character. This types value exists to uniquely set semicolon characters apart from other types values.
 * **start** -  Describes `{` and `(` if the parenthesis is part of a map structure.
 * **template** - Describes a token comprising an external template language that is not of start or end types.
-* **template_else** - Various templating langauges commonly offer conditions with else branches.  Else tokens do not behave the same way as a templates start or end types.
-* **template_end** - Describes the opening sequece for a third party language template tag.
+* **template_else** - Various template languages commonly offer conditions with else branches.  Else tokens do not behave the same way as a templates start or end types.
+* **template_end** - Describes the opening sequence for a third party language template tag.
 * **template_start** - Describes the closing sequence for a third party language template tag.
-* **value** - Describes CSS property values, which is generally anything that follows a colon, even if not a known property, but does not immediately preceed some sort of structure opening.
+* **value** - Describes CSS property values, which is generally anything that follows a colon, even if not a known property, but does not immediately precede some sort of structure opening.
 * **variable** - Languages like LESS and SCSS allow defining and referencing from variables.
 
 ## stack values
@@ -41,6 +41,8 @@ td {
 ```
 
 Code from the opening comment to the closing comment is parsed as a single token of types value *ignore*.
+
+<!-- Everything below this line is dynamically generated! -->
 
 ## supported languages
 * [CSS](https://www.w3.org/Style/CSS/#news)
