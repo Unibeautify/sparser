@@ -6,7 +6,7 @@
    this application. */
 import { Stats } from "fs";
 import * as http from "http";
-import { domainToASCII } from "url";
+import { listenerCount } from "cluster";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -714,7 +714,7 @@ interface directoryList extends Array<directoryItem> {
                 times[2] = `${times[2]}.${str}`;
                 console.log(`${text.cyan + text.bold}[${times.join(":")}]${text.none} ${text.green}Total section time.${text.none}`);
             },
-            // the transtion to the next phase or completion
+            // the transition to the next phase or completion
             next = function node_apps_build_next(message:string):void {
                 let phase = order[type][0],
                     time:string = apps.humantime(false);
@@ -861,10 +861,75 @@ interface directoryList extends Array<directoryItem> {
                 // phase documentation_html builds documentation in HTML format from the markdown files
                 docshtml: function node_apps_build_docshtml():void {
                     heading("Converting documentation from markdown to HTML.");
-                    node.fs.readdir(`${projectPath}docs-markdown`, "utf8", function node_apps_build_docshtml_readdir(er:Error, list:string[]):void {
-                        const total:number = list.length,
-                            convert = function node_apps_build_docshtml_readdir_convert(filename:string) {
-                                node.fs.readFile(`${projectPath}docs-markdown${sep + filename}`, "utf8", function node_apps_build_docshtml_readdir_convert_readfile(erf:Error, filedata:string):void {
+                    node.fs.readdir(`${projectPath}docs-markdown`, "utf8", function node_apps_build_docshtml_readdir(er:Error, filelist:string[]):void {
+                        let lexerLinks:string = "",
+                            total:number = 0,
+                            a:number = 0;
+                        const list:[string, boolean][] = [],
+                            newDir = function node_apps_build_docshtml_newDir(path:string, callback:Function):void {
+                                node.fs.stat(path, function node_apps_build_docshtml_stat(ers:nodeError, stat:Stats):void {
+                                    if (ers !== null) {
+                                        if (ers.code === "ENOENT") {
+                                            node.fs.mkdir(path, function node_apps_build_docshtml_stat_mkdir(erm:Error):void {
+                                                if (erm !== null) {
+                                                    apps.errout([erm.toString()]);
+                                                    return;
+                                                }
+                                                callback();
+                                            });
+                                        } else {
+                                            apps.errout([ers.toString()]);
+                                        }
+                                        return;
+                                    }
+                                    if (stat.isDirectory() === false) {
+                                        apps.errout([`Path ${path + text.angry}exists but is not a directory${text.none}!`]);
+                                        return;
+                                    }
+                                    callback();
+                                });
+                            },
+                            lexers = function node_apps_build_docshtml_lexers():void {
+                                filelist.forEach(function node_apps_build_docshtml_lexers(value:string):void {
+                                    list.push([value, false]);
+                                });
+                                node.fs.readdir(`${projectPath}lexers`, function node_apps_build_docshtml_lexers_readdir(erd:Error, lexerList:string[]):void {
+                                    if (erd !== null) {
+                                        apps.errout([erd.toString()]);
+                                        return;
+                                    }
+                                    let b:number = lexerList.length,
+                                        c:number = 0;
+                                    const links:string[] = ["<li>Lexers <ol>"];
+                                    lexerList.sort();
+                                    do {
+                                        b = b - 2;
+                                        c = b;
+                                        if ((/\.md$/).test(lexerList[b + 1]) === true) {
+                                            c = b + 1;
+                                        } else if ((/\.md$/).test(lexerList[b]) === false) {
+                                            apps.errout([`Lexer file ${lexerList[b]} does not have a matching markdown documentation file.`, "The markdown file must share the same file name as the corresponding lexer file except for file extension."]);
+                                            return;
+                                        }
+                                        list.push([lexerList[c], true]);
+                                        links.push(`<li><a href="lexers/${lexerList[c].replace(".md", ".xhtml")}">${lexerList[c].replace(".md", "")}</a></li>`);
+                                    } while (b > 0);
+                                    links.push("</ol></li>");
+                                    lexerLinks = links.join("");
+                                    total = list.length;
+                                    convert(list[a]);
+                                });
+                            },
+                            convert = function node_apps_build_docshtml_readdir_convert(fileitem:[string, boolean]) {
+                                let fileOutput:string = "";
+                                const readPath = (fileitem[1] === true)
+                                        ? `${projectPath}lexers${sep + fileitem[0]}`
+                                        : `${projectPath}docs-markdown${sep + fileitem[0]}`,
+                                    writePath = (fileitem[1] === true)
+                                        ? `${projectPath}docs-html${sep}lexers${sep + fileitem[0].replace(".md", ".xhtml")}`
+                                        : `${projectPath}docs-html${sep + fileitem[0].replace(".md", ".xhtml")}`;
+                                options.lexer = "markdown";
+                                node.fs.readFile(readPath, "utf8", function node_apps_build_docshtml_readdir_convert_readfile(erf:Error, filedata:string):void {
                                     const doc:string[] = [],
                                         attribute = function node_apps_build_docshtml_readdir_convert_readfile_attribute():void {
                                             const index = doc.length - 1,
@@ -886,13 +951,20 @@ interface directoryList extends Array<directoryItem> {
                                     doc.push("<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html><html xml:lang=\"en\" xmlns=\"http://www.w3.org/1999/xhtml\">\n\n<!-- Automatically generated file. Do not manually alter! -->\n\n<head><title>");
                                     doc.push("Sparser");
                                     doc.push("</title> <link href=\"https://sparser.io/docs-html/");
-                                    doc.push(filename.replace(".md", ".xhtml"));
-                                    doc.push("\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"../website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1><a href=\"../\">Sparser</a></h1>\n<ul><li class=\"donate\"><a href=\"https://liberapay.com/prettydiff/donate\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\" height=\"16\" width=\"16\" x=\"7\" y=\"7\"><g transform=\"translate(-78.37-208.06)\" fill=\"#111\"><path d=\"m104.28 271.1c-3.571 0-6.373-.466-8.41-1.396-2.037-.93-3.495-2.199-4.375-3.809-.88-1.609-1.308-3.457-1.282-5.544.025-2.086.313-4.311.868-6.675l9.579-40.05 11.69-1.81-10.484 43.44c-.202.905-.314 1.735-.339 2.489-.026.754.113 1.421.415 1.999.302.579.817 1.044 1.546 1.395.729.353 1.747.579 3.055.679l-2.263 9.278\"/><path d=\"m146.52 246.14c0 3.671-.604 7.03-1.811 10.07-1.207 3.043-2.879 5.669-5.01 7.881-2.138 2.213-4.702 3.935-7.693 5.167-2.992 1.231-6.248 1.848-9.767 1.848-1.71 0-3.42-.151-5.129-.453l-3.394 13.651h-11.162l12.52-52.19c2.01-.603 4.311-1.143 6.901-1.622 2.589-.477 5.393-.716 8.41-.716 2.815 0 5.242.428 7.278 1.282 2.037.855 3.708 2.024 5.02 3.507 1.307 1.484 2.274 3.219 2.904 5.205.627 1.987.942 4.11.942 6.373m-27.378 15.461c.854.202 1.91.302 3.167.302 1.961 0 3.746-.364 5.355-1.094 1.609-.728 2.979-1.747 4.111-3.055 1.131-1.307 2.01-2.877 2.64-4.714.628-1.835.943-3.858.943-6.071 0-2.161-.479-3.998-1.433-5.506-.956-1.508-2.615-2.263-4.978-2.263-1.61 0-3.118.151-4.525.453l-5.28 21.948\"/></g></svg> Donate</a></li> <li><a href=\"../demo/?scrolldown\">Demo</a></li> <li><a href=\"tech-documentation.xhtml\">Documentation</a></li> <li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li> <li><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1>");
+                                    if (fileitem[1] === true) {
+                                        doc.push("lexers/");
+                                    }
+                                    doc.push(fileitem[0].replace(".md", ".xhtml"));
+                                    doc.push("\" rel=\"canonical\" type=\"application/xhtml+xml\"/> <meta content=\"width=device-width, initial-scale=1\" name=\"viewport\"/> <meta content=\"index, follow\" name=\"robots\"/> <meta content=\"Sparser - Universal Parser\" name=\"DC.title\"/> <meta content=\"#fff\" name=\"theme-color\"/> <meta content=\"Austin Cheney\" name=\"author\"/> <meta content=\"Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model.\" name=\"description\"/> <meta content=\"Global\" name=\"distribution\"/> <meta content=\"en\" http-equiv=\"Content-Language\"/> <meta content=\"application/xhtml+xml;charset=UTF-8\" http-equiv=\"Content-Type\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Enter\"/> <meta content=\"blendTrans(Duration=0)\" http-equiv=\"Page-Exit\"/> <meta content=\"text/css\" http-equiv=\"content-style-type\"/> <meta content=\"application/javascript\" http-equiv=\"content-script-type\"/> <meta content=\"google515f7751c9f8a155\" name=\"google-site-verification\"/> <meta content=\"#bbbbff\" name=\"msapplication-TileColor\"/> <link href=\"/website.css\" media=\"all\" rel=\"stylesheet\" type=\"text/css\"/> </head><body id=\"documentation\"><div id=\"top_menu\"><h1><a href=\"/\">Sparser</a></h1>\n<ul><li class=\"donate\"><a href=\"https://liberapay.com/prettydiff/donate\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 80 80\" height=\"16\" width=\"16\" x=\"7\" y=\"7\"><g transform=\"translate(-78.37-208.06)\" fill=\"#111\"><path d=\"m104.28 271.1c-3.571 0-6.373-.466-8.41-1.396-2.037-.93-3.495-2.199-4.375-3.809-.88-1.609-1.308-3.457-1.282-5.544.025-2.086.313-4.311.868-6.675l9.579-40.05 11.69-1.81-10.484 43.44c-.202.905-.314 1.735-.339 2.489-.026.754.113 1.421.415 1.999.302.579.817 1.044 1.546 1.395.729.353 1.747.579 3.055.679l-2.263 9.278\"/><path d=\"m146.52 246.14c0 3.671-.604 7.03-1.811 10.07-1.207 3.043-2.879 5.669-5.01 7.881-2.138 2.213-4.702 3.935-7.693 5.167-2.992 1.231-6.248 1.848-9.767 1.848-1.71 0-3.42-.151-5.129-.453l-3.394 13.651h-11.162l12.52-52.19c2.01-.603 4.311-1.143 6.901-1.622 2.589-.477 5.393-.716 8.41-.716 2.815 0 5.242.428 7.278 1.282 2.037.855 3.708 2.024 5.02 3.507 1.307 1.484 2.274 3.219 2.904 5.205.627 1.987.942 4.11.942 6.373m-27.378 15.461c.854.202 1.91.302 3.167.302 1.961 0 3.746-.364 5.355-1.094 1.609-.728 2.979-1.747 4.111-3.055 1.131-1.307 2.01-2.877 2.64-4.714.628-1.835.943-3.858.943-6.071 0-2.161-.479-3.998-1.433-5.506-.956-1.508-2.615-2.263-4.978-2.263-1.61 0-3.118.151-4.525.453l-5.28 21.948\"/></g></svg> Donate</a></li> <li><a href=\"/demo/?scrolldown\">Demo</a></li> <li><a href=\"/docs-html/tech-documentation.xhtml\">Documentation</a></li> <li><a href=\"https://github.com/unibeautify/sparser\">Github</a></li> <li><a href=\"https://www.npmjs.com/package/sparser\">NPM</a></li></ul><span class=\"clear\"></span></div><div id=\"content\"><h1>");
                                     doc.push("<span>Sparser</span></h1>");
                                     do {
                                         if (parse.stack[b] === "h1" && parse.types[b] === "content" && parse.token[b].indexOf(" - ") > 0) {
                                             doc[1] = parse.token[b];
-                                            doc[5] = `<span>Sparser</span>${parse.token[b].split(" - ")[1]}</h1>`;
+                                            if (parse.token[b].indexOf("Sparser") > -1) {
+                                                doc[doc.length - 1] = `<span>Sparser</span>${parse.token[b].split(" - ")[1]}</h1>`;
+                                            } else {
+                                                doc[doc.length - 1] = `<span>Sparser</span>${parse.token[b]}</h1>`;
+                                            }
                                         } else if (parse.token[b] === "</h1>") {
                                             b = b + 1;
                                             break;
@@ -909,15 +981,15 @@ interface directoryList extends Array<directoryItem> {
                                         } else if (parse.token[b] === "<h2>") {
                                             if (parse.token[b - 1] === "</h1>") {
                                                 doc.push("<div class=\"section\"><h2>");
-                                            } else if (filename === "options.md") {
+                                            } else if (fileitem[0] === "options.md") {
                                                 doc.push("</div><div class=\"section\" id=\"option_list\"><h2>");
                                             } else {
                                                 doc.push("</div><div class=\"section\"><h2>");
                                             }
                                         } else {
-                                            if (filename === "options.md" && parse.token[b] === "<td>" && parse.token[b - 1] === "<tr>") {
+                                            if (fileitem[0] === "options.md" && parse.token[b] === "<td>" && parse.token[b - 1] === "<tr>") {
                                                 doc.push("<th>");
-                                            } else if (filename === "options.md" && parse.token[b] === "</td>" && parse.token[b + 1] === "<td>") {
+                                            } else if (fileitem[0] === "options.md" && parse.token[b] === "</td>" && parse.token[b + 1] === "<td>") {
                                                 doc.push("</th>");
                                             } else if (parse.types[b] === "start" && parse.types[b - 1] === "content" && b > 0 && "{[(".indexOf(parse.token[b - 1].charAt(parse.token[b - 1].length - 1)) < 0) {
                                                 doc.push(` ${parse.token[b]}`);
@@ -938,8 +1010,10 @@ interface directoryList extends Array<directoryItem> {
                                     doc.push(`\n</g></svg></span><span id="svg_right"><svg height="758.000000pt" preserveAspectRatio="xMaxYMax meet" version="1.0" viewBox="0 0 1280.000000 758.000000" width="1280.000000pt" xmlns="http://www.w3.org/2000/svg"><g fill="#000000" stroke="none" transform="translate(0.000000,758.000000) scale(0.100000,-0.100000)">`);
                                     doc.push(`\n<path d="M5610 7574 c-14 -2 -52 -9 -85 -15 -141 -24 -304 -91 -435 -177 -246 -162 -420 -398 -509 -687 -46 -152 -56 -223 -56 -417 0 -97 -1 -176 -1 -175 -1 1 -27 50 -57 109 -208 404 -559 750 -973 959 -75 38 -104 58 -104 71 0 58 -98 168 -167 188 -21 6 -59 10 -84 8 l-46 -3 13 -46 c24 -81 107 -147 216 -170 97 -21 283 -130 458 -269 100 -79 300 -282 390 -396 173 -217 325 -509 384 -739 43 -171 85 -580 93 -920 5 -228 -7 -589 -24 -700 -6 -40 -6 -40 -20 30 -21 105 -81 308 -120 410 -214 551 -572 910 -1030 1032 -85 23 -118 26 -258 27 -176 1 -245 -11 -385 -65 -251 -96 -451 -320 -516 -574 -23 -91 -23 -256 -1 -348 63 -256 257 -456 508 -524 86 -23 252 -23 339 0 240 63 431 264 475 500 19 98 19 153 0 242 -17 81 -63 197 -75 190 -5 -3 2 -29 15 -58 36 -79 59 -207 51 -286 -17 -167 -66 -272 -180 -386 -130 -132 -264 -188 -451 -188 -182 -1 -325 60 -460 197 -86 87 -128 156 -167 271 -20 61 -23 89 -22 210 0 124 3 148 26 212 178 499 772 700 1299 438 404 -200 694 -609 839 -1185 163 -647 95 -1341 -189 -1936 -177 -370 -417 -687 -676 -893 -388 -308 -805 -713 -1110 -1077 -58 -69 -105 -129 -105 -134 0 -9 99 -90 109 -89 3 0 35 37 71 82 193 242 541 608 795 836 337 303 733 601 1096 826 127 79 154 90 310 124 253 57 393 72 654 72 221 0 352 -14 581 -62 194 -40 332 -86 491 -164 106 -52 144 -76 191 -123 68 -69 123 -88 217 -77 51 7 55 9 49 29 -21 73 -97 118 -203 117 -39 0 -76 -3 -81 -6 -6 -4 -47 17 -92 46 -217 139 -515 237 -853 280 -225 29 -636 11 -868 -37 -38 -8 -71 -14 -75 -14 -13 1 193 111 373 199 394 193 824 365 985 392 108 19 354 16 475 -6 524 -92 953 -416 1175 -888 55 -118 90 -224 122 -369 30 -139 32 -445 4 -583 -72 -357 -252 -621 -510 -746 -110 -53 -203 -72 -329 -67 -120 5 -197 29 -293 89 -80 51 -135 113 -180 204 -94 189 -58 393 95 546 228 227 599 201 715 -51 37 -80 36 -157 -4 -237 -96 -191 -346 -190 -447 1 -23 43 -23 160 1 205 13 24 14 32 4 29 -24 -8 -49 -98 -43 -161 21 -240 309 -331 474 -151 150 164 81 425 -138 527 -194 91 -449 40 -612 -123 -215 -215 -212 -549 5 -765 76 -75 150 -120 261 -156 101 -34 287 -34 395 0 349 109 592 412 677 846 23 114 25 463 4 570 -78 403 -248 707 -545 973 -228 204 -558 354 -861 392 -129 16 -158 21 -153 25 2 2 100 29 218 59 574 147 1078 219 1700 241 85 3 306 10 490 15 626 19 979 56 1294 136 93 24 119 26 331 27 221 1 234 0 330 -26 59 -16 149 -52 220 -87 298 -149 498 -398 587 -728 26 -100 36 -322 18 -441 -39 -267 -188 -526 -398 -693 -341 -271 -781 -321 -1167 -134 -133 65 -214 125 -320 238 -135 143 -228 332 -256 518 -47 321 113 643 386 778 137 68 310 82 454 37 355 -113 498 -536 274 -813 -45 -55 -33 -71 13 -17 83 98 131 253 119 380 -13 140 -64 245 -169 351 -334 334 -928 164 -1096 -314 -41 -116 -54 -204 -47 -334 7 -145 33 -244 102 -383 155 -313 454 -536 815 -606 98 -19 328 -16 428 5 242 51 432 153 603 325 457 457 467 1181 24 1660 -193 208 -487 349 -770 370 l-90 6 145 71 c242 118 395 222 559 379 240 231 401 515 467 825 25 119 25 363 0 480 -55 254 -164 459 -329 617 -213 204 -473 304 -752 290 -401 -21 -727 -278 -826 -652 -31 -121 -29 -290 6 -410 80 -271 271 -460 537 -527 117 -29 291 -23 400 16 84 29 168 73 168 86 0 5 -30 -6 -67 -25 -206 -103 -447 -102 -652 5 -180 94 -314 268 -366 475 -22 89 -23 256 -1 347 63 268 264 493 525 588 241 88 493 74 726 -39 554 -271 755 -962 458 -1571 -162 -330 -432 -592 -808 -782 -480 -243 -952 -326 -1955 -343 -381 -6 -777 -21 -902 -33 -43 -5 -78 -5 -77 -2 0 3 49 29 109 58 222 109 430 263 620 458 164 169 278 329 376 527 23 46 42 73 50 70 7 -2 30 5 53 16 92 47 151 125 151 200 0 67 -5 72 -56 56 -25 -7 -60 -25 -79 -39 -40 -31 -95 -136 -95 -181 0 -38 -65 -161 -148 -280 -209 -300 -552 -596 -892 -769 -193 -99 -324 -145 -472 -166 -692 -102 -1303 -275 -1998 -567 -8 -3 21 32 65 78 356 372 552 787 597 1263 9 94 15 126 25 126 24 0 82 73 104 130 24 63 20 115 -12 167 l-21 33 -26 -19 c-89 -63 -122 -166 -90 -273 23 -79 -37 -396 -112 -582 -48 -121 -182 -381 -247 -478 -78 -116 -205 -269 -301 -360 -146 -139 -225 -194 -415 -289 -266 -134 -509 -273 -756 -433 -56 -36 -104 -66 -107 -66 -3 0 10 21 29 48 197 271 382 707 456 1077 43 212 54 333 57 605 2 176 8 299 18 365 40 256 51 434 51 815 0 442 -9 550 -87 1100 -29 210 -32 535 -5 658 101 457 400 779 837 903 74 21 106 24 255 24 133 0 186 -4 245 -19 368 -92 642 -356 737 -712 23 -86 26 -118 26 -244 0 -123 -4 -160 -26 -243 -72 -271 -264 -505 -522 -635 -320 -160 -706 -113 -929 112 -198 201 -239 494 -98 711 186 289 610 298 740 16 32 -70 36 -176 8 -229 -9 -18 -15 -39 -13 -45 3 -7 15 11 28 38 33 72 32 171 -3 247 -50 108 -140 180 -263 213 -164 42 -329 -8 -462 -140 -120 -119 -170 -254 -160 -430 6 -109 25 -175 79 -278 43 -82 173 -212 263 -265 501 -293 1210 23 1398 623 76 244 59 531 -46 758 -142 306 -425 528 -770 603 -70 15 -306 27 -357 18z"/> <path d="M3463 7528 c-24 -36 -28 -51 -28 -117 0 -60 5 -86 24 -125 24 -49 90 -126 108 -126 5 0 20 21 33 48 32 63 39 175 15 237 -15 41 -94 125 -116 125 -5 0 -21 -19 -36 -42z"/> <path d="M3312 7094 c-70 -18 -119 -53 -153 -108 l-28 -45 50 -16 c67 -23 149 -16 213 15 44 23 146 120 146 140 0 11 -91 30 -138 29 -20 0 -61 -7 -90 -15z"/> <path d="M7750 6299 c-6 -23 -9 -58 -5 -78 10 -60 61 -139 109 -169 48 -30 118 -128 161 -225 14 -32 25 -59 25 -62 0 -2 -24 20 -52 49 -93 92 -205 131 -308 106 -47 -11 -51 -15 -46 -36 21 -82 72 -140 158 -179 75 -34 233 -49 249 -24 14 23 25 -1 40 -86 19 -108 16 -243 -6 -340 l-19 -80 -8 55 c-24 157 -164 291 -321 307 l-53 5 -12 -39 c-17 -58 -15 -92 12 -148 41 -87 147 -169 265 -206 35 -10 66 -17 69 -15 2 3 -45 53 -104 113 -90 89 -208 233 -191 233 3 0 29 -33 60 -72 62 -82 137 -162 215 -230 l52 -46 -35 -68 c-20 -37 -53 -91 -75 -120 -21 -28 -36 -54 -33 -57 3 -4 31 7 62 23 55 27 59 32 105 124 26 53 58 138 71 188 13 51 24 80 24 65 1 -18 5 -26 12 -21 6 3 14 2 18 -4 10 -16 113 29 168 74 99 81 141 192 113 296 -10 35 -13 37 -43 31 -121 -22 -211 -107 -253 -238 l-13 -40 0 50 c-1 72 -18 165 -45 251 -13 40 -20 72 -16 69 4 -2 32 12 61 33 96 67 162 197 144 288 -7 39 -41 114 -51 114 -20 0 -108 -58 -129 -85 -53 -71 -74 -183 -53 -285 7 -32 6 -31 -21 16 -33 61 -66 110 -95 142 -18 20 -21 37 -21 111 0 73 -4 94 -26 136 -25 49 -79 96 -126 110 -19 5 -23 1 -33 -36z m630 -789 c-6 -11 -13 -20 -16 -20 -2 0 0 9 6 20 6 11 13 20 16 20 2 0 0 -9 -6 -20z m-140 -184 c0 -2 -8 -10 -17 -17 -16 -13 -17 -12 -4 4 13 16 21 21 21 13z"/> <path d="M12203 6278 c-39 -75 -14 -183 64 -269 44 -49 87 -138 119 -248 26 -90 32 -140 9 -78 -52 141 -211 248 -341 230 l-41 -5 9 -52 c17 -92 74 -157 183 -207 68 -31 185 -50 185 -29 0 9 4 9 16 -1 15 -12 16 -32 11 -154 -16 -383 -177 -646 -523 -851 -33 -20 -9 -25 61 -13 49 8 79 20 113 46 155 116 290 297 352 470 13 35 29 68 37 74 11 10 12 8 7 -6 -7 -16 -3 -17 37 -11 69 11 164 60 217 113 55 55 82 119 82 195 l0 48 -55 0 c-94 0 -184 -50 -242 -135 l-35 -50 5 45 c6 44 -5 194 -19 258 -5 24 -3 32 7 32 30 0 116 49 157 89 80 78 109 177 80 272 -12 43 -22 46 -79 25 -101 -36 -168 -138 -178 -270 l-6 -81 -13 45 c-8 25 -32 81 -54 126 l-40 81 16 47 c37 109 1 228 -86 280 -35 21 -35 21 -55 -16z m507 -861 c0 -1 -24 -25 -52 -52 l-53 -50 50 53 c46 48 55 57 55 49z m-110 -110 c0 -2 -10 -12 -22 -23 l-23 -19 19 23 c18 21 26 27 26 19z m-80 -71 c0 -2 -8 -10 -17 -17 -16 -13 -17 -12 -4 4 13 16 21 21 21 13z"/> <path d="M11984 5514 c-30 -44 -31 -143 -3 -201 30 -63 129 -160 206 -200 95 -51 95 -47 0 79 -59 79 -157 243 -157 264 0 5 26 -36 58 -91 65 -112 87 -146 152 -228 41 -52 46 -56 58 -40 9 13 12 43 10 98 -2 67 -9 92 -36 147 -46 94 -143 172 -239 192 -27 6 -34 4 -49 -20z"/> <path d="M8608 4502 c-31 -80 -18 -156 40 -229 45 -56 137 -112 155 -94 7 7 11 43 11 84 -1 124 -64 225 -159 254 -34 11 -37 10 -47 -15z"/> <path d="M9053 4271 c-57 -21 -137 -73 -151 -98 -24 -43 73 -79 191 -71 51 4 87 13 124 31 48 25 103 80 103 105 0 5 -19 20 -43 31 -55 27 -152 28 -224 2z"/> <path d="M5712 4086 c6 -69 42 -126 106 -167 57 -36 141 -62 175 -54 23 6 24 9 15 47 -27 123 -145 228 -257 228 l-43 0 4 -54z"/> <path d="M10864 4126 c-9 -24 4 -48 23 -44 12 2 18 12 18 28 0 29 -32 41 -41 16z"/> <path d="M6282 4084 c-63 -31 -134 -101 -161 -160 -23 -49 -25 -58 -12 -49 5 3 12 1 16 -5 10 -17 91 -11 161 12 90 29 158 91 179 161 18 62 14 67 -71 67 -45 0 -73 -7 -112 -26z"/> <path d="M10912 4063 c-17 -33 10 -72 35 -51 16 13 17 40 1 56 -16 16 -26 15 -36 -5z"/> <path d="M10825 4049 c-10 -30 18 -58 40 -39 22 18 15 54 -12 58 -15 2 -23 -3 -28 -19z"/> <path d="M8820 2355 c-16 -19 -3 -55 20 -55 23 0 36 36 20 55 -7 8 -16 15 -20 15 -4 0 -13 -7 -20 -15z"/> <path d="M8775 2279 c-8 -26 16 -54 39 -46 19 7 21 38 4 55 -18 18 -36 14 -43 -9z"/> <path d="M8866 2281 c-23 -26 -14 -53 16 -49 18 2 23 10 23 32 0 36 -16 43 -39 17z"/> <path d="M6758 2071 c-67 -22 -154 -75 -169 -103 -14 -25 -13 -26 52 -38 112 -22 251 13 327 84 l44 41 -38 17 c-51 23 -143 22 -216 -1z"/> <path d="M6468 1873 c-92 -95 -102 -216 -24 -275 22 -16 24 -16 58 12 75 62 91 169 38 253 -16 26 -31 47 -33 47 -2 0 -19 -17 -39 -37z"/> <path d="M4867 1482 c-75 -78 -76 -195 -1 -303 21 -30 23 -40 14 -66 -6 -17 -17 -75 -24 -129 -8 -55 -14 -88 -15 -74 -2 43 -57 145 -102 190 -53 52 -111 79 -178 85 l-51 4 0 -61 c0 -104 57 -185 173 -244 58 -30 134 -46 140 -30 10 26 25 -14 41 -104 10 -53 32 -133 51 -179 l33 -83 -32 34 c-51 56 -102 89 -167 109 -68 21 -107 24 -160 9 l-37 -10 9 -41 c13 -57 31 -88 76 -132 44 -45 86 -68 162 -91 63 -19 181 -22 181 -5 0 6 7 8 16 5 12 -4 15 -2 10 9 -3 8 -9 23 -13 33 -3 9 15 -11 40 -45 53 -68 144 -157 212 -203 32 -22 60 -32 104 -37 78 -8 79 5 4 47 -78 44 -173 120 -173 138 0 8 6 12 14 9 38 -15 168 130 201 223 31 88 11 195 -48 249 l-25 23 -57 -38 c-65 -42 -117 -108 -140 -173 -22 -64 -19 -169 5 -226 11 -25 15 -43 10 -40 -26 16 -115 148 -150 220 -41 86 -87 241 -75 253 4 4 10 2 12 -5 3 -7 13 -9 32 -3 177 50 291 202 254 339 -5 21 -10 22 -47 17 -76 -12 -144 -53 -190 -115 -23 -32 -48 -77 -55 -102 -23 -77 -26 -76 -29 11 -4 110 11 191 48 264 23 45 30 72 30 117 0 69 -11 101 -49 145 l-29 32 -25 -26z m433 -868 c-21 -88 -84 -260 -102 -279 -5 -5 -2 8 7 30 37 85 83 233 96 305 8 41 15 65 17 53 2 -12 -6 -61 -18 -109z"/> <path d="M9884 1103 c-34 -7 -105 -73 -125 -117 -10 -23 -19 -57 -19 -77 0 -45 -38 -132 -91 -210 -22 -32 -41 -59 -43 -59 -2 0 3 21 11 48 29 95 -4 215 -75 266 l-37 27 -32 -35 c-80 -86 -63 -235 37 -332 l39 -38 -42 -38 c-67 -61 -198 -146 -277 -178 -40 -16 -75 -30 -78 -30 -3 0 12 15 34 34 22 19 55 63 74 97 45 85 47 169 6 252 l-27 56 -51 -19 c-65 -25 -101 -59 -129 -123 -18 -44 -21 -64 -17 -142 4 -57 12 -103 23 -127 10 -21 17 -40 14 -42 -9 -9 -135 -26 -196 -26 -35 0 -63 -4 -63 -8 0 -5 24 -18 53 -30 48 -20 61 -21 123 -12 82 11 162 32 233 59 38 14 49 16 40 5 -8 -10 -8 -14 0 -14 6 0 10 -5 8 -12 -1 -6 25 -25 58 -42 48 -24 76 -31 143 -34 48 -3 100 1 126 8 44 12 139 77 140 95 2 19 -95 74 -151 85 -55 12 -141 5 -198 -15 -11 -4 5 10 35 31 30 21 87 71 126 111 67 67 94 86 94 64 0 -13 82 -31 143 -31 108 0 213 55 253 133 15 28 15 28 -32 49 -95 42 -233 11 -330 -74 l-38 -33 29 49 c16 27 38 76 50 109 19 52 27 61 57 72 72 24 130 82 149 148 11 38 2 108 -14 106 -7 -1 -22 -4 -33 -6z m-713 -484 c-11 -24 -20 -41 -20 -37 -1 12 31 89 35 85 3 -2 -4 -24 -15 -48z m-31 -86 c-11 -17 -11 -17 -6 0 3 10 6 24 7 30 0 9 2 9 5 0 3 -7 0 -20 -6 -30z m-13 -55 c-3 -8 -6 -5 -6 6 -1 11 2 17 5 13 3 -3 4 -12 1 -19z m-30 -150 c-3 -7 -5 -2 -5 12 0 14 2 19 5 13 2 -7 2 -19 0 -25z"/> <path d="M3426 605 c-20 -20 -4 -58 22 -53 22 4 27 41 9 57 -12 9 -18 8 -31 -4z"/> <path d="M3392 538 c-17 -17 -15 -32 7 -52 24 -22 41 -13 41 19 0 29 -31 50 -48 33z"/> <path d="M3470 531 c-13 -25 -3 -51 21 -51 20 0 36 40 24 59 -10 17 -33 13 -45 -8z"/>`);
                                     doc.push(`\n</g></svg></span>`);
-                                    doc.push(`\n<div></div></div><script src="../js/website.js" type="application/javascript"></script></body></html>`);
-                                    node.fs.writeFile(`${projectPath}docs-html${sep + filename.replace(".md", ".xhtml")}`, doc.join("").replace(/<code>\n/g, "<code>").replace(/\n<\/code>/g, "</code>"), "utf8", function node_apps_build_docshtml_readdir_convert_readfile_attribute_add_write(err:Error) {
+                                    doc.push(`\n<div></div></div><script src="/js/website.js" type="application/javascript"></script></body></html>`);
+                                    fileOutput = doc.join("").replace(/<code>\n/g, "<code>").replace(/\n<\/code>/g, "</code>");
+                                    fileOutput = fileOutput.replace(/<\/ol><p>For\s+<a\s+href="lexers">lexer\s+specific\s+documentation<\/a>\s+please\s+review\s+the\s+markdown\s+files\s+in\s+the\s+lexer\s+directory.<\/p>/, `${lexerLinks}</ol>`);
+                                    node.fs.writeFile(writePath, fileOutput, "utf8", function node_apps_build_docshtml_readdir_convert_readfile_attribute_add_write(err:Error) {
                                         if (err !== null) {
                                             apps.errout([err.toString()]);
                                             return;
@@ -953,12 +1027,15 @@ interface directoryList extends Array<directoryItem> {
                                     });
                                 });
                             };
-                        let a:number = 0;
                         if (er !== null) {
                             apps.errout([er.toString()]);
                             return;
                         }
-                        convert(list[a]);
+                        newDir(`${projectPath}docs-html`, function node_apps_build_docshtml_callbackDocs():void {
+                            newDir(`${projectPath}docs-html${sep}lexers`, function node_apps_build_docshtml_callbackLexers():void {
+                                lexers();
+                            });
+                        });
                     });
                 },
                 // document the current inventory of supported languages

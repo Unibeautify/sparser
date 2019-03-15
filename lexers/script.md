@@ -1,8 +1,7 @@
 # Lexer - script
-A lexer for JavaScript and other syntax related languages.
 
 ## x tokens
-When option *correct* is true missing syntax characters are inserted, which can include: curly braces, semicolons, and parenthesis.  When *correct* is set to false the characters are still inserted, but artificially so as *X* tokens.  These helps reason about code structure and normalize certain syntax ambiguities.  These tokens are recognizeable as they start with a lowercase *x* as in `x;` for an inserted semicolon.
+When option *correct* is true missing syntax characters are inserted, which can include: curly braces, semicolons, and parenthesis.  When *correct* is set to false the characters are still inserted, but artificially so as *X* tokens.  These helps reason about code structure and normalize certain syntax ambiguities.  These tokens are recognizable as they start with a lowercase *x* as in `x;` for an inserted semicolon.
 
 **x tokens should be removed by the consuming application or converted to regular syntax by removing the x character.**
 
@@ -58,7 +57,7 @@ The stack values are identified by either a known categorical term that describe
 * **method** - Function arguments at the function's reference. Delimited by parenthesis.
 * **notation** - A TSX data structure.  TSX is TypeScript adapted to the syntax of JSX.
 * **object** - A regular object literal.
-* **paren** - Describes parenthsis groupings when other parenthsis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
+* **paren** - Describes parenthesis groupings when other parenthesis based descriptions don't apply.  Most typically found as a grouping mechanism in statements and expressions.
 
 ## Escaping code from the parser
 The parser is capable of selectively ignoring blocks of code.  This occurs when a comment is present starting with `parse-ignore-start` until a later comment is encountered starting with `parse-ignore-end`.  It does not matter whether the comments are line comments or a block comments.

@@ -1,5 +1,5 @@
 html{margin:0;padding:0}
-body{background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJklEQVQImU3IsQ0AMAzDMJ/G0/K5OxQBMmiggm4z01zgjwWaC/QBC/ge8REic+MAAAAASUVORK5CYII=");font-size:10px;margin:0;position:relative;overflow-x:hidden}
+body{background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAJklEQVQImU3IsQ0AMAzDMJ/G0/K5OxQBMmiggm4z01zgjwWaC/QBC/ge8REic+MAAAAASUVORK5CYII=");font-size:10px;margin:0;position:relative;overflow-x:hidden;overflow-y:scroll}
 h1{display:block;font-variant:small-caps;font-weight:normal;line-height:normal}
 h2,
 h3,
@@ -30,8 +30,10 @@ h4{display:block;font-family:Georgia,"Lora","Times New Roman",Times,serif;font-v
 #content h2 a,
 #content h2 span{font-family:"Palatino Linotype",Georgia,"Times New Roman",Times,serif;font-size:0.56em;font-variant:none}
 #content li h3{font-size:1.4em;text-decoration:underline}
+#content li code,
 #content p code{display:inline-block;font-size:1em}
 #content code{background:#eee;border:0.1em solid #ccc;display:block;font-family:"Lucida Console",monospace;font-size:1.4em;line-height:1em;padding:0.15em;white-space:pre}
+#content code[class]{display:block}
 #blobs{height:100%;left:0;position:fixed;top:0;width:100%}
 #blobs div{display:block;position:absolute}
 #blobs div span{border-radius:50%;display:block;opacity:0.25}

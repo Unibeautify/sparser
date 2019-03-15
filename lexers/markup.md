@@ -21,7 +21,7 @@
 * **start** - A start tag of a tag pair.
 * **style** - A tag indicating it may contain contents that need to be passed to the style lexer.
 * **template** - A tag delimited by a known convention of an external template language.
-* **template_attribute** - A tag attribute that conveys instructions to a template preparser opposed to meta data describing the markup tag.
+* **template_attribute** - A tag attribute that conveys instructions to a template pre-parser opposed to meta data describing the markup tag.
 * **template_else** - A template tag acting as the else block of a condition.
 * **template_end** - A closing template tag associated with a prior template\_start tag type.
 * **template_start** - A template tag that contains content or other tags not associated with the template language and expects a closing tag.
