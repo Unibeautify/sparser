@@ -911,7 +911,7 @@
                     a = comm[1];
                 },
                 //consolidate margin and padding values
-                margin_padding  = function lexer_style_properties():void {
+                margin_padding  = function lexer_style_marginPadding():void {
                     const lines:number = parse.linesSpace,
                         props:style_properties = {
                             data: {
@@ -925,7 +925,7 @@
                             removes: []
                         },
                         begin:number = parse.structure[parse.structure.length - 1][1],
-                        populate = function lexer_style_properties_populate(prop:"margin"|"padding"):void {
+                        populate = function lexer_style_marginPadding_populate(prop:"margin"|"padding"):void {
                             if (data.token[aa - 2] === prop) {
                                 const values:string[] = data.token[aa].replace(/\s*!important\s*/g, "").split(" "),
                                     vlen:number = values.length;
@@ -1007,14 +1007,14 @@
                             props.removes.push([aa, prop]);
                             props.last[prop] = aa;
                         },
-                        removes = function lexer_style_properties_removes():void {
+                        removes = function lexer_style_marginPadding_removes():void {
                             let cc:number = 0,
                                 values:string = "";
                             const zero:RegExp     = (/^(0+([a-z]+|%))/),
                                 bb:number = props.removes.length,
                                 tmargin:boolean = (props.data.margin[0] !== "" && props.data.margin[1] !== "" && props.data.margin[2] !== "" && props.data.margin[3] !== ""),
                                 tpadding:boolean = (props.data.padding[0] !== "" && props.data.padding[1] !== "" && props.data.padding[2] !== "" && props.data.padding[3] !== ""),
-                                applyValues = function lexer_style_properties_removes_applyValues(prop:"margin"|"padding") {
+                                applyValues = function lexer_style_marginPadding_removes_applyValues(prop:"margin"|"padding") {
                                     if (zero.test(props.data[prop][0]) === true) {
                                         props.data[prop][0] = "0";
                                     }
@@ -1076,7 +1076,11 @@
                             }
                             // this is necessary to fix the "begin" values of descendent blocks
                             if (endtest === true) {
-                                parse.sortCorrection(begin, parse.count + 1);
+                                if (begin < 0) {
+                                    sparser.parseerror = "Brace mismatch.  There appears to be more closing braces than starting braces.";
+                                } else {
+                                    parse.sortCorrection(begin, parse.count + 1);
+                                }
                             }
                         };
                     let aa:number = parse.count,

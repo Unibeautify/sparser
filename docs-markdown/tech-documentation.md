@@ -4,7 +4,7 @@
 
 ## Contents
 1. [Execution](#execution)
-   1. [Supplied Runtimes](#supplied-runtimes)
+   1. [Supplied Run Times](#supplied-run-times)
       1. [Browser Runtime](#browser-runtime)
       1. [Terminal Runtime](#terminal-runtime)
    1. [Embedding](#embedding)
@@ -32,7 +32,7 @@ global.sparser.parser();
 
 Execute the application by simply running this instruction, where the options are an object described in [Options](options.md).
 
-### Supplied Runtimes
+### Supplied Run Times
 Sparser is intended for inclusion in other applications as an embedded utility.  To run Sparser immediately and experiment without any configuration some simple runtime interfaces are provided.
 
 #### Browser Runtime
@@ -69,7 +69,7 @@ global.sparser.parser();
 ```
 
 ## Ignore Code
-Parts of code can be ignored from parsing by sandwhiching that code between two comments.  The first comment must start with `parse-ignore-start` and the second comment must contain `parse-ignore-end`.  For example:
+Parts of code can be ignored from parsing by sandwiching that code between two comments.  The first comment must start with `parse-ignore-start` and the second comment must contain `parse-ignore-end`.  For example:
 
 ```xml
 <!-- parse-ignore-start --> some code to ignore <!-- parse-ignore-end -->
@@ -97,13 +97,13 @@ ignore some code
 Sparser supports several different formats of data structure for output as defined by the **format** option.  All these formats represent the data equally, but shape the data in a way a user may find more comfortable to access.  The following explanation will use examples in the default *arrays* format type.
 
 ### Data Types 
-* **begin** - *number* - The index where the current structure begins.  For tokens of type *start* this will refere to the parent container or global scope.
+* **begin** - *number* - The index where the current structure begins.  For tokens of type *start* this will refer to the parent container or global scope.
 * **ender** - *number* - The index where the current structure ends. Unlike the *begin* data a token of type *end* refers to itself.
 * **lexer** - *string* - The type of rules use to scan and resolve the current token.
-* **lines** - *number* - Describes the white space immediate prior to the token's first character.  A value of *0* means no white space.  A value of *1* means some amount of white space not containing a new line character.  Values of *2* and greater indicate the number of new lines plus 1.  For example an empty line preceeding the current token would mean a value of *3*, because the white space would contain two new line characters.
+* **lines** - *number* - Describes the white space immediate prior to the token's first character.  A value of *0* means no white space.  A value of *1* means some amount of white space not containing a new line character.  Values of *2* and greater indicate the number of new lines plus 1.  For example an empty line preceding the current token would mean a value of *3*, because the white space would contain two new line characters.
 * **stack** - *string* - A description of the current structure represented by the *begin* and *ender* data values.
 * **token** - *string* - The atomic code fragment.
-* **types** - *string* - A categorical description of the current token.  Types are defined in a lexer's accompanying markdown file.
+* **types** - *string* - A categorical description of the current token.  Types are defined in each markdown file accompanying a respective lexer file.
 
 Each of those data types is an array of identical length that are populated and modified in unison.  Think of this as a database table such that each array is a column, the name of the array (the object key name) is the column metadata, and finally each index of the arrays is a record in the table.  Here is an example:
 
