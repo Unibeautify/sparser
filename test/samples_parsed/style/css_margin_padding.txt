@@ -4,10 +4,10 @@
 {"begin":1,"ender":10,"lexer":"style","lines":2,"stack":".nav-item","token":"margin","types":"property"},
 {"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":":","types":"colon"},
 {"begin":1,"ender":10,"lexer":"style","lines":1,"stack":".nav-item","token":"0 10px !important","types":"value"},
-{"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":";","types":"semi"},
+{"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":";","types":"separator"},
 {"begin":1,"ender":10,"lexer":"style","lines":2,"stack":".nav-item","token":"padding","types":"property"},
 {"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":":","types":"colon"},
 {"begin":1,"ender":10,"lexer":"style","lines":1,"stack":".nav-item","token":"3px 12px 6px !important","types":"value"},
-{"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":";","types":"semi"},
+{"begin":1,"ender":10,"lexer":"style","lines":0,"stack":".nav-item","token":";","types":"separator"},
 {"begin":1,"ender":10,"lexer":"style","lines":2,"stack":".nav-item","token":"}","types":"end"}
 ]

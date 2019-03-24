@@ -1,7 +1,7 @@
 {
     "compilerOptions": {
-        "target": "ES6",
-        "outDir": "js"
+        "outDir": "js",
+        "target": "ES6"
     },
     "include": [
         "*.ts",

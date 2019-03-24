@@ -3153,7 +3153,7 @@ interface directoryList extends Array<directoryItem> {
                     };
                 console.log("");
                 start = time(`Compiling for ${text.green + filename + text.none}`);
-                node.child(`node js/services build`, {
+                node.child("node js/services build", {
                     cwd: projectPath
                 }, function node_apps_server_watch_child(err:Error, stdout:string, stderr:string):void {
                     if (err !== null) {
@@ -3378,6 +3378,7 @@ interface directoryList extends Array<directoryItem> {
                 return;
             }
             const auto:[string, string, string] = sparser.libs.language.auto(filedata, "javascript");
+            let output:string = "";
             options.source = filedata;
             options.language = auto[0];
             options.lexer = (function node_apps_testprep_lexer():string {
@@ -3391,7 +3392,12 @@ interface directoryList extends Array<directoryItem> {
                 return auto[1];
             }());
             options.format = "testprep";
-            console.log(sparser.parser());
+            output = String(sparser.parser());
+            if (options.lexer === "style" && (/"types":"item"\},?\r?\n/).test(output) === true) {
+                console.log(`Style file ${process.argv[0]} returns a types value of ${text.angry}"item"${text.none}.`);
+            } else {
+                console.log(output);
+            }
             apps.log([`${text.green}Test case generated!${text.none}`]);
         });
     };
@@ -3548,6 +3554,10 @@ interface directoryList extends Array<directoryItem> {
                                 comparePass();
                             } else {
                                 if (sparser.parseerror === "") {
+                                    if (currentlex === "style" && (/"types":"item"\},?\r?\n/).test(output) === true) {
+                                        apps.errout([`Style file ${files.parsed[a][0]} returns a types value of ${text.angry}"item"${text.none}.`])
+                                        return;
+                                    }
                                     if (files.parsed[a][1].charAt(0) !== "[") {
                                         apps.errout([`Stored parsed code unit ${text.angry + files.parsed[a][0] + text.none} is incorrect format and will throw a JSON error.`]);
                                         return;

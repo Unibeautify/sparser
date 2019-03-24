@@ -334,7 +334,7 @@
                         : parse.structure[parse.structure.length - 1][0],
                     style:boolean = (data.lexer[cc] === "style"),
                     delim:[string, string] = (style === true)
-                        ? [";", "semi"]
+                        ? [";", "separator"]
                         : [",", "separator"],
                     lines:number = parse.linesSpace,
                     sort    = function parse_objectSort_sort(x:[number, number], y:[number, number]):number {
@@ -367,6 +367,9 @@
                                 return 1;
                             }
                             if (data.types[xx] !== data.types[yy]) {
+                                if (data.types[xx] === "function") {
+                                    return 1;
+                                }
                                 if (data.types[xx] === "variable") {
                                     return -1;
                                 }
@@ -470,11 +473,8 @@
                                     delim[1] = "end";
                                 } else {
                                     delim[0] = ";";
-                                    delim[1] = "semi"
+                                    delim[1] = "separator"
                                 }
-                            }
-                            if (data.lines[keys[dd][0] - 1] > 1 && store.lines.length > 0) {
-                                store.lines[store.lines.length - 1] = data.lines[keys[dd][0] - 1];
                             }
                             ee = keys[dd][0];
                             if (style === true && data.types[keyend - 1] !== "end" && data.types[keyend] === "comment" && data.types[keyend + 1] !== "comment" && dd < keylen - 1) {
@@ -483,7 +483,7 @@
                             }
                             if (ee < keyend) {
                                 do {
-                                    if (style === false && dd === keylen - 1 && ee === keyend - 2 && data.token[ee] === "," && data.types[ee + 1] === "comment") {
+                                    if (style === false && dd === keylen - 1 && ee === keyend - 2 && data.token[ee] === "," && data.lexer[ee] === "script" && data.types[ee + 1] === "comment") {
                                         // do not include terminal commas that are followed by a comment
                                         ff = ff + 1;
                                     } else {
@@ -534,7 +534,7 @@
                                         types: delim[1]
                                     }
                                 });
-                                ff                  = ff + 1;
+                                ff = ff + 1;
                             }
                             dd = dd + 1;
                         } while (dd < keylen);

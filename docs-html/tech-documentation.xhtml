@@ -8,7 +8,7 @@
 </h2>
 </div><div class="section"><h2>Contents</h2>
 <ol><li><a href="#execution">Execution</a>
-<ol><li><a href="#supplied-runtimes">Supplied Runtimes</a>
+<ol><li><a href="#supplied-run-times">Supplied Run Times</a>
 <ol><li><a href="#browser-runtime">Browser Runtime</a>
 </li><li><a href="#terminal-runtime">Terminal Runtime</a>
 </li></ol></li><li><a href="#embedding">Embedding</a>
@@ -30,7 +30,7 @@
 global.sparser.parser();]]></code></p>
 <p>Execute the application by simply running this instruction, where the options are an object described in <a href="options.xhtml">Options</a>
 .</p>
-<h3>Supplied Runtimes</h3>
+<h3>Supplied Run Times</h3>
 <p>Sparser is intended for inclusion in other applications as an embedded utility.  To run Sparser immediately and experiment without any configuration some simple runtime interfaces are provided.</p>
 <h4>Browser Runtime</h4>
 <p>A handy-dandy browser utility is provided to run Sparser in a web browser as <em>demo/index.xhtml</em>. This utility can be run from any location whether on your local file system or from a webserver. First, run the build, <code><![CDATA[node js/services build]]></code>, to create the necessary JavaScript file. To run the web server simply execute <code><![CDATA[node js/services server]]></code> on the command line. The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.</p>
@@ -51,7 +51,7 @@ window.sparser.parser();]]></code></p>
 <p><code class="language-javascript"><![CDATA[global.sparser.options.source = "my code";
 global.sparser.parser();]]></code></p>
 </div><div class="section"><h2>Ignore Code</h2>
-<p>Parts of code can be ignored from parsing by sandwhiching that code between two comments. The first comment must start with <code><![CDATA[parse-ignore-start]]></code> and the second comment must contain <code><![CDATA[parse-ignore-end]]></code>. For example:</p>
+<p>Parts of code can be ignored from parsing by sandwiching that code between two comments. The first comment must start with <code><![CDATA[parse-ignore-start]]></code> and the second comment must contain <code><![CDATA[parse-ignore-end]]></code>. For example:</p>
 <p><code class="language-xml"><![CDATA[<!-- parse-ignore-start --> some code to ignore <!-- parse-ignore-end -->]]></code></p>
 <p><code class="language-javascript"><![CDATA[// parse-ignore-start
 ignore some code
@@ -71,7 +71,7 @@ ignore some code
 </div><div class="section"><h2>Universal Parse Model</h2>
 <p>Sparser supports several different formats of data structure for output as defined by the <strong>format</strong> option. All these formats represent the data equally, but shape the data in a way a user may find more comfortable to access. The following explanation will use examples in the default <em>arrays</em> format type.</p>
 <h3>Data Types</h3>
-<ul><li><strong>begin</strong> - <em>number</em> - The index where the current structure begins. For tokens of type <em>start</em> this will refere to the parent container or global scope.</li><li><strong>ender</strong> - <em>number</em> - The index where the current structure ends. Unlike the <em>begin</em> data a token of type <em>end</em> refers to itself.</li><li><strong>lexer</strong> - <em>string</em> - The type of rules use to scan and resolve the current token.</li><li><strong>lines</strong> - <em>number</em> - Describes the white space immediate prior to the token's first character. A value of <em>0</em> means no white space. A value of <em>1</em> means some amount of white space not containing a new line character. Values of <em>2</em> and greater indicate the number of new lines plus 1. For example an empty line preceeding the current token would mean a value of <em>3</em>, because the white space would contain two new line characters.</li><li><strong>stack</strong> - <em>string</em> - A description of the current structure represented by the <em>begin</em> and <em>ender</em> data values.</li><li><strong>token</strong> - <em>string</em> - The atomic code fragment.</li><li><strong>types</strong> - <em>string</em> - A categorical description of the current token. Types are defined in a lexer's accompanying markdown file.</li></ul><p>Each of those data types is an array of identical length that are populated and modified in unison.  Think of this as a database table such that each array is a column, the name of the array (the object key name) is the column metadata, and finally each index of the arrays is a record in the table.  Here is an example:</p>
+<ul><li><strong>begin</strong> - <em>number</em> - The index where the current structure begins. For tokens of type <em>start</em> this will refer to the parent container or global scope.</li><li><strong>ender</strong> - <em>number</em> - The index where the current structure ends. Unlike the <em>begin</em> data a token of type <em>end</em> refers to itself.</li><li><strong>lexer</strong> - <em>string</em> - The type of rules use to scan and resolve the current token.</li><li><strong>lines</strong> - <em>number</em> - Describes the white space immediate prior to the token's first character. A value of <em>0</em> means no white space. A value of <em>1</em> means some amount of white space not containing a new line character. Values of <em>2</em> and greater indicate the number of new lines plus 1. For example an empty line preceding the current token would mean a value of <em>3</em>, because the white space would contain two new line characters.</li><li><strong>stack</strong> - <em>string</em> - A description of the current structure represented by the <em>begin</em> and <em>ender</em> data values.</li><li><strong>token</strong> - <em>string</em> - The atomic code fragment.</li><li><strong>types</strong> - <em>string</em> - A categorical description of the current token. Types are defined in each markdown file accompanying a respective lexer file.</li></ul><p>Each of those data types is an array of identical length that are populated and modified in unison.  Think of this as a database table such that each array is a column, the name of the array (the object key name) is the column metadata, and finally each index of the arrays is a record in the table.  Here is an example:</p>
 <p>Consider the code <code><![CDATA[<a><b class="cat"></b></a>]]></code>. The parsed output in the default format will be:</p>
 <p><code><![CDATA[{
     begin: [
