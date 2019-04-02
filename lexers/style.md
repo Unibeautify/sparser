@@ -6,7 +6,6 @@
 * **end** - Describes the characters `}` and `)` if the parenthesis closes a structure described as *map*.
 * **function** - Describes a name followed by a single set of parenthesis which is followed by either a semicolon or closing curly brace.
 * **item** - This is an internally used value that should not be exposed outside the lexer unless the lexer receives an incomplete code sample.
-* **pseudo** - Describes a `{` immediately following a `:` character thereby representing a pseudo structure from some CSS pre-processors.
 * **selector** - Describes a CSS selector.
 * **semi** - Describes a `;` character. This types value exists to uniquely set semicolon characters apart from other types values.
 * **start** -  Describes `{` and `(` if the parenthesis is part of a map structure.

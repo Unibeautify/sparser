@@ -6,7 +6,6 @@
    this application. */
 import { Stats } from "fs";
 import * as http from "http";
-import { listenerCount } from "cluster";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;

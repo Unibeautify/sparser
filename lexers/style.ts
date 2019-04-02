@@ -481,9 +481,6 @@
                                     break;
                                 }
                             }
-                            if (out[0] === "@" && block.length === 0 && (b[aa + 1] === "\"" || b[aa + 1] === "'")) {
-                                break;
-                            }
                             aa = aa + 1;
                         } while (aa < len);
                     }
@@ -512,6 +509,7 @@
                         if (data.token[parse.count] === ":") {
                             ltype = "value";
                         } else {
+                            ltoke = ltoke.replace(/,\u0020?/g, ", ");
                             ltype = "function";
                         }
                         ltoke = value(ltoke);
@@ -542,7 +540,8 @@
                 // with something more specific.
                 item        = function lexer_style_item(type:string):void {
                     let aa:number     = parse.count,
-                        bb:number     = 0;
+                        bb:number     = 0,
+                        first:string  = "";
                     const comsa:string[]   = [],
                         priors = function lexer_style_item_priors() {
                             //backtrack through immediately prior comments to find the correct token
@@ -558,6 +557,7 @@
                                     bb = bb - 1;
                                 } while (bb > 0 && data.lexer[aa] === "style" && (data.types[bb] === "comment" || data.types[bb] === "ignore"));
                             }
+                            first = data.token[aa].charAt(0);
                         },
                         selectorPretty = function lexer_style_item_selectorPretty(index:number):void {
                             let cc:number = index,
@@ -634,7 +634,6 @@
                     }
                     if (data.lexer[parse.count - 1] !== "style" || bb < 0) {
                         if (type === "colon") {
-                            const first:string = data.token[aa].charAt(0);
                             if (first === "$" || first === "@") {
                                 data.types[aa] = "variable";
                             } else {
@@ -644,7 +643,7 @@
                             data.types[aa] = "selector";
                             selectorPretty(aa);
                         }
-                    } else if (type === "start" && data.types[aa] == "function" && data.lexer[aa] === "style") {
+                    } else if (type === "start" && data.types[aa] === "function" && data.lexer[aa] === "style") {
                         data.types[aa] = "selector";
                         selectorPretty(aa);
                     } else if (data.types[aa] === "item" && data.lexer[aa] === "style") {
@@ -660,7 +659,6 @@
                                 sparser.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                             }
                         } else if (type === "end") {
-                            const first:string = data.token[aa].charAt(0);
                             if (first === "$" || first === "@") {
                                 data.types[aa] = "variable";
                             } else {
@@ -684,8 +682,6 @@
                                     sparser.parseerror = `Quote looking character (\u201d, \\201d) used instead of actual quotes on line number ${parse.lineNumber}`;
                                 }
                             } else {
-                                let cc:number = 0;
-                                const first:string = data.token[aa].charAt(0);
                                 if (first === "$" || first === "@") {
                                     data.types[aa] = "variable";
                                 } else if (data.types[bb] === "value" || data.types[bb] === "variable") {
@@ -696,7 +692,6 @@
                                 }
                             }
                         } else if (type === "colon") {
-                            const first:string = data.token[aa].charAt(0);
                             if (first === "$" || first === "@") {
                                 data.types[aa] = "variable";
                             } else {
