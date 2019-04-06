@@ -2343,7 +2343,7 @@ interface directoryList extends Array<directoryItem> {
                 if (langs[a].indexOf("- ") < 3 && langs[a].indexOf("- ") > -1) {
                     lex = langs[a].replace(/^\s*-\s+/, "");
                     list[lex] = [];
-                } else {
+                } else if (lex !== "") {
                     name = langs[a].slice(langs[a].indexOf("[") + 1, langs[a].indexOf("]"));
                     uri = langs[a].slice(langs[a].indexOf("](") + 2, langs[a].length - 1);
                     if (name.length > longest) {

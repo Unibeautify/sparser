@@ -1,6 +1,9 @@
 # Sparser - Language Support
-Language support is organized by respective lexer file.
 
+## Summary
+Language support is organized by respective lexer file.  This list is used for several automation tasks during the build.
+
+## List
 - markdown
    * [markdown](https://spec.commonmark.org/)
 - markup
