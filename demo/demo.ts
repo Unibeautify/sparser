@@ -218,9 +218,9 @@
             }());
             if (sparser.parseerror !== "") {
                 document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = sparser.parseerror.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                return;
+            } else {
+                document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             }
-            document.getElementById("errors").getElementsByTagName("span")[0].innerHTML = "";
             if (options.format === "html") {
                 builder();
             } else {

@@ -608,7 +608,7 @@
                             } else {
                                 build.push(c[ee]);
                             }
-                            if ((starting === "\"" || starting === "'") && options.language !== "json" && c[ee - 1] !== "\\" && (c[ee] !== c[ee - 1] || (c[ee] !== "\"" && c[ee] !== "'")) && (c[ee] === "\n" || ee === b - 1)) {
+                            if ((starting === "\"" || starting === "'") && options.language !== "json" && c[ee - 1] !== "\\" && c[ee] !== "\"" && c[ee] !== "'" && (c[ee] === "\n" || ee === b - 1)) {
                                 sparser.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }

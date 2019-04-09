@@ -2117,6 +2117,85 @@
 
                     attributeRecord();
 
+                    // inserts a script space in anticipation of word wrap since JSX has unique white space rules
+                    if (options.wrap > 0 && options.language === "jsx") {
+                        let current_length:number = 0,
+                            bb:number = parse.count,
+                            cc:number = 0;
+                        if (data.types[bb].indexOf("attribute") > -1) {
+                            do {
+                                current_length = current_length + data.token[bb].length + 1;
+                                bb = bb - 1;
+                            } while (data.lexer[bb] !== "markup" || data.types[bb].indexOf("attribute") > -1);
+                            if (data.lines[bb] === 1) {
+                                current_length = current_length + data.token[bb].length + 1;
+                            }
+                        } else if (data.lines[bb] === 1) {
+                            current_length = data.token[bb].length + 1;
+                        }
+                        cc = bb - 1;
+                        if (current_length > 0 && data.types[cc] !== "script_end") {
+                            if (data.types[cc].indexOf("attribute") > -1) {
+                                do {
+                                    current_length = current_length + data.token[cc].length + 1;
+                                    cc = cc - 1;
+                                } while (data.lexer[cc] !== "markup" || data.types[cc].indexOf("attribute") > -1);
+                                if (data.lines[cc] === 1) {
+                                    current_length = current_length + data.token[cc].length + 1;
+                                }
+                            } else if (data.lines[cc] === 1) {
+                                current_length = data.token[cc].length + 1;
+                            }
+                            if (current_length > options.wrap && data.lines[bb] === 1) {
+                                record.begin = data.begin[bb];
+                                record.ender = bb + 2;
+                                record.lexer = data.lexer[bb];
+                                record.lines = 1;
+                                record.stack = data.stack[bb];
+                                record.token = "{";
+                                record.types = "script_start";
+                                parse.splice({
+                                    data: data,
+                                    howmany: 0,
+                                    index: bb,
+                                    record: record
+                                });
+                                record.begin = bb;
+                                record.lexer = "script";
+                                record.lines = 0;
+                                record.stack = "script";
+                                if (options.quote_convert === "single") {
+                                    record.token = "' '";
+                                } else {
+                                    record.token = "\" \"";
+                                }
+                                record.types = "string";
+                                parse.splice({
+                                    data: data,
+                                    howmany: 0,
+                                    index: bb + 1,
+                                    record: record
+                                });
+                                record.lexer = "markup";
+                                record.token = "}";
+                                record.types = "script_end";
+                                parse.splice({
+                                    data: data,
+                                    howmany: 0,
+                                    index: bb + 2,
+                                    record: record
+                                });
+                                data.ender[bb + 3] = data.ender[bb + 3] + 3;
+                                bb = bb + 4;
+                                do {
+                                    data.begin[bb] = data.begin[bb] + 3;
+                                    data.ender[bb] = data.ender[bb] + 3;
+                                    bb = bb + 1;
+                                } while (bb < parse.count);
+                            }
+                        }
+                    }
+
                     //sorts child elements
                     if (options.lexer_options.markup.tag_sort === true && data.types[parse.count] === "end" && data.types[parse.count - 1] !== "start" && tname !== "/script" && tname !== "/style" && tname !== "/cfscript") {
                         let bb:number          = 0,

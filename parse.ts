@@ -582,7 +582,7 @@
                         return;
                     }
                     do {
-                        if (data.begin[a] === begin || (data.begin[data.begin[a]] === begin && data.types[a].indexOf("attribute") > -1)) {
+                        if (data.begin[a] === begin || (data.begin[data.begin[a]] === begin && data.types[a].indexOf("attribute") > -1 && data.types[a].indexOf("attribute_end") < 0)) {
                             data.ender[a] = parse.count;
                         } else {
                             a = data.begin[a];

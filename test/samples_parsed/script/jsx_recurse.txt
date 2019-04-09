@@ -3,11 +3,11 @@
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"x","types":"reference"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"=","types":"operator"},
 {"begin":-1,"ender":10,"lexer":"markup","lines":1,"stack":"global","token":"<Comp>","types":"start"},
-{"begin":3,"ender":10,"lexer":"markup","lines":2,"stack":"Comp","token":"par={","types":"jsx_attribute_start"},
+{"begin":3,"ender":8,"lexer":"markup","lines":2,"stack":"Comp","token":"par={","types":"jsx_attribute_start"},
 {"begin":4,"ender":7,"lexer":"markup","lines":0,"stack":"jsx_attribute","token":"<SubComp>","types":"start"},
 {"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"SubComp","token":"aasdfasdf","types":"content"},
 {"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"SubComp","token":"</SubComp>","types":"end"},
-{"begin":4,"ender":10,"lexer":"markup","lines":0,"stack":"jsx_attribute","token":"}","types":"jsx_attribute_end"},
+{"begin":4,"ender":8,"lexer":"markup","lines":0,"stack":"jsx_attribute","token":"}","types":"jsx_attribute_end"},
 {"begin":3,"ender":10,"lexer":"markup","lines":2,"stack":"Comp","token":"XXX","types":"content"},
 {"begin":3,"ender":10,"lexer":"markup","lines":0,"stack":"Comp","token":"</Comp>","types":"end"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"x;","types":"separator"}
