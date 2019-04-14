@@ -19,7 +19,8 @@
                 : width / 3,
             content:HTMLElement = document.getElementById("content"),
             resize = function website_resize():void {
-                let styletext:string = style.innerHTML;
+                let styletext:string = style.innerHTML,
+                    wscale:number = ((window.innerWidth / 10) - 100) / 12.5;
                 height = (window.innerHeight / 10);
                 width = (window.innerWidth / 10);
                 if (content.clientHeight / 10 < height - 6.1) {
@@ -27,8 +28,10 @@
                 }
                 svg_left.style.width = `${(width - 100) / 2}em`;
                 svg_left.style.height = `${height}em`;
+                svg_left.style.backgroundPositionX = `-${wscale}em`;
                 svg_right.style.width = `${(width - 100) / 2}em`;
                 svg_right.style.height = `${height}em`;
+                svg_right.style.backgroundPositionX = `-${wscale}em`;
                 screen.style.height = `${height}em`;
                 screen.style.width = `${width}em`;
                 blob.style.height = `${height - size}em`;
