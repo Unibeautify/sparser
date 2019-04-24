@@ -1,0 +1,7 @@
+[
+{"begin":-1,"ender":4,"lexer":"markup","lines":0,"stack":"global","token":"<a>","types":"start"},
+{"begin":0,"ender":3,"lexer":"markup","lines":2,"stack":"a","token":"{%- comment -%}","types":"template_start"},
+{"begin":1,"ender":3,"lexer":"markup","lines":0,"stack":"comment","token":"\n           Comment","types":"content"},
+{"begin":1,"ender":3,"lexer":"markup","lines":2,"stack":"comment","token":"{%- endcomment -%}","types":"template_end"},
+{"begin":0,"ender":4,"lexer":"markup","lines":2,"stack":"a","token":"</a>","types":"end"}
+]

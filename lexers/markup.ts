@@ -1453,7 +1453,7 @@
                     }
 
                     //a quick hack to inject records for a type of template comments
-                    if (tname === "comment" && element.slice(0, 2) === "{%") {
+                    if (tname === "comment" && element.slice(0, 2) === "{%" && element.charAt(2) !== "-") {
                         element      = element
                             .replace(/^(\{%\s*comment\s*%\}\s*)/, "")
                             .replace(/(\s*\{%\s*endcomment\s*%\})$/, "");
@@ -2672,7 +2672,11 @@
 
             do {
                 if ((/\s/).test(b[a]) === true) {
-                    a = parse.spacer({array: b, end: c, index: a});
+                    if (data.types[parse.count] === "template_start" && parse.structure[parse.structure.length - 1][0] === "comment") {
+                        content();
+                    } else {
+                        a = parse.spacer({array: b, end: c, index: a});
+                    }
                 } else if (ext) {
                     content();
                 } else if (b[a] === "<") {

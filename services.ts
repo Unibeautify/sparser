@@ -3427,8 +3427,8 @@ interface directoryList extends Array<directoryItem> {
                     output:any,
                     filecount:number = 0,
                     currentlex:string = "",
-                    empty:number = 0,
-                    missing:number = 0;
+                    empty:[number, number] = [0, 0],
+                    missing:[number, number] = [0, 0];
                 const lexer     = function node_apps_validation_compare_lexer():void {
                         const lex:string = files.code[a][0].slice(0, files.code[a][0].indexOf(sep));
                         console.log("");
@@ -3437,21 +3437,40 @@ interface directoryList extends Array<directoryItem> {
                     },
                     completeText = function node_apps_validation_compare_completeText():void {
                         console.log("");
-                        if (missing < 1 && empty < 1) {
+                        if (missing[0] < 1 && missing[1] < 1 && empty[0] < 1 && empty[1] < 1) {
                             console.log(`${text.green}Test units evaluated without failure!${text.none}`);
                         } else {
-                            let pe:string = (empty > 1)
-                                    ? "s are"
-                                    : " is",
-                                pm:string = (missing > 1)
+                            let pe:string = "",
+                                pa:string = "";
+                            if (missing[0] > 0) {
+                                pe = (missing[0] > 1)
                                     ? "s"
                                     : "";
-                            if (missing < 1) {
-                                console.log(`${text.green}Test units passed, but ${text.angry + empty} file${pe} empty.${text.none}`);
-                            } else if (empty < 1) {
-                                console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm}.${text.none}`);
-                            } else {
-                                console.log(`${text.green}Test units passed, but ${text.angry}missing ${missing} file${pm} and ${empty} file${pe} empty.${text.none}`);
+                                console.log(`${text.green}Test units passed, but missing ${text.angry + missing[0]} code file${pe}.${text.none}`);
+                            }
+                            if (missing[1] > 0) {
+                                pe = (missing[1] > 1)
+                                    ? "s"
+                                    : "";
+                                console.log(`${text.green}Test units passed, but missing ${text.angry + missing[1]} parse file${pe}.${text.none}`);
+                            }
+                            if (empty[0] > 0) {
+                                pe = (empty[0] > 1)
+                                    ? "s"
+                                    : "";
+                                pa = (empty[0] > 1)
+                                    ? "are"
+                                    : "is";
+                                console.log(`${text.green}Test units passed, but ${text.angry + empty[0]} code file${pe} ${pa} empty.${text.none}`);
+                            }
+                            if (empty[1] > 0) {
+                                pe = (empty[1] > 1)
+                                    ? "s"
+                                    : "";
+                                pa = (empty[1] > 1)
+                                    ? "are"
+                                    : "is";
+                                console.log(`${text.green}Test units passed, but ${text.angry + empty[1]} parse file${pe} ${pa} empty.${text.none}`);
                             }
                         }
                         if (callback === undefined) {
@@ -3535,10 +3554,10 @@ interface directoryList extends Array<directoryItem> {
                         a   = a - 1;
                     } else if (files.code[a][0] === files.parsed[a][0]) {
                         if (files.parsed[a][1].replace(/^\s+$/, "") === "") {
-                            empty = empty + 1;
+                            empty[1] = empty[1] + 1;
                             console.log(`${text.angry}Parsed file is empty:${text.none} ${files.parsed[a][0]}`);
                         } else if (files.code[a][1].replace(/^\s+$/, "") === "") {
-                            empty = empty + 1;
+                            empty[0] = empty[0] + 1;
                             console.log(`${text.angry}Code file is empty:${text.none} ${files.code[a][0]}`);
                         } else {
                             options.source = files.code[a][1];
@@ -3569,11 +3588,11 @@ interface directoryList extends Array<directoryItem> {
                         }
                     } else {
                         if (files.code[a][0] < files.parsed[a][0]) {
-                            missing = missing + 1;
+                            missing[1] = missing[1] + 1;
                             console.log(`${text.yellow}Parsed samples directory is missing file:${text.none} ${files.code[a][0]}`);
                             files.code.splice(a, 1);
                         } else {
-                            missing = missing + 1;
+                            missing[0] = missing[0] + 1;
                             console.log(`${text.yellow}Code samples directory is missing file:${text.none} ${files.parsed[a][0]}`);
                             files.parsed.splice(a, 1);
                         }
