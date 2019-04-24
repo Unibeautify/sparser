@@ -2552,7 +2552,11 @@
 
                                 //regular content
                                 a = a - 1;
-                                ltoke = lex.join("").replace(/\s+$/, "");
+                                if (parse.structure[parse.structure.length - 1][0] === "comment") {
+                                    ltoke = lex.join("");
+                                } else {
+                                    ltoke = lex.join("").replace(/\s+$/, "");
+                                }
                                 liner = 0;
                                 record.token = ltoke;
                                 if (options.wrap > 0 && options.lexer_options.markup.preserve_text !== true) {
