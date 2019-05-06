@@ -4,10 +4,6 @@
     const sparser:sparser = global.sparser,
         markup = function lexer_markup(source:string):data {
             let a:number             = 0,
-                list:number          = 0,
-                litag:number         = 0,
-                dtlist:number        = 0,
-                dttag:number         = 0,
                 sgmlflag:number      = 0,
                 cftransaction:boolean = false,
                 ext:boolean           = false;
@@ -21,6 +17,23 @@
                 options:any            = sparser.options,
                 b:string[]             = source.split(""),
                 c:number             = b.length,
+                htmlblocks:{} = {
+                    body    : "block",
+                    colgroup: "block",
+                    dd      : "block",
+                    dt      : "block",
+                    head    : "block",
+                    html    : "block",
+                    li      : "block",
+                    option  : "block",
+                    p       : "block",
+                    tbody   : "block",
+                    td      : "block",
+                    tfoot   : "block",
+                    th      : "block",
+                    thead   : "block",
+                    tr      : "block",
+                },
                 recordPush = function lexer_markup_recordPush(target, record, structure):void {
                     if (target === data) {
                         if (record.types.indexOf("end") > -1) {
@@ -58,6 +71,29 @@
                         return "xml";
                     }
                     return name;
+                },
+
+                // A fix for HTML missing end tags
+                fixHtmlEnd = function lexer_markup_fixHtmlEnd(element:string, end:boolean):void {
+                    const tname:string = tagName(element),
+                        record:record          = {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
+                            lexer: "markup",
+                            lines: (data.lines[parse.count] > 0) ? 1 : 0,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: `</${parse.structure[parse.structure.length - 1][0]}>`,
+                            types: "end"
+                        };
+                    recordPush(data, record, "");
+                    if (htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" && ((end === true && parse.structure.length > 1) || (end === false && `/${parse.structure[parse.structure.length - 1][0]}` !== tname))) {
+                        do {
+                            record.begin = parse.structure[parse.structure.length - 1][1];
+                            record.stack = parse.structure[parse.structure.length - 1][0];
+                            record.token = `</${parse.structure[parse.structure.length - 1][0]}>`;
+                            recordPush(data, record, "");
+                        } while (htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" && ((end === true && parse.structure.length > 1) || (end === false && `/${parse.structure[parse.structure.length - 1][0]}` !== tname)));
+                    }
                 },
 
                 //parses tags, attributes, and template elements
@@ -1507,8 +1543,10 @@
                                 eventsource: "singleton",
                                 frame      : "singleton",
                                 hr         : "singleton",
+                                image      : "singleton",
                                 img        : "singleton",
                                 input      : "singleton",
+                                isindex    : "singleton",
                                 keygen     : "singleton",
                                 link       : "singleton",
                                 meta       : "singleton",
@@ -1547,6 +1585,57 @@
                                     } while (aa > -1);
                                 }
                                 return false;
+                            },
+                            peertest = function lexer_markup_tag_cheat_peertest(name:string, item:string):boolean {
+                                if (htmlblocks[name] === undefined) {
+                                    return false;
+                                }
+                                if (name === item) {
+                                    return true;
+                                }
+                                if (name === "dd" && item === "dt") {
+                                    return true;
+                                }
+                                if (name === "dt" && item === "dd") {
+                                    return true;
+                                }
+                                if (name === "td" && item === "th") {
+                                    return true;
+                                }
+                                if (name === "th" && item === "td") {
+                                    return true;
+                                }
+                                if (name === "tbody" && (item === "tfoot" || item === "thead")) {
+                                    return true;
+                                }
+                                if (name === "tfoot" && (item === "tbody" || item === "thead")) {
+                                    return true;
+                                }
+                                if (name === "thead" && (item === "tbody" || item === "tfoot")) {
+                                    return true;
+                                }
+                                return false;
+                            },
+                            addHtmlEnd = function (count:number):void {
+                                record.lines                 = (data.lines[parse.count] > 0) ? 1 : 0;
+                                record.token                 = `</${parse.structure[parse.structure.length - 1][0]}>`;
+                                record.types                 = "end";
+                                recordPush(data, record, "");
+                                if (count > 0) {
+                                    do {
+                                        record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                        record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                        record.token                 = `</${parse.structure[parse.structure.length - 1][0]}>`;
+                                        recordPush(data, record, "");
+                                        count = count - 1;
+                                    } while (count > 0);
+                                }
+                                record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                record.lines                 = parse.linesSpace;
+                                record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                record.token                 = element;
+                                record.types                 = "end";
+                                data.lines[parse.count - 1] = 0;
                             };
 
                         //determine if the current end tag is actually part of an HTML singleton
@@ -1716,115 +1805,48 @@
                                 element = element.toLowerCase();
                             }
 
-                            //looks for HTML "li" tags that have no ending tag, which is valid in HTML
-                            if (tname === "li") {
-                                if (litag === list && (list !== 0 || (list === 0 && parse.count > -1 && data.types[parse.count].indexOf("template") < 0))) {
-                                    let d:number  = parse.count,
-                                        ee:number = 1;
-                                    if (d > -1) {
-                                        do {
-                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
-                                                ee = ee - 1;
-                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
-                                                ee = ee + 1;
-                                            }
-                                            if (ee === -1 && (tagName(data.token[d]) === "li" || (tagName(data.token[d + 1]) === "li" && (tagName(data.token[d]) === "ul" || tagName(data.token[d]) === "ol")))) {
-                                                record.lines                 = data.lines[parse.count];
-                                                record.token                 = "</li>";
-                                                record.types                 = "end";
-                                                recordPush(data, record, "");
-                                                record.begin                 = parse.structure[parse.structure.length - 1][1];
-                                                record.lines                 = parse.linesSpace;
-                                                record.stack                 = parse.structure[parse.structure.length - 1][0];
-                                                record.token                 = element;
-                                                record.types                 = ltype;
-                                                data.lines[parse.count - 1] = 0;
-                                                break;
-                                            }
-                                            if (ee < 0) {
-                                                break;
-                                            }
-                                            d = d - 1;
-                                        } while (d > -1);
-                                    }
-                                } else {
-                                    litag = litag + 1;
-                                }
-                            } else if (tname === "/li" && litag === list) {
-                                litag = litag - 1;
-                            } else if (tname === "ul" || tname === "ol") {
-                                list = list + 1;
-                            } else if (tname === "/ul" || tname === "/ol") {
-                                if (litag === list) {
-                                    record.lines                 = data.lines[parse.count];
-                                    record.token                 = "</li>";
-                                    record.types                 = "end";
-                                    recordPush(data, record, "");
-                                    record.begin                 = parse.structure[parse.structure.length - 1][1];
-                                    record.lines                 = parse.linesSpace;
-                                    record.stack                 = parse.structure[parse.structure.length - 1][0];
-                                    record.token                 = element;
-                                    record.types                 = "end";
-                                    data.lines[parse.count - 1] = 0;
-                                    litag = litag - 1;
-                                }
-                                list = list - 1;
-                            } else if (tname === "dt") {
-                                //looks for HTML "li" tags that have no ending tag, which is valid in HTML
-                                if (dttag === dtlist && (dtlist !== 0 || (dtlist === 0 && parse.count > -1 && data.types[parse.count].indexOf("template") < 0))) {
-                                    let d:number  = parse.count,
-                                        ee:number = 1;
-                                    if (d > -1) {
-                                        do {
-                                            if (data.types[d] === "start" || data.types[d] === "template_start") {
-                                                ee = ee - 1;
-                                            } else if (data.types[d] === "end" || data.types[d] === "template_end") {
-                                                ee = ee + 1;
-                                            }
-                                            if (ee === -1 && (tagName(data.token[d]) === "dt" || (tagName(data.token[d + 1]) === "dt" && tagName(data.token[d]) === "dl"))) {
-                                                record.lines                 = data.lines[parse.count];
-                                                record.token                 = "</dt>";
-                                                record.types                 = "end";
-                                                recordPush(data, record, "");
-                                                record.begin                 = parse.structure[parse.structure.length - 1][1];
-                                                record.lines                 = parse.linesSpace;
-                                                record.stack                 = parse.structure[parse.structure.length - 1][0];
-                                                record.token                 = element;
-                                                record.types                 = ltype;
-                                                data.lines[parse.count - 1] = 0;
-                                                break;
-                                            }
-                                            if (ee < 0) {
-                                                break;
-                                            }
-                                            d = d - 1;
-                                        } while (d > -1);
-                                    }
-                                } else {
-                                    dttag = dttag + 1;
-                                }
-                            } else if (tname === "/dt" && dttag === dtlist) {
-                                dttag = dttag - 1;
-                            } else if (tname === "dl") {
-                                dtlist = dtlist + 1;
-                            } else if (tname === "/dl") {
-                                if (dttag === dtlist) {
-                                    record.lines                 = data.lines[parse.count];
-                                    record.token                 = "</dt>";
-                                    record.types                 = "end";
-                                    recordPush(data, record, "");
-                                    record.begin                 = parse.structure[parse.structure.length - 1][1];
-                                    record.lines                 = parse.linesSpace;
-                                    record.stack                 = parse.structure[parse.structure.length - 1][0];
-                                    record.token                 = element;
-                                    record.types                 = "end";
-                                    data.lines[parse.count - 1] = 0;
-                                    dttag = dttag - 1;
-                                }
-                                dtlist = dtlist - 1;
+                            if (htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" && peertest(tname.slice(1), parse.structure[parse.structure.length - 2][0]) === true) {
+                                // looks for HTML tags missing an ending pair when encountering an ending tag for a parent node
+                                addHtmlEnd(0);
+                            } else if (
+                                parse.structure.length > 3 &&
+                                htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" &&
+                                htmlblocks[parse.structure[parse.structure.length - 2][0]] === "block" &&
+                                htmlblocks[parse.structure[parse.structure.length - 3][0]] === "block" &&
+                                peertest(tname, parse.structure[parse.structure.length - 4][0]) === true
+                            ) {
+                                // looks for consecutive missing end tags
+                                addHtmlEnd(3);
+                            } else if (
+                                parse.structure.length > 2 &&
+                                htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" &&
+                                htmlblocks[parse.structure[parse.structure.length - 2][0]] === "block" &&
+                                peertest(tname, parse.structure[parse.structure.length - 3][0]) === true
+                            ) {
+                                // looks for consecutive missing end tags
+                                addHtmlEnd(2);
+                            } else if (
+                                parse.structure.length > 1 &&
+                                htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" &&
+                                peertest(tname, parse.structure[parse.structure.length - 2][0]) === true
+                            ) {
+                                // looks for consecutive missing end tags
+                                addHtmlEnd(1);
+                            } else if (peertest(tname, parse.structure[parse.structure.length - 1][0]) === true) {
+                                // certain tags cannot contain other certain tags if such tags are peers
+                                addHtmlEnd(0);
+                            } else if (tname.charAt(0) === "/" && htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block" && parse.structure[parse.structure.length - 1][0] !== tname.slice(1)) {
+                                // looks for consecutive missing end tags if the current element is an end tag
+                                fixHtmlEnd(element, false);
+                                record.begin                 = parse.structure[parse.structure.length - 1][1];
+                                record.lines                 = parse.linesSpace;
+                                record.stack                 = parse.structure[parse.structure.length - 1][0];
+                                record.token                 = element;
+                                record.types                 = "end";
+                                data.lines[parse.count - 1] = 0;
                             }
 
-                            //generalized corrections for the handling of singleton tags
+                            // generalized corrections for the handling of singleton tags
                             if (data.types[parse.count] === "end" && htmlsings[tname.slice(1)] === "singleton" && element.toLowerCase().indexOf("/cftransaction") !== 1) {
                                 return fixsingleton();
                             }
@@ -2706,6 +2728,9 @@
                 }
                 a = a + 1;
             } while (a < c);
+            if (data.token[parse.count].charAt(0) !== "/" && htmlblocks[parse.structure[parse.structure.length - 1][0]] === "block") {
+                fixHtmlEnd(data.token[parse.count], true);
+            }
             if (count.end !== count.start && sparser.parseerror === "") {
                 if (count.end > count.start) {
                     let x:number = count.end - count.start,

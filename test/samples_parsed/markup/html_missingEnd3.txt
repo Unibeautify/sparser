@@ -1,0 +1,9 @@
+[
+{"begin":-1,"ender":6,"lexer":"markup","lines":0,"stack":"global","token":"<html>","types":"start"},
+{"begin":0,"ender":5,"lexer":"markup","lines":2,"stack":"html","token":"<body>","types":"start"},
+{"begin":1,"ender":4,"lexer":"markup","lines":2,"stack":"body","token":"<p>","types":"start"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"p","token":"asdf","types":"content"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"p","token":"</p>","types":"end"},
+{"begin":1,"ender":5,"lexer":"markup","lines":0,"stack":"body","token":"</body>","types":"end"},
+{"begin":0,"ender":6,"lexer":"markup","lines":2,"stack":"html","token":"</html>","types":"end"}
+]

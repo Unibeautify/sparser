@@ -10,13 +10,9 @@
         const blob:HTMLElement = document.getElementById("blobs"),
             screen:HTMLElement = blob.getElementsByTagName("div")[0],
             style:HTMLElement = document.createElement("style"),
-            chrome:boolean = (navigator.userAgent.indexOf("Chrome") > 0),
-            blobs:number = (chrome === true)
-                ? 4
-                : 5,
-            size:number = (chrome === true)
-                ? width / 4
-                : width / 3,
+            blobs:number = 8,
+            ff:boolean = (navigator.userAgent.indexOf("Gecko/") > 0),
+            size:number = width / 4,
             content:HTMLElement = document.getElementById("content"),
             resize = function website_resize():void {
                 let styletext:string = style.innerHTML,
@@ -65,8 +61,13 @@
                 div.style.width = `${size}em`;
                 inner.style.height = `${size}em`;
                 inner.style.width = `${size}em`;
-                inner.style.filter = `blur(${size / 5}em)`;
-                if (chrome === true) {
+                inner.style.opacity = (ff === true)
+                    ? "0.1"
+                    : "0.25";
+                inner.style.filter = (ff === true)
+                    ? `blur(${size}em)`
+                    : `blur(${size / 2}em)`;
+                /*if (chrome === true) {
                     if (a % 2 === 1) {
                         style.innerHTML = `${style.innerHTML} @keyframes moving${a}{from{left:0}to{left:${width - size}em}}@keyframes inner${a}{0%,100%{bottom:0;animation-timing-function:ease-out}50%{bottom:${height - size}em;animation-timing-function:ease-in}}`;
                     } else {
@@ -80,7 +81,7 @@
                     inner.style.animationDuration = `${randb * 4}s`;
                     inner.style.animationName = `inner${a}`;
                     inner.style.animationIterationCount = "infinite";
-                }
+                }*/
                 blob.appendChild(div);
             };
         style.setAttribute("type", "text/css");

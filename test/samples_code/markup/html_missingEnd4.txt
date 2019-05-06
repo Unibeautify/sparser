@@ -1,0 +1,20 @@
+<html>
+    <body>
+        <table>
+            <thead>
+                <tr>
+                    <th>header 1
+                    <th>header 2
+            <tbody>
+                <tr>
+                    <th>header 3
+                    <td>data 1
+                <tr>
+                    <td>data 2
+                    <th>header 4
+            <tfoot>
+                <tr>
+                    <td>footer 1
+                    <td>footer 2
+        </table>
+</html>

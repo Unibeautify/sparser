@@ -3474,9 +3474,9 @@ interface directoryList extends Array<directoryItem> {
                             }
                         }
                         if (callback === undefined) {
-                            console.log(`${text.green}Lint complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
+                            console.log(`${text.green}Validation complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
                         } else {
-                            callback(`${text.green}Lint complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
+                            callback(`${text.green}Validation complete for ${text.cyan + text.bold + filecount + text.none + text.green} files!${text.none}`);
                         }
                     },
                     comparePass = function node_apps_validation_compare_comparePass():void {

@@ -1,0 +1,12 @@
+[
+{"begin":-1,"ender":9,"lexer":"markup","lines":0,"stack":"global","token":"<html>","types":"start"},
+{"begin":0,"ender":8,"lexer":"markup","lines":2,"stack":"html","token":"<body>","types":"start"},
+{"begin":1,"ender":4,"lexer":"markup","lines":2,"stack":"body","token":"<p>","types":"start"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"p","token":"asdf","types":"content"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"p","token":"</p>","types":"end"},
+{"begin":1,"ender":7,"lexer":"markup","lines":0,"stack":"body","token":"<p>","types":"start"},
+{"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"p","token":"qwer","types":"content"},
+{"begin":5,"ender":7,"lexer":"markup","lines":0,"stack":"p","token":"</p>","types":"end"},
+{"begin":1,"ender":8,"lexer":"markup","lines":0,"stack":"body","token":"</body>","types":"end"},
+{"begin":0,"ender":9,"lexer":"markup","lines":2,"stack":"html","token":"</html>","types":"end"}
+]
