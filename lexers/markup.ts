@@ -1605,13 +1605,19 @@
                                 if (name === "th" && item === "td") {
                                     return true;
                                 }
-                                if (name === "tbody" && (item === "tfoot" || item === "thead")) {
+                                if (name === "colgroup" && (item === "tbody" || item === "tfoot" || item === "thead" || item === "tr")) {
                                     return true;
                                 }
-                                if (name === "tfoot" && (item === "tbody" || item === "thead")) {
+                                if (name === "tbody" && (item === "colgroup" || item === "tfoot" || item === "thead")) {
                                     return true;
                                 }
-                                if (name === "thead" && (item === "tbody" || item === "tfoot")) {
+                                if (name === "tfoot" && (item === "colgroup" || item === "tbody" || item === "thead")) {
+                                    return true;
+                                }
+                                if (name === "thead" && (item === "colgroup" || item === "tbody" || item === "tfoot")) {
+                                    return true;
+                                }
+                                if (name === "tr" && item === "colgroup") {
                                     return true;
                                 }
                                 return false;
