@@ -1,0 +1,15 @@
+# Title
+
+## Correct Output
+
+*[Italic link](../_link_including_underscores_.md)*
+**[Strong link](../_link_including_underscores_.md)**
+
+---
+
+## Incorrect Output
+
+_[Italic link](../_link_including_underscores_.md)_
+__[Strong link](../_link_including_underscores_.md)__
+
+---

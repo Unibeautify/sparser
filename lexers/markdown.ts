@@ -40,7 +40,7 @@
                         struct:string = tag.replace("<", "").replace(/(\/?>)$/, "");
                     
                     // line containing strong, em, or inline code
-                    if (item.indexOf("*") > -1 || item.indexOf("`") > -1 || (item.indexOf("[") > -1 && item.indexOf("](") > -1)) {
+                    if (item.indexOf("*") > -1 || item.indexOf("_") > -1 || item.indexOf("`") > -1 || (item.indexOf("[") > -1 && item.indexOf("](") > -1)) {
                         const esctest = function lexer_markdown_text_esctest():boolean {
                                 let bb = aa - 1;
                                 if (str[bb] === "\\") {
@@ -51,6 +51,15 @@
                                         return true;
                                     }
                                     return false;
+                                }
+                                return false;
+                            },
+                            underscore = function lexer_markdown_text_underscore():boolean {
+                                const numb:number = (str[aa + 1] === "_")
+                                    ? 2
+                                    : 1;
+                                if ((/\s/).test(str[aa - 1]) === true || aa === 0 || aa === bb - numb || (/\s/).test(str[aa + numb]) === true) {
+                                    return true;
                                 }
                                 return false;
                             },
@@ -189,7 +198,8 @@
                                         square = square - 1;
                                         if (square === 0) {
                                             content = str.slice(aa + 2, cc).join("").replace(/\s+/g, " ").replace(/^\s/, "").replace(/\s$/, "");
-                                            aa = cc + 1;
+                                            aa = cc;
+                                            str[cc] = "";
                                             itemx = [];
                                             cc = (parse.structure[parse.structure.length - 1][0] === "a")
                                                 ? parse.structure[parse.structure.length - 1][1] + 1
@@ -217,7 +227,7 @@
                                     }, "");
                                 }
                             } else if (
-                                (str[aa] === "*" || str[aa] === "~") &&
+                                (str[aa] === "*" || (str[aa] === "_" && underscore() === true) || str[aa] === "~") &&
                                 esctest() === false &&
                                 stack[stack.length - 1] !== "`" &&
                                 (
@@ -235,10 +245,15 @@
                                         str[aa] = "";
                                         aa = aa + 1;
                                     } while (str[aa] === "~");
-                                } else if (str[aa + 1] === "*") {
+                                } else if (str[aa] === "*" && str[aa + 1] === "*") {
                                     quote = "**";
                                     str[aa + 1] = "";
-                                } else {
+                                } else if (str[aa] === "_" && str[aa + 1] === "_") {
+                                    quote = "__";
+                                    str[aa + 1] = "";
+                                } else if (str[aa] === "_") {
+                                    quote = "_";
+                                } else if (str[aa] !== "_") {
                                     quote = "*";
                                 }
                                 str[aa] = "";
@@ -259,7 +274,7 @@
                                     itemx = [];
                                     if (quote === "~") {
                                         midtag = "</strike>";
-                                    } else if (quote === "**") {
+                                    } else if (quote === "**" || quote === "__") {
                                         midtag = "</strong>";
                                     }
                                     stack.pop();
@@ -291,7 +306,7 @@
                                     itemx = [];
                                     if (quote === "~") {
                                         midtag = "strike";
-                                    } else if (quote === "**") {
+                                    } else if (quote === "**" || quote === "__") {
                                         midtag = "strong";
                                     }
                                     stack.push(quote);
@@ -301,7 +316,7 @@
                                         lexer: "markdown",
                                         lines: 1,
                                         stack: parse.structure[parse.structure.length - 1][0],
-                                        token: "<" + midtag + ">",
+                                        token: `<${midtag}>`,
                                         types: "start"
                                     }, midtag);
                                 }
@@ -670,9 +685,9 @@
                         fixquote = function lexer_markdown_parabuild_fixquote() {
                             let key:string = "",
                                 x:number = parse.count;
-                            if (quote === "*") {
+                            if (quote === "*" || quote === "_") {
                                 key = "<em>";
-                            } else if (quote === "**") {
+                            } else if (quote === "**" || quote === "__") {
                                 key = "<strong>";
                             } else if (quote === "~") {
                                 key = "<strike>";
@@ -686,7 +701,7 @@
                                 } while (x > 0 && data.token[x] !== key);
                             }
                             if (data.types[x + 1] === "content") {
-                                data.token[x + 1] = quote + " " + data.token[x + 1];
+                                data.token[x + 1] = `${quote} ${data.token[x + 1]}`;
                                 parse.splice({
                                     data: data,
                                     howmany: 1,

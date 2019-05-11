@@ -1,0 +1,12 @@
+# Title
+
+## Correct Output
+
+*[Italic link](../_link_including_underscores_.md)*
+**[Strong link](../_link_including_underscores_.md)**
+
+_[Italic link](../_link_including_underscores_.md)_
+__[Strong link](../_link_including_underscores_.md)__
+
+* **object_sort** - *function* - Provides object sorting for the *style* and *script* lexers if their *object_sort* options are set to true.  The sort is multidimensional.  The *markup* lexer uses different internal functionality for its *tag_sort* option.  This method takes only 1 argument of type *data*.
+* **pop** - *function* - Similar to JavaScript's `Array.prototype.pop` method, but works on *data* typed data structures and returns the last record.  This method takes only 1 argument of type *data*.
