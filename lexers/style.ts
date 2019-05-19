@@ -500,7 +500,7 @@
                         .replace(/^\s/, "")
                         .replace(/\s$/, "");
                     if (funk === true) {
-                        ltoke = ltoke.replace(/\s+\(/, "(");
+                        ltoke = ltoke.replace(/\s+\(/g, "(").replace(/\s+\)/g, ")").replace(/,\(/g, ", (");
                     }
                     if (parse.count > -1 && data.token[parse.count].indexOf("extend(") === 0) {
                         ltype = "pseudo";

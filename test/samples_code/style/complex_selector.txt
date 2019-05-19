@@ -1,0 +1,34 @@
+@include responsive-properties(
+    (
+        (
+            padding-left,
+            (
+                v: $spacer-x,
+                v-md-up: 0
+            )
+        ),
+        (
+            padding-right,
+            (
+                v: $spacer-x,
+                v-md-up: 0
+            )
+        ),
+        (
+            margin-left,
+            (
+                v: ($grid-gutter-width / -1),
+                v-sm-up: ($grid-gutter-width / -2),
+                v-md-up: 0
+            )
+        ),
+        (
+            margin-right,
+            (
+                v: ($grid-gutter-width / -1),
+                v-sm-up: ($grid-gutter-width / -2),
+                v-md-up: 0
+            )
+        ),
+    )
+);
