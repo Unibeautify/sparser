@@ -117,7 +117,14 @@
                             return;
                         }
                     }
-                    if (record.types === "comment" || clist === "method" || clist === "paren" || clist === "expression" || clist === "array" || clist === "object" || (clist === "switch" && record.stack !== "method" && data.token[data.begin[parse.count]] === "(")) {
+                    if (
+                        record.types === "comment" ||
+                        clist === "method" ||
+                        clist === "paren" ||
+                        clist === "expression" ||
+                        clist === "array" ||
+                        clist === "object" ||
+                        (clist === "switch" && record.stack !== "method" && data.token[data.begin[parse.count]] === "(" && data.token[data.begin[parse.count] - 1] !== "return" && data.types[data.begin[parse.count] - 1] !== "operator")) {
                         return;
                     }
                     if (data.stack[parse.count] === "expression" && (data.token[data.begin[parse.count] - 1] !== "while" || (data.token[data.begin[parse.count] - 1] === "while" && data.stack[data.begin[parse.count] - 2] !== "do"))) {

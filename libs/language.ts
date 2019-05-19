@@ -326,6 +326,9 @@
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
                 return output("html");
             }
+            if ((/^\s*@((charset)|(import)|(include)|(keyframes)|(media)|(namespace)|(page))/).test(sample) === true) {
+                return cssA();
+            }
             if (
                 finalstatic === false &&
                 (/=(>|=|-|\+|\*)/).test(sample) === false &&

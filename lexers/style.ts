@@ -365,6 +365,7 @@
                             ? "none"
                             : options.lexer_options.style.quote_convert,
                         spacestart = function lexer_style_build_spacestart():void {
+                            out.push(b[aa]);
                             if ((/\s/).test(b[aa + 1]) === true) {
                                 do {
                                     aa = aa + 1;
@@ -405,6 +406,7 @@
                                 } else if (qc === "single" && b[aa] === "'") {
                                     b[aa] = "\\'";
                                 }
+                                out.push(b[aa]);
                             } else if (b[aa - 1] !== "\\" || esctest(aa - 1) === false) {
                                 if (b[aa] === "(") {
                                     if (funk === null) {
@@ -424,10 +426,14 @@
                                     block.push("}");
                                     spacestart();
                                 } else if (b[aa] === block[block.length - 1]) {
+                                    out.push(b[aa]);
                                     block.pop();
+                                } else {
+                                    out.push(b[aa]);
                                 }
+                            } else {
+                                out.push(b[aa]);
                             }
-                            out.push(b[aa]);
                             if (parse.structure[parse.structure.length - 1][0] === "map" && block.length === 0 && (
                                 b[aa + 1] === "," || b[aa + 1] === ")"
                             )) {
