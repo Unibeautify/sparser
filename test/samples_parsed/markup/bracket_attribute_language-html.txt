@@ -1,0 +1,7 @@
+[
+{"begin":-1,"ender":4,"lexer":"markup","lines":0,"stack":"global","token":"<html>","types":"start"},
+{"begin":0,"ender":4,"lexer":"markup","lines":2,"stack":"html","token":"<form/>","types":"singleton"},
+{"begin":1,"ender":4,"lexer":"markup","lines":1,"stack":"form","token":"id=\"asdf\"","types":"attribute"},
+{"begin":1,"ender":4,"lexer":"markup","lines":1,"stack":"form","token":"[formGroup]=\"something\"","types":"attribute"},
+{"begin":0,"ender":4,"lexer":"markup","lines":3,"stack":"html","token":"</html>","types":"end"}
+]

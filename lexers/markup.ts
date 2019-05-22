@@ -528,7 +528,7 @@
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
-                                        if (options.language === "html" && attstore[ind][0].charAt(0) !== "#" && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
+                                        if (options.language === "html" && "[{(".indexOf(attstore[ind][0].charAt(0)) < 0 && attstore[ind][0].charAt(0) !== "#" && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
                                             record.token = attstore[ind][0].toLowerCase();
                                         } else if (options.language === "xml" || options.language === "coldfusion") {
                                             if (options.lexer_options.markup.quote_convert === "single") {
@@ -547,7 +547,7 @@
                                             slice = "\"" + slice + "\"";
                                         }
                                         name = attstore[ind][0].slice(0, eq);
-                                        if (options.language === "html" && cft === undefined && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
+                                        if (options.language === "html" && "[{(".indexOf(name.charAt(0)) < 0 && cft === undefined && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
                                             name = name.toLowerCase();
                                         }
                                         if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
