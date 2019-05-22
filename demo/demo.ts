@@ -200,7 +200,11 @@
             }
             if (langVal === "" || langVal === "auto") {
                 if (editor !== undefined && (acetest === true || lang[0] !== "")) {
-                    editor.getSession().setMode(`ace/mode/${lang[0]}`);
+                    if (lang[0] === "vapor" && (/^\s*#/).test(options.source) === false) {
+                        editor.getSession().setMode(`ace/mode/html`);
+                    } else {
+                        editor.getSession().setMode(`ace/mode/${lang[0]}`);
+                    }
                 }
                 document.getElementById("language").getElementsByTagName("span")[0].innerHTML = lang[2];
                 options.language = lang[0];
@@ -574,7 +578,11 @@
                 ? sparser.libs.language.auto(options.source, "javascript")
                 : [options.language, options.lexer, ""];
             editor.setValue(options.source);
-            editor.getSession().setMode(`ace/mode/${lang[0]}`);
+            if (lang[0] === "vapor" && (/^\s*#/).test(options.source) === false) {
+                editor.getSession().setMode(`ace/mode/html`);
+            } else {
+                editor.getSession().setMode(`ace/mode/${lang[0]}`);
+            }
             editor.clearSelection();
             height.ace();
         }

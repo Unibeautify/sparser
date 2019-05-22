@@ -32,6 +32,7 @@ Language support is organized by respective lexer file.  This list is used for s
    * [ThymeLeaf](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
    * [Underscore Templates (TPL)](https://underscorejs.org/#template)
    * [Twig](https://twig.symfony.com/)
+   * [Vapor Leaf](https://docs.vapor.codes/3.0/leaf/overview/)
    * [Vash](https://github.com/kirbysayshi/vash)
    * [Volt](https://phalcon-php-framework-documentation.readthedocs.io/en/latest/reference/volt.html)
    * [XML](https://www.w3.org/TR/REC-xml/)

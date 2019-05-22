@@ -32,6 +32,7 @@
                 tss       : "script",
                 twig      : "markup",
                 typescript: "script",
+                vapor     : "markup",
                 velocity  : "markup",
                 xhtml     : "markup",
                 xml       : "markup"
@@ -72,6 +73,7 @@
                 tss       : "Titanium Stylesheets",
                 twig      : "HTML TWIG Template",
                 typescript: "TypeScript",
+                vapor     : "Vapor Leaf",
                 velocity  : "Apache Velocity",
                 volt      : "Volt Template"
             };
@@ -258,6 +260,9 @@
                         if ((/\{(#|\?|\^|@|<|\+|~)/).test(sample) === true && (/\{\//).test(sample) === true && sample.indexOf("<![CDATA[") < 0) {
                             return output("dustjs");
                         }
+                        if ((/#((if)|(for)|(set))?\(/).test(sample) === true) {
+                            return output("vapor");
+                        }
                         return output("html");
                     };
                     if ((/<cfset\s/i).test(sample) === true || (/<cfif\s/i).test(sample) === true) {
@@ -312,6 +317,9 @@
                     if ((/<jsp:include\s/).test(sample) === true || (/<c:((set)|(if))\s/).test(sample) === true) {
                         return output("jsp");
                     }
+                    if ((/#((if)|(for)|(set))?\(/).test(sample) === true) {
+                        return output("vapor");
+                    }
                     return output("xml");
                 };
             if (sample === null || sample.replace(/\s+/g, "") === "") {
@@ -324,7 +332,7 @@
                 return output("markdown");
             }
             if ((/^(\s*<!DOCTYPE\s+html>)/i).test(sample) === true) {
-                return output("html");
+                return markup();
             }
             if ((/^\s*@((charset)|(import)|(include)|(keyframes)|(media)|(namespace)|(page))/).test(sample) === true) {
                 return cssA();

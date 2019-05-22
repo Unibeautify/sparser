@@ -5,7 +5,7 @@
 ## License
 Creative Commons Zero v1.0 Universal (cc0-1.0)
 
-## Version 1.1.11
+## Version 1.1.12
 Play around with this application [in your browser](https://sparser/demo/).
 
 ## Contents
@@ -63,6 +63,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [ThymeLeaf](https://www.thymeleaf.org/doc/tutorials/3.0/usingthymeleaf.html)
    - [Underscore Templates (TPL)](https://underscorejs.org/#template)
    - [Twig](https://twig.symfony.com/)
+   - [Vapor Leaf](https://docs.vapor.codes/3.0/leaf/overview/)
    - [Vash](https://github.com/kirbysayshi/vash)
    - [Volt](https://phalcon-php-framework-documentation.readthedocs.io/en/latest/reference/volt.html)
    - [XML](https://www.w3.org/TR/REC-xml/)
@@ -82,7 +83,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [PostCSS](https://postcss.org/)
    - [SCSS (Sass)](https://sass-lang.com/)
 
-*42 total languages.*
+*43 total languages.*
 
 ## Build
 ### Dependencies

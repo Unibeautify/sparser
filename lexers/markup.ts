@@ -96,6 +96,84 @@
                     }
                 },
 
+                // A fix for Vapor Leaf end structure parsing
+                vaporEnd = function lexer_markup_vaporEnd():void {
+                    const liner:number = parse.linesSpace,
+                        rec:record = {
+                            begin: parse.structure[parse.structure.length - 1][1],
+                            ender: -1,
+                            lexer: "markup",
+                            lines: liner,
+                            stack: parse.structure[parse.structure.length - 1][0],
+                            token: "}",
+                            types: "template_end"
+                        };
+                    let aa:number = a + 1;
+                    if ((/\s/).test(b[aa]) === true) {
+                        aa = parse.spacer({array: b, end: c, index: aa}) + 1;
+                    }
+                    if (b[aa] === "e" && b[aa + 1] === "l" && b[aa + 2] === "s" && b[aa + 3] === "e") {
+                        if (b[aa + 4] === "{") {
+                            rec.token = "} else {";
+                            rec.types = "template_else";
+                            recordPush(data, rec, "");
+                            a = aa;
+                            return;
+                        }
+                        if ((/\s/).test(b[aa + 4]) === true) {
+                            aa = parse.spacer({array: b, end: c, index: aa + 4}) + 1;
+                            if (b[aa] === "{") {
+                                rec.token = "} else {";
+                                rec.types = "template_else";
+                                recordPush(data, rec, "");
+                                a = aa;
+                                return;
+                            }
+                            if (b[aa] === "i" && b[aa + 1] === "f") {
+                                aa = aa + 2;
+                                if ((/\s/).test(b[aa]) === true) {
+                                    aa = parse.spacer({array: b, end: c, index: aa}) + 1;
+                                }
+                                if (b[aa] === "(") {
+                                    let paren:number = 0;
+                                    do {
+                                        if (b[aa] === "(") {
+                                            paren = paren + 1;
+                                        } else if (b[aa] === ")") {
+                                            paren = paren - 1;
+                                            if (paren < 1) {
+                                                aa = aa + 1;
+                                                break;
+                                            }
+                                        }
+                                        aa = aa + 1;
+                                    } while (aa < c);
+                                    if ((/\s/).test(b[aa]) === true) {
+                                        aa = parse.spacer({array: b, end: c, index: aa}) + 1;
+                                    }
+                                    if (b[aa] === "{") {
+                                        rec.token = b.slice(a, aa + 1).join("");
+                                        rec.types = "template_else";
+                                        recordPush(data, rec, "");
+                                        a = aa;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    recordPush(data, rec, "");
+                    parse.linesSpace = liner;
+                },
+
+                // A fix for Vapor Leaf start structure parsing
+                vaporStart = function lexer_markup_vaporStart():void {
+                    const rec:record = parse.pop(data);
+                    rec.token = `${rec.token} {`;
+                    rec.types = "template_start";
+                    recordPush(data, rec, rec.token.slice(0, rec.token.indexOf("(")));
+                },
+
                 //parses tags, attributes, and template elements
                 tag           = function lexer_markup_tag(end:string):void {
 
@@ -603,6 +681,8 @@
                         } else if (end === "---") {
                             ltype    = "comment";
                             start    = "---";
+                        } else if (end === ")" && options.language === "vapor") {
+                            ltype    = "template";
                         } else if (b[a] === "<") {
                             if (b[a + 1] === "/") {
                                 if (b[a + 2] === "#") {
@@ -2719,7 +2799,17 @@
                     tag("");
                 } else if (b[a] === "]" && sgmlflag > 0) {
                     tag("]>");
-                } else if (b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-" && options.language === "jekyll") {
+                } else if (options.language === "vapor") {
+                    if (b[a] === "#") {
+                        tag(")");
+                    } else if (b[a] === "{" && data.token[parse.count].charAt(0) === "#") {
+                        vaporStart();
+                    } else if (b[a] === "}") {
+                        vaporEnd();
+                    } else {
+                        content();
+                    }
+                } else if (options.language === "jekyll" && b[a] === "-" && b[a + 1] === "-" && b[a + 2] === "-") {
                     tag("---");
                 } else if (options.language === "apacheVelocity" && (/\d/).test(b[a + 1]) === false && (/\s/).test(b[a + 1]) === false) {
                     if (b[a] === "#" && ((/\w/).test(b[a + 1]) === true || b[a + 1] === "*" || b[a + 1] === "#" || (b[a + 1] === "[" && b[a + 2] === "["))) {
