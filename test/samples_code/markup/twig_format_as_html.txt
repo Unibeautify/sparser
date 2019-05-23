@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    {% if block('htmlTitle') is defined %}{{ block('htmlTitle') ~ ' - ' }}{% endif %}
+    Administration
+  </title>
+  <link rel="stylesheet" href="...link-to-file">
+
+  <script>
+    let config = {
+      dateFormat: "{{site.settings.dateFormat}}",
+      weekStart: {{site.settings.dateFormat == 'mm/dd/yyyy' ? '0' : '1'}},
+      csrfTokenName: "{{ site.csrf.name }}",
+      csrfTokenValue: "{{site.csrf.value}}",
+      {% block jsConfig '' %}
+    };
+  </script>
+
+  {% block head '' %}
+</head>
+
+<body>
+  {% include "@admin/includes/_alert.html" %}
+
+  <section id="default" class="content-wrapper">
+    <div class="sidebar">
+      {% block sidebar '' %}
+    </div>
+
+    <main role="main" class="content">
+      {% block content '' %}
+    </main>
+  </section>
+
+  <script src="...link-to-file"></script>
+
+  {% block foot '' %}
+  <li><a href="{{ path_for('home') }}">Home</a></li>
+  {{var}}
+  <a routerLink="/detail/{{hero.id}}"/>
+</body>
+
+</html>

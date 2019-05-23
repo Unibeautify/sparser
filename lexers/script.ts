@@ -540,7 +540,25 @@
                         qc:"none"|"double"|"single" = (options.lexer_options.script.quote_convert === undefined)
                             ? "none"
                             : options.lexer_options.script.quote_convert,
-                        base:number   = a + starting.length;
+                        base:number   = a + starting.length,
+                        //pads certain template tag delimiters with a space
+                        bracketSpace = function lexer_script_bracketSpace(input:string):string {
+                            if (options.language !== "javascript" && options.language !== "typescript" && options.language !== "jsx" && options.language !== "tsx") {
+                                const spaceStart = function lexer_markup_tag_spaceStart(start:string):string {
+                                        return start.replace(/\s*$/, " ");
+                                    },
+                                    spaceEnd = function lexer_markup_tag_spaceStart(end:string):string {
+                                        return end.replace(/^\s*/, " ");
+                                    };
+                                if (input.indexOf("{#") > -1 || input.indexOf("{/") > -1 || input.indexOf("{%>") > -1) {
+                                    return input;
+                                }
+                                input = input.replace(/\{((\{+)|%)\s*/g, spaceStart);
+                                input = input.replace(/\s*((\}\}+)|(%\}))/g, spaceEnd);
+                                return input;
+                            }
+                            return input;
+                        };
                     if (wordTest > -1) {
                         word();
                     }
@@ -651,6 +669,9 @@
                         build.pop();
                     }
                     output = build.join("");
+                    if (starting === "\"" || starting === "'" || starting === "{{" || starting === "{%" || starting === "{{{") {
+                        output = bracketSpace(output);
+                    }
                     return output;
                 },
                 // line comments
@@ -1798,7 +1819,7 @@
                         if (name === "end") {
                             return ["template_end", ""];
                         }
-                        if (name === "block" || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
+                        if ((name === "block" && (/\{%\s*\w/).test(source) === false) || name === "define" || name === "form" || name === "if" || name === "range" || name === "with") {
                             return ["template_start", `template_${name}`];
                         }
                         return ["template", ""];
@@ -1806,7 +1827,7 @@
                     en = namelist.length - 1;
                     if (en > -1) {
                         do {
-                            if (name === namelist[en]) {
+                            if (name === namelist[en] && (name !== "block" || (/\{%\s*\w/).test(source) === false)) {
                                 return ["template_start", `template_${name}`];
                             }
                             if (name === "end" + namelist[en]) {

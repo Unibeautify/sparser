@@ -5,6 +5,7 @@
         markup = function lexer_markup(source:string):data {
             let a:number             = 0,
                 sgmlflag:number      = 0,
+                html:"html"|"xml"|"" = "",
                 cftransaction:boolean = false,
                 ext:boolean           = false;
             const parse:parse       = sparser.parse,
@@ -34,6 +35,27 @@
                     thead   : "block",
                     tr      : "block",
                 },
+
+                //pads certain template tag delimiters with a space
+                bracketSpace = function lexer_markup_bracketSpace(input:string):string {
+                    if (options.language !== "html" && options.language !== "xml" && options.language !== "sgml" && options.language !== "jsx") {
+                        const spaceStart = function lexer_markup_tag_spaceStart(start:string):string {
+                                return start.replace(/\s*$/, " ");
+                            },
+                            spaceEnd = function lexer_markup_tag_spaceStart(end:string):string {
+                                return end.replace(/^\s*/, " ");
+                            };
+                        if (input.indexOf("{#") > -1 || input.indexOf("{/") > -1 || input.indexOf("{%>") > -1) {
+                            return input;
+                        }
+                        input = input.replace(/\{((\{+)|%)\s*/g, spaceStart);
+                        input = input.replace(/\s*((\}\}+)|(%\}))/g, spaceEnd);
+                        return input;
+                    }
+                    return input;
+                },
+
+                // pushes a record into the parse table
                 recordPush = function lexer_markup_recordPush(target, record, structure):void {
                     if (target === data) {
                         if (record.types.indexOf("end") > -1) {
@@ -44,6 +66,7 @@
                     }
                     parse.push(target, record, structure);
                 },
+
                 // Find the lowercase tag name of the provided token.
                 tagName       = function lexer_markup_tagName(el:string):string {
                     let space:number = 0,
@@ -60,7 +83,7 @@
                     name  = (space < 0)
                         ? name.slice(1, el.length - 1)
                         : name.slice(1, space);
-                    if (options.language === "html" || options.language === "coldfusion") {
+                    if (html === "html" || options.language === "coldfusion") {
                         name = name.toLowerCase();
                     }
                     name = name.replace(/(\}\})$/, "");
@@ -606,7 +629,7 @@
                                     } else if (eq < 0 && cft === undefined) {
                                         // in most markup languages an attribute without an expressed value has its name
                                         // as its string value
-                                        if (options.language === "html" && "[{(".indexOf(attstore[ind][0].charAt(0)) < 0 && attstore[ind][0].charAt(0) !== "#" && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
+                                        if (html === "html" && "[{(".indexOf(attstore[ind][0].charAt(0)) < 0 && attstore[ind][0].charAt(0) !== "#" && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
                                             record.token = attstore[ind][0].toLowerCase();
                                         } else if (options.language === "xml" || options.language === "coldfusion") {
                                             if (options.lexer_options.markup.quote_convert === "single") {
@@ -625,7 +648,7 @@
                                             slice = "\"" + slice + "\"";
                                         }
                                         name = attstore[ind][0].slice(0, eq);
-                                        if (options.language === "html" && "[{(".indexOf(name.charAt(0)) < 0 && cft === undefined && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
+                                        if (html === "html" && "[{(".indexOf(name.charAt(0)) < 0 && cft === undefined && (/^\*?ng[A-Z]/).test(attstore[ind][0]) === false) {
                                             name = name.toLowerCase();
                                         }
                                         if (options.language === "jsx" && (/^(\s*\{)/).test(slice) === true) {
@@ -992,6 +1015,7 @@
                                 } else {
                                     atty = attribute.join("\n");
                                 }
+                                atty = bracketSpace(atty);
                                 if (atty === "=") {
                                     attstore[attstore.length - 1][0] = `${attstore[attstore.length - 1][0]}=`;
                                 } else if (atty.charAt(0) === "=" && attstore.length > 0 && attstore[attstore.length - 1][0].indexOf("=") < 0) {
@@ -1532,6 +1556,15 @@
 
                         igcount      = 0;
                         element      = lex.join("");
+                        tname        = tagName(element);
+                        element      = bracketSpace(element);
+                        if (tname === "xml") {
+                            html = "xml";
+                        } else if (html === "" && tname === "!DOCTYPE" && element.toLowerCase().indexOf("xhtml") > 0) {
+                            html = "xml";
+                        } else if (html === "" && tname === "html") {
+                            html = "html";
+                        }
                         if (element.replace(start, "").replace(/^\s+/, "").indexOf("parse-ignore-start") === 0) {
                             a = a + 1;
                             do {
@@ -1734,7 +1767,7 @@
                                 tname !== "/div" &&
                                 tname !== "/script" &&
                                 options.lexer_options.markup.tag_merge === true &&
-                                (options.language !== "html" || (options.language === "html" && tname !== "/li"))
+                                (html !== "html" || (html === "html" && tname !== "/li"))
                             ) {
                                 if (tname === "/" + tagName(data.token[parse.count]) && data.types[parse.count] === "start") {
                                     parse.structure.pop();
@@ -1884,7 +1917,7 @@
                             return false;
                         }
 
-                        if (options.language === "html") {
+                        if (html === "html") {
                             // html gets tag names in lowercase, if you want to preserve case sensitivity
                             // beautify as XML
                             if (element.charAt(0) === "<" && element.charAt(1) !== "!" && element.charAt(1) !== "?" && (parse.count < 0 || data.types[parse.count].indexOf("template") < 0) && cftags[tname] === undefined && tname.slice(0, 3) !== "cf_") {
@@ -2155,7 +2188,9 @@
                                 let namelen:number = names.length - 1;
                                 do {
                                     if (tname === names[namelen]) {
-                                        record.types = "template_start";
+                                        if (tname !== "block" || (/\{%\s*\w/).test(source) === false) {
+                                            record.types = "template_start";
+                                        }
                                         break;
                                     }
                                     if (tname === "end" + names[namelen]) {
@@ -2665,6 +2700,7 @@
                                 } else {
                                     ltoke = lex.join("").replace(/\s+$/, "");
                                 }
+                                ltoke = bracketSpace(ltoke);
                                 liner = 0;
                                 record.token = ltoke;
                                 if (options.wrap > 0 && options.lexer_options.markup.preserve_text !== true) {
@@ -2781,7 +2817,11 @@
                     }
                     ext = false;
                 };
-
+            if (options.language === "html") {
+                html = "html";
+            } else if (options.language === "xml" || options.language === "sgml") {
+                html = "xml";
+            }
             do {
                 if ((/\s/).test(b[a]) === true) {
                     if (data.types[parse.count] === "template_start" && parse.structure[parse.structure.length - 1][0] === "comment") {
