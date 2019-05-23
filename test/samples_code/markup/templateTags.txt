@@ -45,6 +45,11 @@
 <span class="q"/>
 [% } %]
 </div>
+<div>
+{%- capture NYDUHGWUGA -%}
+    test
+{%- endcapture -%}
+</div>
 
 <div class="swa-g-screen-reader-only">
     {@ if (ond.isLastOndOfNonOneWayTrip) { @}

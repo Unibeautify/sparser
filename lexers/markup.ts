@@ -45,11 +45,11 @@
                             spaceEnd = function lexer_markup_tag_spaceStart(end:string):string {
                                 return end.replace(/^\s*/, " ");
                             };
-                        if (input.indexOf("{#") > -1 || input.indexOf("{/") > -1 || input.indexOf("{%>") > -1) {
+                        if ((/\{(=|#|\/|(%>)|(%\]))/).test(input) === true || (/\}%(>|\])/).test(input) === true) {
                             return input;
                         }
-                        input = input.replace(/\{((\{+)|%)\s*/g, spaceStart);
-                        input = input.replace(/\s*((\}\}+)|(%\}))/g, spaceEnd);
+                        input = input.replace(/\{((\{+)|%-?)\s*/g, spaceStart);
+                        input = input.replace(/\s*((\}\}+)|(-?%\}))/g, spaceEnd);
                         return input;
                     }
                     return input;
