@@ -1,0 +1,10 @@
+<div>
+    
+{% block A %}
+  {% set foo = 'bar' %}
+{% endblock A %}
+
+{% block B %}
+  {% set bar = 'foo' %}
+{% endblock B %}
+</div>

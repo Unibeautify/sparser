@@ -1595,6 +1595,8 @@
                             .toLowerCase()
                             .replace(/\/$/, "")
                             .replace(/^\//, "");
+                    } else if (tname === "block" && element.slice(0, 2) === "{%") {
+                        record.types = "template_start";
                     }
 
                     if (preserve === false && options.language !== "jsx") {
@@ -2187,10 +2189,8 @@
                             } else {
                                 let namelen:number = names.length - 1;
                                 do {
-                                    if (tname === names[namelen]) {
-                                        if (tname !== "block" || (/\{%\s*\w/).test(source) === false) {
-                                            record.types = "template_start";
-                                        }
+                                    if (tname === names[namelen] && ((tname === "block" && element.slice(0, 2) === "{%") || tname !== "block")) {
+                                        record.types = "template_start";
                                         break;
                                     }
                                     if (tname === "end" + names[namelen]) {
@@ -2203,10 +2203,8 @@
                         } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
                             if ((/^(\{\{\s*-?\s*end\s*-?\s*\}\})$/).test(element) === true) {
                                 record.types = "template_end";
-                            } else if (tname === "block" || tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
-                                if (tname !== "block" || (/\{%\s*\w/).test(source) === false) {
-                                    record.types = "template_start";
-                                }
+                            } else if ((tname === "block" && element.slice(0, 2) !== "{{") || tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
+                                record.types = "template_start";
                             }
                         } else if (record.types === "template") {
                             if (element.indexOf("else") > 2) {

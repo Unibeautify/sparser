@@ -1,0 +1,10 @@
+[
+{"begin":-1,"ender":7,"lexer":"markup","lines":0,"stack":"global","token":"<div>","types":"start"},
+{"begin":0,"ender":3,"lexer":"markup","lines":3,"stack":"div","token":"{% block A %}","types":"template_start"},
+{"begin":1,"ender":3,"lexer":"markup","lines":2,"stack":"block","token":"{% set foo = 'bar' %}","types":"template"},
+{"begin":1,"ender":3,"lexer":"markup","lines":2,"stack":"block","token":"{% endblock A %}","types":"template_end"},
+{"begin":0,"ender":6,"lexer":"markup","lines":3,"stack":"div","token":"{% block B %}","types":"template_start"},
+{"begin":4,"ender":6,"lexer":"markup","lines":2,"stack":"block","token":"{% set bar = 'foo' %}","types":"template"},
+{"begin":4,"ender":6,"lexer":"markup","lines":2,"stack":"block","token":"{% endblock B %}","types":"template_end"},
+{"begin":0,"ender":7,"lexer":"markup","lines":2,"stack":"div","token":"</div>","types":"end"}
+]
