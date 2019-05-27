@@ -74,6 +74,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [JSON](https://json.org/)
    - [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
    - [React JSX](https://reactjs.org/docs/introducing-jsx.html)
+   - [styled-components](https://www.styled-components.com/)
    - [styled-jsx](https://github.com/zeit/styled-jsx#readme)
    - [TSS (Titanium Style Sheets)](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
    - [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
@@ -84,7 +85,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [PostCSS](https://postcss.org/)
    - [SCSS (Sass)](https://sass-lang.com/)
 
-*44 total languages.*
+*45 total languages.*
 
 ## Build
 ### Dependencies
