@@ -5,7 +5,7 @@
 ## License
 Creative Commons Zero v1.0 Universal (cc0-1.0)
 
-## Version 1.1.15
+## Version 1.1.16
 Play around with this application [in your browser](https://sparser/demo/).
 
 ## Contents
@@ -74,6 +74,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [JSON](https://json.org/)
    - [QML](https://doc.qt.io/qt-5/qmlfirststeps.html)
    - [React JSX](https://reactjs.org/docs/introducing-jsx.html)
+   - [styled JSX](https://github.com/zeit/styled-jsx#readme)
    - [TSS (Titanium Style Sheets)](https://docs.appcelerator.com/platform/latest/#!/api/Titanium.UI.TextField)
    - [TSX](https://www.typescriptlang.org/docs/handbook/jsx.html)
    - [TypeScript](https://www.typescriptlang.org/)
@@ -83,7 +84,7 @@ A list of supplied lexers and their various dedicated language support as indica
    - [PostCSS](https://postcss.org/)
    - [SCSS (Sass)](https://sass-lang.com/)
 
-*43 total languages.*
+*44 total languages.*
 
 ## Build
 ### Dependencies

@@ -645,7 +645,7 @@
                             } else {
                                 data.types[aa] = "property";
                             }
-                        } else {
+                        } else if (data.lexer[aa] === "style") {
                             data.types[aa] = "selector";
                             selectorPretty(aa);
                         }

@@ -68,8 +68,8 @@ interface directoryList extends Array<directoryItem> {
                         defined: "Lists all commands and their definitions to the shell."
                     },
                     {
-                        code: "sparser commands commands",
-                        defined: "Details the mentioned command with code examples."
+                        code: "sparser commands directory",
+                        defined: "Details the mentioned command with examples."
                     }
                 ]
             },

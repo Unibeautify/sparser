@@ -1,0 +1,15 @@
+import { colors, spacing } from '../theme'
+import { invertColor } from '../theme/utils'
+
+const Button = ({ children }) => (
+  <button>
+     { children }
+     <style jsx>{`
+        button {
+          padding: ${ spacing.medium };
+          background: ${ colors.primary };
+          color: ${ invertColor(colors.primary) };
+        }
+     `}</style>
+  </button>
+)

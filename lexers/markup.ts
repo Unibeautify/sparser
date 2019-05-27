@@ -2029,7 +2029,7 @@
                         //ext is flag to send information between the tag lexer and the content lexer
                         if (tname === "script" && (attValue === "" || attValue === "text/javascript" || attValue === "babel" || attValue === "module" || attValue === "application/javascript" || attValue === "application/x-javascript" || attValue === "text/ecmascript" || attValue === "application/ecmascript" || attValue === "text/jsx" || attValue === "application/jsx" || attValue === "text/cjs")) {
                             ext = true;
-                        } else if (tname === "style" && (attValue === "" || attValue === "text/css")) {
+                        } else if (tname === "style" && options.language !== "jsx" && (attValue === "" || attValue === "text/css")) {
                             ext = true;
                         } else if (tname === "cfscript") {
                             ext = true;
