@@ -6,6 +6,7 @@
    this application. */
 import { Stats } from "fs";
 import * as http from "http";
+import { parse } from "url";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -3394,6 +3395,8 @@ interface directoryList extends Array<directoryItem> {
             output = String(sparser.parser());
             if (options.lexer === "style" && (/"types":"item"\},?\r?\n/).test(output) === true) {
                 console.log(`Style file ${process.argv[0]} returns a types value of ${text.angry}"item"${text.none}.`);
+            } else if (output === sparser.parseerror) {
+                console.log(text.angry + output + text.none);
             } else {
                 console.log(output);
             }

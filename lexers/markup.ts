@@ -1590,13 +1590,63 @@
                     record.token = element;
                     record.types = ltype;
                     tname        = tagName(element);
+
+                    // Twig language allows {% block %} elements to be singleton or start.  You don't
+                    // know until you encounter a {% endblock %} tag
+                    if (tname === "endblock" && element.slice(0, 2) === "{%") {
+                        const endName:string = element.replace(/\{%\s*endblock\s+/, "").replace(/\s*%\}/, "");
+                        let aa:number = parse.count,
+                            bb:number = parse.count,
+                            startName:string = "";
+                        do {
+                            if (data.types[aa].indexOf("end") > 0) {
+                                aa = data.begin[aa];
+                                if (aa < 0) {
+                                    break;
+                                }
+                            } else if ((/\{%\s*block/).test(data.token[aa]) === true) {
+                                if (endName === "") {
+                                    break;
+                                }
+                                startName = data.token[aa].replace(/\{%\s*block\s+/, "").split(/\s+/)[0].replace(/\s+/, "");
+                                if (endName === startName) {
+                                    break;
+                                }
+                            }
+                            aa = aa - 1;
+                        } while (aa > -1);
+                        count.start = count.start + 1;
+                        data.types[aa] = "template_start";
+                        data.ender[aa] = parse.count + 1;
+                        record.begin = aa;
+                        record.stack = "block";
+                        record.token = element;
+                        record.types = "template_end";
+                        if (aa > -1) {
+                            do {
+                                if (data.types[bb].indexOf("end") > 0) {
+                                    bb = data.begin[bb];
+                                    data.begin[bb] = aa;
+                                    data.stack[bb] = "block";
+                                } else if (data.begin[bb] < aa) {
+                                    data.begin[bb] = aa;
+                                    if (data.types[bb].indexOf("start") < 0) {
+                                        data.ender[bb] = parse.count + 1;
+                                    }
+                                    data.stack[bb] = "block";
+                                }
+                                bb = bb - 1;
+                            } while (bb > aa);
+                        }
+                        parse.structure.push(["block", aa]);
+                        recordPush(data, record, "");
+                        return;
+                    }
                     if ((/^(\/?cf)/i).test(tname) === true) {
                         tname = tname
                             .toLowerCase()
                             .replace(/\/$/, "")
                             .replace(/^\//, "");
-                    } else if (tname === "block" && element.slice(0, 2) === "{%") {
-                        record.types = "template_start";
                     }
 
                     if (preserve === false && options.language !== "jsx") {
@@ -2166,7 +2216,6 @@
                         if (element.slice(0, 2) === "{%") {
                             let names:string[] = [
                                 "autoescape",
-                                "block",
                                 "capture",
                                 "comment",
                                 "embed",
@@ -2189,7 +2238,7 @@
                             } else {
                                 let namelen:number = names.length - 1;
                                 do {
-                                    if (tname === names[namelen] && ((tname === "block" && element.slice(0, 2) === "{%") || tname !== "block")) {
+                                    if (tname === names[namelen]) {
                                         record.types = "template_start";
                                         break;
                                     }
@@ -2203,7 +2252,7 @@
                         } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
                             if ((/^(\{\{\s*-?\s*end\s*-?\s*\}\})$/).test(element) === true) {
                                 record.types = "template_end";
-                            } else if ((tname === "block" && element.slice(0, 2) !== "{{") || tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
+                            } else if (tname === "define" || tname === "form" || tname === "if" || tname === "range" || tname === "with") {
                                 record.types = "template_start";
                             }
                         } else if (record.types === "template") {

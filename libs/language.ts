@@ -26,6 +26,8 @@
                 phphtml   : "markup",
                 qml       : "style",
                 scss      : "style",
+                "styled-jsx": "script",
+                "styled-components": "script",
                 swig      : "markup",
                 text      : "text",
                 titanium  : "script",
@@ -355,7 +357,7 @@
                 .replace(/\[[a-zA-Z][\w-]*=("|')?[a-zA-Z][\w-]*("|')?\]/g, "")
                 .split("");
             c = b.length;
-            if ((/^(\s*\{(%|#|\{))/).test(sample) === true) {
+            if ((/^(\s*(\{|<)(%|#|\{))/).test(sample) === true) {
                 return markup();
             }
             if (((/^([\s\w-]*<)/).test(sample) === false && (/(>[\s\w-]*)$/).test(sample) === false) || finalstatic === true) {
