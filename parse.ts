@@ -90,6 +90,26 @@
             if (parse.data.begin.length > 0 && (sparser.options.lexer_options[sparser.options.lexer].object_sort === true || sparser.options.lexer_options.markup.tag_sort === true)) {
                 parse.sortCorrection(0, parse.count + 1);
             }
+            if (sparser.options.format === "csv") {
+                let a:number = 0;
+                const d:data = parse.data,
+                    data:string[] = ["index,begin,ender,lexer,lines,stack,token,types"],
+                    len:number = parse.count + 1;
+                do {
+                    data.push([
+                        a,
+                        d.begin[a],
+                        d.ender[a],
+                        `"${d.lexer[a].replace(/"/g, "\"\"")}"`,
+                        d.lines[a],
+                        `"${d.stack[a].replace(/"/g, "\"\"")}"`,
+                        `"${d.token[a].replace(/"/g, "\"\"")}"`,
+                        `"${d.types[a].replace(/"/g, "\"\"")}"`
+                    ].join(","));
+                    a = a + 1;
+                } while (a < len);
+                return data.join("\r\n");
+            }
             if (sparser.options.format === "markdown") {
                 let a:number = 0;
                 const data:string[] = [],
@@ -154,7 +174,6 @@
             if (sparser.options.format === "table") {
                 let a:number = 0,
                     b:number = 0,
-                    c:number = 0,
                     strlen:number = 0,
                     row:string[] = [],
                     heading:string = "",
@@ -163,8 +182,14 @@
                     begin:number = 0;
                 const data:string[] = [],
                     names:string[] = parse.datanames,
-                    longest:[number, number, number, number, number, number, number, number] = [1, 5, 5, 0, 5, 0, 0, 0],
+                    longest:[number, number, number, number, number, number, number, number] = [1, 5, 5, 5, 5, 5, 5, 5],
                     len = parse.count + 1;
+                
+                // first gather the string length of each data item
+                longest[0] = String(parse.count).length;
+                if (longest[0] < 5) {
+                    longest[0] = 5;
+                }
                 do {
                     begin = String(parse.data.begin[a]).length;
                     if (begin > longest[1]) {
@@ -177,19 +202,24 @@
                     if (parse.data.lexer[a].length > longest[3]) {
                         longest[3] = parse.data.lexer[a].length;
                     }
-                    if (parse.data.lexer[a].length > longest[5]) {
-                        longest[5] = parse.data.lexer[a].length;
+                    begin = String(parse.data.lines[a]).length;
+                    if (begin > longest[4]) {
+                        longest[4] = begin;
                     }
-                    if (parse.data.lexer[a].length > longest[6]) {
-                        longest[6] = parse.data.lexer[a].length;
+                    if (parse.data.stack[a].length > longest[5]) {
+                        longest[5] = parse.data.stack[a].length;
                     }
-                    if (parse.data.lexer[a].length > longest[7]) {
-                        longest[7] = parse.data.lexer[a].length;
+                    if (parse.data.token[a].length > longest[6]) {
+                        longest[6] = parse.data.token[a].length;
+                    }
+                    if (parse.data.types[a].length > longest[7]) {
+                        longest[7] = parse.data.types[a].length;
                     }
                     a = a + 1;
                 } while (a < len);
-                longest[0] = String(parse.count).length;
                 names.splice(0, 0, "index");
+
+                // second create the heading
                 a = 0;
                 do {
                     row.push(parse.datanames[a]);
@@ -206,6 +236,8 @@
                 row.pop();
                 heading = row.join("");
                 row = [];
+
+                // third create the line of dashes
                 a = 0;
                 do {
                     b = 0;
@@ -215,9 +247,12 @@
                     } while (b < longest[a]);
                     row.push("|");
                     a = a + 1;
-                } while (a < 7);
+                } while (a < 8);
                 row.pop();
                 line = row.join("");
+                row = [];
+
+                // fourth create each data record
                 a = 0;
                 do {
                     if (a % 100 === 0) {
@@ -242,17 +277,18 @@
                         if (strlen < longest[b]) {
                             do {
                                 row.push(" ");
-                                c = c + 1;
-                            } while (c < strlen);
+                                strlen = strlen + 1;
+                            } while (strlen < longest[b]);
                         }
                         row.push("|");
                         b = b + 1;
                     } while (b < 8);
                     row.pop();
-                    data.push(row.join());
+                    data.push(row.join(""));
+                    row = [];
                     a = a + 1;
                 } while (a < len);
-                return data.join("\n");
+                return data.join("\r\n");
             }
             if (sparser.options.format === "testprep") {
                 let a:number = 0;

@@ -2698,9 +2698,15 @@ interface directoryList extends Array<directoryItem> {
                     }
                 } while (a > 0);
                 // if there is only 1 file then just return the parse table
-                str = (len === 1)
-                    ? JSON.stringify(files[keys[0]])
-                    : JSON.stringify(files);
+                if (options.format === "csv" || options.format === "table") {
+                    str = (len === 1)
+                    ? files[keys[0]]
+                    : files;
+                } else {
+                    str = (len === 1)
+                        ? JSON.stringify(files[keys[0]])
+                        : JSON.stringify(files);
+                }
                 performance.codeLength = str.length;
                 if (output === "") {
                     log.push(str);
@@ -3245,7 +3251,7 @@ interface directoryList extends Array<directoryItem> {
                         return;
                     }
                     if (typeof stdout === "string") {
-                        stdout = stdout.replace(/\s+$/, "").replace(/^\s+/, "").replace(/\s\d+(\.\d+)*\s/g, " XXXX ");
+                        stdout = stdout.replace(/\s+$/, "").replace(/^\s+/, "").replace(/\u0020-?\d+(\.\d+)*\s/g, " XXXX ").replace(/\\n-?\d+(\.\d+)*\s/g, "\\nXXXX ");
                     }
                     if (tests[a].qualifier.indexOf("file") === 0) {
                         if (tests[a].artifact === "" || tests[a].artifact === undefined) {
