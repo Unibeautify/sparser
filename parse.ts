@@ -111,67 +111,6 @@
                 return data.join("\r\n");
             }
             if (sparser.options.format === "markdown") {
-                let a:number = 0;
-                const data:string[] = [],
-                    len:number = parse.count + 1,
-                    heading:string = "index | begin | ender | lexer | lines | stack | token | types",
-                    line:string = "------|-------|-------|-------|-------|-------|-------|------";
-                do {
-                    if (a % 100 === 0) {
-                        data.push(heading);
-                        data.push(line);
-                    }
-                    data.push([
-                        a,
-                        parse.data.begin[a],
-                        parse.data.ender[a],
-                        parse.data.lexer[a],
-                        parse.data.lines[a],
-                        parse.data.stack[a].replace(/\|/g, "\\|"),
-                        parse.data.token[a].replace(/\|/g, "\\|"),
-                        parse.data.types[a].replace(/\|/g, "\\|")
-                    ].join(" | "));
-                    a = a + 1;
-                } while (a < len);
-                return data.join("\n");
-            }
-            if (sparser.options.format === "minimal") {
-                let a:number = 0;
-                const data:minimal[] = [],
-                    len = parse.count + 1;
-                do {
-                    data.push([
-                        parse.data.begin[a],
-                        parse.data.ender[a],
-                        parse.data.lexer[a],
-                        parse.data.lines[a],
-                        parse.data.stack[a],
-                        parse.data.token[a],
-                        parse.data.types[a]
-                    ]);
-                    a = a + 1;
-                } while (a < len);
-                return data;
-            }
-            if (sparser.options.format === "objects") {
-                let a:number = 0;
-                const data:record[] = [],
-                    len = parse.count + 1;
-                do {
-                    data.push({
-                        begin: parse.data.begin[a],
-                        ender: parse.data.ender[a],
-                        lexer: parse.data.lexer[a],
-                        lines: parse.data.lines[a],
-                        stack: parse.data.stack[a],
-                        token: parse.data.token[a],
-                        types: parse.data.types[a]
-                    });
-                    a = a + 1;
-                } while (a < len);
-                return data;
-            }
-            if (sparser.options.format === "table") {
                 let a:number = 0,
                     b:number = 0,
                     strlen:number = 0,
@@ -289,6 +228,42 @@
                     a = a + 1;
                 } while (a < len);
                 return data.join("\r\n");
+            }
+            if (sparser.options.format === "minimal") {
+                let a:number = 0;
+                const data:minimal[] = [],
+                    len = parse.count + 1;
+                do {
+                    data.push([
+                        parse.data.begin[a],
+                        parse.data.ender[a],
+                        parse.data.lexer[a],
+                        parse.data.lines[a],
+                        parse.data.stack[a],
+                        parse.data.token[a],
+                        parse.data.types[a]
+                    ]);
+                    a = a + 1;
+                } while (a < len);
+                return data;
+            }
+            if (sparser.options.format === "objects") {
+                let a:number = 0;
+                const data:record[] = [],
+                    len = parse.count + 1;
+                do {
+                    data.push({
+                        begin: parse.data.begin[a],
+                        ender: parse.data.ender[a],
+                        lexer: parse.data.lexer[a],
+                        lines: parse.data.lines[a],
+                        stack: parse.data.stack[a],
+                        token: parse.data.token[a],
+                        types: parse.data.types[a]
+                    });
+                    a = a + 1;
+                } while (a < len);
+                return data;
             }
             if (sparser.options.format === "testprep") {
                 let a:number = 0;

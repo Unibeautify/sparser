@@ -53,7 +53,7 @@ label      | Output Format
 lexer      | all
 type       | string
 use        | options.format
-values     | arrays, csv, markdown, minimal, objects, table
+values     | arrays, csv, markdown, minimal, objects
 
 #### Value Definitions
 * **arrays** - The output format is an object of arrays such that the same index of all the arrays represents one data record, for example: `{begin:[],ender:[],lexer:[],lines[],stack:[],token:[],types:[]}`.
@@ -61,7 +61,6 @@ values     | arrays, csv, markdown, minimal, objects, table
 * **markdown** - Generates the output in a markdown table.
 * **minimal** - The output format is an array of arrays which is structurally similar to the objects format but without key names, for example: `[[-1,-1,"script",0,"global","const","word"]]`.
 * **objects** - The output format is an array of objects such that each array index is one data record, for example: `[{begin:-1,ender:-1,lexer:"script",lines:0,stack:"global",token:"const",types:"word"}]`.
-* **table** - Generates output that resembles a markdown table but padded for presentation in a terminal.
 
 ### language
 property   | value

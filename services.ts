@@ -2698,7 +2698,7 @@ interface directoryList extends Array<directoryItem> {
                     }
                 } while (a > 0);
                 // if there is only 1 file then just return the parse table
-                if (options.format === "csv" || options.format === "table") {
+                if (options.format === "csv" || options.format === "markdown" || options.format === "table") {
                     str = (len === 1)
                     ? files[keys[0]]
                     : files;
