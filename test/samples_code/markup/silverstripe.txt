@@ -1,0 +1,13 @@
+<% with Element %>
+<% end_with %>
+<% control Element %>
+<% end_control %>
+<% loop Elements %>
+<% end_loop %>
+<% if $MyDinner == "quiche" %>
+    Real men don't eat quiche
+<% else_if $MyDinner == $YourDinner %>
+    We both have good taste
+<% else %>
+    Can I have some of your chips?
+<% end_if %>

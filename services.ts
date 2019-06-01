@@ -31,11 +31,6 @@ interface directoryList extends Array<directoryItem> {
         }()),
         js:string = `${projectPath}js${sep}`,
         libFiles:string[] = [`${js}lexers`, `${js}libs`],
-        sparser:sparser = (function node_setSparser():sparser {
-            require(`${js}parse.js`);
-            return global.sparser;
-        }()),
-        options:any = sparser.options,
         text:any     = {
             angry    : "\u001b[1m\u001b[31m",
             blue     : "\u001b[34m",
@@ -58,6 +53,14 @@ interface directoryList extends Array<directoryItem> {
                     {
                         code: "sparser build",
                         defined: "Compiles from TypeScript into JavaScript and puts librarys together."
+                    },
+                    {
+                        code: "sparser build incremental",
+                        defined: "Use the TypeScript incremental build, which takes about half the time."
+                    },
+                    {
+                        code: "sparser build local",
+                        defined: "The default behavior assumes TypeScript is installed globally. Use the 'local' argument if TypeScript is locally installed in node_modules."
                     }
                 ]
             },
@@ -311,7 +314,6 @@ interface directoryList extends Array<directoryItem> {
                 }
                 return list;
             }
-            require(`${js}parse.js`);
             return [];
         }()),
         performance:performance = {
@@ -324,7 +326,141 @@ interface directoryList extends Array<directoryItem> {
             store: [],
             test: false
         },
-        apps:any = {};
+        apps:any = {},
+        args = function node_args():void {
+            const readOptions = function node_args_readOptions():void {
+                    const list:string[] = process.argv,
+                        def:optionDef = sparser.libs.optionDef,
+                        keys:string[] = (command === "options")
+                            ? Object.keys(def.format)
+                            : [],
+                        obj = (command === "options")
+                            ? def.format
+                            : options,
+                        optionName = function node_args_optionName(bindArgument:boolean):void {
+                            if (a === 0 || options[list[a]] === undefined) {
+                                if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
+                                    list.splice(a, 1);
+                                    len = len - 1;
+                                    a = a - 1;
+                                }
+                                return;
+                            }
+                            if (bindArgument === true && list[a + 1] !== undefined && list[a + 1].length > 0) {
+                                list[a] = `${list[a]}:${list[a + 1]}`;
+                                list.splice(a + 1, 1);
+                                len = len - 1;
+                            }
+                            list.splice(0, 0, list[a]);
+                            list.splice(a + 1, 1);
+                        };
+                    let split:string = "",
+                        value:string = "",
+                        name:string = "",
+                        a:number = 0,
+                        si:number = 0,
+                        len:number = list.length;
+                    do {
+                        list[a] = list[a].replace(/^(-+)/, "");
+                        if (list[a] === "verbose") {
+                            verbose = true;
+                            list.splice(a, 1);
+                            len = len - 1;
+                            a = a - 1;
+                        } else {
+                            si = list[a].indexOf("=");
+                            if (
+                                si > 0 &&
+                                (list[a].indexOf("\"") < 0 || si < list[a].indexOf("\"")) &&
+                                (list[a].indexOf("'") < 0 || si < list[a].indexOf("'")) &&
+                                (si < list[a].indexOf(":") || list[a].indexOf(":") < 0)
+                            ) {
+                                split = "=";
+                            } else {
+                                split = ":";
+                            }
+                            if (list[a + 1] === undefined) {
+                                si = 99;
+                            } else {
+                                si = list[a + 1].indexOf(split);
+                            }
+                            if (
+                                obj[list[a]] !== undefined &&
+                                list[a + 1] !== undefined &&
+                                obj[list[a + 1]] === undefined &&
+                                (
+                                    si < 0 || 
+                                    (si > list[a + 1].indexOf("\"") && list[a + 1].indexOf("\"") > -1) ||
+                                    (si > list[a + 1].indexOf("'") && list[a + 1].indexOf("'") > -1)
+                                )
+                            ) {
+                                if (command === "options") {
+                                    optionName(true);
+                                } else {
+                                    options[list[a]] = list[a + 1];
+                                    a = a + 1;
+                                }
+                            } else if (list[a].indexOf(split) > 0 || (list[a].indexOf(split) < 0 && list[a + 1] !== undefined && (list[a + 1].charAt(0) === ":" || list[a + 1].charAt(0) === "="))) {
+                                if (list[a].indexOf(split) > 0) {
+                                    name = list[a].slice(0, list[a].indexOf(split)).toLowerCase();
+                                    value = list[a].slice(list[a].indexOf(split) + 1);
+                                } else {
+                                    name = list[a].toLowerCase();
+                                    value = list[a + 1].slice(1);
+                                    list.splice(a + 1, 1);
+                                    len = len - 1;
+                                }
+                                if (command === "options") {
+                                    if (keys.indexOf(name) > -1) {
+                                        if (value !== undefined && value.length > 0) {
+                                            list[a] = `${name}:${value}`;
+                                        } else {
+                                            list[a] = name;
+                                        }
+                                    } else {
+                                        list.splice(a, 1);
+                                        len = len - 1;
+                                    }
+                                } else if (options[name] !== undefined) {
+                                    if (value === "true" && def[name].type === "boolean") {
+                                        options[name] = true;
+                                    } else if (value === "false" && def[name].type === "boolean") {
+                                        options[name] = false;
+                                    } else if (isNaN(Number(value)) === false && def[name].type === "number") {
+                                        options[name] = Number(value);
+                                    } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
+                                        options[name] = value;
+                                    } else if (def[name].values === undefined) {
+                                        options[name] = value;
+                                    }
+                                }
+                            } else if (command === "options") {
+                                optionName(false);
+                            }
+                        }
+                        a = a + 1;
+                    } while (a < len);
+                    if (options.source === "" && process.argv.length > 0 && process.argv[0].indexOf("=") < 0 && process.argv[0].replace(/^[a-zA-Z]:\\/, "").indexOf(":") < 0) {
+                        if (command === "performance") {
+                            options.source = (process.argv.length < 1)
+                                ? ""
+                                : process.argv[1];
+                        } else {
+                            options.source = process.argv[0];
+                        }
+                    }
+                };
+            options = sparser.options;
+            options.api = "node";
+            options.binary_check = (
+                // eslint-disable-next-line
+                /\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u000b|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001c|\u001d|\u001e|\u001f|\u007f|\u0080|\u0081|\u0082|\u0083|\u0084|\u0085|\u0086|\u0087|\u0088|\u0089|\u008a|\u008b|\u008c|\u008d|\u008e|\u008f|\u0090|\u0091|\u0092|\u0093|\u0094|\u0095|\u0096|\u0097|\u0098|\u0099|\u009a|\u009b|\u009c|\u009d|\u009e|\u009f/g
+            );
+            if (process.argv.length > 0) {
+                readOptions();
+            }
+            apps[command]();
+        };
     let verbose:boolean = false,
         errorflag:boolean = false,
         command:string = (function node_command():string {
@@ -400,228 +536,48 @@ interface directoryList extends Array<directoryItem> {
             }
             return filtered[0];
         }()),
+        sparser:sparser,
+        options:any = {},
         writeflag:string = ""; // location of written assets in case of an error and they need to be deleted
 
-    (function node_args():void {
-        const requireDir = function node_args_requireDir(item:string):void {
-                let counts = {
-                    items: 0,
-                    total: 0
-                };
-                const dirlist:string[] = item.split(sep),
-                    dirname:string = (dirlist[dirlist.length - 1] === "")
-                        ? dirlist[dirlist.length - 2]
-                        : dirlist[dirlist.length - 1],
-                    completeTest = function node_args_requireDir_completeTest(filesLength:number):boolean {
-                        counts.total = counts.total + filesLength;
-                        if (counts.total === counts.items) {
-                            dirs = dirs + 1;
-                            if (dirs === dirstotal) {
-                                if (process.argv.length > 0) {
-                                    readOptions();
-                                }
-                                apps[command]();
-                            }
-                            return true;
-                        }
-                        return false;
-                    },
-                    readdir = function node_args_requireDir_dirwrapper(start:string):void {
-                        node.fs.stat(start, function node_args_requireDir_dirwrapper_stat(ers:Error, stat:Stats):void {
-                            if (ers !== null) {
-                                console.log(ers.toString());
-                                process.exit(1);
-                                return;
-                            }
-                            if (stat.isDirectory() === true) {
-                                sparser[dirname] = {};
-                                node.fs.readdir(start, function node_args_requireDir_dirwrapper_stat_readdir(err:Error, files:string[]) {
-                                    if (err !== null) {
-                                        console.log(err.toString());
-                                        process.exit(1);
-                                        return;
-                                    }
-                                    if (completeTest(files.length) === true) {
-                                        return;
-                                    }
-                                    files.forEach(function node_args_requireDir_dirwrapper_stat_readdir_each(value:string) {
-                                        const valpath:string = start + sep + value;
-                                        node.fs.stat(valpath, function node_args_requireDir_dirwrapper_stat_readdir_each_stat(errs:Error, stats:Stats):void {
-                                            if (errs !== null) {
-                                                console.log(errs.toString());
-                                                process.exit(1);
-                                                return;
-                                            }
-                                            if (stats.isFile() === true) {
-                                                require(valpath);
-                                                counts.items = counts.items + 1;
-                                            } else if (stats.isDirectory() === true) {
-                                                node_args_requireDir_dirwrapper(valpath);
-                                            } else {
-                                                counts.items = counts.items + 1;
-                                            }
-                                            if (completeTest(0) === true) {
-                                                return;
-                                            }
-                                        });
-                                    });
-                                });
-                            }
-                            if (stat.isFile() === true) {
-                                require(item);
-                                if (completeTest(0) === true) {
-                                    return;
-                                }
-                            }
-                        });
-                    };
-                dirstotal = dirstotal + 1;
-                readdir(item);
-            },
-            readOptions = function node_args_readOptions():void {
-                const list:string[] = process.argv,
-                    def:optionDef = sparser.libs.optionDef,
-                    keys:string[] = (command === "options")
-                        ? Object.keys(def.format)
-                        : [],
-                    obj = options,
-                    optionName = function node_args_readOptions_optionName(bindArgument:boolean):void {
-                        if (a === 0 || def[list[a]] === undefined) {
-                            if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
-                                list.splice(a, 1);
-                                len = len - 1;
-                                a = a - 1;
-                            }
+        (function node_sparsertest():void {
+            node.fs.stat(`${js}parse.js`, function node_sparsertest_stat(ers:Error) {
+                if (ers !== null) {
+                    let err:string = ers.toString();
+                    if (err.indexOf("no such file or directory") > 0) {
+                        if (command === "build") {
+                            global.sparser = (function node_sparsertest_stat_dummy():sparser {
+                                let func:any = function () {};
+                                    func.lexers = {};
+                                    func.libs = {};
+                                    func.options = {};
+                                    func.parse  = {};
+                                    func.parseerror = "";
+                                    func.version = {
+                                        date: "",
+                                        number: ""
+                                    };
+                                return func;
+                            }());
+                            require(`${js}libs${sep}options.js`);
+                            sparser = global.sparser;
+                            args();
+                        } else {
+                            console.log(`The file js/parse.js has not been written.  Please run the build: ${text.cyan}node js/services build${text.none}`);
+                            process.exit(1);
                             return;
                         }
-                        if (bindArgument === true && list[a + 1] !== undefined && list[a + 1].length > 0) {
-                            list[a] = `${list[a]}:${list[a + 1]}`;
-                            list.splice(a + 1, 1);
-                            len = len - 1;
-                        }
-                        list.splice(0, 0, list[a]);
-                        list.splice(a + 1, 1);
-                    },
-                    assign = function node_args_readOptions_assign(value:string|number|boolean):void {
-                        let b:number = def[name].lexer.length;
-                        if (def[name].lexer[0] === "all") {
-                            options[name] = value;
-                        } else {
-                            do {
-                                b = b - 1;
-                                options.lexer_options[def[name].lexer[b]][name] = value;
-                            } while (b > 0);
-                        }
-                        list.splice(list.indexOf(name + split + value), 1);
-                        len = len - 1;
-                        def[name].default = value;
-                    };
-                let split:string = "",
-                    value:string = "",
-                    name:string = "",
-                    a:number = 0,
-                    si:number = 0,
-                    len:number = list.length;
-                do {
-                    list[a] = list[a].replace(/^(-+)/, "");
-                    if (list[a] === "verbose") {
-                        verbose = true;
-                        list.splice(a, 1);
-                        len = len - 1;
-                        a = a - 1;
                     } else {
-                        si = list[a].indexOf("=");
-                        if (
-                            si > 0 &&
-                            (list[a].indexOf("\"") < 0 || si < list[a].indexOf("\"")) &&
-                            (list[a].indexOf("'") < 0 || si < list[a].indexOf("'")) &&
-                            (si < list[a].indexOf(":") || list[a].indexOf(":") < 0)
-                        ) {
-                            split = "=";
-                        } else {
-                            split = ":";
-                        }
-                        if (list[a + 1] === undefined) {
-                            si = 99;
-                        } else {
-                            si = list[a + 1].indexOf(split);
-                        }
-                        if (
-                            obj[list[a]] !== undefined &&
-                            list[a + 1] !== undefined &&
-                            obj[list[a + 1]] === undefined &&
-                            (
-                                si < 0 || 
-                                (si > list[a + 1].indexOf("\"") && list[a + 1].indexOf("\"") > -1) ||
-                                (si > list[a + 1].indexOf("'") && list[a + 1].indexOf("'") > -1)
-                            )
-                        ) {
-                            if (command === "options") {
-                                optionName(true);
-                            } else {
-                                options[list[a]] = list[a + 1];
-                                a = a + 1;
-                            }
-                        } else if (list[a].indexOf(split) > 0 || (list[a].indexOf(split) < 0 && list[a + 1] !== undefined && (list[a + 1].charAt(0) === ":" || list[a + 1].charAt(0) === "="))) {
-                            if (list[a].indexOf(split) > 0) {
-                                name = list[a].slice(0, list[a].indexOf(split)).toLowerCase();
-                                value = list[a].slice(list[a].indexOf(split) + 1);
-                            } else {
-                                name = list[a].toLowerCase();
-                                value = list[a + 1].slice(1);
-                                list.splice(a + 1, 1);
-                                len = len - 1;
-                            }
-                            if (command === "options") {
-                                if (keys.indexOf(name) > -1) {
-                                    if (value !== undefined && value.length > 0) {
-                                        list[a] = `${name}:${value}`;
-                                    } else {
-                                        list[a] = name;
-                                    }
-                                } else {
-                                    list.splice(a, 1);
-                                    len = len - 1;
-                                }
-                            } else if (def[name] !== undefined) {
-                                if (value === "true" && def[name].type === "boolean") {
-                                    assign(true);
-                                } else if (value === "false" && def[name].type === "boolean") {
-                                    assign(false);
-                                } else if (isNaN(Number(value)) === false && def[name].type === "number") {
-                                    assign(Number(value));
-                                } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
-                                    assign(value);
-                                } else if (def[name].values === undefined) {
-                                    assign(value);
-                                }
-                            }
-                        } else if (command === "options") {
-                            optionName(false);
-                        }
+                        console.log(err);
+                        process.exit(1);
+                        return;
                     }
-                    a = a + 1;
-                } while (a < len);
-                if (options.source === "" && process.argv.length > 0 && process.argv[0].indexOf("=") < 0 && process.argv[0].replace(/^[a-zA-Z]:\\/, "").indexOf(":") < 0) {
-                    if (command === "performance") {
-                        options.source = (process.argv.length < 1)
-                            ? ""
-                            : process.argv[1];
-                    } else {
-                        options.source = process.argv[0];
-                    }
+                } else {
+                    sparser = require(`${js}parse.js`);
+                    args();
                 }
-            };
-        let dirs:number = 0,
-            dirstotal:number = 0;
-        options.api = "node";
-        options.binary_check = (
-            /\u0000|\u0001|\u0002|\u0003|\u0004|\u0005|\u0006|\u0007|\u000b|\u000e|\u000f|\u0010|\u0011|\u0012|\u0013|\u0014|\u0015|\u0016|\u0017|\u0018|\u0019|\u001a|\u001c|\u001d|\u001e|\u001f|\u007f|\u0080|\u0081|\u0082|\u0083|\u0084|\u0085|\u0086|\u0087|\u0088|\u0089|\u008a|\u008b|\u008c|\u008d|\u008e|\u008f|\u0090|\u0091|\u0092|\u0093|\u0094|\u0095|\u0096|\u0097|\u0098|\u0099|\u009a|\u009b|\u009c|\u009d|\u009e|\u009f/g
-        );
-        libFiles.forEach(function node_args_each(value:string) {
-            requireDir(value);
-        });
-    }());
+            });
+        }());
 
     // build/test system
     apps.build = function node_apps_build(test:boolean):void {
@@ -1161,7 +1117,7 @@ interface directoryList extends Array<directoryItem> {
                         write = function node_apps_build_libraries_write():void {
                             const message:string = `${text.green}Files modified and combined for easy use.${text.none}`;
                             parsefile = parsefile + libfiles.join("");
-                            node.fs.writeFile(`${js}parse.js`, `${parsefile}global.sparser=sparser;}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse(erp:Error) {
+                            node.fs.writeFile(`${js}parse.js`, `${parsefile}global.sparser=sparser;module.exports=sparser;return sparser;}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse(erp:Error) {
                                 const browserfile:string = `${parsefile.replace(/global\.sparser/g, "window.sparser")}window.sparser=sparser;}());`;
                                 if (erp !== null) {
                                     apps.error([erp.toString()]);
@@ -1196,20 +1152,20 @@ interface directoryList extends Array<directoryItem> {
                                     apps.errout([errr.toString()]);
                                     return;
                                 }
-                                if (filename !== "browser.js" && filename !== "all.js") {
+                                if (filename !== "all.js") {
                                     filedata = filedata
                                         .replace(/\/\*\s*global \w+(\s*,\s*\w+)*\s*\*\//, "")
                                         .replace(/^\s+/, "");
-                                    if (filename === "demo.js") {
+                                    if (filename === "demofile.js") {
                                         demofile = filedata.replace(/("|')use strict("|');/g, "");
                                     } else if (filename === "readme.md") {
                                         readme = filedata.replace(/##\s+Version\s+\d+\.\d+\.\d+/, `## Version ${sparser.version.number}`);
-                                    } else if (filename === "parse.js") {
+                                    } else if (filename === "parsefile.js") {
                                         parsefile = filedata
                                             .replace(/global\.sparser/g, "sparser")
                                             .replace(/sparser\s*=\s*sparser;?\s*\}\(\)\);\s*$/, "")
                                             .replace(/options\s*:\s*\{\},/, `options:${opts[0]},`)
-                                            .replace(/version\s*:\s*\{(\s*((date)|(number))\s*:\s*("|'){2}\s*,?\s*){2}\}/, `version:${opts[1]}`);
+                                            .replace(/version\s*:\s*\{\s*date\s*:\s*"(\d+\s+\w+\s+\d{4})?",\s*number\s*:\s*"(\d+\.\d+\.\d+)?"\s*\}/, `version:${opts[1]}`);
                                     } else {
                                         libfiles.push(filedata
                                             .replace(/global\.sparser/g, "sparser")
@@ -1253,8 +1209,8 @@ interface directoryList extends Array<directoryItem> {
                         parsefile:string = "",
                         readme:string = "";
                     heading("Merging files for simplified application access.");
-                    libFiles.push(`${js}parse.js`);
-                    libFiles.push(`${js}demo${sep}demo.js`);
+                    libFiles.push(`${js}parsefile.js`);
+                    libFiles.push(`${js}demo${sep}demofile.js`);
                     libFiles.push(`${projectPath}readme.md`);
                     filelen = libFiles.length;
                     (function node_apps_build_libraries_versionGather():void {
@@ -1486,8 +1442,14 @@ interface directoryList extends Array<directoryItem> {
                             services: false,
                             typescript: false
                         },
+                        incremental:string = (process.argv.indexOf("incremental") > -1)
+                            ? "--incremental"
+                            : "--pretty",
+                        command:string = (process.argv.indexOf("local") > -1)
+                            ? `node_modules\\.bin\\tsc ${incremental}`
+                            : `tsc ${incremental}`,
                         ts = function node_apps_build_typescript_ts() {
-                            node.child("tsc --pretty", {
+                            node.child(command, {
                                 cwd: projectPath
                             }, function node_apps_build_typescript_callback(err:Error, stdout:string, stderr:string):void {
                                 if (stdout !== "" && stdout.indexOf(` \u001b[91merror${text.none} `) > -1) {
@@ -1558,6 +1520,9 @@ interface directoryList extends Array<directoryItem> {
                     apps.validation(callback);
                 }
             };
+        if (sparser.parser === undefined) {
+            order.build.pop();
+        }
         next("");
     };
     // CLI commands documentation generator
@@ -2684,7 +2649,6 @@ interface directoryList extends Array<directoryItem> {
                     output:string = "",
                     str:string = "";
                 do {
-                    apps.fileNameOptions(keys[a]);
                     options.source = files[keys[a]];
                     files[keys[a]] = sparser.parser();
                     a = a + 1;
@@ -3159,7 +3123,7 @@ interface directoryList extends Array<directoryItem> {
                     };
                 console.log("");
                 start = time(`Compiling for ${text.green + filename + text.none}`);
-                node.child("node js/services build", {
+                node.child("node js/services build incremental", {
                     cwd: projectPath
                 }, function node_apps_server_watch_child(err:Error, stdout:string, stderr:string):void {
                     if (err !== null) {

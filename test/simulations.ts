@@ -195,7 +195,7 @@
             {
                 command: "parse demo no_lead_zero:true",
                 qualifier: "contains",
-                test: `".title","{","margin",":","0 XXXX .5em",";","min-width",":","35em","x;","}"`
+                test: `".title","{","margin",":","0 XXXX 0.5em",";","min-width",":","35em","x;","}"`
             },
             {
                 artifact: `${projectPath}libstest.txt`,
@@ -215,7 +215,7 @@
                 test: "is not a file or directory."
             },
             {
-                command: "performance parse parse.ts",
+                command: "performance parse parsefile.ts",
                 qualifier: "contains",
                 test: "] Milliseconds, \u00b1"
             },

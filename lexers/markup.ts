@@ -71,7 +71,7 @@
                 tagName       = function lexer_markup_tagName(el:string):string {
                     let space:number = 0,
                         name:string  = "";
-                    const reg:RegExp   = (/^(\{((%-?)|\{-?)\s*)/);
+                    const reg:RegExp   = (/^((\{|<)((%-?)|\{-?)=?\s*)/);
                     if (typeof el !== "string") {
                         return "";
                     }
@@ -2248,6 +2248,14 @@
                                     }
                                     namelen = namelen - 1;
                                 } while (namelen > -1);
+                            }
+                        } else if (element.slice(0, 2) === "<%" && options.language === "silverstripe") {
+                            if (tname === "if" || tname === "loop" || tname === "with" || tname === "control" || tname === "cached" || tname === "uncached") {
+                                record.types = "template_start";
+                            } else if (tname === "else" || tname === "else_if") {
+                                record.types = "template_else";
+                            } else if (tname === "end_if" || tname === "end_loop" || tname === "end_with" || tname === "end_control" || tname === "end_cached" || tname === "end_uncached") {
+                                record.types = "template_end";
                             }
                         } else if (element.slice(0, 2) === "{{" && element.charAt(3) !== "{") {
                             if ((/^(\{\{\s*-?\s*end\s*-?\s*\}\})$/).test(element) === true) {

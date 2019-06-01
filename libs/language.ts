@@ -26,6 +26,7 @@
                 phphtml   : "markup",
                 qml       : "style",
                 scss      : "style",
+                silverstripe: "markup",
                 "styled-jsx": "script",
                 "styled-components": "script",
                 swig      : "markup",
@@ -70,6 +71,7 @@
                 markup    : "markup",
                 phphtml   : "HTML/PHP",
                 scss      : "SCSS",
+                silverstripe: "SilverStripe",
                 text      : "Plain Text",
                 titanium  : "Titanium Stylesheets",
                 tss       : "Titanium Stylesheets",
@@ -236,6 +238,9 @@
                         if ((/<%\s*\}/).test(sample) === true) {
                             return output("ejs");
                         }
+                        if ((/<%\s+end_((if)|(with)|(loop)|(control)|(cached)|(uncached))/).test(sample) === true) {
+                            return output("silverstripe");
+                        }
                         if ((/<%\s*end/).test(sample) === true) {
                             return output("html_ruby");
                         }
@@ -292,6 +297,9 @@
                     }
                     if ((/<%\s*\}/).test(sample) === true) {
                         return output("ejs");
+                    }
+                    if ((/<%\s+end_((if)|(with)|(loop)|(control)|(cached)|(uncached))/).test(sample) === true) {
+                        return output("silverstripe");
                     }
                     if ((/<%\s*end/).test(sample) === true) {
                         return output("html_ruby");

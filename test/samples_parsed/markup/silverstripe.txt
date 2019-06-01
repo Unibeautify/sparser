@@ -1,0 +1,15 @@
+[
+{"begin":-1,"ender":1,"lexer":"markup","lines":0,"stack":"global","token":"<% with Element %>","types":"template_start"},
+{"begin":0,"ender":1,"lexer":"markup","lines":2,"stack":"with","token":"<% end_with %>","types":"template_end"},
+{"begin":-1,"ender":3,"lexer":"markup","lines":2,"stack":"global","token":"<% control Element %>","types":"template_start"},
+{"begin":2,"ender":3,"lexer":"markup","lines":2,"stack":"control","token":"<% end_control %>","types":"template_end"},
+{"begin":-1,"ender":5,"lexer":"markup","lines":2,"stack":"global","token":"<% loop Elements %>","types":"template_start"},
+{"begin":4,"ender":5,"lexer":"markup","lines":2,"stack":"loop","token":"<% end_loop %>","types":"template_end"},
+{"begin":-1,"ender":8,"lexer":"markup","lines":2,"stack":"global","token":"<% if $MyDinner == \"quiche\" %>","types":"template_start"},
+{"begin":6,"ender":8,"lexer":"markup","lines":2,"stack":"if","token":"Real men don't eat quiche","types":"content"},
+{"begin":6,"ender":10,"lexer":"markup","lines":2,"stack":"if","token":"<% else_if $MyDinner == $YourDinner %>","types":"template_else"},
+{"begin":8,"ender":10,"lexer":"markup","lines":2,"stack":"else","token":"We both have good taste","types":"content"},
+{"begin":8,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"<% else %>","types":"template_else"},
+{"begin":10,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"Can I have some of your chips?","types":"content"},
+{"begin":10,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"<% end_if %>","types":"template_end"}
+]
