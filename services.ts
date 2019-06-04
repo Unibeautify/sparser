@@ -329,127 +329,127 @@ interface directoryList extends Array<directoryItem> {
         apps:any = {},
         args = function node_args():void {
             const readOptions = function node_args_readOptions():void {
-                    const list:string[] = process.argv,
-                        def:optionDef = sparser.libs.optionDef,
-                        keys:string[] = (command === "options")
-                            ? Object.keys(def.format)
-                            : [],
-                        obj = (command === "options")
-                            ? def.format
-                            : options,
-                        optionName = function node_args_optionName(bindArgument:boolean):void {
-                            if (a === 0 || options[list[a]] === undefined) {
-                                if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
-                                    list.splice(a, 1);
-                                    len = len - 1;
-                                    a = a - 1;
-                                }
-                                return;
+                const list:string[] = process.argv,
+                    def:optionDef = sparser.libs.optionDef,
+                    keys:string[] = (command === "options")
+                        ? Object.keys(def.format)
+                        : [],
+                    obj = (command === "options")
+                        ? def.format
+                        : options,
+                    optionName = function node_args_optionName(bindArgument:boolean):void {
+                        if (a === 0 || options[list[a]] === undefined) {
+                            if (keys.indexOf(list[a]) < 0 && def[list[a]] === undefined) {
+                                list.splice(a, 1);
+                                len = len - 1;
+                                a = a - 1;
                             }
-                            if (bindArgument === true && list[a + 1] !== undefined && list[a + 1].length > 0) {
-                                list[a] = `${list[a]}:${list[a + 1]}`;
+                            return;
+                        }
+                        if (bindArgument === true && list[a + 1] !== undefined && list[a + 1].length > 0) {
+                            list[a] = `${list[a]}:${list[a + 1]}`;
+                            list.splice(a + 1, 1);
+                            len = len - 1;
+                        }
+                        list.splice(0, 0, list[a]);
+                        list.splice(a + 1, 1);
+                    };
+                let split:string = "",
+                    value:string = "",
+                    name:string = "",
+                    a:number = 0,
+                    si:number = 0,
+                    len:number = list.length;
+                do {
+                    list[a] = list[a].replace(/^(-+)/, "");
+                    if (list[a] === "verbose") {
+                        verbose = true;
+                        list.splice(a, 1);
+                        len = len - 1;
+                        a = a - 1;
+                    } else {
+                        si = list[a].indexOf("=");
+                        if (
+                            si > 0 &&
+                            (list[a].indexOf("\"") < 0 || si < list[a].indexOf("\"")) &&
+                            (list[a].indexOf("'") < 0 || si < list[a].indexOf("'")) &&
+                            (si < list[a].indexOf(":") || list[a].indexOf(":") < 0)
+                        ) {
+                            split = "=";
+                        } else {
+                            split = ":";
+                        }
+                        if (list[a + 1] === undefined) {
+                            si = 99;
+                        } else {
+                            si = list[a + 1].indexOf(split);
+                        }
+                        if (
+                            obj[list[a]] !== undefined &&
+                            list[a + 1] !== undefined &&
+                            obj[list[a + 1]] === undefined &&
+                            (
+                                si < 0 || 
+                                (si > list[a + 1].indexOf("\"") && list[a + 1].indexOf("\"") > -1) ||
+                                (si > list[a + 1].indexOf("'") && list[a + 1].indexOf("'") > -1)
+                            )
+                        ) {
+                            if (command === "options") {
+                                optionName(true);
+                            } else {
+                                options[list[a]] = list[a + 1];
+                                a = a + 1;
+                            }
+                        } else if (list[a].indexOf(split) > 0 || (list[a].indexOf(split) < 0 && list[a + 1] !== undefined && (list[a + 1].charAt(0) === ":" || list[a + 1].charAt(0) === "="))) {
+                            if (list[a].indexOf(split) > 0) {
+                                name = list[a].slice(0, list[a].indexOf(split)).toLowerCase();
+                                value = list[a].slice(list[a].indexOf(split) + 1);
+                            } else {
+                                name = list[a].toLowerCase();
+                                value = list[a + 1].slice(1);
                                 list.splice(a + 1, 1);
                                 len = len - 1;
                             }
-                            list.splice(0, 0, list[a]);
-                            list.splice(a + 1, 1);
-                        };
-                    let split:string = "",
-                        value:string = "",
-                        name:string = "",
-                        a:number = 0,
-                        si:number = 0,
-                        len:number = list.length;
-                    do {
-                        list[a] = list[a].replace(/^(-+)/, "");
-                        if (list[a] === "verbose") {
-                            verbose = true;
-                            list.splice(a, 1);
-                            len = len - 1;
-                            a = a - 1;
-                        } else {
-                            si = list[a].indexOf("=");
-                            if (
-                                si > 0 &&
-                                (list[a].indexOf("\"") < 0 || si < list[a].indexOf("\"")) &&
-                                (list[a].indexOf("'") < 0 || si < list[a].indexOf("'")) &&
-                                (si < list[a].indexOf(":") || list[a].indexOf(":") < 0)
-                            ) {
-                                split = "=";
-                            } else {
-                                split = ":";
-                            }
-                            if (list[a + 1] === undefined) {
-                                si = 99;
-                            } else {
-                                si = list[a + 1].indexOf(split);
-                            }
-                            if (
-                                obj[list[a]] !== undefined &&
-                                list[a + 1] !== undefined &&
-                                obj[list[a + 1]] === undefined &&
-                                (
-                                    si < 0 || 
-                                    (si > list[a + 1].indexOf("\"") && list[a + 1].indexOf("\"") > -1) ||
-                                    (si > list[a + 1].indexOf("'") && list[a + 1].indexOf("'") > -1)
-                                )
-                            ) {
-                                if (command === "options") {
-                                    optionName(true);
+                            if (command === "options") {
+                                if (keys.indexOf(name) > -1) {
+                                    if (value !== undefined && value.length > 0) {
+                                        list[a] = `${name}:${value}`;
+                                    } else {
+                                        list[a] = name;
+                                    }
                                 } else {
-                                    options[list[a]] = list[a + 1];
-                                    a = a + 1;
-                                }
-                            } else if (list[a].indexOf(split) > 0 || (list[a].indexOf(split) < 0 && list[a + 1] !== undefined && (list[a + 1].charAt(0) === ":" || list[a + 1].charAt(0) === "="))) {
-                                if (list[a].indexOf(split) > 0) {
-                                    name = list[a].slice(0, list[a].indexOf(split)).toLowerCase();
-                                    value = list[a].slice(list[a].indexOf(split) + 1);
-                                } else {
-                                    name = list[a].toLowerCase();
-                                    value = list[a + 1].slice(1);
-                                    list.splice(a + 1, 1);
+                                    list.splice(a, 1);
                                     len = len - 1;
                                 }
-                                if (command === "options") {
-                                    if (keys.indexOf(name) > -1) {
-                                        if (value !== undefined && value.length > 0) {
-                                            list[a] = `${name}:${value}`;
-                                        } else {
-                                            list[a] = name;
-                                        }
-                                    } else {
-                                        list.splice(a, 1);
-                                        len = len - 1;
-                                    }
-                                } else if (options[name] !== undefined) {
-                                    if (value === "true" && def[name].type === "boolean") {
-                                        options[name] = true;
-                                    } else if (value === "false" && def[name].type === "boolean") {
-                                        options[name] = false;
-                                    } else if (isNaN(Number(value)) === false && def[name].type === "number") {
-                                        options[name] = Number(value);
-                                    } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
-                                        options[name] = value;
-                                    } else if (def[name].values === undefined) {
-                                        options[name] = value;
-                                    }
+                            } else if (options[name] !== undefined) {
+                                if (value === "true" && def[name].type === "boolean") {
+                                    options[name] = true;
+                                } else if (value === "false" && def[name].type === "boolean") {
+                                    options[name] = false;
+                                } else if (isNaN(Number(value)) === false && def[name].type === "number") {
+                                    options[name] = Number(value);
+                                } else if (def[name].values !== undefined && def[name].values[value] !== undefined) {
+                                    options[name] = value;
+                                } else if (def[name].values === undefined) {
+                                    options[name] = value;
                                 }
-                            } else if (command === "options") {
-                                optionName(false);
                             }
-                        }
-                        a = a + 1;
-                    } while (a < len);
-                    if (options.source === "" && process.argv.length > 0 && process.argv[0].indexOf("=") < 0 && process.argv[0].replace(/^[a-zA-Z]:\\/, "").indexOf(":") < 0) {
-                        if (command === "performance") {
-                            options.source = (process.argv.length < 1)
-                                ? ""
-                                : process.argv[1];
-                        } else {
-                            options.source = process.argv[0];
+                        } else if (command === "options") {
+                            optionName(false);
                         }
                     }
-                };
+                    a = a + 1;
+                } while (a < len);
+                if (options.source === "" && process.argv.length > 0 && process.argv[0].indexOf("=") < 0 && process.argv[0].replace(/^[a-zA-Z]:\\/, "").indexOf(":") < 0) {
+                    if (command === "performance") {
+                        options.source = (process.argv.length < 1)
+                            ? ""
+                            : process.argv[1];
+                    } else {
+                        options.source = process.argv[0];
+                    }
+                }
+            };
             options = sparser.options;
             options.api = "node";
             options.binary_check = (

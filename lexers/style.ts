@@ -261,7 +261,7 @@
                         dotstart:RegExp        = (/^-?\.\d+[a-z]/),
                         zerodot:RegExp         = (/(\s|\(|,)-?0+\.?\d+([a-z]|\)|,|\s)/g),
                         dot:RegExp             = (/(\s|\(|,)-?\.?\d+([a-z]|\)|,|\s)/g),
-                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw";
+                        dimensions:string = "%|cap|ch|cm|deg|dpcm|dpi|dppx|em|ex|fr|grad|Hz|ic|in|kHz|lh|mm|ms|mS|pc|pt|px|Q|rad|rem|rlh|s|turn|vb|vh|vi|vmax|vmin|vw";
                     let cc:number         = 0,
                         dd:number         = 0,
                         block:string      = "",

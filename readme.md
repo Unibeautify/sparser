@@ -5,7 +5,7 @@
 ## License
 Creative Commons Zero v1.0 Universal (cc0-1.0)
 
-## Version 1.3.0
+## Version 1.3.1
 Play around with this application [in your browser](https://sparser/demo/).
 
 ## Contents
