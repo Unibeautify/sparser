@@ -1,3 +1,5 @@
+import { Recoverable } from "repl";
+
 /*global global*/
 (function markdown_init() {
     "use strict";
@@ -36,6 +38,39 @@
                     }, "");
                 },
                 text     = function lexer_markdown_text(item:string, tag:string, listrecurse:boolean):void {
+                    const headerId = function lexer_markdown_text_headerId(tag:string):string {
+                        if ((/<\/h\d>/).test(tag) === false) {
+                            return tag;
+                        }
+                        const store:string[] = [],
+                            parent:[string, number] = parse.structure[parse.structure.length - 1];
+                        let aa:number = parent[1] + 1,
+                            id:string = "";
+                        do {
+                            if (data.types[aa] === "content") {
+                                store.push(data.token[aa]);
+                            }
+                            aa = aa + 1;
+                        } while (aa < parse.count);
+                        if (store.length > 0) {
+                            id = `id="${store.join(" ").replace(/\s+/g, "-").replace(/\.|\(|\)|:|\?|#|=|\{|\}|\[|\]/g, "").replace(/-+/g, "-").replace(/^-/, "").replace(/-$/, "").toLowerCase()}"`;
+                            parse.splice({
+                                data: data,
+                                howmany: 0,
+                                index: parent[1] + 1,
+                                record: {
+                                    begin: parent[1],
+                                    ender: -1,
+                                    lexer: "markdown",
+                                    lines: 0,
+                                    stack: parent[0],
+                                    token: id,
+                                    types: "attribute"
+                                }
+                            });
+                        }
+                        return tag;
+                    };
                     let tagend:string = tag.replace("<", "</"),
                         struct:string = tag.replace("<", "").replace(/(\/?>)$/, "");
                     
@@ -407,7 +442,7 @@
                                 lexer: "markdown",
                                 lines: 0,
                                 stack: parse.structure[parse.structure.length - 1][0],
-                                token: tagend,
+                                token: headerId(tagend),
                                 types: "end"
                             }, "");
                             quote = "";
@@ -449,7 +484,7 @@
                             lexer: "markdown",
                             lines: 0,
                             stack: parse.structure[parse.structure.length - 1][0],
-                            token: tagend,
+                            token: headerId(tagend),
                             types: "end"
                         }, "");
                         quote = "";

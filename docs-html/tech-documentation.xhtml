@@ -4,9 +4,9 @@
 
 <head><title>Sparser - Technical Documentation</title> <link href="https://sparser.io/docs-html/tech-documentation.xhtml" rel="canonical" type="application/xhtml+xml"/> <meta content="width=device-width, initial-scale=1" name="viewport"/> <meta content="index, follow" name="robots"/> <meta content="Sparser - Universal Parser" name="DC.title"/> <meta content="#fff" name="theme-color"/> <meta content="Austin Cheney" name="author"/> <meta content="Sparser is a programming language parsing utility that can interpret many different languages using a single simple data model." name="description"/> <meta content="Global" name="distribution"/> <meta content="en" http-equiv="Content-Language"/> <meta content="application/xhtml+xml;charset=UTF-8" http-equiv="Content-Type"/> <meta content="blendTrans(Duration=0)" http-equiv="Page-Enter"/> <meta content="blendTrans(Duration=0)" http-equiv="Page-Exit"/> <meta content="text/css" http-equiv="content-style-type"/> <meta content="application/javascript" http-equiv="content-script-type"/> <meta content="google515f7751c9f8a155" name="google-site-verification"/> <meta content="#bbbbff" name="msapplication-TileColor"/> <link href="/website.css" media="all" rel="stylesheet" type="text/css"/> </head><body id="documentation"><div id="top_menu"><h1><a href="/">Sparser</a></h1>
 <ul><li class="donate"><a href="https://liberapay.com/prettydiff/donate"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" height="16" width="16" x="7" y="7"><g transform="translate(-78.37-208.06)" fill="#111"><path d="m104.28 271.1c-3.571 0-6.373-.466-8.41-1.396-2.037-.93-3.495-2.199-4.375-3.809-.88-1.609-1.308-3.457-1.282-5.544.025-2.086.313-4.311.868-6.675l9.579-40.05 11.69-1.81-10.484 43.44c-.202.905-.314 1.735-.339 2.489-.026.754.113 1.421.415 1.999.302.579.817 1.044 1.546 1.395.729.353 1.747.579 3.055.679l-2.263 9.278"/><path d="m146.52 246.14c0 3.671-.604 7.03-1.811 10.07-1.207 3.043-2.879 5.669-5.01 7.881-2.138 2.213-4.702 3.935-7.693 5.167-2.992 1.231-6.248 1.848-9.767 1.848-1.71 0-3.42-.151-5.129-.453l-3.394 13.651h-11.162l12.52-52.19c2.01-.603 4.311-1.143 6.901-1.622 2.589-.477 5.393-.716 8.41-.716 2.815 0 5.242.428 7.278 1.282 2.037.855 3.708 2.024 5.02 3.507 1.307 1.484 2.274 3.219 2.904 5.205.627 1.987.942 4.11.942 6.373m-27.378 15.461c.854.202 1.91.302 3.167.302 1.961 0 3.746-.364 5.355-1.094 1.609-.728 2.979-1.747 4.111-3.055 1.131-1.307 2.01-2.877 2.64-4.714.628-1.835.943-3.858.943-6.071 0-2.161-.479-3.998-1.433-5.506-.956-1.508-2.615-2.263-4.978-2.263-1.61 0-3.118.151-4.525.453l-5.28 21.948"/></g></svg> Donate</a></li> <li><a href="/demo/?scrolldown">Demo</a></li> <li><a href="/docs-html/tech-documentation.xhtml">Documentation</a></li> <li><a href="https://github.com/unibeautify/sparser">Github</a></li> <li><a href="https://www.npmjs.com/package/sparser">NPM</a></li></ul><span class="clear"></span></div><div id="content"><h1><span>Sparser</span>Technical Documentation</h1>
-<div class="section"><h2>License: <a href="../license">Creative Commons Zero v1.0 Universal (cc0-1.0)</a>
+<div class="section"><h2 id="license-creative-commons-zero-v10-universal-cc0-10">License: <a href="../license">Creative Commons Zero v1.0 Universal (cc0-1.0)</a>
 </h2>
-</div><div class="section"><h2>Contents</h2>
+</div><div class="section"><h2 id="contents">Contents</h2>
 <ol><li><a href="#execution">Execution</a>
 <ol><li><a href="#supplied-run-times">Supplied Run Times</a>
 <ol><li><a href="#browser-runtime">Browser Runtime</a>
@@ -16,7 +16,7 @@
 </li><li><a href="#node-embedding">Node Embedding</a>
 </li></ol></li></ol></li><li><a href="#ignore-code">Ignore Code</a>
 </li><li><a href="#universal-parse-model">Universal Parse Model</a>
-</li></ol><h3>See Also</h3>
+</li></ol><h3 id="see-also">See Also</h3>
 <ol><li><a href="architecture.xhtml">Architecture</a>
 </li><li><a href="automation.xhtml">Automation</a>
 </li><li><a href="demo.xhtml">Demo Tool</a>
@@ -25,32 +25,32 @@
 </li><li><a href="options.xhtml">Options</a>
 </li><li><a href="parsers.xhtml">Introduction to Parsers</a>
 </li><li>Lexers <ol><li><a href="lexers/style.xhtml">style</a></li><li><a href="lexers/script.xhtml">script</a></li><li><a href="lexers/markup.xhtml">markup</a></li><li><a href="lexers/markdown.xhtml">markdown</a></li></ol></li></ol>
-</div><div class="section"><h2>Execution</h2>
+</div><div class="section"><h2 id="execution">Execution</h2>
 <p><code class="language-javascript"><![CDATA[global.sparser.options.source = "my code";
 global.sparser.parser();]]></code></p>
 <p>Execute the application by simply running this instruction, where the options are an object described in <a href="options.xhtml">Options</a>
 .</p>
-<h3>Supplied Run Times</h3>
+<h3 id="supplied-run-times">Supplied Run Times</h3>
 <p>Sparser is intended for inclusion in other applications as an embedded utility.  To run Sparser immediately and experiment without any configuration some simple runtime interfaces are provided.</p>
-<h4>Browser Runtime</h4>
+<h4 id="browser-runtime">Browser Runtime</h4>
 <p>A handy-dandy browser utility is provided to run Sparser in a web browser as <em>demo/index.xhtml</em>. This utility can be run from any location whether on your local file system or from a webserver. First, run the build, <code><![CDATA[node js/services build]]></code>, to create the necessary JavaScript file. To run the web server simply execute <code><![CDATA[node js/services server]]></code> on the command line. The server provides a local webserver and a web socket channel so that the provided HTML tool automatically refreshes when the application rebuilds.</p>
 <p>The browser utility produces output in a HTML table and color codes the output based upon the lexer used.</p>
-<h4>Terminal Runtime</h4>
+<h4 id="terminal-runtime">Terminal Runtime</h4>
 <p>All Node.js support is consolidated into a single location. To examine available features run this command: <code><![CDATA[node js/services command]]></code></p>
-<h3>Embedding</h3>
+<h3 id="embedding">Embedding</h3>
 <p>Sparser is completely environment agnostic, which means it can be embedded anywhere and run the same way and produce the same output.</p>
-<h4>Browser Embedding</h4>
+<h4 id="browser-embedding">Browser Embedding</h4>
 <p>The browser environment makes use of a single dynamically created file: <em>js/browser.js</em>. Just simply install from NPM (<code><![CDATA[npm install sparser]]></code>) or run the build <code><![CDATA[node js/services build]]></code> to compile the TypeScript and generate this file. This file is actually API agnostic except that it builds out the application and attaches it as a property of the <em>window</em> object. The file also contains every available lexer.</p>
 <p>Include the js/browser.js file in your HTML:</p>
 <p><code class="language-html"><![CDATA[<script src="node_modules/sparser/js/browser.js" type="application/javascript"></script>]]></code></p>
 <p>Inside your browser-based JavaScript application simply call Sparser.</p>
 <p><code class="language-javascript"><![CDATA[window.sparser.options.source = "my code";
 window.sparser.parser();]]></code></p>
-<h4>Node Embedding</h4>
+<h4 id="node-embedding">Node Embedding</h4>
 <p>The file for embedding into Node, <em>js/parser.js</em> is identical to the file for embedding into the browser except the one reference to the <em>window</em> object instead refers to Node's <em>global</em> object. Simply include this file into your application by any means, example: <code><![CDATA[require ("sparser");]]></code></p>
 <p><code class="language-javascript"><![CDATA[global.sparser.options.source = "my code";
 global.sparser.parser();]]></code></p>
-</div><div class="section"><h2>Ignore Code</h2>
+</div><div class="section"><h2 id="ignore-code">Ignore Code</h2>
 <p>Parts of code can be ignored from parsing by sandwiching that code between two comments. The first comment must start with <code><![CDATA[parse-ignore-start]]></code> and the second comment must contain <code><![CDATA[parse-ignore-end]]></code>. For example:</p>
 <p><code class="language-xml"><![CDATA[<!-- parse-ignore-start --> some code to ignore <!-- parse-ignore-end -->]]></code></p>
 <p><code class="language-javascript"><![CDATA[// parse-ignore-start
@@ -68,9 +68,9 @@ ignore some code
 /* parse-ignore-start */
 ignore some code
 /* parse-ignore-end */]]></code></p>
-</div><div class="section"><h2>Universal Parse Model</h2>
+</div><div class="section"><h2 id="universal-parse-model">Universal Parse Model</h2>
 <p>Sparser supports several different formats of data structure for output as defined by the <strong>format</strong> option. All these formats represent the data equally, but shape the data in a way a user may find more comfortable to access. The following explanation will use examples in the default <em>arrays</em> format type.</p>
-<h3>Data Types</h3>
+<h3 id="data-types">Data Types</h3>
 <ul><li><strong>begin</strong> - <em>number</em> - The index where the current structure begins. For tokens of type <em>start</em> this will refer to the parent container or global scope.</li><li><strong>ender</strong> - <em>number</em> - The index where the current structure ends. Unlike the <em>begin</em> data a token of type <em>end</em> refers to itself.</li><li><strong>lexer</strong> - <em>string</em> - The type of rules use to scan and resolve the current token.</li><li><strong>lines</strong> - <em>number</em> - Describes the white space immediate prior to the token's first character. A value of <em>0</em> means no white space. A value of <em>1</em> means some amount of white space not containing a new line character. Values of <em>2</em> and greater indicate the number of new lines plus 1. For example an empty line preceding the current token would mean a value of <em>3</em>, because the white space would contain two new line characters.</li><li><strong>stack</strong> - <em>string</em> - A description of the current structure represented by the <em>begin</em> and <em>ender</em> data values.</li><li><strong>token</strong> - <em>string</em> - The atomic code fragment.</li><li><strong>types</strong> - <em>string</em> - A categorical description of the current token. Types are defined in each markdown file accompanying a respective lexer file.</li></ul><p>Each of those data types is an array of identical length that are populated and modified in unison.  Think of this as a database table such that each array is a column, the name of the array (the object key name) is the column metadata, and finally each index of the arrays is a record in the table.  Here is an example:</p>
 <p>Consider the code <code><![CDATA[<a><b class="cat"></b></a>]]></code>. The parsed output in the default format will be:</p>
 <p><code><![CDATA[{
