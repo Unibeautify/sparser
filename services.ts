@@ -2935,7 +2935,11 @@ interface directoryList extends Array<directoryItem> {
                             if (ers.code === "ENOENT") {
                                 console.log(`${text.angry}404${text.none} for ${uri}`);
                                 response.writeHead(200, {"Content-Type": "text/html"});
-                                response.write(page.replace("insertme", `<p>HTTP 404: ${uri}</p>`));
+                                if (request.headers.referer.indexOf("http") === 0 && request.headers.referer.indexOf("/demo") > 0) {
+                                    response.write("");
+                                } else {
+                                    response.write(page.replace("insertme", `<p>HTTP 404: ${uri}</p>`));
+                                }
                                 response.end();
                             } else {
                                 apps.errout([ers.toString()]);

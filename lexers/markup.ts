@@ -139,7 +139,7 @@
                         if (b[aa + 4] === "{") {
                             rec.token = "} else {";
                             rec.types = "template_else";
-                            recordPush(data, rec, "");
+                            recordPush(data, rec, "else");
                             a = aa;
                             return;
                         }
@@ -148,7 +148,7 @@
                             if (b[aa] === "{") {
                                 rec.token = "} else {";
                                 rec.types = "template_else";
-                                recordPush(data, rec, "");
+                                recordPush(data, rec, "else");
                                 a = aa;
                                 return;
                             }
@@ -177,7 +177,7 @@
                                     if (b[aa] === "{") {
                                         rec.token = b.slice(a, aa + 1).join("");
                                         rec.types = "template_else";
-                                        recordPush(data, rec, "");
+                                        recordPush(data, rec, "else");
                                         a = aa;
                                         return;
                                     }
@@ -812,7 +812,7 @@
                                     earlyexit    = true;
                                     record.token = "{:else}";
                                     record.types = "template_else";
-                                    recordPush(data, record, "");
+                                    recordPush(data, record, "else");
                                     return;
                                 }
                                 if (b[a + 1] === "!") {
@@ -871,7 +871,7 @@
                                 earlyexit    = true;
                                 record.token = "{@}else{@}";
                                 record.types = "template_else";
-                                recordPush(data, record, "");
+                                recordPush(data, record, "else");
                                 return;
                             }
                         } else if (b[a] === "[" && b[a + 1] === "%") {
@@ -1092,7 +1092,10 @@
                                                     f = f - 1;
                                                 } while (f > 0 && (/\s/).test(lex[f]) === true);
                                             }
-                                            if (lex[f - 1] === "{" && lex[f] === "%") {
+                                            if (lex[f - 2] === "{" && lex[f - 1] === "%" && lex[f] === "-") {
+                                                end      = "-%}";
+                                                lastchar = "}";
+                                            } else if (lex[f - 1] === "{" && lex[f] === "%") {
                                                 end      = "%}";
                                                 lastchar = "}";
                                             }
@@ -1487,6 +1490,11 @@
                                             lastchar = "t";
                                             preserve = true;
                                             ltype    = "comment";
+                                        } else if (lex[0] === "{" && lex[1] === "%" && lex[2] === "-" && lex.join("").replace(/\s+/g, "") === "{%-comment-%}") {
+                                            end      = "endcomment";
+                                            lastchar = "t";
+                                            preserve = true;
+                                            ltype    = "comment";
                                         } else {
                                             //if current character matches the last character of the tag ending sequence
                                             f = lex.length;
@@ -1654,17 +1662,36 @@
                     }
 
                     //a quick hack to inject records for a type of template comments
-                    if (tname === "comment" && element.slice(0, 2) === "{%" && element.charAt(2) !== "-") {
-                        element      = element
-                            .replace(/^(\{%\s*comment\s*%\}\s*)/, "")
-                            .replace(/(\s*\{%\s*endcomment\s*%\})$/, "");
-                        record.token = "{% comment %}";
+                    if (tname === "comment" && element.slice(0, 2) === "{%") {
+                        record.begin = parse.structure[parse.structure.length - 1][1];
+                        record.ender = parse.count + 3;
+                        record.stack = parse.structure[parse.structure.length - 1][0];
                         record.types = "template_start";
-                        recordPush(data, record, "");
-                        record.token = element;
-                        record.types = "comment";
-                        recordPush(data, record, "");
-                        record.token = "{% endcomment %}";
+                        if (element.charAt(2) === "-") {
+                            element      = element
+                                .replace(/^(\s*\{%-\s*comment\s*-%\}\s*)/, "")
+                                .replace(/(\s*\{%-\s*endcomment\s*-%\}\s*)$/, "");
+                            record.token = "{%- comment -%}";
+                            recordPush(data, record, "comment");
+                            record.begin = parse.count;
+                            record.stack = "comment";
+                            record.token = element;
+                            record.types = "comment";
+                            recordPush(data, record, "");
+                            record.token = "{%- endcomment -%}";
+                        } else {
+                            element      = element
+                                .replace(/^(\s*\{%\s*comment\s*%\}\s*)/, "")
+                                .replace(/(\s*\{%\s*endcomment\s*%\}\s*)$/, "");
+                            record.token = "{% comment %}";
+                            recordPush(data, record, "comment");
+                            record.begin = parse.count;
+                            record.stack = "comment";
+                            record.token = element;
+                            record.types = "comment";
+                            recordPush(data, record, "");
+                            record.token = "{% endcomment %}";
+                        }
                         record.types = "template_end";
                         recordPush(data, record, "");
                         return;
@@ -1891,7 +1918,7 @@
                             if (tname === "cfelse" || tname === "cfelseif") {
                                 record.token = element;
                                 record.types = "template_else";
-                                recordPush(data, record, "");
+                                recordPush(data, record, tname);
                                 singleton    = true;
                                 return false;
                             }
@@ -2216,6 +2243,7 @@
                         if (element.slice(0, 2) === "{%") {
                             let names:string[] = [
                                 "autoescape",
+                                "case",
                                 "capture",
                                 "comment",
                                 "embed",
@@ -2307,8 +2335,6 @@
                         record.types = "cdata_end";
                         recordPush(data, record, "");
                         parse.structure.pop();
-                    } else if (record.types === "template_else") {
-                        recordPush(data, record, "");
                     } else {
                         recordPush(data, record, tname);
                     }

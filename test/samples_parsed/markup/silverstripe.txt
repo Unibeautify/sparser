@@ -8,8 +8,8 @@
 {"begin":-1,"ender":8,"lexer":"markup","lines":2,"stack":"global","token":"<% if $MyDinner == \"quiche\" %>","types":"template_start"},
 {"begin":6,"ender":8,"lexer":"markup","lines":2,"stack":"if","token":"Real men don't eat quiche","types":"content"},
 {"begin":6,"ender":10,"lexer":"markup","lines":2,"stack":"if","token":"<% else_if $MyDinner == $YourDinner %>","types":"template_else"},
-{"begin":8,"ender":10,"lexer":"markup","lines":2,"stack":"else","token":"We both have good taste","types":"content"},
-{"begin":8,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"<% else %>","types":"template_else"},
+{"begin":8,"ender":10,"lexer":"markup","lines":2,"stack":"else_if","token":"We both have good taste","types":"content"},
+{"begin":8,"ender":12,"lexer":"markup","lines":2,"stack":"else_if","token":"<% else %>","types":"template_else"},
 {"begin":10,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"Can I have some of your chips?","types":"content"},
 {"begin":10,"ender":12,"lexer":"markup","lines":2,"stack":"else","token":"<% end_if %>","types":"template_end"}
 ]

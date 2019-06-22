@@ -1,0 +1,25 @@
+<div>
+    {% case handle %}
+        {% when 'cake' %}
+            This is a cake
+        {% when 'cookie' %}
+            This is a cookie
+        {% else %}
+            This is not a cake nor a cookie
+    {% endcase %}
+</div>
+
+{% comment %}
+hello world
+{% endcomment %}
+
+{%- comment -%}
+hello world
+{%- endcomment -%}
+
+{% capture foo_object %}
+{% if condition %}
+size:  {{ foo_bar  }},
+color: {{ bar | json }}
+{% endif %}
+{% endcapture %}

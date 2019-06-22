@@ -612,17 +612,46 @@
                 if (data === parse.data) {
                     parse.count      = parse.count + 1;
                     parse.linesSpace = 0;
+                    if (record.lexer !== "style") {
+                        if (structure.replace(/(\{|\}|@|<|>|%|#|)/g, "") === "") {
+                            if (record.types === "else" || record.types.indexOf("_else") > 0) {
+                                structure = "else";
+                            } else {
+                                structure = record.token;
+                            }
+                        } else {
+                            structure = structure.replace(/(\{|\}|@|<|>|%|#|)/g, "");
+                        }
+                    }
                     if (record.types === "start" || record.types.indexOf("_start") > 0) {
                         parse.structure.push([structure, parse.count]);
                     } else if (record.types === "end" || record.types.indexOf("_end") > 0) {
+                        // this big condition fixes language specific else blocks that are children of start/end blocks not associated with the if/else chain
+                        if (
+                            parse.structure.length > 2 &&
+                            (data.types[parse.structure[parse.structure.length - 1][1]] === "else" || data.types[parse.structure[parse.structure.length - 1][1]].indexOf("_else") > 0) &&
+                            (data.types[parse.structure[parse.structure.length - 2][1]] === "start" || data.types[parse.structure[parse.structure.length - 2][1]].indexOf("_start") > 0) &&
+                            (data.types[parse.structure[parse.structure.length - 2][1] + 1] === "else" || data.types[parse.structure[parse.structure.length - 2][1] + 1].indexOf("_else") > 0)
+                        ) {
+                            parse.structure.pop();
+                            data.begin[parse.count] = parse.structure[parse.structure.length - 1][1];
+                            data.ender[parse.count - 1] = parse.count;
+                        }
                         ender();
                         parse.structure.pop();
                     } else if (record.types === "else" || record.types.indexOf("_else") > 0) {
-                        ender();
                         if (structure === "") {
-                            parse.structure[parse.structure.length - 1] = ["else", parse.count];
+                            structure = "else";
+                        }
+                        if (parse.count > 0 && (data.types[parse.count - 1] === "start" || data.types[parse.count - 1].indexOf("_start") > 0)) {
+                            parse.structure.push([structure, parse.count]);
                         } else {
-                            parse.structure[parse.structure.length - 1] = [structure, parse.count];
+                            ender();
+                            if (structure === "") {
+                                parse.structure[parse.structure.length - 1] = ["else", parse.count];
+                            } else {
+                                parse.structure[parse.structure.length - 1] = [structure, parse.count];
+                            }
                         }
                     }
                 }

@@ -114,6 +114,9 @@
                     return [langname, language.setlexer(langname), language.nameproper(langname)];
                 },
                 cssA        = function language_auto_cssA():languageAuto {
+                    if ((/\n\s*#+\s+/).test(sample) === true || (/^#+\s+/).test(sample) === true) {
+                        return output("markdown");
+                    }
                     if ((/\$[a-zA-Z]/).test(sample) === true || (/\{\s*(\w|\.|\$|#)+\s*\{/).test(sample) === true) {
                         return output("scss");
                     }
