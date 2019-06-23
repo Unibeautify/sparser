@@ -2261,7 +2261,9 @@
                                 "unless",
                                 "verbatim"
                             ];
-                            if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif" || tname === "elsif") {
+                            if ((tname === "case" || tname === "default") && (parse.structure[parse.structure.length - 1][0] === "switch" || parse.structure[parse.structure.length - 1][0] === "case")) {
+                                record.types = "template_else";
+                            } else if (tname === "else" || tname === "elseif" || tname === "when" || tname === "elif" || tname === "elsif") {
                                 record.types = "template_else";
                             } else {
                                 let namelen:number = names.length - 1;

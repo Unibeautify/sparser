@@ -1,0 +1,6 @@
+{% switch variable %}
+    {% case "value1" %}
+    {% case "value2" %}
+    {% case "value2" %}
+    {% default %} 
+{% endswitch %}

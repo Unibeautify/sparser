@@ -627,6 +627,7 @@
                         parse.structure.push([structure, parse.count]);
                     } else if (record.types === "end" || record.types.indexOf("_end") > 0) {
                         // this big condition fixes language specific else blocks that are children of start/end blocks not associated with the if/else chain
+                        let case_ender:number = 0;
                         if (
                             parse.structure.length > 2 &&
                             (data.types[parse.structure[parse.structure.length - 1][1]] === "else" || data.types[parse.structure[parse.structure.length - 1][1]].indexOf("_else") > 0) &&
@@ -635,9 +636,14 @@
                         ) {
                             parse.structure.pop();
                             data.begin[parse.count] = parse.structure[parse.structure.length - 1][1];
+                            data.stack[parse.count] = parse.structure[parse.structure.length - 1][0];
                             data.ender[parse.count - 1] = parse.count;
+                            case_ender = data.ender[data.begin[parse.count] + 1];
                         }
                         ender();
+                        if (case_ender > 0) {
+                            data.ender[data.begin[parse.count] + 1] = case_ender;
+                        }
                         parse.structure.pop();
                     } else if (record.types === "else" || record.types.indexOf("_else") > 0) {
                         if (structure === "") {

@@ -1,0 +1,8 @@
+[
+{"begin":-1,"ender":5,"lexer":"markup","lines":0,"stack":"global","token":"{% switch variable %}","types":"template_start"},
+{"begin":0,"ender":2,"lexer":"markup","lines":2,"stack":"switch","token":"{% case \"value1\" %}","types":"template_else"},
+{"begin":1,"ender":3,"lexer":"markup","lines":2,"stack":"case","token":"{% case \"value2\" %}","types":"template_else"},
+{"begin":2,"ender":4,"lexer":"markup","lines":2,"stack":"case","token":"{% case \"value2\" %}","types":"template_else"},
+{"begin":3,"ender":5,"lexer":"markup","lines":2,"stack":"case","token":"{% default %}","types":"template_else"},
+{"begin":0,"ender":5,"lexer":"markup","lines":2,"stack":"switch","token":"{% endswitch %}","types":"template_end"}
+]

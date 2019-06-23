@@ -7,7 +7,7 @@
 {"begin":4,"ender":6,"lexer":"markup","lines":2,"stack":"when","token":"This is a cookie","types":"content"},
 {"begin":4,"ender":6,"lexer":"markup","lines":2,"stack":"when","token":"{% else %}","types":"template_else"},
 {"begin":6,"ender":8,"lexer":"markup","lines":2,"stack":"else","token":"This is not a cake nor a cookie","types":"content"},
-{"begin":1,"ender":8,"lexer":"markup","lines":2,"stack":"else","token":"{% endcase %}","types":"template_end"},
+{"begin":1,"ender":8,"lexer":"markup","lines":2,"stack":"case","token":"{% endcase %}","types":"template_end"},
 {"begin":0,"ender":9,"lexer":"markup","lines":2,"stack":"div","token":"</div>","types":"end"},
 {"begin":-1,"ender":12,"lexer":"markup","lines":3,"stack":"global","token":"{% comment %}","types":"template_start"},
 {"begin":10,"ender":12,"lexer":"markup","lines":3,"stack":"comment","token":"hello world","types":"comment"},
