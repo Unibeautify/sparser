@@ -696,7 +696,7 @@
                     // for start tags or singleton tags just yet some types set the `preserve` flag,
                     // which means to preserve internal white space The `nopush` flag is set when
                     // parsed tags are to be ignored and forgotten
-                    (function lexer_markup_types() {
+                    (function lexer_markup_tag_types() {
                         if (end === "]>") {
                             end      = ">";
                             sgmlflag = sgmlflag - 1;
@@ -1663,17 +1663,38 @@
 
                     //a quick hack to inject records for a type of template comments
                     if (tname === "comment" && element.slice(0, 2) === "{%") {
+                        const lineFindStart = function lexer_markup_tag_lineFindStart(spaces:string):string {
+                                if (spaces === "") {
+                                    linesStart = 0;
+                                } else {
+                                    linesStart = spaces.split("\n").length;
+                                }
+                                return "";
+                            },
+                            lineFindEnd = function lexer_markup_tag_lineFindEnd(spaces:string):string {
+                                if (spaces === "") {
+                                    linesEnd = 0;
+                                } else {
+                                    linesEnd = spaces.split("\n").length;
+                                }
+                                return "";
+                            };
+                        let linesStart:number = 0,
+                            linesEnd:number = 0;
                         record.begin = parse.structure[parse.structure.length - 1][1];
                         record.ender = parse.count + 3;
                         record.stack = parse.structure[parse.structure.length - 1][0];
                         record.types = "template_start";
                         if (element.charAt(2) === "-") {
                             element      = element
-                                .replace(/^(\s*\{%-\s*comment\s*-%\}\s*)/, "")
-                                .replace(/(\s*\{%-\s*endcomment\s*-%\}\s*)$/, "");
+                                .replace(/^(\s*\{%-\s*comment\s*-%\})/, "")
+                                .replace(/(\{%-\s*endcomment\s*-%\}\s*)$/, "");
                             record.token = "{%- comment -%}";
                             recordPush(data, record, "comment");
                             record.begin = parse.count;
+                            element = element.replace(/^\s*/, lineFindStart);
+                            element = element.replace(/\s*$/, lineFindEnd);
+                            record.lines = linesStart;
                             record.stack = "comment";
                             record.token = element;
                             record.types = "comment";
@@ -1681,17 +1702,21 @@
                             record.token = "{%- endcomment -%}";
                         } else {
                             element      = element
-                                .replace(/^(\s*\{%\s*comment\s*%\}\s*)/, "")
-                                .replace(/(\s*\{%\s*endcomment\s*%\}\s*)$/, "");
+                                .replace(/^(\s*\{%\s*comment\s*%\})/, "")
+                                .replace(/(\{%\s*endcomment\s*%\}\s*)$/, "");
                             record.token = "{% comment %}";
                             recordPush(data, record, "comment");
                             record.begin = parse.count;
+                            element = element.replace(/^\s*/, lineFindStart);
+                            element = element.replace(/\s*$/, lineFindEnd);
+                            record.lines = linesStart;
                             record.stack = "comment";
                             record.token = element;
                             record.types = "comment";
                             recordPush(data, record, "");
                             record.token = "{% endcomment %}";
                         }
+                        record.lines = linesEnd;
                         record.types = "template_end";
                         recordPush(data, record, "");
                         return;
