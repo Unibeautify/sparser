@@ -1,0 +1,1 @@
+body:after { content: url('/img/loading.png,a157648x15b.webp') }

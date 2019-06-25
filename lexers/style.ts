@@ -342,7 +342,11 @@
                                     values[cc] = values[cc].replace(/(\+|-)?\d+(\.\d+)?(e-?\d+)?/, diFix);
                                 }
                             }
-                            if ((/^\w+\(/).test(values[cc]) === true && values[cc].charAt(values[cc].length - 1) === ")") {
+                            if (
+                                (/^\w+\(/).test(values[cc]) === true &&
+                                values[cc].charAt(values[cc].length - 1) === ")" &&
+                                (values[cc].indexOf("url(") !== 0 || (values[cc].indexOf("url(") === 0 && values[cc].indexOf(" ") > 0))
+                            ) {
                                 values[cc] = values[cc].replace(/,\S/g, commaspace);
                             }
                             cc = cc + 1;

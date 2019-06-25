@@ -3491,7 +3491,7 @@ interface directoryList extends Array<directoryItem> {
                             return false;
                         }
                         console.log(`${apps.humantime(false) + text.angry}Fail: ${text.cyan + files.code[a][0] + text.none}`);
-                        console.log("");console.log(options.language);
+                        console.log("");
                         console.log(`Diff output colors: ${text.angry + text.underline}red = generated${text.none} and ${text.green + text.underline}green = saved file${text.none}`);
                         diff_options.diff         = files.parsed[a][1];
                         diff_options.source       = output;
