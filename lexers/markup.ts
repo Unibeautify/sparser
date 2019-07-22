@@ -1,4 +1,3 @@
-/*global global*/
 (function markup_init() {
     "use strict";
     const sparser:sparser = global.sparser,
@@ -63,6 +62,9 @@
                         } else if (record.types.indexOf("start") > -1) {
                             count.start = count.start + 1;
                         }
+                    }
+                    if (options.lexer_options.markup.parse_space === true) {
+                        record.lines = 0;
                     }
                     parse.push(target, record, structure);
                 },
@@ -2580,6 +2582,8 @@
                     }
                     parse.linesSpace = 0;
                 },
+
+                // parses everything other than markup tags
                 content       = function lexer_markup_content():void {
                     let lex:string[]       = [],
                         ltoke:string     = "",
@@ -2778,7 +2782,10 @@
                             //typically this logic is for artifacts nested within an SGML tag
                             if (square === true && b[a] === "]") {
                                 a = a - 1;
-                                ltoke = lex.join("").replace(/\s+$/, "");
+                                ltoke = lex.join("");
+                                if (options.lexer_options.markup.parse_space === false) {
+                                    ltoke = ltoke.replace(/\s+$/, "");
+                                }
                                 liner = 0;
                                 record.token = ltoke;
                                 recordPush(data, record, "");
@@ -2791,7 +2798,10 @@
                                 //dustjs template handling
                                 if (options.language === "dustjs" && b[a] === "{" && b[a + 1] === ":" && b[a + 2] === "e" && b[a + 3] === "l" && b[a + 4] === "s" && b[a + 5] === "e" && b[a + 6] === "}") {
                                     a = a + 6;
-                                    ltoke = lex.join("").replace(/\s+$/, "");
+                                    ltoke = lex.join("");
+                                    if (options.lexer_options.markup.parse_space === false) {
+                                        ltoke = ltoke.replace(/\s+$/, "");
+                                    }
                                     liner = 0;
                                     record.token = ltoke;
                                     recordPush(data, record, "");
@@ -2803,7 +2813,7 @@
 
                                 //regular content
                                 a = a - 1;
-                                if (parse.structure[parse.structure.length - 1][0] === "comment") {
+                                if (options.lexer_options.markup.parse_space === true || parse.structure[parse.structure.length - 1][0] === "comment") {
                                     ltoke = lex.join("");
                                 } else {
                                     ltoke = lex.join("").replace(/\s+$/, "");
@@ -2813,7 +2823,9 @@
                                 record.token = ltoke;
                                 if (options.wrap > 0 && options.lexer_options.markup.preserve_text !== true) {
                                     let aa:number  = options.wrap,
-                                        len:number = ltoke.length;
+                                        len:number = ltoke.length,
+                                        startSpace:string = "",
+                                        endSpace:string = "";
                                     const wrap:number = options.wrap,
                                         store:string[] = [],
                                         wrapper = function beautify_markup_apply_content_wrapper():void {
@@ -2874,7 +2886,16 @@
                                             aa = ltoke.indexOf(" ");
                                         }
                                     }
-                                    ltoke = ltoke.replace(/\s+/g, " ");
+                                    ltoke = lex.join("");
+                                    if (options.lexer_options.markup.parse_space === true) {
+                                        startSpace = ((/\s/).test(ltoke.charAt(0)) === true)
+                                            ? (/\s+/).exec(ltoke)[0]
+                                            : "";
+                                        endSpace = ((/\s/).test(ltoke.charAt(ltoke.length - 1)) === true)
+                                            ? (/\s+$/).exec(ltoke)[0]
+                                            : "";
+                                    }
+                                    ltoke = ltoke.replace(/^\s+/, "").replace(/\s+$/, "").replace(/\s+/g, " ");
                                     do {
                                         wrapper();
                                     } while (aa < len);
@@ -2886,6 +2907,7 @@
                                     } else {
                                         ltoke = store.join("\n");
                                     }
+                                    ltoke = startSpace + ltoke + endSpace;
                                 }
                                 liner = 0;
                                 record.token = ltoke;
@@ -2897,30 +2919,32 @@
                         } while (a < c);
                     }
 
-                    if (a > now && a < c) {
-                        if ((/\s/).test(b[a]) === true) {
-                            let x:number = a;
-                            parse.linesSpace = 1;
-                            do {
-                                if (b[x] === "\n") {
-                                    parse.linesSpace = parse.linesSpace + 1;
-                                }
-                                x = x - 1;
-                            } while (x > now && (/\s/).test(b[x]) === true);
-                        } else {
-                            parse.linesSpace = 0;
-                        }
-                    } else if (a !== now || (a === now && ext === false)) {
+                    if (options.lexer_options.markup.parse_space === false) {
+                        if (a > now && a < c) {
+                            if ((/\s/).test(b[a]) === true) {
+                                let x:number = a;
+                                parse.linesSpace = 1;
+                                do {
+                                    if (b[x] === "\n") {
+                                        parse.linesSpace = parse.linesSpace + 1;
+                                    }
+                                    x = x - 1;
+                                } while (x > now && (/\s/).test(b[x]) === true);
+                            } else {
+                                parse.linesSpace = 0;
+                            }
+                        } else if (a !== now || (a === now && ext === false)) {
 
-                        //regular content at the end of the supplied source
-                        ltoke = lex.join("").replace(/\s+$/, "");
-                        liner = 0;
-                        
-                        //this condition prevents adding content that was just added in the loop above
-                        if (record.token !== ltoke) {
-                            record.token       = ltoke;
-                            recordPush(data, record, "");
-                            parse.linesSpace   = 0;
+                            //regular content at the end of the supplied source
+                            ltoke = lex.join("").replace(/\s+$/, "");
+                            liner = 0;
+                            
+                            //this condition prevents adding content that was just added in the loop above
+                            if (record.token !== ltoke) {
+                                record.token       = ltoke;
+                                recordPush(data, record, "");
+                                parse.linesSpace   = 0;
+                            }
                         }
                     }
                     ext = false;
@@ -2932,7 +2956,7 @@
             }
             do {
                 if ((/\s/).test(b[a]) === true) {
-                    if (data.types[parse.count] === "template_start" && parse.structure[parse.structure.length - 1][0] === "comment") {
+                    if (options.lexer_options.markup.parse_space === true || (data.types[parse.count] === "template_start" && parse.structure[parse.structure.length - 1][0] === "comment")) {
                         content();
                     } else {
                         a = parse.spacer({array: b, end: c, index: a});

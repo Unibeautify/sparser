@@ -1,4 +1,4 @@
-/*global ace, performance, window*/
+/*global ace*/
 /*jslint browser:true */
 /*eslint-env browser*/
 

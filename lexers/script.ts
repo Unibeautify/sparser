@@ -1,4 +1,3 @@
-/*global global*/
 (function script_init() {
     "use strict";
     const sparser:sparser = global.sparser,

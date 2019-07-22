@@ -6,7 +6,6 @@
    this application. */
 import { Stats } from "fs";
 import * as http from "http";
-import { parse } from "url";
 type directoryItem = [string, "file" | "directory" | "link" | "screen", number, number, Stats];
 interface directoryList extends Array<directoryItem> {
     [key:number]: directoryItem;
@@ -1122,7 +1121,7 @@ interface directoryList extends Array<directoryItem> {
                                         apps.error([erb.toString()]);
                                         return;
                                     }
-                                    node.fs.writeFile(`${js}demo${sep}demo.js`, `/*global ace, performance, window\u002a/${browserfile.replace(/\}\(\)\);\s*$/, "") + demofile}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo(ers:Error) {
+                                    node.fs.writeFile(`${js}demo${sep}demo.js`, `/*global ace\u002a/${browserfile.replace(/\}\(\)\);\s*$/, "") + demofile}}());`, "utf8", function node_apps_build_libraries_appendFile_read_writeParse_writeBrowser_writeDemo(ers:Error) {
                                         if (ers !== null) {
                                             apps.error([ers.toString()]);
                                             return;

@@ -1,4 +1,3 @@
-/*global global*/
 (function options_init(): void {
     "use strict";
     const optionDef:optionDef = {
@@ -68,6 +67,13 @@
             definition: "Where style properties should be sorted by type and then alphabetically and whether script object properties should be sorted alphabetically.",
             label: "Object Sort",
             lexer: ["script", "style"],
+            type: "boolean"
+        },
+        parse_space: {
+            default: false,
+            definition: "Whether white space should be parsed as content tokens.",
+            label: "Parse Markup White Space",
+            lexer: ["markup"],
             type: "boolean"
         },
         preserve_comment: {

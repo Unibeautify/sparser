@@ -1,6 +1,3 @@
-import { Recoverable } from "repl";
-
-/*global global*/
 (function markdown_init() {
     "use strict";
     const sparser: sparser = global.sparser,

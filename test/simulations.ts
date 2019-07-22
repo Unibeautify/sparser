@@ -125,7 +125,7 @@
             {
                 command: "opts 2",
                 qualifier: "contains",
-                test: `${text.green}17${text.none} matching options.`
+                test: `${text.green}18${text.none} matching options.`
             },
             {
                 command: "opts type:boolean",

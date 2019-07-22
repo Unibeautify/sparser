@@ -65,6 +65,9 @@ The markup lexer uses tag names, even if the tag is a template tag, as the stack
 * [XSLT](https://www.w3.org/standards/xml/transformation)
 
 ## markup options
+* **parse_space**: Whether white space should be parsed as content tokens.
+   - type: boolean
+   - default: false
 * **preserve_text**: Whether text content should be preserved from manipulation, such as word wrap.
    - type: boolean
    - default: false

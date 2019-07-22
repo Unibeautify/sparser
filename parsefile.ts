@@ -2,7 +2,6 @@
 /*jslint node:true */
 /*eslint-env node*/
 /*eslint no-console:0*/
-/*global global, location*/
 
 (function parse_init() {
     "use strict";

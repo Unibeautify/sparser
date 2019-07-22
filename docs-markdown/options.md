@@ -102,6 +102,16 @@ lexer      | script, style
 type       | boolean
 use        | options.lexer_options.**script**.object_sort, options.lexer_options.**style**.object_sort
 
+### parse_space
+property   | value
+-----------|---
+default    | false
+definition | Whether white space should be parsed as content tokens.
+label      | Parse Markup White Space
+lexer      | markup
+type       | boolean
+use        | options.lexer_options.**markup**.parse_space
+
 ### preserve_comment
 property   | value
 -----------|---
