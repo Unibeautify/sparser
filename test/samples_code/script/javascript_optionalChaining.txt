@@ -1,0 +1,20 @@
+obj?.prop       // optional static property access
+obj?.[expr]     // optional dynamic property access
+func?.(...args) // optional function or method call
+
+a?.b.c(++x).d
+a?.[++x]
+a?.b[3].c?.(x).d
+
+foo ? .3 : 0
+foo?.3:0
+
+const animationDuration = response.settings?.animationDuration ?? 300;
+
+(function () {
+    "use strict"
+    undeclared_var?.b    // ReferenceError: undeclared_var is not defined
+    arguments?.callee    // TypeError: 'callee' may not be accessed in strict mode
+    arguments.callee?.() // TypeError: 'callee' may not be accessed in strict mode
+    true?.()             // TypeError: true is not a function
+})()

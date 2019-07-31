@@ -1,0 +1,9 @@
+[
+{"begin":-1,"ender":6,"lexer":"markup","lines":0,"stack":"global","token":"<a>","types":"start"},
+{"begin":0,"ender":6,"lexer":"markup","lines":0,"stack":"a","token":"\n    ","types":"content"},
+{"begin":0,"ender":4,"lexer":"markup","lines":0,"stack":"a","token":"<b>","types":"start"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"b","token":"\n        content that is long enough to\nwrap onto multiple lines of text that\ncan be tested in a sample.\n    ","types":"content"},
+{"begin":2,"ender":4,"lexer":"markup","lines":0,"stack":"b","token":"</b>","types":"end"},
+{"begin":0,"ender":6,"lexer":"markup","lines":0,"stack":"a","token":"\n","types":"content"},
+{"begin":0,"ender":6,"lexer":"markup","lines":0,"stack":"a","token":"</a>","types":"end"}
+]

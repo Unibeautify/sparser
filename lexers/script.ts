@@ -59,7 +59,7 @@
                     if (options.language === "json" || record.token === ";" || record.token === "," || next === "{" || record.stack === "class" || record.stack === "map" || record.stack === "attribute" || clist === "initializer" || data.types[record.begin - 1] === "generic") {
                         return;
                     }
-                    if (((record.stack === "global" && record.types !== "end") || (record.types === "end" && data.stack[record.begin - 1] === "global" && data.token[record.begin - 1] !== "=")) && (next === "" || next === "}") && record.stack === data.stack[parse.count - 1]) {
+                    if (record.token === "}" && data.stack[record.begin - 1] === "global" && data.types[record.begin - 1] !== "operator" && record.stack === data.stack[parse.count - 1]) {
                         return;
                     }
                     if (record.stack === "array" && record.token !== "]") {
@@ -1042,8 +1042,15 @@
                         recordPush("");
                         return "regex";
                     }
-                    if (c[a] === "?" && ("+-\u002a/".indexOf(c[a + 1]) > -1 || (c[a + 1] === ":" && syntax.join("").indexOf(c[a + 2]) < 0))) {
-                        return "?";
+                    if (c[a] === "?" && ("+-\u002a/.?".indexOf(c[a + 1]) > -1 || (c[a + 1] === ":" && syntax.join("").indexOf(c[a + 2]) < 0))) {
+                        if (c[a + 1] === "." && (/\d/).test(c[a + 2]) === false) {
+                            output = "?.";
+                        } else if (c[a + 1] === "?") {
+                            output = "??";
+                        }
+                        if (output === "") {
+                            return "?";
+                        }
                     }
                     if (c[a] === ":" && "+-\u002a/".indexOf(c[a + 1]) > -1) {
                         return ":";
