@@ -1,0 +1,14 @@
+[
+{"begin":-1,"ender":11,"lexer":"markup","lines":0,"stack":"global","token":"<a>","types":"start"},
+{"begin":0,"ender":10,"lexer":"markup","lines":0,"stack":"a","token":"<%= form_with(model: @order) do |form| %>","types":"template_start"},
+{"begin":1,"ender":9,"lexer":"markup","lines":0,"stack":"form_with","token":"<b>","types":"start"},
+{"begin":2,"ender":9,"lexer":"markup","lines":1,"stack":"b","token":"aaa=\"alphatest\"","types":"attribute"},
+{"begin":2,"ender":9,"lexer":"markup","lines":1,"stack":"b","token":"class=\"class name\"","types":"attribute"},
+{"begin":2,"ender":9,"lexer":"markup","lines":1,"stack":"b","token":"id=\"unique\"","types":"attribute"},
+{"begin":2,"ender":9,"lexer":"markup","lines":1,"stack":"b","token":"pdq=\"test\"","types":"attribute"},
+{"begin":2,"ender":9,"lexer":"markup","lines":1,"stack":"b","token":"xyz=\"test\"","types":"attribute"},
+{"begin":2,"ender":9,"lexer":"markup","lines":0,"stack":"b","token":"cat","types":"content"},
+{"begin":2,"ender":9,"lexer":"markup","lines":0,"stack":"b","token":"</b>","types":"end"},
+{"begin":1,"ender":10,"lexer":"markup","lines":0,"stack":"form_with","token":"<% end %>","types":"template_end"},
+{"begin":0,"ender":11,"lexer":"markup","lines":0,"stack":"a","token":"</a>","types":"end"}
+]

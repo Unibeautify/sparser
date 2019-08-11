@@ -3641,16 +3641,15 @@ interface directoryList extends Array<directoryItem> {
         apps.log([""]);
     };
     // performs word wrap when printing text to the shell
-    apps.wrapit = function node_apps_lists_wrapit(outputArray:string[], string:string):void {
+    apps.wrapit = function node_apps_wrapit(outputArray:string[], string:string):void {
         const wrap:number = 100;
         if (string.length > wrap) {
-            const indent:string = (function node_apps_options_wrapit_indent():string {
+            const indent:string = (function node_apps_wrapit_indent():string {
                     const len:number = string.length;
                     let inc:number = 0,
                         num:number = 2,
                         str:string = "";
-                    // eslint-disable-next-line
-                    if ((/^(\s*((\*|-)\s*)?\w+\s*:)/).test(string.replace(/\u001b\[\d+m/g, "")) === false) {
+                    if ((/^(\s*((\u002a|-)\s*)?\w+\s*:)/).test(string.replace(/\u001b\[\d+m/g, "")) === false) {
                         return "";
                     }
                     do {
@@ -3675,7 +3674,7 @@ interface directoryList extends Array<directoryItem> {
                     } while (inc < num);
                     return str;
                 }()),
-                formLine = function node_apps_options_wrapit_formLine():void {
+                formLine = function node_apps_wrapit_formLine():void {
                     let inc:number = 0,
                         wrapper:number = wrap;
                     do {
@@ -3688,20 +3687,23 @@ interface directoryList extends Array<directoryItem> {
                         }
                         inc = inc + 1;
                     } while (inc < wrapper);
+                    inc = wrapper;
                     if (string.charAt(wrapper) !== " " && string.length > wrapper) {
                         do {
                             wrapper = wrapper - 1;
                         } while (wrapper > 0 && string.charAt(wrapper) !== " ");
-                        if (wrapper === 0) {
-                            outputArray.push(string);
-                            return;
+                        if (wrapper === 0 || wrapper === indent.length - 1) {
+                            wrapper = inc;
+                            do {
+                                wrapper = wrapper + 1;
+                            } while (wrapper < string.length && string.charAt(wrapper) !== " ");
                         }
                     }
-                    outputArray.push(string.slice(0, wrapper).replace(/ $/, ""));
-                    string = string.slice(wrapper + 1);
-                    if (string.length + indent.length > wrap && string.replace(/\s+/g, "").length < wrap) {
+                    outputArray.push(string.slice(0, wrapper).replace(/\s+$/, ""));
+                    string = string.slice(wrapper + 1).replace(/^\s+/, "");
+                    if (string.length + indent.length > wrap) {
                         string = indent + string;
-                        node_apps_options_wrapit_formLine();
+                        node_apps_wrapit_formLine();
                     } else if (string !== "") {
                         outputArray.push(indent + string);
                     }

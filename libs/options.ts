@@ -1,6 +1,20 @@
 (function options_init(): void {
     "use strict";
     const optionDef:optionDef = {
+        attribute_sort: {
+            default: false,
+            definition: "Alphanumerically sort markup attributes. Sorting is ignored if a given tag contains an attribute with instructions for a different language such as a template scheme, child markup tag, or start of a code structure.",
+            label: "Sort Attributes",
+            lexer: ["markup"],
+            type: "boolean"
+        },
+        attribute_sort_list: {
+            default: "",
+            definition: "A comma separated list of attribute names. Attributes will be sorted according to this list and then alphanumerically. This option requires 'attribute_sort' have a value of true.",
+            label: "Sort Attribute List",
+            lexer: ["markup"],
+            type: "string"
+        },
         correct      : {
             default   : false,
             definition: "Automatically correct sloppiness in code. If false missing syntax will be included starting with 'x', such as 'x;' for missing simicolons.",

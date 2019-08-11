@@ -34,6 +34,10 @@
                     thead   : "block",
                     tr      : "block",
                 },
+                attribute_sort_list:string[] = (typeof options.lexer_options.markup.attribute_sort_list === "string" && options.lexer_options.markup.attribute_sort_list !== "")
+                    ? options.lexer_options.markup.attribute_sort_list.split(",")
+                    : [],
+                asl:number = attribute_sort_list.length,
 
                 //pads certain template tag delimiters with a space
                 bracketSpace = function lexer_markup_bracketSpace(input:string):string {
@@ -486,9 +490,9 @@
                                         .toLowerCase()
                                         .replace(/\/$/, "")
                                 ],
-                                store:string[]        = [];
-                            const len:number          = attstore.length,
-                                qc:"none"|"double"|"single" = (options.lexer_options.markup.quote_convert === undefined)
+                                store:string[]        = [],
+                                len:number = attstore.length;
+                            const qc:"none"|"double"|"single" = (options.lexer_options.markup.quote_convert === undefined)
                                     ? "none"
                                     : options.lexer_options.markup.quote_convert,
                                 begin:number = parse.count,
@@ -581,8 +585,36 @@
                             }
 
                             // sort the attributes
-                            if (options.lexer_options.markup.tag_sort === true && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
-                                attstore     = parse.safeSort(attstore, "", false);
+                            if ((options.lexer_options.markup.attribute_sort === true || options.lexer_options.markup.tag_sort === true) && jscom === false && options.language !== "jsx" && nosort === false && tname !== "cfif" && tname !== "cfelseif" && tname !== "cfset") {
+                                // if making use of the 'attribute_sort_list` option
+                                if (asl > 0) {
+                                    const tempstore:attStore = [];
+                                    dq = 0;
+                                    eq = 0;
+                                    len = attstore.length;
+
+                                    // loop through the attribute_sort_list looking for attribute name matches
+                                    do {
+                                        // loop through the attstore
+                                        eq = 0;
+                                        do {
+                                            name = attstore[eq][0].split("=")[0];
+                                            if (attribute_sort_list[dq] === name) {
+                                                tempstore.push(attstore[eq]);
+                                                attstore.splice(eq, 1);
+                                                len = len - 1;
+                                                break;
+                                            }
+                                            eq = eq + 1;
+                                        } while (eq < len);
+                                        dq = dq + 1;
+                                    } while (dq < asl);
+                                    attstore = parse.safeSort(attstore, "", false);
+                                    attstore = tempstore.concat(attstore);
+                                    len = attstore.length;
+                                } else {
+                                    attstore = parse.safeSort(attstore, "", false);
+                                }
                             }
 
                             // preparation for a coldfusion edge case
@@ -593,6 +625,7 @@
                             record.begin = begin;
                             record.stack = stack;
                             record.types = "attribute";
+                            store = [];
 
                             if (ind < len) {
                                 do {
@@ -2949,6 +2982,15 @@
                     }
                     ext = false;
                 };
+            
+            // trim the attribute_sort_list values
+            if (asl > 0) {
+                do {
+                    attribute_sort_list[a] = attribute_sort_list[a].replace(/^\s+/, "").replace(/\s+$/, "");
+                    a = a + 1;
+                } while (a < asl);
+                a = 0;
+            }
             if (options.language === "html") {
                 html = "html";
             } else if (options.language === "xml" || options.language === "sgml") {

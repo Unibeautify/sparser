@@ -120,12 +120,12 @@
             {
                 command: "opts",
                 qualifier: "contains",
-                test: `${text.angry}* ${text.none + text.cyan}unformatted     ${text.none}: If tags in markup code should be preserved from any manner of alteration.`
+                test: `${text.angry}* ${text.none + text.cyan}unformatted        ${text.none}: If tags in markup code should be preserved from any manner of`
             },
             {
                 command: "opts 2",
                 qualifier: "contains",
-                test: `${text.green}18${text.none} matching options.`
+                test: `${text.green}20${text.none} matching options.`
             },
             {
                 command: "opts type:boolean",

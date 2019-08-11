@@ -65,6 +65,12 @@ The markup lexer uses tag names, even if the tag is a template tag, as the stack
 * [XSLT](https://www.w3.org/standards/xml/transformation)
 
 ## markup options
+* **attribute_sort**: Alphanumerically sort markup attributes. Sorting is ignored if a given tag contains an attribute with instructions for a different language such as a template scheme, child markup tag, or start of a code structure.
+   - type: boolean
+   - default: false
+* **attribute_sort_list**: A comma separated list of attribute names. Attributes will be sorted according to this list and then alphanumerically. This option requires 'attribute_sort' have a value of true.
+   - type: string
+   - default: 
 * **parse_space**: Whether white space should be parsed as content tokens.
    - type: boolean
    - default: false

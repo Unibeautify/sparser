@@ -8,6 +8,26 @@ The options object is directly available from the *sparser* object. This means t
 
 ## Option List
 
+### attribute_sort
+property   | value
+-----------|---
+default    | false
+definition | Alphanumerically sort markup attributes. Sorting is ignored if a given tag contains an attribute with instructions for a different language such as a template scheme, child markup tag, or start of a code structure.
+label      | Sort Attributes
+lexer      | markup
+type       | boolean
+use        | options.lexer_options.**markup**.attribute_sort
+
+### attribute_sort_list
+property   | value
+-----------|---
+default    | 
+definition | A comma separated list of attribute names. Attributes will be sorted according to this list and then alphanumerically. This option requires 'attribute_sort' have a value of true.
+label      | Sort Attribute List
+lexer      | markup
+type       | string
+use        | options.lexer_options.**markup**.attribute_sort_list
+
 ### correct
 property   | value
 -----------|---

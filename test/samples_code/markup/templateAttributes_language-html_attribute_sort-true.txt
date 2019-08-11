@@ -1,0 +1,2 @@
+<Route exact path="/" component={Home} />
+<div class="orbit" value="{{ siteName }}" {% if loop.first %}checked{% endif %} data-orbit aaa="alphatest"></div>
