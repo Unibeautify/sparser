@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    <?php if ($title) { ?>
+      <?= $title ?>
+    <?php } ?>
+    Administration
+  </title>
+  <link rel="stylesheet" href="...link-to-file">
+
+  <script>
+    let config = {
+      dateFormat: "<?= date('Y-m-d') ?>",
+      weekStart: <?= $weekstart ? 0 : 1 ?>,
+      csrfTokenName: "<?= $csrf_name ?>",
+      csrfTokenValue: "<?= $csrf_value ?>",
+    };
+    let demovar = <?= json_encode($demovar) ?>;
+  </script>
+  <style type="css">
+    a {
+      width: <?= $width_value ?>px;
+    }
+  </style>
+  <?php foreach ($styles as $style) { ?>
+    <link rel="stylesheet" href="<?= $style ?>">
+  <?php } ?>
+</head>
+
+<body>
+  <?php include "admin/includes/_alert.php" ?>
+
+  <section id="default" class="content-wrapper">
+    <div class="sidebar">
+      <?= $sidebar ?>
+    </div>
+
+    <main role="main" class="content">
+      <?= $content ?>
+    </main>
+  </section>
+
+  <script src="...link-to-file"></script>
+
+  <?= $footer ?>
+  <li><a href="<?= $home->url ?>">Home</a></li>
+  <?= $var ?>
+  <a routerLink="/detail/<?= $hero->id ?>"/>
+</body>
+
+</html>

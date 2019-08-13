@@ -606,6 +606,10 @@
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<?php", "?>"));
                                     ee = ee + build[build.length - 1].length - 1;
+                                } else if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "=" && c[ee + 3] !== starting) {
+                                    a = ee;
+                                    build.push(lexer_script_genericBuilder("<?=", "?>"));
+                                    ee = ee + build[build.length - 1].length - 1;
                                 } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
                                     a = ee;
                                     build.push(lexer_script_genericBuilder("<%", "%>"));
@@ -2292,6 +2296,11 @@
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "p" && c[a + 3] === "h" && c[a + 4] === "p") {
                     // php
                     ltoke = generic("<?php", "?>");
+                    ltype = "template";
+                    recordPush("");
+                } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "=") {
+                    // php
+                    ltoke = generic("<?=", "?>");
                     ltype = "template";
                     recordPush("");
                 } else if (c[a] === "<" && c[a + 1] === "%") {
