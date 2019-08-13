@@ -22,7 +22,11 @@
     };
     let demovar = <?= json_encode($demovar) ?>;
   </script>
-
+  <style type="css">
+    a {
+      width: <?= $width_value ?>px;
+    }
+  </style>
   <?php foreach ($styles as $style) { ?>
     <link rel="stylesheet" href="<?= $style ?>">
   <?php } ?>
