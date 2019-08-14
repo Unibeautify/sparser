@@ -542,13 +542,19 @@
                             : options.lexer_options.script.quote_convert,
                         base:number   = a + starting.length,
                         cleanUp = function lexer_script_genericBuilder_cleanUp():void {
+                            let linesSpace:number = 0;
                             build = [];
                             ltype = type;
                             ee = a;
                             if (type === "string" && (/\s/).test(c[ee + 1]) === true) {
+                                linesSpace = 1;
                                 do {
                                     ee = ee + 1;
+                                    if (c[ee] === "\n") {
+                                        linesSpace = linesSpace + 1;
+                                    }
                                 } while (ee < b && (/\s/).test(c[ee + 1]) === true);
+                                parse.linesSpace = linesSpace;
                             }
                         },
                         finish = function lexer_script_genericBuilder_finish():void {
