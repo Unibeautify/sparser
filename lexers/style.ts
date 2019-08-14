@@ -752,7 +752,11 @@
                                 }
                             }
                             ltype = typename;
-                            recordPush("");
+                            if (ltype.indexOf("start") > -1 || ltype.indexOf("else") > -1) {
+                                recordPush(ltoke);
+                            } else {
+                                recordPush("");
+                            }
                         };
                     nosort[nosort.length - 1] = true;
                     if (a < len) {
@@ -883,6 +887,22 @@
                                                 exit("template_start");
                                                 return;
                                             }
+                                        }
+                                        if ((/\{\s*\?>$/).test(ltoke) === true) {
+                                            if ((/^<\?(=|(php))\s*\}\s*else/).test(ltoke) === true) {
+                                                exit("template_else");
+                                                return;
+                                            }
+                                            exit("template_start");
+                                            return;
+                                        }
+                                        if ((/^<\?(=|(php))\s*\}/).test(ltoke) === true) {
+                                            if ((/^<\?(=|(php))\s*\}\s*else/).test(ltoke) === true) {
+                                                exit("template_else");
+                                                return;
+                                            }
+                                            exit("template_end");
+                                            return;
                                         }
                                         exit("template");
                                         return;

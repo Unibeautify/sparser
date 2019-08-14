@@ -9,7 +9,7 @@
     "description": "A simple parse format for everything.",
     "devDependencies": {
         "ace-builds": "1.4.5",
-        "ws": "^7.1.1"
+        "ws": "^7.1.2"
     },
     "directories": {
         "test": "test"
@@ -36,5 +36,5 @@
         "start": "node js/services build",
         "test": "node js/services test"
     },
-    "version": "1.4.7"
+    "version": "1.4.8"
 }

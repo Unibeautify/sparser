@@ -613,13 +613,13 @@
                     parse.linesSpace = 0;
                     if (record.lexer !== "style") {
                         if (structure.replace(/(\{|\}|@|<|>|%|#|)/g, "") === "") {
-                            if (record.types === "else" || record.types.indexOf("_else") > 0) {
+                            if (record.types === "else") {
                                 structure = "else";
                             } else {
                                 structure = record.token;
                             }
-                        } else {
-                            structure = structure.replace(/(\{|\}|@|<|>|%|#|)/g, "");
+                        } else if ((/^<\?(=|(php))/).test(structure) === false) {
+                            structure = structure.replace(/(\{|\}|@|<|>|%|#|)\s*/g, "");
                         }
                     }
                     if (record.types === "start" || record.types.indexOf("_start") > 0) {

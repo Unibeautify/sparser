@@ -5,7 +5,7 @@
 * **cdata** - An XML/SGML CDATA block.  Typically used to allow extraneous string content in an XML document that might otherwise break the XML syntax rules.
 * **cdata_end** - When a CDATA segment terminates an enclosed grammar parsed with a different lexer.
 * **cdata_start** - When a CDATA segment starts an enclosed grammar parsed with a different lexer.
-* **comment** - An XML comment.
+* **comment** - Comment in XML or supporting template syntax.
 * **comment_attribute** - JSX allows JavaScript style comments as tag attributes.
 * **conditional** - Comments used in IE to hack references to CSS by IE version.  Follows a SGML square brace convention.
 * **content** - Regular text nodes, but white space is removed from the front and end of the node as an approximate value is accounted for in the *lines* data field.

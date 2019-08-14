@@ -59,7 +59,7 @@
                 },
 
                 // pushes a record into the parse table
-                recordPush = function lexer_markup_recordPush(target, record, structure):void {
+                recordPush = function lexer_markup_recordPush(target:data, record:record, structure:string):void {
                     if (target === data) {
                         if (record.types.indexOf("end") > -1) {
                             count.end = count.end + 1;
@@ -293,7 +293,7 @@
                         // * optional - means the tag could have a separate end tag, but is probably a
                         // singleton
                         // * prohibited - means there is no corresponding end tag
-                        cftags          = {
+                        cftags:cftags          = {
                             "cfNTauthenticate"      : "optional",
                             "cfabort"               : "prohibited",
                             "cfajaximport"          : "optional",
@@ -2360,11 +2360,19 @@
                                 record.types = "template_end";
                             } else if ((/(\{\s*%>)$/).test(element) === true || (/(\{\s*%\])$/).test(element) === true || (/(\{\s*@\})$/).test(element) === true) {
                                 record.types = "template_start";
+                            } else if ((/\{\s*\?>$/).test(element) === true) {
+                                record.types = "template_start";
+                            } else if ((/^<\?(=|(php))\s*\}/).test(element) === true) {
+                                record.types = "template_end";
                             }
                         }
-                        if (record.types === "template_start" && (tname === "" || tname === "@" || tname === "#" || tname === "%")) {
-                            tname = tname + element.slice(1).replace(tname, "").replace(/^(\s+)/, "");
-                            tname = tname.slice(0, tname.indexOf("(")).replace(/\s+/, "");
+                        if (record.types === "template_start" || record.types === "template_else") {
+                            if ((/^<\?(=|(php))\s*/).test(element) === true) {
+                                tname = element;
+                            } else if (tname === "" || tname === "@" || tname === "#" || tname === "%") {
+                                tname = tname + element.slice(1).replace(tname, "").replace(/^\s+/, "");
+                                tname = tname.slice(0, tname.indexOf("(")).replace(/\s+/, "");
+                            }
                         }
                     }
 

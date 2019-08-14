@@ -8,6 +8,9 @@ type qualifier = "begins" | "contains" | "ends" | "file begins" | "file contains
 interface attStore extends Array<[string, number]>{
     [index:number]: [string, number]
 }
+interface cftags {
+    [key:string]: "optional" | "prohibited" | "required";
+}
 interface commandList {
     [key: string]: {
         description: string;

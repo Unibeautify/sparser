@@ -12,7 +12,6 @@
                 paren:number          = -1,
                 funreferences:string[] = [],
                 tempstore:record,
-                template:[string, string] = ["", ""],
                 pstack:[string, number],
                 comment:[string, number];
             const parse:parse          = sparser.parse,
@@ -529,34 +528,185 @@
                 // the generic function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
-                generic        = function lexer_script_genericBuilder(starting:string, ending:string):string {
+                generic        = function lexer_script_genericBuilder(starting:string, ending:string, type:string):void {
                     let ee:number     = 0,
-                        output:string = "",
                         escape:boolean = false,
+                        ext:boolean = false,
                         build:string[]  = [starting],
-                        ender:string[]  = ending.split("");
+                        ender:string[]  = ending.split(""),
+                        temp:[string, string];
                     const endlen:number = ender.length,
+                        start:number = a,
                         qc:"none"|"double"|"single" = (options.lexer_options.script.quote_convert === undefined)
                             ? "none"
                             : options.lexer_options.script.quote_convert,
                         base:number   = a + starting.length,
-                        //pads certain template tag delimiters with a space
-                        bracketSpace = function lexer_script_bracketSpace(input:string):string {
-                            if (options.language !== "javascript" && options.language !== "typescript" && options.language !== "jsx" && options.language !== "tsx") {
-                                const spaceStart = function lexer_markup_tag_spaceStart(start:string):string {
-                                        return start.replace(/\s*$/, " ");
-                                    },
-                                    spaceEnd = function lexer_markup_tag_spaceStart(end:string):string {
-                                        return end.replace(/^\s*/, " ");
-                                    };
-                                if ((/\{(#|\/|(%>)|(%\]))/).test(input) === true || (/\}%(>|\])/).test(input) === true) {
+                        cleanUp = function lexer_script_genericBuilder_cleanUp():void {
+                            build = [];
+                            ltype = type;
+                            ee = a;
+                            if (type === "string" && (/\s/).test(c[ee + 1]) === true) {
+                                do {
+                                    ee = ee + 1;
+                                } while (ee < b && (/\s/).test(c[ee + 1]) === true);
+                            }
+                        },
+                        finish = function lexer_script_genericBuilder_finish():void {
+                            let str:string = "";
+                            //pads certain template tag delimiters with a space
+                            const bracketSpace = function lexer_script_genericBuilder_finish_bracketSpace(input:string):string {
+                                if (options.language !== "javascript" && options.language !== "typescript" && options.language !== "jsx" && options.language !== "tsx") {
+                                    const spaceStart = function lexer_script_genericBuilder_finish_bracketSpace_spaceStart(start:string):string {
+                                            return start.replace(/\s*$/, " ");
+                                        },
+                                        spaceEnd = function lexer_script_genericBuilder_finish_bracketSpace_spaceStart(end:string):string {
+                                            return end.replace(/^\s*/, " ");
+                                        };
+                                    if ((/\{(#|\/|(%>)|(%\]))/).test(input) === true || (/\}%(>|\])/).test(input) === true) {
+                                        return input;
+                                    }
+                                    input = input.replace(/\{((\{+)|%-?)\s*/g, spaceStart);
+                                    input = input.replace(/\s*((\}\}+)|(-?%\}))/g, spaceEnd);
                                     return input;
                                 }
-                                input = input.replace(/\{((\{+)|%-?)\s*/g, spaceStart);
-                                input = input.replace(/\s*((\}\}+)|(-?%\}))/g, spaceEnd);
                                 return input;
+                            };
+                            if (starting === "\"" && qc === "single") {
+                                build[0] = "'";
+                                build[build.length - 1] = "'";
+                            } else if (starting === "'" && qc === "double") {
+                                build[0] = "\"";
+                                build[build.length - 1] = "\"";
+                            } else if (escape === true) {
+                                str = build[build.length - 1];
+                                build.pop();
+                                build.pop();
+                                build.push(str);
                             }
-                            return input;
+                            a = ee;
+                            if (ending === "\n") {
+                                a = a - 1;
+                                build.pop();
+                            }
+                            ltoke = build.join("");
+                            if (starting === "\"" || starting === "'" || starting === "{{" || starting === "{%" || starting === "{{{") {
+                                ltoke = bracketSpace(ltoke);
+                            }
+                            if (starting === "{%" || starting === "{{") {
+                                temp = tname(ltoke);
+                                ltype = temp[0];
+                                recordPush(temp[1]);
+                                return;
+                            }
+                            if (type === "string") {
+                                ltype = "string";
+                                if (options.language === "json") {
+                                    ltoke = ltoke
+                                        .replace(/\u0000/g, "\\u0000")
+                                        .replace(/\u0001/g, "\\u0001")
+                                        .replace(/\u0002/g, "\\u0002")
+                                        .replace(/\u0003/g, "\\u0003")
+                                        .replace(/\u0004/g, "\\u0004")
+                                        .replace(/\u0005/g, "\\u0005")
+                                        .replace(/\u0006/g, "\\u0006")
+                                        .replace(/\u0007/g, "\\u0007")
+                                        .replace(/\u0008/g, "\\u0008")
+                                        .replace(/\u0009/g, "\\u0009")
+                                        .replace(/\u000a/g, "\\u000a")
+                                        .replace(/\u000b/g, "\\u000b")
+                                        .replace(/\u000c/g, "\\u000c")
+                                        .replace(/\u000d/g, "\\u000d")
+                                        .replace(/\u000e/g, "\\u000e")
+                                        .replace(/\u000f/g, "\\u000f")
+                                        .replace(/\u0010/g, "\\u0010")
+                                        .replace(/\u0011/g, "\\u0011")
+                                        .replace(/\u0012/g, "\\u0012")
+                                        .replace(/\u0013/g, "\\u0013")
+                                        .replace(/\u0014/g, "\\u0014")
+                                        .replace(/\u0015/g, "\\u0015")
+                                        .replace(/\u0016/g, "\\u0016")
+                                        .replace(/\u0017/g, "\\u0017")
+                                        .replace(/\u0018/g, "\\u0018")
+                                        .replace(/\u0019/g, "\\u0019")
+                                        .replace(/\u001a/g, "\\u001a")
+                                        .replace(/\u001b/g, "\\u001b")
+                                        .replace(/\u001c/g, "\\u001c")
+                                        .replace(/\u001d/g, "\\u001d")
+                                        .replace(/\u001e/g, "\\u001e")
+                                        .replace(/\u001f/g, "\\u001f");
+                                } else if (starting.indexOf("#!") === 0) {
+                                    ltoke = ltoke.slice(0, ltoke.length - 1);
+                                    parse.linesSpace = 2;
+                                } else if (parse.structure[parse.structure.length - 1][0] !== "object" || (parse.structure[parse.structure.length - 1][0] === "object" && nextchar(1, false) !== ":" && data.token[parse.count] !== "," && data.token[parse.count] !== "{")) {
+                                    if ((ltoke.length > options.wrap && options.wrap > 0) || (options.wrap !== 0 && data.token[parse.count] === "+" && (data.token[parse.count - 1].charAt(0) === "\"" || data.token[parse.count - 1].charAt(0) === "'"))) {
+                                        let item:string = ltoke,
+                                            q:string = (qc === "double")
+                                                ? "\""
+                                                : (qc === "single")
+                                                    ? "'"
+                                                    : item.charAt(0),
+                                            segment:string = "";
+                                        const limit:number = options.wrap,
+                                            uchar:RegExp     = (/u[0-9a-fA-F]{4}/),
+                                            xchar:RegExp     = (/x[0-9a-fA-F]{2}/);
+                                        item = item.slice(1, item.length - 1);
+                                        if (data.token[parse.count] === "+" && (data.token[parse.count - 1].charAt(0) === "\"" || data.token[parse.count - 1].charAt(0) === "'")) {
+                                            parse.pop(data);
+                                            q = data.token[parse.count].charAt(0);
+                                            item = data.token[parse.count].slice(1, data.token[parse.count].length - 1) + item;
+                                            parse.pop(data);
+                                        }
+                                        if (item.length > limit && limit > 0) {
+                                            do {
+                                                segment = item.slice(0, limit);
+                                                if (segment.charAt(limit - 5) === "\\" && uchar.test(item.slice(limit - 4, limit + 1)) === true) {
+                                                    segment = segment.slice(0, limit - 5);
+                                                } else if (segment.charAt(limit - 4) === "\\" && uchar.test(item.slice(limit - 3, limit + 2)) === true) {
+                                                    segment = segment.slice(0, limit - 4);
+                                                } else if (segment.charAt(limit - 3) === "\\" && (uchar.test(item.slice(limit - 2, limit + 3)) === true || xchar.test(item.slice(limit - 2, limit + 1)) === true)) {
+                                                    segment = segment.slice(0, limit - 3);
+                                                } else if (segment.charAt(limit - 2) === "\\" && (uchar.test(item.slice(limit - 1, limit + 4)) === true || xchar.test(item.slice(limit - 1, limit + 2)) === true)) {
+                                                    segment = segment.slice(0, limit - 2);
+                                                } else if (segment.charAt(limit - 1) === "\\") {
+                                                    segment = segment.slice(0, limit - 1);
+                                                }
+                                                segment = q + segment + q;
+                                                item = item.slice(segment.length - 2);
+                                                ltoke = segment;
+                                                ltype = "string";
+                                                recordPush("");
+                                                parse.linesSpace = 0;
+                                                ltoke = "+";
+                                                ltype = "operator";
+                                                recordPush("");
+                                            } while (item.length > limit);
+                                        }
+                                        if (item === "") {
+                                            ltoke = q + q;
+                                        } else {
+                                            ltoke = q + item + q;
+                                        }
+                                        ltype = "string";
+                                    }
+                                }
+                            } else if ((/\{\s*\?>$/).test(ltoke) === true) {
+                                if ((/^<\?(=|(php))\s*\}\s*else/).test(ltoke) === true) {
+                                    ltype = "template_else";
+                                } else {
+                                    ltype = "template_start";
+                                }
+                            } else if ((/^<\?(=|(php))\s*\}/).test(ltoke) === true) {
+                                if ((/^<\?(=|(php))\s*\}\s*else/).test(ltoke) === true) {
+                                    ltype = "template_else";
+                                } else {
+                                    ltype = "template_end";
+                                }
+                            } else {
+                                ltype = type;
+                            }
+                            if (ltoke.length > 0) {
+                                recordPush("");
+                            }
                         };
                     if (wordTest > -1) {
                         word();
@@ -578,9 +728,13 @@
                             escape = true;
                         } else {
                             if (c[a] === "\"") {
-                                return "\\\"";
+                                build = ["\\\""];
+                                finish();
+                                return;
                             }
-                            return "\\'";
+                            build = ["\\'"];
+                            finish();
+                            return;
                         }
                     }
                     ee = base;
@@ -601,42 +755,51 @@
                                     c[ee] = "\\'";
                                 }
                                 build.push(c[ee]);
-                            } else if (ee > a + 1) {
+                            } else if (ee > start) {
+                                ext = true;
                                 if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<?php", "?>"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // php
+                                    lexer_script_genericBuilder("<?php", "?>", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "=" && c[ee + 3] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<?=", "?>"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // php
+                                    lexer_script_genericBuilder("<?=", "?>", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<%", "%>"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // asp
+                                    lexer_script_genericBuilder("<%", "%>", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{%", "%}"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // twig
+                                    lexer_script_genericBuilder("{%", "%}", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{{{", "}}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // mustache
+                                    lexer_script_genericBuilder("{{{", "}}}", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("{{", "}}"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // handlebars
+                                    lexer_script_genericBuilder("{{", "}}", "template");
+                                    cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting) {
-                                    a = ee;
-                                    build.push(lexer_script_genericBuilder("<!--#", "-->"));
-                                    ee = ee + build[build.length - 1].length - 1;
+                                    finish();
+                                    // ssi
+                                    lexer_script_genericBuilder("<!--#", "-->", "template");
+                                    cleanUp();
                                 } else {
+                                    ext = false;
                                     build.push(c[ee]);
                                 }
                             } else {
                                 build.push(c[ee]);
                             }
-                            if ((starting === "\"" || starting === "'") && options.language !== "json" && c[ee - 1] !== "\\" && c[ee] !== "\"" && c[ee] !== "'" && (c[ee] === "\n" || ee === b - 1)) {
+                            if ((starting === "\"" || starting === "'") && (ext === true || ee > start) && options.language !== "json" && c[ee - 1] !== "\\" && c[ee] !== "\"" && c[ee] !== "'" && (c[ee] === "\n" || ee === b - 1)) {
                                 sparser.parseerror = "Unterminated string in script on line number " + parse.lineNumber;
                                 break;
                             }
@@ -654,28 +817,7 @@
                             ee = ee + 1;
                         } while (ee < b);
                     }
-                    if (starting === "\"" && qc === "single") {
-                        build[0] = "'";
-                        build[build.length - 1] = "'";
-                    } else if (starting === "'" && qc === "double") {
-                        build[0] = "\"";
-                        build[build.length - 1] = "\"";
-                    } else if (escape === true) {
-                        output = build[build.length - 1];
-                        build.pop();
-                        build.pop();
-                        build.push(output);
-                    }
-                    a = ee;
-                    if (ending === "\n") {
-                        a = a - 1;
-                        build.pop();
-                    }
-                    output = build.join("");
-                    if (starting === "\"" || starting === "'" || starting === "{{" || starting === "{%" || starting === "{{{") {
-                        output = bracketSpace(output);
-                    }
-                    return output;
+                    finish();
                 },
                 // line comments
                 lineComment    = function lexer_script_lineComment() {
@@ -2216,72 +2358,6 @@
                             }
                         }
                     }
-                },
-                // convert long strings into string concat at options.wrap
-                wrapString = function lexer_script_wrapString(build:boolean, item:string) {
-                    const limit:number = options.wrap,
-                        q:string = item.charAt(0),
-                        uchar:RegExp     = (/u[0-9a-fA-F]{4}/),
-                        xchar:RegExp     = (/x[0-9a-fA-F]{2}/);
-                    item = item.slice(1, item.length - 1);
-                    let segment:string = "";
-                    if (build === true) {
-                        const space:RegExp = (/\s/);
-                        let aa:number = a + 1,
-                            plus:boolean = false;
-                        do {
-                            if (c[aa] !== "+" && space.test(c[aa]) === false && c[aa] !== "\"" && c[aa] !== "'") {
-                                break;
-                            }
-                            if (c[aa] === "+") {
-                                plus = true;
-                            }
-                            if (c[aa] === "\"" || c[aa] === "'") {
-                                if (plus === true) {
-                                    plus = false;
-                                    a = aa;
-                                    segment = generic(c[a], c[a]);
-                                    aa = a;
-                                    item = item + segment.slice(1, segment.length - 1);
-                                } else {
-                                    break;
-                                }
-                            }
-                            aa = aa + 1;
-                        } while (aa < b);
-                    }
-                    if (item.length > limit && limit > 0) {
-                        do {
-                            segment = item.slice(0, limit);
-                            if (segment.charAt(limit - 5) === "\\" && uchar.test(item.slice(limit - 4, limit + 1)) === true) {
-                                segment = segment.slice(0, limit - 5);
-                            } else if (segment.charAt(limit - 4) === "\\" && uchar.test(item.slice(limit - 3, limit + 2)) === true) {
-                                segment = segment.slice(0, limit - 4);
-                            } else if (segment.charAt(limit - 3) === "\\" && (uchar.test(item.slice(limit - 2, limit + 3)) === true || xchar.test(item.slice(limit - 2, limit + 1)) === true)) {
-                                segment = segment.slice(0, limit - 3);
-                            } else if (segment.charAt(limit - 2) === "\\" && (uchar.test(item.slice(limit - 1, limit + 4)) === true || xchar.test(item.slice(limit - 1, limit + 2)) === true)) {
-                                segment = segment.slice(0, limit - 2);
-                            } else if (segment.charAt(limit - 1) === "\\") {
-                                segment = segment.slice(0, limit - 1);
-                            }
-                            segment = q + segment + q;
-                            item = item.slice(segment.length - 2);
-                            ltoke = segment;
-                            ltype = "string";
-                            recordPush("");
-                            parse.linesSpace = 0;
-                            ltoke = "+";
-                            ltype = "operator";
-                            recordPush("");
-                        } while (item.length > limit);
-                    }
-                    if (item === "") {
-                        ltoke = q + q;
-                    } else {
-                        ltoke = q + item + q;
-                    }
-                    ltype = "string";
-                    recordPush("");
                 };
             do {
                 if ((/\s/).test(c[a]) === true) {
@@ -2295,46 +2371,28 @@
                     }
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "p" && c[a + 3] === "h" && c[a + 4] === "p") {
                     // php
-                    ltoke = generic("<?php", "?>");
-                    ltype = "template";
-                    recordPush("");
+                    generic("<?php", "?>", "template");
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "=") {
                     // php
-                    ltoke = generic("<?=", "?>");
-                    ltype = "template";
-                    recordPush("");
+                    generic("<?=", "?>", "template");
                 } else if (c[a] === "<" && c[a + 1] === "%") {
                     // asp
-                    ltoke = generic("<%", "%>");
-                    ltype = "template";
-                    recordPush("");
+                    generic("<%", "%>", "template");
                 } else if (c[a] === "{" && c[a + 1] === "%") {
                     // twig
-                    ltoke = generic("{%", "%}");
-                    template = tname(ltoke);
-                    ltype = template[0];
-                    recordPush(template[1]);
+                    generic("{%", "%}", "template");
                 } else if (c[a] === "{" && c[a + 1] === "{" && c[a + 2] === "{") {
                     // mustache
-                    ltoke = generic("{{{", "}}}");
-                    ltype = "template";
-                    recordPush("");
+                    generic("{{{", "}}}", "template");
                 } else if (c[a] === "{" && c[a + 1] === "{") {
                     // handlebars
-                    ltoke = generic("{{", "}}");
-                    template = tname(ltoke);
-                    ltype = template[0];
-                    recordPush(template[1]);
+                    generic("{{", "}}", "template");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-" && c[a + 4] === "#") {
                     // ssi
-                    ltoke = generic("<!--#", "-->");
-                    ltype = "template";
-                    recordPush("");
+                    generic("<!--#", "-->", "template");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-") {
                     // markup comment
-                    ltoke = generic("<!--", "-->");
-                    ltype = "comment";
-                    recordPush("");
+                    generic("<!--", "-->", "comment");
                 } else if (c[a] === "<") {
                     // markup
                     markup();
@@ -2343,26 +2401,18 @@
                     blockComment();
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     // shebang
-                    ltoke      = generic("#!" + c[a + 2], "\n");
-                    ltoke      = ltoke.slice(0, ltoke.length - 1);
-                    ltype      = "string";
-                    parse.linesSpace = 2;
-                    recordPush("");
+                    generic("#!" + c[a + 2], "\n", "string");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     // comment line
                     lineComment();
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);
-                    ltoke = generic("#region", "\n");
-                    ltype = "comment";
-                    recordPush("");
+                    generic("#region", "\n", "comment");
                 } else if (c[a] === "#" && c[a + 1] === "e" && c[a + 2] === "n" && c[a + 3] === "d" && c[a + 4] === "r" && c[a + 5] === "e" && c[a + 6] === "g" && c[a + 7] === "i" && c[a + 8] === "o" && c[a + 9] === "n") {
                     // comment line
                     asi(false);
-                    ltoke = generic("#endregion", "\n");
-                    ltype = "comment";
-                    recordPush("");
+                    generic("#endregion", "\n", "comment");
                 } else if (c[a] === "`" || (c[a] === "}" && parse.structure[parse.structure.length - 1][0] === "template_string")) {
                     // template string
                     if (wordTest > -1) {
@@ -2384,54 +2434,7 @@
                     }
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
-                    ltoke = generic(c[a], c[a]);
-                    if (options.language === "json") {
-                        ltype = "string";
-                        ltoke = ltoke
-                            .replace(/\u0000/g, "\\u0000")
-                            .replace(/\u0001/g, "\\u0001")
-                            .replace(/\u0002/g, "\\u0002")
-                            .replace(/\u0003/g, "\\u0003")
-                            .replace(/\u0004/g, "\\u0004")
-                            .replace(/\u0005/g, "\\u0005")
-                            .replace(/\u0006/g, "\\u0006")
-                            .replace(/\u0007/g, "\\u0007")
-                            .replace(/\u0008/g, "\\u0008")
-                            .replace(/\u0009/g, "\\u0009")
-                            .replace(/\u000a/g, "\\u000a")
-                            .replace(/\u000b/g, "\\u000b")
-                            .replace(/\u000c/g, "\\u000c")
-                            .replace(/\u000d/g, "\\u000d")
-                            .replace(/\u000e/g, "\\u000e")
-                            .replace(/\u000f/g, "\\u000f")
-                            .replace(/\u0010/g, "\\u0010")
-                            .replace(/\u0011/g, "\\u0011")
-                            .replace(/\u0012/g, "\\u0012")
-                            .replace(/\u0013/g, "\\u0013")
-                            .replace(/\u0014/g, "\\u0014")
-                            .replace(/\u0015/g, "\\u0015")
-                            .replace(/\u0016/g, "\\u0016")
-                            .replace(/\u0017/g, "\\u0017")
-                            .replace(/\u0018/g, "\\u0018")
-                            .replace(/\u0019/g, "\\u0019")
-                            .replace(/\u001a/g, "\\u001a")
-                            .replace(/\u001b/g, "\\u001b")
-                            .replace(/\u001c/g, "\\u001c")
-                            .replace(/\u001d/g, "\\u001d")
-                            .replace(/\u001e/g, "\\u001e")
-                            .replace(/\u001f/g, "\\u001f");
-                        recordPush("");
-                    } else if (parse.structure[parse.structure.length - 1][0] === "object" && nextchar(1, false) === ":" && (data.token[parse.count] === "," || data.token[parse.count] === "{")) {
-                        ltype = "string";
-                        recordPush("");
-                    } else if (ltoke.length > options.wrap && options.wrap > 0) {
-                        wrapString(false, ltoke);
-                    } else if (options.wrap !== 0 && nextchar(1, false) === "+") {
-                        wrapString(true, ltoke);
-                    } else {
-                        ltype = "string";
-                        recordPush("");
-                    }
+                    generic(c[a], c[a], "string");
                 } else if (
                     c[a] === "-" &&
                     (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") &&

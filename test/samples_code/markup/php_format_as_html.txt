@@ -8,6 +8,10 @@
   <title>
     <?php if ($title) { ?>
       <?= $title ?>
+    <?php } else if ($title_a) { ?>
+      <?= $title_a ?>
+    <?php } else { ?>
+      <?= $something ?>
     <?php } ?>
     Administration
   </title>
@@ -18,13 +22,33 @@
       dateFormat: "<?= date('Y-m-d') ?>",
       weekStart: <?= $weekstart ? 0 : 1 ?>,
       csrfTokenName: "<?= $csrf_name ?>",
-      csrfTokenValue: "<?= $csrf_value ?>",
+      csrfTokenValue: "<?php if ($tokentest) { ?>
+      <?= $tokentest ?>
+    <?php } else if ($tokentest_a) { ?>
+      <?= $tokentest_a ?>
+    <?php } else { ?>
+      <?= $tokentest_b ?>
+    <?php } ?>",
     };
     let demovar = <?= json_encode($demovar) ?>;
+    let test = <?php if ($width) { ?>
+      <?= $width ?>
+    <?php } else if ($width_a) { ?>
+      <?= $width_a ?>
+    <?php } else { ?>
+      <?= $width_b ?>
+    <?php } ?>;
   </script>
-  <style type="css">
+  <style type="text/css">
     a {
-      width: <?= $width_value ?>px;
+      width: 
+    <?php if ($width) { ?>
+      <?= $width ?>
+    <?php } else if ($width_a) { ?>
+      <?= $width_a ?>
+    <?php } else { ?>
+      <?= $width_b ?>
+    <?php } ?>px;
     }
   </style>
   <?php foreach ($styles as $style) { ?>
