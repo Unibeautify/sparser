@@ -27,7 +27,7 @@
                 svg_left.style.backgroundPositionX = `-${wscale}em`;
                 svg_right.style.width = `${(width - 100) / 2}em`;
                 svg_right.style.height = `${height}em`;
-                svg_right.style.backgroundPositionX = `-${wscale}em`;
+                svg_right.style.backgroundPositionX = `-${wscale + 2}em`;
                 screen.style.height = `${height}em`;
                 screen.style.width = `${width}em`;
                 blob.style.height = `${height - size}em`;

@@ -67,7 +67,7 @@
                     if (data.token[data.begin[parse.count]] === "{" && record.stack === "data_type") {
                         return;
                     }
-                    if (record.types !== undefined && record.types.indexOf("template") > -1) {
+                    if (record.types !== undefined && record.types.indexOf("template") > -1 && record.types.indexOf("template_string") < 0) {
                         return;
                     }
                     if (next === ";" && isEnd === false) {
