@@ -1,0 +1,37 @@
+// Inputa
+type ALongGenericTypeThing<AGivenLongTypeNam> = AGivenLongTypeName extends ALongLongLongTypeName
+  /*
+   * A multi-line comment
+   */
+  ? ALongLongLongTypeName
+  : ALongLongLongTypeName;
+
+// First format
+type ALongGenericTypeThing<
+  AGivenLongTypeName extends string
+> = AGivenLongTypeName extends ALongLongLongTypeName
+  ? /*
+     * A multi-line comment
+     */
+    ALongLongLongTypeName
+  : ALongLongLongTypeName;
+
+// Second format
+type ALongGenericTypeThing<
+  AGivenLongTypeName extends string
+> = AGivenLongTypeName extends ALongLongLongTypeName
+/*
+ * A multi-line comment
+ */
+  ? ALongLongLongTypeName
+  : ALongLongLongTypeName;
+
+// Third format
+type ALongGenericTypeThing<
+  AGivenLongTypeName extends string
+> = AGivenLongTypeName extends ALongLongLongTypeName
+  ? /*
+     * A multi-line comment
+     */
+    ALongLongLongTypeName
+type ALongGenericTypeThing<AGivenLongTypeNam > = AGivenLongTypeName extends ALongLongLongTypeName

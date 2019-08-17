@@ -525,10 +525,10 @@
                         datatype[datatype.length - 1] = false;
                     }
                 },
-                // the generic function is a generic tokenizer start argument contains the
+                // the general function is a generic tokenizer start argument contains the
                 // token's starting syntax offset argument is length of start minus control
                 // chars end is how is to identify where the token ends
-                generic        = function lexer_script_genericBuilder(starting:string, ending:string, type:string):void {
+                general        = function lexer_script_general(starting:string, ending:string, type:string):void {
                     let ee:number     = 0,
                         escape:boolean = false,
                         ext:boolean = false,
@@ -541,7 +541,7 @@
                             ? "none"
                             : options.lexer_options.script.quote_convert,
                         base:number   = a + starting.length,
-                        cleanUp = function lexer_script_genericBuilder_cleanUp():void {
+                        cleanUp = function lexer_script_general_cleanUp():void {
                             let linesSpace:number = 0;
                             build = [];
                             ltype = type;
@@ -557,15 +557,15 @@
                                 parse.linesSpace = linesSpace;
                             }
                         },
-                        finish = function lexer_script_genericBuilder_finish():void {
+                        finish = function lexer_script_general_finish():void {
                             let str:string = "";
                             //pads certain template tag delimiters with a space
-                            const bracketSpace = function lexer_script_genericBuilder_finish_bracketSpace(input:string):string {
+                            const bracketSpace = function lexer_script_general_finish_bracketSpace(input:string):string {
                                 if (options.language !== "javascript" && options.language !== "typescript" && options.language !== "jsx" && options.language !== "tsx") {
-                                    const spaceStart = function lexer_script_genericBuilder_finish_bracketSpace_spaceStart(start:string):string {
+                                    const spaceStart = function lexer_script_general_finish_bracketSpace_spaceStart(start:string):string {
                                             return start.replace(/\s*$/, " ");
                                         },
-                                        spaceEnd = function lexer_script_genericBuilder_finish_bracketSpace_spaceStart(end:string):string {
+                                        spaceEnd = function lexer_script_general_finish_bracketSpace_spaceStart(end:string):string {
                                             return end.replace(/^\s*/, " ");
                                         };
                                     if ((/\{(#|\/|(%>)|(%\]))/).test(input) === true || (/\}%(>|\])/).test(input) === true) {
@@ -766,37 +766,37 @@
                                 if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "p" && c[ee + 3] === "h" && c[ee + 4] === "p" && c[ee + 5] !== starting) {
                                     finish();
                                     // php
-                                    lexer_script_genericBuilder("<?php", "?>", "template");
+                                    lexer_script_general("<?php", "?>", "template");
                                     cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "?" && c[ee + 2] === "=" && c[ee + 3] !== starting) {
                                     finish();
                                     // php
-                                    lexer_script_genericBuilder("<?=", "?>", "template");
+                                    lexer_script_general("<?=", "?>", "template");
                                     cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
                                     finish();
                                     // asp
-                                    lexer_script_genericBuilder("<%", "%>", "template");
+                                    lexer_script_general("<%", "%>", "template");
                                     cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "%" && c[ee + 2] !== starting) {
                                     finish();
                                     // twig
-                                    lexer_script_genericBuilder("{%", "%}", "template");
+                                    lexer_script_general("{%", "%}", "template");
                                     cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] === "{" && c[ee + 3] !== starting) {
                                     finish();
                                     // mustache
-                                    lexer_script_genericBuilder("{{{", "}}}", "template");
+                                    lexer_script_general("{{{", "}}}", "template");
                                     cleanUp();
                                 } else if (c[ee] === "{" && c[ee + 1] === "{" && c[ee + 2] !== starting) {
                                     finish();
                                     // handlebars
-                                    lexer_script_genericBuilder("{{", "}}", "template");
+                                    lexer_script_general("{{", "}}", "template");
                                     cleanUp();
                                 } else if (c[ee] === "<" && c[ee + 1] === "!" && c[ee + 2] === "-" && c[ee + 3] === "-" && c[ee + 4] === "#" && c[ee + 5] !== starting) {
                                     finish();
                                     // ssi
-                                    lexer_script_genericBuilder("<!--#", "-->", "template");
+                                    lexer_script_general("<!--#", "-->", "template");
                                     cleanUp();
                                 } else {
                                     ext = false;
@@ -861,20 +861,21 @@
                         }, "");
                     }
                 },
-                // Identifies blocks of markup embedded within JavaScript for language supersets
+                // Identifies blocks of markup embedded within JavaScript for language super sets
                 // like React JSX.
                 markup         = function lexer_script_markup():void {
-                    let curlytest:boolean   = false,
-                        endtag:boolean      = false,
+                    let curlytest:boolean  = false,
+                        endtag:boolean     = false,
                         anglecount:number  = 0,
                         curlycount:number  = 0,
                         tagcount:number    = 0,
                         d:number           = 0,
                         next:string        = "",
-                        output:string[]      = [];
+                        priorToken:string  = "",
+                        priorType:string   = "",
+                        output:string[]    = [];
                     const dt:boolean = datatype[datatype.length - 1],
                         syntaxnum:string   = "0123456789=<>+-*?|^:&.,;%(){}[]~",
-                        syntax:string      = "=<>+-*?|^:&.,;%(){}[]~",
                         applyMarkup = function lexer_script_markup_applyMarkup():void {
                             if (ltoke === "(") {
                                 parse.structure[parse.structure.length - 1] = ["paren", parse.count];
@@ -884,6 +885,51 @@
                     if (wordTest > -1) {
                         word();
                     }
+                    
+                    // type generics tokenizer
+                    priorToken = (parse.count > 0)
+                    ? data.token[parse.count - 1]
+                    : "";
+                    priorType = (parse.count > 0)
+                        ? data.types[parse.count - 1]
+                        : "";
+                    if (options.language !== "jsx" && options.language !== "tsx" && (
+                        ltoke === "function" ||
+                        priorToken === "=>" ||
+                        data.stack[parse.count] === "arguments" ||
+                        (ltype === "reference" && (priorType === "operator" || priorToken === "function" || priorToken === "class" || priorToken === "type")) ||
+                        (ltype === "type" && priorType === "operator") ||
+                        ltoke === "return" ||
+                        ltype === "operator"
+                    )) {
+                        let inc:number = 0,
+                            e:number = 0;
+                        const build:string[] = [];
+                        d = a;
+                        do {
+                            build.push(c[d]);
+                            if (c[d] === "<") {
+                                inc = inc + 1;
+                            } else if (c[d] === ">") {
+                                inc = inc - 1;
+                                if (inc < 1) {
+                                    break;
+                                }
+                            }
+                            d = d + 1;
+                        } while (d < b);
+                        e = a;
+                        a = d;
+                        next = nextchar(1, false);
+                        if (dt === true || priorToken === "=>" || priorType !== "operator" || (priorType === "operator" && (next === "(" || next === "="))) {
+                            ltype = "generic";
+                            ltoke = build.join("").replace(/^<\s+/, "<").replace(/\s+>$/, ">").replace(/,\s*/g, ", ");
+                            recordPush("");
+                            return;
+                        }
+                        a = e;
+                    }
+
                     d = parse.count;
                     if (data.types[d] === "comment") {
                         do {
@@ -891,12 +937,6 @@
                         } while (
                             d > 0 && data.types[d] === "comment"
                         );
-                    }
-                    if (c[a] === "<" && c[a + 1] === ">" && ltoke !== "(") {
-                        a     = a + 1;
-                        ltype = "generic";
-                        ltoke = "<>";
-                        return;
                     }
                     if (
                         dt === false &&
@@ -923,133 +963,76 @@
                     if (options.language !== "typescript" && options.language !== "flow" && (data.token[d] === "return" || data.types[d] === "operator" || data.types[d] === "start" || data.types[d] === "separator" || data.types[d] === "jsx_attribute_start" || (data.token[d] === "}" && parse.structure[parse.structure.length - 1][0] === "global"))) {
                         ltype        = "markup";
                         options.language = "jsx";
-                    } else if (options.language === "typescript" || options.language === "flow" || data.token[parse.count] === "#include" || (((/\s/).test(c[a - 1]) === false || ltoke === "public" || ltoke === "private" || ltoke === "static" || ltoke === "final" || ltoke === "implements" || ltoke === "class" || ltoke === "void" || ltoke === "Promise") && syntaxnum.indexOf(c[a + 1]) < 0)) {
-                        // Java type generics
-                        let comma:boolean    = false,
-                            e:number        = 1,
-                            f:number        = 0;
-                        const generics:string[] = ["<"],
-                            jj:number = b;
-                        if (c[a + 1] === "<") {
-                            e = 2;
-                        }
-                        d = a + 1;
-                        if (d < jj) {
-                            do {
-                                generics.push(c[d]);
-                                if (c[d] === "?" && c[d + 1] === ">") {
-                                    generics.push(">");
-                                    d = d + 1;
+                        do {
+                            output.push(c[a]);
+                            if (c[a] === "{") {
+                                curlycount = curlycount + 1;
+                                curlytest  = true;
+                            } else if (c[a] === "}") {
+                                curlycount = curlycount - 1;
+                                if (curlycount === 0) {
+                                    curlytest = false;
                                 }
-                                if (c[d] === ",") {
-                                    comma = true;
-                                    if ((/\s/).test(c[d + 1]) === false) {
-                                        generics.push(" ");
-                                    }
-                                } else if (c[d] === "[") {
-                                    f = f + 1;
-                                } else if (c[d] === "]") {
-                                    f = f - 1;
-                                } else if (c[d] === "<") {
-                                    e = e + 1;
-                                } else if (c[d] === ">") {
-                                    e = e - 1;
-                                    if (e === 0 && f === 0) {
-                                        if ((/\s/).test(c[d - 1]) === true && dt === false) {
-                                            ltype = "operator";
-                                            ltoke = operator();
-                                            recordPush("");
-                                            return;
-                                        }
-                                        ltype = "generic";
-                                        a     = d;
-                                        ltoke = generics
-                                            .join("")
-                                            .replace(/\s+/g, " ");
-                                        return recordPush("");
-                                    }
-                                }
-                                if (dt === false && ((syntax.indexOf(c[d]) > -1 && c[d] !== "," && c[d] !== "<" && c[d] !== ">" && c[d] !== "[" && c[d] !== "]") || (comma === false && (/\s/).test(c[d]) === true))) {
-                                    ltype = "operator";
-                                    ltoke = operator();
-                                    recordPush("");
-                                    return;
-                                }
-                                d = d + 1;
-                            } while (d < jj);
-                        }
-                        return;
-                    } else {
-                        ltype = "operator";
-                        ltoke = operator();
-                        recordPush("");
-                        return;
-                    }
-                    do {
-                        output.push(c[a]);
-                        if (c[a] === "{") {
-                            curlycount = curlycount + 1;
-                            curlytest  = true;
-                        } else if (c[a] === "}") {
-                            curlycount = curlycount - 1;
-                            if (curlycount === 0) {
-                                curlytest = false;
-                            }
-                        } else if (c[a] === "<" && curlytest === false) {
-                            if (c[a + 1] === "<") {
-                                do {
-                                    output.push(c[a]);
-                                    a = a + 1;
-                                } while (a < b && c[a + 1] === "<");
-                            }
-                            anglecount = anglecount + 1;
-                            if (nextchar(1, false) === "/") {
-                                endtag = true;
-                            }
-                        } else if (c[a] === ">" && curlytest === false) {
-                            if (c[a + 1] === ">") {
-                                do {
-                                    output.push(c[a]);
-                                    a = a + 1;
-                                } while (c[a + 1] === ">");
-                            }
-                            anglecount = anglecount - 1;
-                            if (endtag === true) {
-                                tagcount = tagcount - 1;
-                            } else if (c[a - 1] !== "/") {
-                                tagcount = tagcount + 1;
-                            }
-                            if (anglecount === 0 && curlycount === 0 && tagcount < 1) {
-                                next = nextchar(2, false);
-                                if (next.charAt(0) !== "<") {
-                                    // if followed by nonmarkup
-                                    return applyMarkup();
-                                }
-                                // catch additional trailing tag sets
-                                if (next.charAt(0) === "<" && syntaxnum.indexOf(next.charAt(1)) < 0 && (/\s/).test(next.charAt(1)) === false) {
-                                    // perform a minor safety test to verify if "<" is a tag start or a less than
-                                    // operator
-                                    d = a + 1;
+                            } else if (c[a] === "<" && curlytest === false) {
+                                if (c[a + 1] === "<") {
                                     do {
-                                        d = d + 1;
-                                        if (c[d] === ">" || ((/\s/).test(c[d - 1]) === true && syntaxnum.indexOf(c[d]) < 0)) {
-                                            break;
-                                        }
-                                        if (syntaxnum.indexOf(c[d]) > -1) {
-                                            // if followed by additional markup tags
-                                            return applyMarkup();
-                                        }
-                                    } while (d < b);
-                                } else {
-                                    // if a nonmarkup "<" follows markup
-                                    return applyMarkup();
+                                        output.push(c[a]);
+                                        a = a + 1;
+                                    } while (a < b && c[a + 1] === "<");
                                 }
+                                anglecount = anglecount + 1;
+                                if (nextchar(1, false) === "/") {
+                                    endtag = true;
+                                }
+                            } else if (c[a] === ">" && curlytest === false) {
+                                if (c[a + 1] === ">") {
+                                    do {
+                                        output.push(c[a]);
+                                        a = a + 1;
+                                    } while (c[a + 1] === ">");
+                                }
+                                anglecount = anglecount - 1;
+                                if (endtag === true) {
+                                    tagcount = tagcount - 1;
+                                } else if (c[a - 1] !== "/") {
+                                    tagcount = tagcount + 1;
+                                }
+                                if (anglecount === 0 && curlycount === 0 && tagcount < 1) {
+                                    next = nextchar(2, false);
+                                    if (next.charAt(0) !== "<") {
+                                        // if followed by nonmarkup
+                                        return applyMarkup();
+                                    }
+                                    // catch additional trailing tag sets
+                                    if (next.charAt(0) === "<" && syntaxnum.indexOf(next.charAt(1)) < 0 && (/\s/).test(next.charAt(1)) === false) {
+                                        // perform a minor safety test to verify if "<" is a tag start or a less than
+                                        // operator
+                                        d = a + 1;
+                                        do {
+                                            d = d + 1;
+                                            if (c[d] === ">" || ((/\s/).test(c[d - 1]) === true && syntaxnum.indexOf(c[d]) < 0)) {
+                                                break;
+                                            }
+                                            if (syntaxnum.indexOf(c[d]) > -1) {
+                                                // if followed by additional markup tags
+                                                return applyMarkup();
+                                            }
+                                        } while (d < b);
+                                    } else {
+                                        // if a nonmarkup "<" follows markup
+                                        return applyMarkup();
+                                    }
+                                }
+                                endtag = false;
                             }
-                            endtag = false;
-                        }
-                        a = a + 1;
-                    } while (a < b);
-                    return applyMarkup();
+                            a = a + 1;
+                        } while (a < b);
+                        return applyMarkup();
+                    }
+                    ltype = "operator";
+                    ltoke = operator();
+                    recordPush("");
+                    return;
                 },
                 // peek at whats up next
                 nextchar       = function lexer_script_nextchar(len:number, current:boolean):string {
@@ -2212,7 +2195,7 @@
                             }
                         } else if (datatype[datatype.length - 1] === true) {
                             ltype = "type";
-                        } else if (references.length > 0 && (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
+                        } else if (references.length > 0 && (tokel === "function" || ((options.language === "typescript" || options.language === "flow") && tokel === "type") || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
                             ltype = "reference";
                             references[references.length - 1].push(output);
                             if (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow") {
@@ -2233,7 +2216,7 @@
                                     if (data.token[d] === ";") {
                                         break;
                                     }
-                                    if (data.token[d] === "var" || data.token[d] === "let" || data.token[d] === "const") {
+                                    if (data.token[d] === "var" || data.token[d] === "let" || data.token[d] === "const" || data.token[d] === "type") {
                                         break;
                                     }
                                 } else if (data.types[d] === "end") {
@@ -2245,7 +2228,7 @@
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                                 hoisting(d, output, true);
-                            } else if (references.length > 0 && data.token[d] === "let" || data.token[d] === "const") {
+                            } else if (references.length > 0 && (data.token[d] === "let" || data.token[d] === "const" || (data.token[d] === "type" && (options.language === "typescript" || options.language === "flow")))) {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
                                 hoisting(d, output, false);
@@ -2377,28 +2360,28 @@
                     }
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "p" && c[a + 3] === "h" && c[a + 4] === "p") {
                     // php
-                    generic("<?php", "?>", "template");
+                    general("<?php", "?>", "template");
                 } else if (c[a] === "<" && c[a + 1] === "?" && c[a + 2] === "=") {
                     // php
-                    generic("<?=", "?>", "template");
+                    general("<?=", "?>", "template");
                 } else if (c[a] === "<" && c[a + 1] === "%") {
                     // asp
-                    generic("<%", "%>", "template");
+                    general("<%", "%>", "template");
                 } else if (c[a] === "{" && c[a + 1] === "%") {
                     // twig
-                    generic("{%", "%}", "template");
+                    general("{%", "%}", "template");
                 } else if (c[a] === "{" && c[a + 1] === "{" && c[a + 2] === "{") {
                     // mustache
-                    generic("{{{", "}}}", "template");
+                    general("{{{", "}}}", "template");
                 } else if (c[a] === "{" && c[a + 1] === "{") {
                     // handlebars
-                    generic("{{", "}}", "template");
+                    general("{{", "}}", "template");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-" && c[a + 4] === "#") {
                     // ssi
-                    generic("<!--#", "-->", "template");
+                    general("<!--#", "-->", "template");
                 } else if (c[a] === "<" && c[a + 1] === "!" && c[a + 2] === "-" && c[a + 3] === "-") {
                     // markup comment
-                    generic("<!--", "-->", "comment");
+                    general("<!--", "-->", "comment");
                 } else if (c[a] === "<") {
                     // markup
                     markup();
@@ -2407,18 +2390,18 @@
                     blockComment();
                 } else if ((parse.count < 0 || data.lines[parse.count] > 0) && c[a] === "#" && c[a + 1] === "!" && (c[a + 2] === "/" || c[a + 2] === "[")) {
                     // shebang
-                    generic("#!" + c[a + 2], "\n", "string");
+                    general("#!" + c[a + 2], "\n", "string");
                 } else if (c[a] === "/" && (a === b - 1 || c[a + 1] === "/")) {
                     // comment line
                     lineComment();
                 } else if (c[a] === "#" && c[a + 1] === "r" && c[a + 2] === "e" && c[a + 3] === "g" && c[a + 4] === "i" && c[a + 5] === "o" && c[a + 6] === "n" && (/\s/).test(c[a + 7]) === true) {
                     // comment line
                     asi(false);
-                    generic("#region", "\n", "comment");
+                    general("#region", "\n", "comment");
                 } else if (c[a] === "#" && c[a + 1] === "e" && c[a + 2] === "n" && c[a + 3] === "d" && c[a + 4] === "r" && c[a + 5] === "e" && c[a + 6] === "g" && c[a + 7] === "i" && c[a + 8] === "o" && c[a + 9] === "n") {
                     // comment line
                     asi(false);
-                    generic("#endregion", "\n", "comment");
+                    general("#endregion", "\n", "comment");
                 } else if (c[a] === "`" || (c[a] === "}" && parse.structure[parse.structure.length - 1][0] === "template_string")) {
                     // template string
                     if (wordTest > -1) {
@@ -2440,7 +2423,7 @@
                     }
                 } else if (c[a] === "\"" || c[a] === "'") {
                     // string
-                    generic(c[a], c[a], "string");
+                    general(c[a], c[a], "string");
                 } else if (
                     c[a] === "-" &&
                     (a < b - 1 && c[a + 1] !== "=" && c[a + 1] !== "-") &&
