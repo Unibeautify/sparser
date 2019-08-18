@@ -893,11 +893,16 @@
                     priorType = (parse.count > 0)
                         ? data.types[parse.count - 1]
                         : "";
-                    if (options.language !== "jsx" && options.language !== "tsx" && (
+                    next = nextchar(1, false);
+                    if (options.language !== "jsx" && options.language !== "tsx" && (/\d/).test(next) === false && (
                         ltoke === "function" ||
                         priorToken === "=>" ||
+                        priorToken === "void" ||
+                        priorToken === "." ||
                         data.stack[parse.count] === "arguments" ||
-                        (ltype === "reference" && (priorType === "operator" || priorToken === "function" || priorToken === "class" || priorToken === "type")) ||
+                        ((options.language === "csharp" || options.language === "java") && priorToken === "public" || priorToken === "private" || priorToken === "final" || priorToken === "static") ||
+                        (ltype === "type" && priorToken === "type") ||
+                        (ltype === "reference" && (priorType === "operator" || priorToken === "function" || priorToken === "class" || priorToken === "new")) ||
                         (ltype === "type" && priorType === "operator") ||
                         ltoke === "return" ||
                         ltype === "operator"
@@ -921,7 +926,7 @@
                         e = a;
                         a = d;
                         next = nextchar(1, false);
-                        if (dt === true || priorToken === "=>" || priorType !== "operator" || (priorType === "operator" && (next === "(" || next === "="))) {
+                        if (c[d] === ">" && (dt === true || priorToken === "=>" || priorToken === "." || priorType !== "operator" || (priorType === "operator" && (next === "(" || next === "=")))) {
                             ltype = "generic";
                             ltoke = build.join("").replace(/^<\s+/, "<").replace(/\s+>$/, ">").replace(/,\s*/g, ", ");
                             recordPush("");
@@ -1851,6 +1856,8 @@
                                     break;
                                 }
                             } while (aa > data.begin[parse.count]);
+                        } else if ((options.language === "java" || options.language === "csharp") && data.types[parse.count - 1] === "reference" && data.token[parse.count - 2] === "]") {
+                            stack = "array";
                         } else {
                             stack = "object";
                         }
@@ -2177,7 +2184,14 @@
                             typel = data.types[d];
                             tokel = data.token[d];
                         }
-                        if (
+                        nextitem = nextchar(2, false);
+                        if (output === "void") {
+                            if (tokel === ":" && data.stack[parse.count - 2] === "arguments") {
+                                ltype = "type";
+                            } else {
+                                ltype = "word";
+                            }
+                        } else if (
                             (
                                 parse.structure[parse.structure.length - 1][0] === "object" ||
                                 parse.structure[parse.structure.length - 1][0] === "class" ||
@@ -2193,9 +2207,13 @@
                             } else {
                                 ltype = "property";
                             }
-                        } else if (datatype[datatype.length - 1] === true) {
+                        } else if (datatype[datatype.length - 1] === true  || ((options.language === "typescript" || options.language === "flow") && tokel === "type")) {
                             ltype = "type";
-                        } else if (references.length > 0 && (tokel === "function" || ((options.language === "typescript" || options.language === "flow") && tokel === "type") || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var")) {
+                        } else if ((options.language === "java" || options.language === "csharp") && (tokel === "public" || tokel === "private" || tokel === "static" || tokel === "final")) {
+                            ltype = "reference";
+                        } else if ((options.language === "java" || options.language === "csharp") && ltoke !== "var" && (ltype === "end" || ltype === "word") && nextitem.charAt(0) === "=" && nextitem.charAt(1) !== "=") {
+                            ltype = "reference";
+                        } else if (references.length > 0 && (tokel === "function" || tokel === "class" || tokel === "const" || tokel === "let" || tokel === "var" || tokel === "new" || tokel === "void")) {
                             ltype = "reference";
                             references[references.length - 1].push(output);
                             if (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow") {
@@ -2204,6 +2222,8 @@
                                 } else {
                                     hoisting(parse.count, output, false);
                                 }
+                            } else {
+                                hoisting(parse.count, output, false);
                             }
                         } else if (parse.structure[parse.structure.length - 1][0] === "arguments" && ltype !== "operator") {
                             ltype = "reference";
@@ -2224,10 +2244,14 @@
                                 }
                                 d = d - 1;
                             } while (d > e);
-                            if (references.length > 0 && data.token[d] === "var" && (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow")) {
+                            if (references.length > 0 && data.token[d] === "var") {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);
-                                hoisting(d, output, true);
+                                if (options.language === "javascript" || options.language === "jsx" || options.language === "typescript" || options.language === "flow") {
+                                    hoisting(d, output, true);
+                                } else {
+                                    hoisting(d, output, false);
+                                }
                             } else if (references.length > 0 && (data.token[d] === "let" || data.token[d] === "const" || (data.token[d] === "type" && (options.language === "typescript" || options.language === "flow")))) {
                                 ltype = "reference";
                                 references[references.length - 1].push(output);

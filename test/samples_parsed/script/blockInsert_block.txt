@@ -25,7 +25,7 @@
 {"begin":12,"ender":31,"lexer":"script","lines":0,"stack":"function","token":"x{","types":"start"},
 {"begin":23,"ender":31,"lexer":"script","lines":0,"stack":"if","token":"throw","types":"word"},
 {"begin":23,"ender":31,"lexer":"script","lines":1,"stack":"if","token":"new","types":"word"},
-{"begin":23,"ender":31,"lexer":"script","lines":1,"stack":"if","token":"Error","types":"word"},
+{"begin":23,"ender":31,"lexer":"script","lines":1,"stack":"if","token":"Error","types":"reference"},
 {"begin":23,"ender":29,"lexer":"script","lines":0,"stack":"if","token":"(","types":"start"},
 {"begin":27,"ender":29,"lexer":"script","lines":0,"stack":"method","token":"\"Array with property names expected as first argument\"","types":"string"},
 {"begin":27,"ender":29,"lexer":"script","lines":0,"stack":"method","token":")","types":"end"},

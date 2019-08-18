@@ -139,7 +139,7 @@
                                     return output("csharp");
                                 }
                                 if (finalstatic === true || (/\w<\w+(,\s+\w+)*>/).test(sample) === true) {
-                                    if ((/:\s*((number)|(string))/).test(sample) === false && vartest === false && (finalstatic === true || publicprivate === true)) {
+                                    if ((/:\s*((number)|(string))/).test(sample) === false && (finalstatic === true || publicprivate === true)) {
                                         return output("java");
                                     }
                                     return output("typescript");

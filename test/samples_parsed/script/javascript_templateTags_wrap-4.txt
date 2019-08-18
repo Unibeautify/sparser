@@ -38,7 +38,7 @@
 {"begin":34,"ender":76,"lexer":"script","lines":1,"stack":"if","token":"ws","types":"reference"},
 {"begin":34,"ender":76,"lexer":"script","lines":1,"stack":"if","token":"=","types":"operator"},
 {"begin":34,"ender":76,"lexer":"script","lines":1,"stack":"if","token":"new","types":"word"},
-{"begin":34,"ender":76,"lexer":"script","lines":1,"stack":"if","token":"WebSocket","types":"word"},
+{"begin":34,"ender":76,"lexer":"script","lines":1,"stack":"if","token":"WebSocket","types":"reference"},
 {"begin":34,"ender":74,"lexer":"script","lines":0,"stack":"if","token":"(","types":"start"},
 {"begin":40,"ender":73,"lexer":"script","lines":0,"stack":"method","token":"`ws://localhost:${","types":"template_string_start"},
 {"begin":41,"ender":70,"lexer":"script","lines":0,"stack":"template_string","token":"(","types":"start"},
