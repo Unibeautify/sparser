@@ -1,6 +1,6 @@
 [
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"public","types":"word"},
-{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"static","types":"reference"},
+{"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"static","types":"word"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"List","types":"reference"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"<TestTable>","types":"generic"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"ToListLinq","types":"word"},

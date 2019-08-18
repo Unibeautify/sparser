@@ -2191,6 +2191,8 @@
                             } else {
                                 ltype = "word";
                             }
+                        } else if ((options.language === "java" || options.language === "csharp") && output === "static") {
+                            ltype = "word";
                         } else if (
                             (
                                 parse.structure[parse.structure.length - 1][0] === "object" ||

@@ -2,7 +2,7 @@
 {"begin":-1,"ender":-1,"lexer":"script","lines":0,"stack":"global","token":"class","types":"word"},
 {"begin":-1,"ender":-1,"lexer":"script","lines":1,"stack":"global","token":"Program","types":"reference"},
 {"begin":-1,"ender":60,"lexer":"script","lines":2,"stack":"global","token":"{","types":"start"},
-{"begin":2,"ender":60,"lexer":"script","lines":2,"stack":"class","token":"static","types":"property"},
+{"begin":2,"ender":60,"lexer":"script","lines":2,"stack":"class","token":"static","types":"word"},
 {"begin":2,"ender":60,"lexer":"script","lines":1,"stack":"class","token":"void","types":"word"},
 {"begin":2,"ender":60,"lexer":"script","lines":1,"stack":"class","token":"Main","types":"reference"},
 {"begin":2,"ender":11,"lexer":"script","lines":0,"stack":"class","token":"(","types":"start"},
