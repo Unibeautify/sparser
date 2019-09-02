@@ -52,6 +52,9 @@
                     if ((/^(\/(\/|\*)\s*parse-ignore\u002dstart)/).test(ltoke) === true) {
                         return;
                     }
+                    if (ltype === "start" || ltype === "type_start") {
+                        return;
+                    }
                     if (options.language === "json" || options.language === "java" || options.language === "csharp") {
                         return;
                     }
@@ -2186,7 +2189,7 @@
                         }
                         nextitem = nextchar(2, false);
                         if (output === "void") {
-                            if (tokel === ":" && data.stack[parse.count - 2] === "arguments") {
+                            if (tokel === ":" && data.stack[parse.count - 1] === "arguments") {
                                 ltype = "type";
                             } else {
                                 ltype = "word";

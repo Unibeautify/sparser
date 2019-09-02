@@ -51,7 +51,7 @@ interface directoryList extends Array<directoryItem> {
                 example: [
                     {
                         code: "sparser build",
-                        defined: "Compiles from TypeScript into JavaScript and puts librarys together."
+                        defined: "Compiles from TypeScript into JavaScript and puts libraries together."
                     },
                     {
                         code: "sparser build incremental",
@@ -1606,9 +1606,13 @@ interface directoryList extends Array<directoryItem> {
                         callback: function node_apps_directory_startPath_callback(result:string[]|directoryList) {
                             const output:string[] = [];
                             if (verbose === true) {
-                                apps.wrapit(output, `Sparser found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
+                                output.push(JSON.stringify(result));
+                                output.push("");
+                                apps.wrapit(output, `Pretty Diff found ${text.green + apps.commas(result.length) + text.none} matching items from address ${text.cyan + startPath + text.none} with a total file size of ${text.green + apps.commas(size) + text.none} bytes.`);
+                                apps.log(output);
+                            } else {
+                                apps.log([JSON.stringify(result)]);
                             }
-                            apps.log([JSON.stringify(result), output]);
                         },
                         exclusions: exclusions,
                         path: "",

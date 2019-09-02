@@ -1,0 +1,10 @@
+(function local():void {
+    let loadTest = true,
+        data:ui_data = {
+            zIndex: 0
+        };
+    ui.fs.expand = function local_ui_fs_expand(event:MouseEvent) {
+        const ul:HTMLCollectionOf<HTMLUListElement> = li.getElementsByTagName("ul");
+    };
+    cat;
+}());
