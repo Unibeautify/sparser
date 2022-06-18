@@ -9,7 +9,7 @@
     "description": "A simple parse format for everything.",
     "devDependencies": {
         "ace-builds": "1.4.5",
-        "ws": "^7.1.2"
+        "ws": "7.5.8"
     },
     "directories": {
         "test": "test"
